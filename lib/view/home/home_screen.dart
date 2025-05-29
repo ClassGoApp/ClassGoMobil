@@ -17,10 +17,14 @@ class _HomeScreenState extends State<HomeScreen> {
   VideoPlayerController? _activeController;
   bool _isVideoLoading = true;
   int _playingIndex = -1;
+  ScrollController _scrollController = ScrollController();
+  final Map<int, bool> _visibleItems = {};
+  bool _isManualPlay = false;
 
   // Define las rutas base
     final String baseImageUrl = 'http://192.168.0.199:8000/storage/profile_images/';
     final String baseVideoUrl = 'http://192.168.0.199:8000/storage/profile_videos/';
+    final String testVideoUrl = 'https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4';
 
   @override
   void initState() {
@@ -28,6 +32,48 @@ class _HomeScreenState extends State<HomeScreen> {
     print('*** INICIO DE LA VISTA HOME ***');
     debugPrint('*** INICIO DE LA VISTA HOME (debugPrint) ***');
     fetchFeaturedTutors();
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (!mounted || _isManualPlay) return;
+    
+    // Actualizar la visibilidad de los items
+    for (int i = 0; i < featuredTutors.length; i++) {
+      final isVisible = _isItemVisible(i);
+      if (_visibleItems[i] != isVisible) {
+        _visibleItems[i] = isVisible;
+        if (isVisible) {
+          _playVideo(testVideoUrl, i);
+        } else if (_playingIndex == i) {
+          _stopVideo();
+        }
+      }
+    }
+  }
+
+  bool _isItemVisible(int index) {
+    if (!_scrollController.hasClients) return false;
+    
+    final itemPosition = index * 212.0; // 200 (ancho) + 12 (separación)
+    final screenWidth = MediaQuery.of(context).size.width;
+    final scrollOffset = _scrollController.offset;
+    
+    return itemPosition >= scrollOffset && 
+           itemPosition <= scrollOffset + screenWidth;
+  }
+
+  void _stopVideo() {
+    if (_activeController != null) {
+      _activeController!.pause();
+      _activeController!.dispose();
+      _activeController = null;
+    }
+    setState(() {
+      _playingIndex = -1;
+      _isVideoLoading = true;
+      _isManualPlay = false;
+    });
   }
 
   Future<void> fetchFeaturedTutors() async {
@@ -86,6 +132,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           SafeArea(
             child: SingleChildScrollView(
+              controller: _scrollController,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -213,7 +260,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           SizedBox(height: 12),
                           SizedBox(
-                            height: 220,
+                            height: MediaQuery.of(context).size.height * 0.20, // 35% de la altura de la pantalla
                             child: isLoadingTutors
                                 ? Center(child: CircularProgressIndicator(color: Colors.white))
                                 : featuredTutors.isEmpty
@@ -224,6 +271,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ),
                                       )
                                     : ListView.separated(
+                                        controller: _scrollController,
                                         scrollDirection: Axis.horizontal,
                                         itemCount: featuredTutors.length,
                                         separatorBuilder: (_, __) => SizedBox(width: 12),
@@ -276,10 +324,22 @@ class _HomeScreenState extends State<HomeScreen> {
                                                                     child: _playingIndex == index && _activeController != null
                                                                         ? _isVideoLoading
                                                                             ? Center(child: CircularProgressIndicator(color: AppColors.lightBlueColor))
-                                                                            : VideoPlayer(_activeController!)
+                                                                            : Stack(
+                                                                                children: [
+                                                                                  VideoPlayer(_activeController!),
+                                                                                  Positioned.fill(
+                                                                                    child: Material(
+                                                                                      color: Colors.transparent,
+                                                                                      child: InkWell(
+                                                                                        onTap: () => _handleVideoTap(index),
+                                                                                      ),
+                                                                                    ),
+                                                                                  ),
+                                                                                ],
+                                                                              )
                                                                         : FutureBuilder<Uint8List?>(
                                                                             future: VideoThumbnail.thumbnailData(
-                                                                              video: videoUrl,
+                                                                              video: testVideoUrl,
                                                                               imageFormat: ImageFormat.JPEG,
                                                                               maxWidth: 200,
                                                                               quality: 50,
@@ -299,9 +359,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                                                       child: Material(
                                                                                         color: Colors.transparent,
                                                                                         child: InkWell(
-                                                                                          onTap: () {
-                                                                                            _playVideo(videoUrl, index);
-                                                                                          },
+                                                                                          onTap: () => _handleVideoTap(index),
                                                                                         ),
                                                                                       ),
                                                                                     ),
@@ -320,9 +378,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                                                       child: Material(
                                                                                         color: Colors.transparent,
                                                                                         child: InkWell(
-                                                                                          onTap: () {
-                                                                                            _playVideo(videoUrl, index);
-                                                                                          },
+                                                                                          onTap: () => _handleVideoTap(index),
                                                                                         ),
                                                                                       ),
                                                                                     ),
@@ -561,15 +617,53 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _playVideo(String url, int index) async {
+    if (_activeController != null) {
+      await _activeController!.dispose();
+    }
+    
     setState(() {
       _playingIndex = index;
       _isVideoLoading = true;
     });
-    final controller = await _initializeVideoController(url);
+
+    try {
+      final controller = await _initializeVideoController(url);
+      setState(() {
+        _activeController = controller;
+        _isVideoLoading = false;
+      });
+      await controller.play();
+    } catch (e) {
+      print('Error al reproducir el video: $e');
+      setState(() {
+        _isVideoLoading = false;
+        _playingIndex = -1;
+      });
+    }
+  }
+
+  void _handleVideoTap(int index) {
     setState(() {
-      _activeController = controller;
-      _isVideoLoading = false;
+      _isManualPlay = true;
     });
+    
+    if (_playingIndex == index && _activeController != null) {
+      if (_activeController!.value.isPlaying) {
+        _activeController!.pause();
+      } else {
+        _activeController!.play();
+      }
+    } else {
+      _playVideo(testVideoUrl, index);
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    _stopVideo();
+    super.dispose();
   }
 
   // Función para obtener la URL completa de imagen o video
