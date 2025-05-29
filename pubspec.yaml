@@ -50,7 +50,7 @@ dependencies:
   shimmer: ^3.0.0
   package_info_plus: ^8.3.0
   flutter_rating_bar: ^4.0.1
-
+  video_thumbnail: ^0.5.3
 
 
 

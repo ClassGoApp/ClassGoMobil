@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
 
-  final String baseUrl = 'https://classgoapp.com/api';
+final String baseUrl = 'http://192.168.0.199:8000/api';
 
 Future<Map<String, dynamic>> registerUser(Map<String, dynamic> userData) async {
   try {

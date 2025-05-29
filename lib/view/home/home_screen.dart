@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
+import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/view/components/video_widget.dart';
+import 'package:video_player/video_player.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
+import 'dart:typed_data';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -9,10 +14,19 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   List<dynamic> featuredTutors = [];
   bool isLoadingTutors = true;
+  VideoPlayerController? _activeController;
+  bool _isVideoLoading = true;
+  int _playingIndex = -1;
+
+  // Define las rutas base
+    final String baseImageUrl = 'http://192.168.0.199:8000/storage/profile_images/';
+    final String baseVideoUrl = 'http://192.168.0.199:8000/storage/profile_videos/';
 
   @override
   void initState() {
     super.initState();
+    print('*** INICIO DE LA VISTA HOME ***');
+    debugPrint('*** INICIO DE LA VISTA HOME (debugPrint) ***');
     fetchFeaturedTutors();
   }
 
@@ -21,13 +35,36 @@ class _HomeScreenState extends State<HomeScreen> {
       isLoadingTutors = true;
     });
     try {
-      final response = await findTutors(null, perPage: 5); // Puedes ajustar el perPage
+      print('*** OBTENIENDO TUTORES ***');
+      debugPrint('*** OBTENIENDO TUTORES (debugPrint) ***');
+      final response = await findTutors(null, perPage: 1000); // Eliminar perPage: 5 para traer todos
+      print('Respuesta de la API de tutores:');
+      print(response);
       if (response.containsKey('data') && response['data']['list'] is List) {
+        final tutors = response['data']['list'];
+        for (var tutor in tutors) {
+          final profile = tutor['profile'] ?? {};
+          final name = profile['full_name'] ?? 'Sin nombre';
+          final imagePath = profile['image'] ?? '';
+          final videoPath = profile['intro_video'] ?? '';
+          final imageUrl = getFullUrl(imagePath, baseImageUrl);
+          final videoUrl = getFullUrl(videoPath, baseVideoUrl);
+          debugPrint('TUTOR: $name');
+          debugPrint('Ruta imagen: $imageUrl');
+          debugPrint('Ruta video: $videoUrl');
+        }
         setState(() {
-          featuredTutors = response['data']['list'];
+          featuredTutors = tutors;
         });
+        print('Tutores obtenidos:');
+        print(featuredTutors);
+      } else {
+        print('La respuesta no contiene la lista de tutores esperada.');
       }
-    } catch (e) {
+    } catch (e, stack) {
+      print('Error al obtener tutores:');
+      print(e);
+      print(stack);
       // Puedes mostrar un error si quieres
     } finally {
       setState(() {
@@ -176,7 +213,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           SizedBox(height: 12),
                           SizedBox(
-                            height: 170,
+                            height: 220,
                             child: isLoadingTutors
                                 ? Center(child: CircularProgressIndicator(color: Colors.white))
                                 : featuredTutors.isEmpty
@@ -191,6 +228,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         itemCount: featuredTutors.length,
                                         separatorBuilder: (_, __) => SizedBox(width: 12),
                                         itemBuilder: (context, index) {
+                                          try {
                                           final tutor = featuredTutors[index];
                                           final profile = tutor['profile'] ?? {};
                                           final name = profile['full_name'] ?? 'Sin nombre';
@@ -199,77 +237,174 @@ class _HomeScreenState extends State<HomeScreen> {
                                           if (subjects is List && subjects.isNotEmpty && subjects[0] != null && subjects[0]['name'] != null) {
                                             specialty = subjects[0]['name'];
                                           }
-                                          final rating = tutor['avg_rating']?.toString() ?? '0.0';
-                                          final imageUrl = profile['image'] ?? '';
-                                          return Container(
-                                            width: 200,
-                                            decoration: BoxDecoration(
-                                              color: Colors.white,
-                                              borderRadius: BorderRadius.circular(16),
-                                            ),
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                            final rating = double.tryParse(tutor['avg_rating']?.toString() ?? '0.0') ?? 0.0;
+                                            final imagePath = profile['image'] ?? '';
+                                            final videoPath = profile['intro_video'] ?? '';
+                                            final imageUrl = getFullUrl(imagePath, baseImageUrl);
+                                            final videoUrl = getFullUrl(videoPath, baseVideoUrl);
+                                            return Column(
                                               children: [
-                                                ClipRRect(
-                                                  borderRadius: BorderRadius.only(
-                                                    topLeft: Radius.circular(16),
-                                                    topRight: Radius.circular(16),
-                                                  ),
-                                                  child: imageUrl.isNotEmpty
-                                                      ? Image.network(
-                                                          imageUrl,
-                                                          height: 80,
-                                                          width: double.infinity,
-                                                          fit: BoxFit.cover,
-                                                        )
-                                                      : Container(
-                                                          height: 80,
-                                                          color: Colors.grey[300],
-                                                          child: Icon(Icons.person, size: 40, color: Colors.grey[600]),
-                                                        ),
-                                                ),
-                                                Padding(
-                                                  padding: const EdgeInsets.all(8.0),
-                                                  child: Column(
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                    children: [
-                                                      Row(
+                                                Stack(
+                                                  clipBehavior: Clip.none,
+                                                  children: [
+                                                    Container(
+                                                      width: 200,
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.transparent,
+                                                        borderRadius: BorderRadius.circular(16),
+                                                      ),
+                                                      child: Column(
                                                         children: [
-                                                          CircleAvatar(
-                                                            radius: 12,
-                                                            backgroundImage: imageUrl.isNotEmpty
-                                                                ? NetworkImage(imageUrl)
-                                                                : null,
-                                                            child: imageUrl.isEmpty
-                                                                ? Icon(Icons.person, size: 16, color: Colors.grey[600])
-                                                                : null,
-                                                          ),
-                                                          SizedBox(width: 6),
-                                                          Flexible(
-                                                            child: Text(
-                                                              name,
-                                                              style: TextStyle(
-                                                                color: Color(0xFF0B3C5D),
-                                                                fontWeight: FontWeight.bold,
-                                                                fontSize: 13,
-                                                              ),
-                                                              overflow: TextOverflow.ellipsis,
+                                                          Container(
+                                                            width: 200,
+                                                            decoration: BoxDecoration(
+                                                              color: Colors.white,
+                                                              border: Border.all(color: AppColors.lightBlueColor, width: 4),
+                                                              borderRadius: BorderRadius.circular(16),
+                                                            ),
+                                                            child: Column(
+                                                              children: [
+                                                                ClipRRect(
+                                                                  borderRadius: BorderRadius.only(
+                                                                    topLeft: Radius.circular(12),
+                                                                    topRight: Radius.circular(12),
+                                                                  ),
+                                                                  child: Container(
+                                                                    width: 200,
+                                                                    height: 100,
+                                                                    color: Colors.grey[300],
+                                                                    child: _playingIndex == index && _activeController != null
+                                                                        ? _isVideoLoading
+                                                                            ? Center(child: CircularProgressIndicator(color: AppColors.lightBlueColor))
+                                                                            : VideoPlayer(_activeController!)
+                                                                        : FutureBuilder<Uint8List?>(
+                                                                            future: VideoThumbnail.thumbnailData(
+                                                                              video: videoUrl,
+                                                                              imageFormat: ImageFormat.JPEG,
+                                                                              maxWidth: 200,
+                                                                              quality: 50,
+                                                                            ),
+                                                                            builder: (context, snapshot) {
+                                                                              if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+                                                                                return Stack(
+                                                                                  children: [
+                                                                                    Image.memory(
+                                                                                      snapshot.data!,
+                                                                                      width: 200,
+                                                                                      height: 100,
+                                                                                      fit: BoxFit.cover,
+                                                                                    ),
+                                                                                    Center(child: Icon(Icons.play_circle_outline, size: 50, color: AppColors.lightBlueColor)),
+                                                                                    Positioned.fill(
+                                                                                      child: Material(
+                                                                                        color: Colors.transparent,
+                                                                                        child: InkWell(
+                                                                                          onTap: () {
+                                                                                            _playVideo(videoUrl, index);
+                                                                                          },
+                                                                                        ),
+                                                                                      ),
+                                                                                    ),
+                                                                                  ],
+                                                                                );
+                                                                              } else {
+                                                                                return Stack(
+                                                                                  children: [
+                                                                                    Container(
+                                                                                      color: Colors.grey[300],
+                                                                                      width: 200,
+                                                                                      height: 100,
+                                                                                    ),
+                                                                                    Center(child: Icon(Icons.play_circle_outline, size: 50, color: AppColors.lightBlueColor)),
+                                                                                    Positioned.fill(
+                                                                                      child: Material(
+                                                                                        color: Colors.transparent,
+                                                                                        child: InkWell(
+                                                                                          onTap: () {
+                                                                                            _playVideo(videoUrl, index);
+                                                                                          },
+                                                                                        ),
+                                                                                      ),
+                                                                                    ),
+                                                                                  ],
+                                                                                );
+                                                                              }
+                                                                            },
+                                                                          ),
+                                                                  ),
+                                                                ),
+                                                                Container(
+                                                                  width: double.infinity,
+                                                                  height: 20,
+                                                                  decoration: BoxDecoration(
+                                                                    color: AppColors.lightBlueColor,
+                                                                    borderRadius: BorderRadius.only(
+                                                                      bottomLeft: Radius.circular(12),
+                                                                      bottomRight: Radius.circular(12),
+                                                                    ),
+                                                                  ),
+                                                                  alignment: Alignment.centerLeft,
+                                                                  padding: EdgeInsets.only(left: 44, right: 8),
+                                                                  child: Text(
+                                                                    name,
+                                                                    style: TextStyle(
+                                                                      color: Colors.white,
+                                                                      fontWeight: FontWeight.bold,
+                                                                      fontSize: 14,
+                                                                    ),
+                                                                    overflow: TextOverflow.ellipsis,
+                                                                  ),
+                                                                ),
+                                                              ],
                                                             ),
                                                           ),
                                                         ],
                                                       ),
-                                                      SizedBox(height: 4),
+                                                    ),
+                                                    Positioned(
+                                                      bottom: -18,
+                                                      left: 8,
+                                                      child: CircleAvatar(
+                                                        radius: 20,
+                                                        backgroundColor: Colors.white,
+                                                        child: CircleAvatar(
+                                                          radius: 17,
+                                                          backgroundImage: imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
+                                                          backgroundColor: Colors.grey[300],
+                                                          child: imageUrl.isEmpty ? Icon(Icons.person, size: 18, color: Colors.grey[600]) : null,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                SizedBox(height: 18),
+                                                Container(
+                                                  width: 200,
+                                                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                                  child: Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
                                                       Text(
                                                         'Especialidad: $specialty',
-                                                        style: TextStyle(fontSize: 11, color: Colors.black87),
+                                                        style: TextStyle(fontSize: 13, color: Colors.white, fontWeight: FontWeight.w600),
+                                                        maxLines: 2,
+                                                        overflow: TextOverflow.ellipsis,
                                                       ),
-                                                      SizedBox(height: 2),
+                                                      SizedBox(height: 4),
                                                       Row(
                                                         children: [
-                                                          Text(rating, style: TextStyle(fontSize: 12)),
-                                                          SizedBox(width: 4),
+                                                          Text(rating.toStringAsFixed(2), style: TextStyle(fontSize: 14, color: Colors.white, fontWeight: FontWeight.bold)),
+                                                          SizedBox(width: 6),
                                                           Row(
-                                                            children: List.generate(5, (i) => Icon(Icons.star, color: Colors.amber, size: 14)),
+                                                            children: List.generate(5, (i) {
+                                                              if (rating >= i + 1) {
+                                                                return Icon(Icons.star, color: Colors.amber, size: 16);
+                                                              } else if (rating > i && rating < i + 1) {
+                                                                return Icon(Icons.star_half, color: Colors.amber, size: 16);
+                                                              } else {
+                                                                return Icon(Icons.star_border, color: Colors.amber, size: 16);
+                                                              }
+                                                            }),
                                                           ),
                                                         ],
                                                       ),
@@ -277,8 +412,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   ),
                                                 ),
                                               ],
-                                            ),
-                                          );
+                                            );
+                                          } catch (e, stack) {
+                                            print('Error en itemBuilder de tutor:');
+                                            print(e);
+                                            print(stack);
+                                            return Container(
+                                              width: 200,
+                                              height: 120,
+                                              color: Colors.red[100],
+                                              child: Center(child: Text('Error al mostrar tutor', style: TextStyle(color: Colors.red))),
+                                            );
+                                          }
                                         },
                                       ),
                           ),
@@ -405,6 +550,34 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
+  }
+
+  Future<VideoPlayerController> _initializeVideoController(String url) async {
+    final controller = VideoPlayerController.network(url);
+    await controller.initialize();
+    controller.setVolume(0);
+    controller.setLooping(true);
+    return controller;
+  }
+
+  void _playVideo(String url, int index) async {
+    setState(() {
+      _playingIndex = index;
+      _isVideoLoading = true;
+    });
+    final controller = await _initializeVideoController(url);
+    setState(() {
+      _activeController = controller;
+      _isVideoLoading = false;
+    });
+  }
+
+  // Función para obtener la URL completa de imagen o video
+  String getFullUrl(String path, String base) {
+    if (path.startsWith('http')) {
+      return path;
+    }
+    return base + path;
   }
 }
 

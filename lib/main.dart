@@ -13,7 +13,7 @@ import 'package:flutter_projects/view/home/home_screen.dart';
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+    
   try {
     await AppConfig().getSettings();
   } catch (e) {}
