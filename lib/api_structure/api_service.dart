@@ -1377,3 +1377,22 @@ Future<Map<String, dynamic>> getEarningDetails(String token) async {
     throw 'Failed to get earning details $e';
   }
 }
+
+Future<Map<String, dynamic>> fetchAlliances() async {
+  try {
+    final Uri uri = Uri.parse('$baseUrl/alianzas');
+    final headers = <String, String>{
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
+    final response = await http.get(uri, headers: headers);
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      final error = json.decode(response.body);
+      throw Exception(error['message'] ?? 'Error al obtener alianzas');
+    }
+  } catch (e) {
+    throw 'Error al obtener alianzas: $e';
+  }
+}

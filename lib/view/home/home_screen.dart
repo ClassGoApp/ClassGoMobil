@@ -5,6 +5,7 @@ import 'package:flutter_projects/view/components/video_widget.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'dart:typed_data';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -21,6 +22,8 @@ class _HomeScreenState extends State<HomeScreen> {
   final Map<int, bool> _visibleItems = {};
   bool _isManualPlay = false;
   final Map<int, Uint8List?> _thumbnailCache = {};
+  List<dynamic> alliances = [];
+  bool isLoadingAlliances = true;
 
   // Define las rutas base
   final String baseImageUrl = 'http://192.168.0.199:8000/storage/profile_images/';
@@ -33,6 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
     debugPrint('*** INICIO DE LA VISTA HOME (debugPrint) ***');
     fetchFeaturedTutors();
     _scrollController.addListener(_onScroll);
+    fetchAlliancesData();
   }
 
   void _onScroll() {
@@ -129,6 +133,28 @@ class _HomeScreenState extends State<HomeScreen> {
     } finally {
       setState(() {
         isLoadingTutors = false;
+      });
+    }
+  }
+
+  Future<void> fetchAlliancesData() async {
+    setState(() {
+      isLoadingAlliances = true;
+    });
+    try {
+      final response = await fetchAlliances();
+      print('Respuesta de alianzas: $response');
+      if (response.containsKey('data')) {
+        setState(() {
+          alliances = response['data'];
+        });
+      }
+    } catch (e) {
+      print('Error al obtener alianzas:');
+      print(e);
+    } finally {
+      setState(() {
+        isLoadingAlliances = false;
       });
     }
   }
@@ -274,7 +300,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           SizedBox(height: 12),
                           SizedBox(
-                            height: MediaQuery.of(context).size.height * 0.20, // 35% de la altura de la pantalla
+                            height: MediaQuery.of(context).size.height * 0.30, // 35% de la altura de la pantalla
                             child: isLoadingTutors
                                 ? Center(child: CircularProgressIndicator(color: Colors.white))
                                 : featuredTutors.isEmpty
@@ -461,7 +487,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           SizedBox(height: 12),
                           SizedBox(
-                            height: MediaQuery.of(context).size.height * 0.24, // Altura variable
+                            height: MediaQuery.of(context).size.height * 0.36, // Altura variable
                             child: ListView(
                               scrollDirection: Axis.horizontal,
                               children: [
@@ -542,7 +568,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             borderRadius: BorderRadius.circular(12),
                             child: Image.network(
                               'http://192.168.0.199:8000/storage/optionbuilder/uploads/229502-18-2025_1204amPASO_3.jpg',
-                              height: 90,
+                              height: 220,
                               width: double.infinity,
                               fit: BoxFit.cover,
                             ),
@@ -551,24 +577,38 @@ class _HomeScreenState extends State<HomeScreen> {
                           // Alianzas
                           Text('Alianzas', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                           SizedBox(height: 10),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _AllianceCard(
-                                  logoUrl: 'https://i.ibb.co/0j1Yw1v/logo-ejemplo1.png',
-                                  name: 'Ingeniería Petrolera',
-                                  color: Color(0xFF0B9ED9),
-                                ),
-                              ),
-                              SizedBox(width: 10),
-                              Expanded(
-                                child: _AllianceCard(
-                                  logoUrl: 'https://i.ibb.co/0j1Yw1v/logo-ejemplo1.png',
-                                  name: 'Club "Tacuara" Debate y Oratoria',
-                                  color: Color(0xFFF9A825),
-                                ),
-                              ),
-                            ],
+                          SizedBox(
+                            height: 70,
+                            child: isLoadingAlliances
+                                ? Center(child: CircularProgressIndicator(color: Colors.white))
+                                : alliances.isEmpty
+                                    ? Center(child: Text('No hay alianzas disponibles', style: TextStyle(color: Colors.white)))
+                                    : ListView.separated(
+                                        scrollDirection: Axis.horizontal,
+                                        itemCount: alliances.length,
+                                        separatorBuilder: (_, __) => SizedBox(width: 10),
+                                        itemBuilder: (context, index) {
+                                          print('Mostrando alianza: ${alliances[index]}'); // <-- AGREGA ESTO
+                                          final alianza = alliances[index];
+                                          final logoUrl = alianza['imagen'] ?? '';
+                                          final name = alianza['titulo'] ?? '';
+                                          final enlace = alianza['enlace'] ?? '';
+                                          final color = Color(0xFF0B9ED9);
+                                          return GestureDetector(
+                                            onTap: () {
+                                              if (enlace.isNotEmpty) {
+                                                // Abrir enlace en el navegador
+                                                launchUrl(Uri.parse(enlace));
+                                              }
+                                            },
+                                            child: _AllianceCard(
+                                              logoUrl: logoUrl,
+                                              name: name,
+                                              color: color,
+                                            ),
+                                          );
+                                        },
+                                      ),
                           ),
                           SizedBox(height: 30),
                         ],
@@ -866,25 +906,36 @@ class _AllianceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 90,
+      width: 100, // ancho compacto
+      height: 120, // alto compacto
+      margin: EdgeInsets.symmetric(vertical: 4),
       decoration: BoxDecoration(
         color: color.withOpacity(0.15),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(10.0),
-            child: Image.network(logoUrl, width: 40, height: 40),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.network(
+              logoUrl,
+              width: 60,
+              height: 60,
+              fit: BoxFit.contain,
+            ),
           ),
-          Expanded(
+          SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6.0),
             child: Text(
               name,
               style: TextStyle(
                 color: color,
                 fontWeight: FontWeight.bold,
-                fontSize: 13,
+                fontSize: 12,
               ),
+              textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
