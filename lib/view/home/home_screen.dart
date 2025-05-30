@@ -20,11 +20,11 @@ class _HomeScreenState extends State<HomeScreen> {
   ScrollController _scrollController = ScrollController();
   final Map<int, bool> _visibleItems = {};
   bool _isManualPlay = false;
+  final Map<int, Uint8List?> _thumbnailCache = {};
 
   // Define las rutas base
-    final String baseImageUrl = 'http://192.168.0.199:8000/storage/profile_images/';
-    final String baseVideoUrl = 'http://192.168.0.199:8000/storage/profile_videos/';
-    final String testVideoUrl = 'https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4';
+  final String baseImageUrl = 'http://192.168.0.199:8000/storage/profile_images/';
+  final String baseVideoUrl = 'http://192.168.0.199:8000/storage/profile_videos/';
 
   @override
   void initState() {
@@ -43,10 +43,14 @@ class _HomeScreenState extends State<HomeScreen> {
       final isVisible = _isItemVisible(i);
       if (_visibleItems[i] != isVisible) {
         _visibleItems[i] = isVisible;
-        if (isVisible) {
-          _playVideo(testVideoUrl, i);
-        } else if (_playingIndex == i) {
-          _stopVideo();
+        if (isVisible && !_thumbnailCache.containsKey(i)) {
+          final tutor = featuredTutors[i];
+          final profile = tutor['profile'] ?? {};
+          final videoPath = profile['intro_video'] ?? '';
+          if (videoPath.isNotEmpty) {
+            final videoUrl = getFullUrl(videoPath, baseVideoUrl);
+            _preloadThumbnail(videoUrl, i);
+          }
         }
       }
     }
@@ -63,17 +67,30 @@ class _HomeScreenState extends State<HomeScreen> {
            itemPosition <= scrollOffset + screenWidth;
   }
 
-  void _stopVideo() {
-    if (_activeController != null) {
-      _activeController!.pause();
-      _activeController!.dispose();
-      _activeController = null;
+  Future<void> _preloadThumbnail(String videoUrl, int index) async {
+    if (_thumbnailCache.containsKey(index)) return;
+    
+    try {
+      final thumbnail = await VideoThumbnail.thumbnailData(
+        video: videoUrl,
+        imageFormat: ImageFormat.JPEG,
+        maxWidth: 200,
+        quality: 50,
+      );
+      if (mounted) {
+        setState(() {
+          _thumbnailCache[index] = thumbnail;
+        });
+      }
+    } catch (e) {
+      print('Error al cargar thumbnail: $e');
+      // Si hay error, intentamos cargar una imagen por defecto
+      if (mounted) {
+        setState(() {
+          _thumbnailCache[index] = null;
+        });
+      }
     }
-    setState(() {
-      _playingIndex = -1;
-      _isVideoLoading = true;
-      _isManualPlay = false;
-    });
   }
 
   Future<void> fetchFeaturedTutors() async {
@@ -83,27 +100,25 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       print('*** OBTENIENDO TUTORES ***');
       debugPrint('*** OBTENIENDO TUTORES (debugPrint) ***');
-      final response = await findTutors(null, perPage: 1000); // Eliminar perPage: 5 para traer todos
+      final response = await findTutors(null, perPage: 1000);
       print('Respuesta de la API de tutores:');
       print(response);
       if (response.containsKey('data') && response['data']['list'] is List) {
         final tutors = response['data']['list'];
-        for (var tutor in tutors) {
-          final profile = tutor['profile'] ?? {};
-          final name = profile['full_name'] ?? 'Sin nombre';
-          final imagePath = profile['image'] ?? '';
-          final videoPath = profile['intro_video'] ?? '';
-          final imageUrl = getFullUrl(imagePath, baseImageUrl);
-          final videoUrl = getFullUrl(videoPath, baseVideoUrl);
-          debugPrint('TUTOR: $name');
-          debugPrint('Ruta imagen: $imageUrl');
-          debugPrint('Ruta video: $videoUrl');
-        }
         setState(() {
           featuredTutors = tutors;
         });
-        print('Tutores obtenidos:');
-        print(featuredTutors);
+        
+        // Precargar thumbnails para los primeros tutores visibles
+        for (var i = 0; i < tutors.length; i++) {
+          final tutor = tutors[i];
+          final profile = tutor['profile'] ?? {};
+          final videoPath = profile['intro_video'] ?? '';
+          if (videoPath.isNotEmpty) {
+            final videoUrl = getFullUrl(videoPath, baseVideoUrl);
+            _preloadThumbnail(videoUrl, i);
+          }
+        }
       } else {
         print('La respuesta no contiene la lista de tutores esperada.');
       }
@@ -111,7 +126,6 @@ class _HomeScreenState extends State<HomeScreen> {
       print('Error al obtener tutores:');
       print(e);
       print(stack);
-      // Puedes mostrar un error si quieres
     } finally {
       setState(() {
         isLoadingTutors = false;
@@ -337,56 +351,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                                                   ),
                                                                                 ],
                                                                               )
-                                                                        : FutureBuilder<Uint8List?>(
-                                                                            future: VideoThumbnail.thumbnailData(
-                                                                              video: testVideoUrl,
-                                                                              imageFormat: ImageFormat.JPEG,
-                                                                              maxWidth: 200,
-                                                                              quality: 50,
-                                                                            ),
-                                                                            builder: (context, snapshot) {
-                                                                              if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
-                                                                                return Stack(
-                                                                                  children: [
-                                                                                    Image.memory(
-                                                                                      snapshot.data!,
-                                                                                      width: 200,
-                                                                                      height: 100,
-                                                                                      fit: BoxFit.cover,
-                                                                                    ),
-                                                                                    Center(child: Icon(Icons.play_circle_outline, size: 50, color: AppColors.lightBlueColor)),
-                                                                                    Positioned.fill(
-                                                                                      child: Material(
-                                                                                        color: Colors.transparent,
-                                                                                        child: InkWell(
-                                                                                          onTap: () => _handleVideoTap(index),
-                                                                                        ),
-                                                                                      ),
-                                                                                    ),
-                                                                                  ],
-                                                                                );
-                                                                              } else {
-                                                                                return Stack(
-                                                                                  children: [
-                                                                                    Container(
-                                                                                      color: Colors.grey[300],
-                                                                                      width: 200,
-                                                                                      height: 100,
-                                                                                    ),
-                                                                                    Center(child: Icon(Icons.play_circle_outline, size: 50, color: AppColors.lightBlueColor)),
-                                                                                    Positioned.fill(
-                                                                                      child: Material(
-                                                                                        color: Colors.transparent,
-                                                                                        child: InkWell(
-                                                                                          onTap: () => _handleVideoTap(index),
-                                                                                        ),
-                                                                                      ),
-                                                                                    ),
-                                                                                  ],
-                                                                                );
-                                                                              }
-                                                                            },
-                                                                          ),
+                                                                        : _buildVideoThumbnail(videoUrl, index),
                                                                   ),
                                                                 ),
                                                                 Container(
@@ -610,13 +575,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<VideoPlayerController> _initializeVideoController(String url) async {
     final controller = VideoPlayerController.network(url);
-    await controller.initialize();
-    controller.setVolume(0);
-    controller.setLooping(true);
-    return controller;
+    try {
+      await controller.initialize();
+      controller.setVolume(1.0);
+      controller.setLooping(true);
+      return controller;
+    } catch (e) {
+      controller.dispose();
+      rethrow;
+    }
   }
 
-  void _playVideo(String url, int index) async {
+  Future<void> _playVideo(String url, int index) async {
     if (_activeController != null) {
       await _activeController!.dispose();
     }
@@ -628,24 +598,127 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       final controller = await _initializeVideoController(url);
+      if (!mounted) {
+        controller.dispose();
+        return;
+      }
+      
       setState(() {
         _activeController = controller;
         _isVideoLoading = false;
       });
+      
       await controller.play();
     } catch (e) {
       print('Error al reproducir el video: $e');
+      if (!mounted) return;
+      
       setState(() {
         _isVideoLoading = false;
         _playingIndex = -1;
+        _activeController = null;
       });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('No se pudo cargar el video. Por favor, intente más tarde.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
     }
   }
 
-  void _handleVideoTap(int index) {
+  void _stopVideo() {
+    if (_activeController != null) {
+      _activeController!.pause();
+      _activeController!.dispose();
+      _activeController = null;
+    }
+    if (!mounted) return;
+    
     setState(() {
-      _isManualPlay = true;
+      _playingIndex = -1;
+      _isVideoLoading = true;
+      _isManualPlay = false;
     });
+  }
+
+  Widget _buildVideoThumbnail(String videoUrl, int index) {
+    if (_playingIndex == index && _activeController != null) {
+      return Stack(
+        children: [
+          AspectRatio(
+            aspectRatio: _activeController!.value.aspectRatio,
+            child: VideoPlayer(_activeController!),
+          ),
+          if (_isVideoLoading)
+            Center(child: CircularProgressIndicator(color: AppColors.lightBlueColor)),
+          Positioned.fill(
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => _handleVideoTap(index),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (_thumbnailCache.containsKey(index)) {
+      if (_thumbnailCache[index] != null) {
+        return Stack(
+          children: [
+            Image.memory(
+              _thumbnailCache[index]!,
+              width: 200,
+              height: 100,
+              fit: BoxFit.cover,
+            ),
+            Center(child: Icon(Icons.play_circle_outline, size: 50, color: AppColors.lightBlueColor)),
+            Positioned.fill(
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => _handleVideoTap(index),
+                ),
+              ),
+            ),
+          ],
+        );
+      }
+    }
+
+    return Stack(
+      children: [
+        Container(
+          color: Colors.grey[300],
+          width: 200,
+          height: 100,
+          child: Center(
+            child: CircularProgressIndicator(color: AppColors.lightBlueColor),
+          ),
+        ),
+        Center(child: Icon(Icons.play_circle_outline, size: 50, color: AppColors.lightBlueColor)),
+        Positioned.fill(
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => _handleVideoTap(index),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _handleVideoTap(int index) {
+    final tutor = featuredTutors[index];
+    final profile = tutor['profile'] ?? {};
+    final videoPath = profile['intro_video'] ?? '';
+    if (videoPath.isEmpty) return;
+    
+    final videoUrl = getFullUrl(videoPath, baseVideoUrl);
     
     if (_playingIndex == index && _activeController != null) {
       if (_activeController!.value.isPlaying) {
@@ -654,7 +727,10 @@ class _HomeScreenState extends State<HomeScreen> {
         _activeController!.play();
       }
     } else {
-      _playVideo(testVideoUrl, index);
+      setState(() {
+        _isManualPlay = true;
+      });
+      _playVideo(videoUrl, index);
     }
   }
 
@@ -663,6 +739,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _stopVideo();
+    _thumbnailCache.clear();
     super.dispose();
   }
 
