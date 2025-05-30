@@ -461,25 +461,36 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           SizedBox(height: 12),
                           SizedBox(
-                            height: 180,
+                            height: MediaQuery.of(context).size.height * 0.24, // Altura variable
                             child: ListView(
                               scrollDirection: Axis.horizontal,
                               children: [
                                 _StepCard(
                                   step: 'Paso 1',
                                   title: 'Inscríbete',
-                                  description: 'Crea tu cuenta rápidamente para comenzar a utilizar nuestra plataforma',
+                                  description: 'Crea tu cuenta rápidamente para comenzar a utilizar nuestra plataforma.',
                                   buttonText: 'Empezar',
-                                  imageUrl: 'https://images.unsplash.com/photo-1519125323398-675f0ddb6308',
+                                  imageUrl: 'http://192.168.0.199:8000/storage/optionbuilder/uploads/927102-18-2025_1202amPASO_1.jpg',
                                 ),
-                                SizedBox(width: 12),
+                                SizedBox(width: 18),
                                 _StepCard(
                                   step: 'Paso 2',
-                                  title: 'Encuentra tu tutor',
-                                  description: 'Busca y selecciona tutores calificados para tus necesidades',
-                                  buttonText: 'Buscar',
-                                  imageUrl: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61',
+                                  title: 'Encuentra un Tutor',
+                                  description: 'Busca y selecciona entre tutores calificados según tus necesidades.',
+                                  buttonText: 'Buscar Ahora',
+                                  imageUrl: 'http://192.168.0.199:8000/storage/optionbuilder/uploads/776302-18-2025_1203amPASO_2.jpg',
                                 ),
+                                SizedBox(width: 18),
+                                _StepCard(
+                                  step: 'Paso 3',
+                                  title: 'Programar una Sesión',
+                                  description: 'Reserva fácilmente un horario conveniente para tu sesión.',
+                                  buttonText: 'Empecemos',
+                                  imageUrl: 'http://192.168.0.199:8000/storage/optionbuilder/uploads/229502-18-2025_1204amPASO_3.jpg',
+                                ),
+                                SizedBox(width: 18),
+                                _StartJourneyCard(),
+                                SizedBox(width: 8),
                               ],
                             ),
                           ),
@@ -526,11 +537,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                           SizedBox(height: 18),
-                          // Imagen de grupo
+                          // Imagen de grupo (usa la imagen del paso 3)
                           ClipRRect(
                             borderRadius: BorderRadius.circular(12),
                             child: Image.network(
-                              'https://images.unsplash.com/photo-1464983953574-0892a716854b',
+                              'http://192.168.0.199:8000/storage/optionbuilder/uploads/229502-18-2025_1204amPASO_3.jpg',
                               height: 90,
                               width: double.infinity,
                               fit: BoxFit.cover,
@@ -791,36 +802,48 @@ class _StepCard extends StatelessWidget {
               fit: BoxFit.cover,
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(10.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Color(0xFFFF9900),
-                    borderRadius: BorderRadius.circular(8),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        margin: EdgeInsets.only(top: 2, bottom: 6),
+                        decoration: BoxDecoration(
+                          color: Color(0xFFFF9900),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(step, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                      ),
+                      Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0B3C5D))),
+                      SizedBox(height: 4),
+                      Text(description, style: TextStyle(fontSize: 12, color: Colors.black87)),
+                    ],
                   ),
-                  child: Text(step, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
-                ),
-                SizedBox(height: 6),
-                Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0B3C5D))),
-                SizedBox(height: 4),
-                Text(description, style: TextStyle(fontSize: 12, color: Colors.black87)),
-                SizedBox(height: 10),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFFFF9900),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0, bottom: 2.0),
+                    child: Center(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color(0xFFFF9900),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                        ),
+                        onPressed: () {},
+                        child: Text(buttonText, style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
                     ),
-                    padding: EdgeInsets.symmetric(horizontal: 18, vertical: 8),
                   ),
-                  onPressed: () {},
-                  child: Text(buttonText, style: TextStyle(fontWeight: FontWeight.bold)),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
@@ -864,6 +887,70 @@ class _AllianceCard extends StatelessWidget {
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StartJourneyCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    return Container(
+      width: isMobile ? 240 : 280,
+      margin: EdgeInsets.only(right: 8),
+      decoration: BoxDecoration(
+        color: Color(0xFF073B4C),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Icon(Icons.layers, color: Colors.white, size: 38),
+          ),
+          SizedBox(height: 12),
+          Text(
+            'Comienza tu Jornada',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Comienza tu viaje educativo con nosotros. ¡Encuentra un tutor y reserva tu primera sesión hoy mismo!',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.85),
+              fontSize: 14,
+            ),
+          ),
+          SizedBox(height: 18),
+          Center(
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFFFF9900),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+              ),
+              onPressed: () {},
+              icon: Icon(Icons.arrow_forward, color: Colors.white),
+              label: Text('Empieza Ahora', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ),
         ],
