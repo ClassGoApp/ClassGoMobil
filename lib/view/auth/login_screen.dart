@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_projects/base_components/textfield.dart';
 import 'package:flutter_projects/view/auth/register_screen.dart';
 import 'package:flutter_projects/view/auth/reset_password_screen.dart';
+import 'package:flutter_projects/view/home/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   final Map<String, dynamic>? registrationResponse;
@@ -368,7 +369,7 @@ class _LoginScreenState extends State<LoginScreen>
                               Navigator.pushAndRemoveUntil(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => SearchTutorsScreen()),
+                                    builder: (context) => HomeScreen()),
                                 (Route<dynamic> route) => false,
                               );
                             },

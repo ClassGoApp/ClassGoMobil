@@ -29,8 +29,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isLoadingAlliances = true;
 
   // Define las rutas base
-  final String baseImageUrl = 'http://192.168.0.173:8000/storage/profile_images/';
-  final String baseVideoUrl = 'http://192.168.0.173:8000/storage/profile_videos/';
+  final String baseImageUrl = 'https://www.classgoapp.com/storage/profile_images/';
+  final String baseVideoUrl = 'https://www.classgoapp.com/storage/profile_videos/';
 
   @override
   void initState() {
@@ -336,7 +336,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           SizedBox(height: 12),
                           SizedBox(
-                            height: MediaQuery.of(context).size.height * 0.30, // 35% de la altura de la pantalla
+                            height: MediaQuery.of(context).size.height * 0.26, // 35% de la altura de la pantalla
                             child: isLoadingTutors
                                 ? Center(child: CircularProgressIndicator(color: Colors.white))
                                 : featuredTutors.isEmpty
@@ -532,7 +532,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   title: 'Inscríbete',
                                   description: 'Crea tu cuenta rápidamente para comenzar a utilizar nuestra plataforma.',
                                   buttonText: 'Empezar',
-                                  imageUrl: 'http://192.168.0.173:8000/storage/optionbuilder/uploads/927102-18-2025_1202amPASO_1.jpg',
+                                  imageUrl: 'https://www.classgoapp.com/storage/optionbuilder/uploads/927102-18-2025_1202amPASO_1.jpg',
                                 ),
                                 SizedBox(width: 18),
                                 _StepCard(
@@ -540,7 +540,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   title: 'Encuentra un Tutor',
                                   description: 'Busca y selecciona entre tutores calificados según tus necesidades.',
                                   buttonText: 'Buscar Ahora',
-                                  imageUrl: 'http://192.168.0.173:8000/storage/optionbuilder/uploads/776302-18-2025_1203amPASO_2.jpg',
+                                  imageUrl: 'https://www.classgoapp.com/storage/optionbuilder/uploads/776302-18-2025_1203amPASO_2.jpg',
                                 ),
                                 SizedBox(width: 18),
                                 _StepCard(
@@ -548,7 +548,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   title: 'Programar una Sesión',
                                   description: 'Reserva fácilmente un horario conveniente para tu sesión.',
                                   buttonText: 'Empecemos',
-                                  imageUrl: 'http://192.168.0.173:8000/storage/optionbuilder/uploads/229502-18-2025_1204amPASO_3.jpg',
+                                  imageUrl: 'https://www.classgoapp.com/storage/optionbuilder/uploads/229502-18-2025_1204amPASO_3.jpg',
                                 ),
                                 SizedBox(width: 18),
                                 _StartJourneyCard(),
@@ -603,7 +603,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ClipRRect(
                             borderRadius: BorderRadius.circular(12),
                             child: Image.network(
-                              'http://192.168.0.173:8000/storage/optionbuilder/uploads/229502-18-2025_1204amPASO_3.jpg',
+                              'https://www.classgoapp.com/storage/optionbuilder/uploads/229502-18-2025_1204amPASO_3.jpg',
                               height: 220,
                               width: double.infinity,
                               fit: BoxFit.cover,
@@ -948,24 +948,36 @@ class _StepCard extends StatelessWidget {
               padding: const EdgeInsets.all(10.0),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        margin: EdgeInsets.only(top: 2, bottom: 6),
-                        decoration: BoxDecoration(
-                          color: Color(0xFFFF9900),
-                          borderRadius: BorderRadius.circular(8),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          margin: EdgeInsets.only(top: 2, bottom: 6),
+                          decoration: BoxDecoration(
+                            color: Color(0xFFFF9900),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(step, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
                         ),
-                        child: Text(step, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
-                      ),
-                      Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0B3C5D))),
-                      SizedBox(height: 4),
-                      Text(description, style: TextStyle(fontSize: 12, color: Colors.black87)),
-                    ],
+                        SizedBox(height: 8),
+                        Text(
+                          title,
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0B3C5D)),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          description,
+                          style: TextStyle(fontSize: 12, color: Colors.black87),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
                   ),
                   Padding(
                     padding: const EdgeInsets.only(top: 8.0, bottom: 2.0),
