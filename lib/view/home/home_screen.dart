@@ -5,7 +5,10 @@ import 'package:flutter_projects/view/components/video_widget.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'dart:typed_data';
+import 'dart:async';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_projects/provider/auth_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -26,8 +29,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isLoadingAlliances = true;
 
   // Define las rutas base
-  final String baseImageUrl = 'http://192.168.0.199:8000/storage/profile_images/';
-  final String baseVideoUrl = 'http://192.168.0.199:8000/storage/profile_videos/';
+  final String baseImageUrl = 'http://192.168.0.173:8000/storage/profile_images/';
+  final String baseVideoUrl = 'http://192.168.0.173:8000/storage/profile_videos/';
 
   @override
   void initState() {
@@ -75,20 +78,32 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_thumbnailCache.containsKey(index)) return;
     
     try {
+      // Verificar si la URL del video es válida
+      if (videoUrl.isEmpty) {
+        setState(() {
+          _thumbnailCache[index] = null;
+        });
+        return;
+      }
+
+      print('Generando thumbnail para: $videoUrl');
+      
       final thumbnail = await VideoThumbnail.thumbnailData(
         video: videoUrl,
         imageFormat: ImageFormat.JPEG,
         maxWidth: 200,
         quality: 50,
       );
+      
       if (mounted) {
         setState(() {
           _thumbnailCache[index] = thumbnail;
         });
+        print('Thumbnail generado exitosamente para el índice $index');
       }
     } catch (e) {
       print('Error al cargar thumbnail: $e');
-      // Si hay error, intentamos cargar una imagen por defecto
+      // Si hay error, establecemos null para usar la imagen por defecto
       if (mounted) {
         setState(() {
           _thumbnailCache[index] = null;
@@ -104,9 +119,11 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       print('*** OBTENIENDO TUTORES ***');
       debugPrint('*** OBTENIENDO TUTORES (debugPrint) ***');
+      
       final response = await findTutors(null, perPage: 1000);
       print('Respuesta de la API de tutores:');
       print(response);
+      
       if (response.containsKey('data') && response['data']['list'] is List) {
         final tutors = response['data']['list'];
         setState(() {
@@ -124,12 +141,31 @@ class _HomeScreenState extends State<HomeScreen> {
           }
         }
       } else {
-        print('La respuesta no contiene la lista de tutores esperada.');
+        print('La respuesta no contiene la lista de tutores esperada:');
+        print(response);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('No se pudieron cargar los tutores. Por favor, intente más tarde.'),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
       }
     } catch (e, stack) {
       print('Error al obtener tutores:');
       print(e);
+      print('Stack trace:');
       print(stack);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cargar los tutores. Por favor, intente más tarde.'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
     } finally {
       setState(() {
         isLoadingTutors = false;
@@ -496,7 +532,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   title: 'Inscríbete',
                                   description: 'Crea tu cuenta rápidamente para comenzar a utilizar nuestra plataforma.',
                                   buttonText: 'Empezar',
-                                  imageUrl: 'http://192.168.0.199:8000/storage/optionbuilder/uploads/927102-18-2025_1202amPASO_1.jpg',
+                                  imageUrl: 'http://192.168.0.173:8000/storage/optionbuilder/uploads/927102-18-2025_1202amPASO_1.jpg',
                                 ),
                                 SizedBox(width: 18),
                                 _StepCard(
@@ -504,7 +540,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   title: 'Encuentra un Tutor',
                                   description: 'Busca y selecciona entre tutores calificados según tus necesidades.',
                                   buttonText: 'Buscar Ahora',
-                                  imageUrl: 'http://192.168.0.199:8000/storage/optionbuilder/uploads/776302-18-2025_1203amPASO_2.jpg',
+                                  imageUrl: 'http://192.168.0.173:8000/storage/optionbuilder/uploads/776302-18-2025_1203amPASO_2.jpg',
                                 ),
                                 SizedBox(width: 18),
                                 _StepCard(
@@ -512,7 +548,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   title: 'Programar una Sesión',
                                   description: 'Reserva fácilmente un horario conveniente para tu sesión.',
                                   buttonText: 'Empecemos',
-                                  imageUrl: 'http://192.168.0.199:8000/storage/optionbuilder/uploads/229502-18-2025_1204amPASO_3.jpg',
+                                  imageUrl: 'http://192.168.0.173:8000/storage/optionbuilder/uploads/229502-18-2025_1204amPASO_3.jpg',
                                 ),
                                 SizedBox(width: 18),
                                 _StartJourneyCard(),
@@ -567,7 +603,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ClipRRect(
                             borderRadius: BorderRadius.circular(12),
                             child: Image.network(
-                              'http://192.168.0.199:8000/storage/optionbuilder/uploads/229502-18-2025_1204amPASO_3.jpg',
+                              'http://192.168.0.173:8000/storage/optionbuilder/uploads/229502-18-2025_1204amPASO_3.jpg',
                               height: 220,
                               width: double.infinity,
                               fit: BoxFit.cover,
@@ -578,7 +614,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           Text('Alianzas', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                           SizedBox(height: 10),
                           SizedBox(
-                            height: 70,
+                            height: 180,
                             child: isLoadingAlliances
                                 ? Center(child: CircularProgressIndicator(color: Colors.white))
                                 : alliances.isEmpty
@@ -588,7 +624,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         itemCount: alliances.length,
                                         separatorBuilder: (_, __) => SizedBox(width: 10),
                                         itemBuilder: (context, index) {
-                                          print('Mostrando alianza: ${alliances[index]}'); // <-- AGREGA ESTO
+                                          print('Mostrando alianza: ${alliances[index]}');
                                           final alianza = alliances[index];
                                           final logoUrl = alianza['imagen'] ?? '';
                                           final name = alianza['titulo'] ?? '';
@@ -597,7 +633,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                           return GestureDetector(
                                             onTap: () {
                                               if (enlace.isNotEmpty) {
-                                                // Abrir enlace en el navegador
                                                 launchUrl(Uri.parse(enlace));
                                               }
                                             },
@@ -624,19 +659,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<VideoPlayerController> _initializeVideoController(String url) async {
-    final controller = VideoPlayerController.network(url);
-    try {
-      await controller.initialize();
-      controller.setVolume(1.0);
-      controller.setLooping(true);
-      return controller;
-    } catch (e) {
-      controller.dispose();
-      rethrow;
-    }
-  }
-
   Future<void> _playVideo(String url, int index) async {
     if (_activeController != null) {
       await _activeController!.dispose();
@@ -648,20 +670,55 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     try {
-      final controller = await _initializeVideoController(url);
+      print('Intentando reproducir video: $url');
+      
+      // Verificar si la URL es válida
+      if (url.isEmpty) {
+        throw Exception('URL del video vacía');
+      }
+
+      // Crear un nuevo controlador con configuración específica
+      final controller = VideoPlayerController.network(
+        url,
+        videoPlayerOptions: VideoPlayerOptions(
+          mixWithOthers: true,
+          allowBackgroundPlayback: false,
+        ),
+        httpHeaders: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Origin, Content-Type',
+        },
+      );
+      
+      // Inicializar el controlador con timeout
+      await controller.initialize().timeout(
+        Duration(seconds: 10),
+        onTimeout: () {
+          throw TimeoutException('Tiempo de espera agotado al cargar el video');
+        },
+      );
+
       if (!mounted) {
         controller.dispose();
         return;
       }
+
+      controller.setVolume(1.0);
+      controller.setLooping(true);
       
       setState(() {
         _activeController = controller;
         _isVideoLoading = false;
       });
       
+      print('Video inicializado correctamente');
       await controller.play();
-    } catch (e) {
+      
+    } catch (e, stack) {
       print('Error al reproducir el video: $e');
+      print('Stack trace: $stack');
+      
       if (!mounted) return;
       
       setState(() {
@@ -670,12 +727,52 @@ class _HomeScreenState extends State<HomeScreen> {
         _activeController = null;
       });
       
+      String errorMessage = 'No se pudo reproducir el video. ';
+      if (e is TimeoutException) {
+        errorMessage += 'El servidor tardó demasiado en responder.';
+      } else if (e.toString().contains('CleartextNotPermitted')) {
+        errorMessage += 'Error de configuración de red.';
+      } else {
+        errorMessage += 'Por favor, intente más tarde.';
+      }
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('No se pudo cargar el video. Por favor, intente más tarde.'),
+          content: Text(errorMessage),
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  void _handleVideoTap(int index) {
+    final tutor = featuredTutors[index];
+    final profile = tutor['profile'] ?? {};
+    final videoPath = profile['intro_video'] ?? '';
+    if (videoPath.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Este tutor no tiene video de presentación'),
           duration: Duration(seconds: 2),
         ),
       );
+      return;
+    }
+    
+    final videoUrl = getFullUrl(videoPath, baseVideoUrl);
+    print('URL del video a reproducir: $videoUrl');
+    
+    if (_playingIndex == index && _activeController != null) {
+      if (_activeController!.value.isPlaying) {
+        _activeController!.pause();
+      } else {
+        _activeController!.play();
+      }
+    } else {
+      setState(() {
+        _isManualPlay = true;
+      });
+      _playVideo(videoUrl, index);
     }
   }
 
@@ -716,30 +813,42 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    if (_thumbnailCache.containsKey(index)) {
-      if (_thumbnailCache[index] != null) {
-        return Stack(
-          children: [
-            Image.memory(
-              _thumbnailCache[index]!,
-              width: 200,
-              height: 100,
-              fit: BoxFit.cover,
-            ),
-            Center(child: Icon(Icons.play_circle_outline, size: 50, color: AppColors.lightBlueColor)),
-            Positioned.fill(
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () => _handleVideoTap(index),
-                ),
+    if (_thumbnailCache.containsKey(index) && _thumbnailCache[index] != null) {
+      return Stack(
+        children: [
+          Image.memory(
+            _thumbnailCache[index]!,
+            width: 200,
+            height: 100,
+            fit: BoxFit.cover,
+          ),
+          Center(
+            child: Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.5),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.play_arrow,
+                color: Colors.white,
+                size: 30,
               ),
             ),
-          ],
-        );
-      }
+          ),
+          Positioned.fill(
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => _handleVideoTap(index),
+              ),
+            ),
+          ),
+        ],
+      );
     }
 
+    // Imagen por defecto mientras se carga el thumbnail
     return Stack(
       children: [
         Container(
@@ -747,10 +856,22 @@ class _HomeScreenState extends State<HomeScreen> {
           width: 200,
           height: 100,
           child: Center(
-            child: CircularProgressIndicator(color: AppColors.lightBlueColor),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.video_library, size: 40, color: Colors.grey[600]),
+                SizedBox(height: 4),
+                Text(
+                  'Cargando...',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-        Center(child: Icon(Icons.play_circle_outline, size: 50, color: AppColors.lightBlueColor)),
         Positioned.fill(
           child: Material(
             color: Colors.transparent,
@@ -763,33 +884,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _handleVideoTap(int index) {
-    final tutor = featuredTutors[index];
-    final profile = tutor['profile'] ?? {};
-    final videoPath = profile['intro_video'] ?? '';
-    if (videoPath.isEmpty) return;
-    
-    final videoUrl = getFullUrl(videoPath, baseVideoUrl);
-    
-    if (_playingIndex == index && _activeController != null) {
-      if (_activeController!.value.isPlaying) {
-        _activeController!.pause();
-      } else {
-        _activeController!.play();
-      }
-    } else {
-      setState(() {
-        _isManualPlay = true;
-      });
-      _playVideo(videoUrl, index);
-    }
-  }
-
   @override
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
-    _stopVideo();
+    if (_activeController != null) {
+      _activeController!.dispose();
+    }
     _thumbnailCache.clear();
     super.dispose();
   }
@@ -906,8 +1007,8 @@ class _AllianceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 100, // ancho compacto
-      height: 120, // alto compacto
+      width: 120,
+      height: 160,
       margin: EdgeInsets.symmetric(vertical: 4),
       decoration: BoxDecoration(
         color: color.withOpacity(0.15),
@@ -920,20 +1021,20 @@ class _AllianceCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             child: Image.network(
               logoUrl,
-              width: 60,
-              height: 60,
+              width: 80,
+              height: 80,
               fit: BoxFit.contain,
             ),
           ),
-          SizedBox(height: 8),
+          SizedBox(height: 12),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6.0),
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: Text(
               name,
               style: TextStyle(
                 color: color,
                 fontWeight: FontWeight.bold,
-                fontSize: 12,
+                fontSize: 14,
               ),
               textAlign: TextAlign.center,
               maxLines: 2,

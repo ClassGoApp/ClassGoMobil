@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
 
-final String baseUrl = 'http://192.168.0.199:8000/api';
+final String baseUrl = 'http://192.168.0.173:8000/api';
 
 Future<Map<String, dynamic>> registerUser(Map<String, dynamic> userData) async {
   try {
@@ -222,27 +222,33 @@ Future<Map<String, dynamic>> findTutors(
 
     queryParams.removeWhere((key, value) => value == null);
 
-    final Uri uri =
-        Uri.parse('$baseUrl/find-tutors').replace(queryParameters: queryParams);
+    final Uri uri = Uri.parse('$baseUrl/find-tutors').replace(queryParameters: queryParams);
 
     final headers = <String, String>{
       'Accept': 'application/json',
       'Content-Type': 'application/json',
     };
-    if (token != null) {
+    
+    if (token != null && token.isNotEmpty) {
       headers['Authorization'] = 'Bearer $token';
     }
 
+    print('Realizando petición a: ${uri.toString()}');
+    print('Headers: $headers');
+
     final response = await http.get(uri, headers: headers);
+    print('Código de respuesta: ${response.statusCode}');
+    print('Cuerpo de la respuesta: ${response.body}');
 
     if (response.statusCode == 200) {
       return json.decode(response.body);
     } else {
       final error = json.decode(response.body);
-      throw Exception(error['message'] ?? 'Failed to get tutors');
+      throw Exception(error['message'] ?? 'Error al obtener tutores: ${response.statusCode}');
     }
   } catch (e) {
-    throw 'Failed to get tutors: $e';
+    print('Error en findTutors: $e');
+    throw 'Error al obtener tutores: $e';
   }
 }
 
@@ -1387,7 +1393,7 @@ Future<Map<String, dynamic>> fetchAlliances() async {
     };
     final response = await http.get(uri, headers: headers);
     if (response.statusCode == 200) {
-      return json.decode(response.body);
+      return {'data': json.decode(response.body)};
     } else {
       final error = json.decode(response.body);
       throw Exception(error['message'] ?? 'Error al obtener alianzas');
