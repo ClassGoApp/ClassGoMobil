@@ -91,7 +91,7 @@ class _LoginScreenState extends State<LoginScreen>
 
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => SearchTutorsScreen()),
+          MaterialPageRoute(builder: (context) => HomeScreen()),
         );
 
         _emailController.clear();

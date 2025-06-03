@@ -29,8 +29,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isLoadingAlliances = true;
 
   // Define las rutas base
-  final String baseImageUrl = 'https://www.classgoapp.com/storage/profile_images/';
-  final String baseVideoUrl = 'https://www.classgoapp.com/storage/profile_videos/';
+  final String baseImageUrl = 'http://192.168.0.199:8000/storage/profile_images/';
+  final String baseVideoUrl = 'http://192.168.0.199:8000/storage/profile_videos/';
 
   @override
   void initState() {
@@ -223,13 +223,20 @@ class _HomeScreenState extends State<HomeScreen> {
                           'assets/images/logo_classgo.png',
                           height: 38, // Ajusta el tamaño según tu diseño
                         ),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(10),
+                        Builder(
+                          builder: (context) => InkWell(
+                            onTap: () {
+                              Scaffold.of(context).openEndDrawer();
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              padding: EdgeInsets.all(6),
+                              child: Icon(Icons.person_outline, color: Colors.white, size: 26),
+                            ),
                           ),
-                          padding: EdgeInsets.all(6),
-                          child: Icon(Icons.person_outline, color: Colors.white, size: 26),
                         ),
                       ],
                     ),
@@ -532,7 +539,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   title: 'Inscríbete',
                                   description: 'Crea tu cuenta rápidamente para comenzar a utilizar nuestra plataforma.',
                                   buttonText: 'Empezar',
-                                  imageUrl: 'https://www.classgoapp.com/storage/optionbuilder/uploads/927102-18-2025_1202amPASO_1.jpg',
+                                  imageUrl: 'http://192.168.0.199:8000/storage/optionbuilder/uploads/927102-18-2025_1202amPASO_1.jpg',
                                 ),
                                 SizedBox(width: 18),
                                 _StepCard(
@@ -540,7 +547,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   title: 'Encuentra un Tutor',
                                   description: 'Busca y selecciona entre tutores calificados según tus necesidades.',
                                   buttonText: 'Buscar Ahora',
-                                  imageUrl: 'https://www.classgoapp.com/storage/optionbuilder/uploads/776302-18-2025_1203amPASO_2.jpg',
+                                  imageUrl: 'http://192.168.0.199:8000/storage/optionbuilder/uploads/776302-18-2025_1203amPASO_2.jpg',
                                 ),
                                 SizedBox(width: 18),
                                 _StepCard(
@@ -548,7 +555,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   title: 'Programar una Sesión',
                                   description: 'Reserva fácilmente un horario conveniente para tu sesión.',
                                   buttonText: 'Empecemos',
-                                  imageUrl: 'https://www.classgoapp.com/storage/optionbuilder/uploads/229502-18-2025_1204amPASO_3.jpg',
+                                  imageUrl: 'http://192.168.0.199:8000/storage/optionbuilder/uploads/229502-18-2025_1204amPASO_3.jpg',
                                 ),
                                 SizedBox(width: 18),
                                 _StartJourneyCard(),
@@ -603,7 +610,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ClipRRect(
                             borderRadius: BorderRadius.circular(12),
                             child: Image.network(
-                              'https://www.classgoapp.com/storage/optionbuilder/uploads/229502-18-2025_1204amPASO_3.jpg',
+                              'http://192.168.0.199:8000/storage/optionbuilder/uploads/229502-18-2025_1204amPASO_3.jpg',
                               height: 220,
                               width: double.infinity,
                               fit: BoxFit.cover,
@@ -655,6 +662,95 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ],
+      ),
+      endDrawer: Drawer(
+        backgroundColor: Color(0xFF0B3C5D),
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: AppColors.primaryGreen,
+              ),
+              child: Consumer<AuthProvider>(
+                builder: (context, authProvider, child) {
+                  final user = authProvider.userData;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      CircleAvatar(
+                        radius: 30,
+                        backgroundImage: user != null && user['profile'] != null && user['profile']['profile_image'] != null
+                            ? NetworkImage(getFullUrl(user['profile']['profile_image'], baseImageUrl))
+                            : AssetImage('assets/images/default_avatar.png') as ImageProvider,
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        user != null ? user['name'] ?? 'Usuario' : 'Usuario',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        user != null ? user['email'] ?? '' : '',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+            ListTile(
+              leading: Icon(Icons.dashboard, color: Colors.white),
+              title: Text('Panel', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.settings, color: Colors.white),
+              title: Text('Configuración del perfil', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.calendar_today, color: Colors.white),
+              title: Text('Mis reservas', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.receipt, color: Colors.white),
+              title: Text('Facturas', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.inbox, color: Colors.white),
+              title: Text('Bandeja de entrada', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(context);
+              },
+            ),
+            Divider(),
+            ListTile(
+              leading: Icon(Icons.logout, color: Colors.red),
+              title: Text('Salir de aplicación', style: TextStyle(color: Colors.red)),
+              onTap: () {
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
