@@ -9,6 +9,7 @@ import 'dart:async';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
+import 'package:flutter_projects/view/auth/login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -761,10 +762,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   Divider(color: Colors.white54, thickness: 0.5), // Add a divider
                   ListTile(
                     leading: Icon(Icons.logout, color: Colors.red),
-                    title: Text('Salir de aplicación', style: TextStyle(color: Colors.red)),
-                    onTap: () {
+                    title: Text('Salir de la cuenta', style: TextStyle(color: Colors.red)),
+                    onTap: () async { // Make the function async
                       // TODO: Implement logout functionality
-                      setState(() { _isCustomDrawerOpen = false; });
+                      // Call the logout method from AuthProvider
+                      await Provider.of<AuthProvider>(context, listen: false).clearToken();
+
+                      // Navigate to the LoginScreen and remove all previous routes
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (context) => LoginScreen()),
+                            (Route<dynamic> route) => false,
+                      );
+                      setState(() { _isCustomDrawerOpen = false; }); // Close the drawer
                     },
                   ),
                 ],
@@ -1249,17 +1258,6 @@ class _CustomDrawerHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final userData = authProvider.userData;
-    print('\n=== DATOS DEL USUARIO LOGUEADO ===');
-    print('Token: ${userData?['token']}');
-    print('ID: ${userData?['user']?['id']}');
-    print('Email: ${userData?['user']?['email']}');
-    print('Estado: ${userData?['user']?['status']}');
-    print('Rol: ${userData?['user']?['role']}');
-    print('Nombre Completo: ${userData?['user']?['profile']?['full_name']}');
-    print('Nombre Corto: ${userData?['user']?['profile']?['short_name']}');
-    print('Descripción: ${userData?['user']?['profile']?['description']}');
-    print('Imagen: ${userData?['user']?['profile']?['image']}');
-    print('================================\n');
 
     // Corregir la URL de la imagen si es necesario
     String? imageUrl = userData?['user']?['profile']?['image'];
@@ -1269,24 +1267,19 @@ class _CustomDrawerHeader extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20), // Ajustar padding
-      // Eliminar la decoración con fondo blanco, borde y borderRadius
-      // La decoración del cajón principal manejará el fondo y el borderRadius.
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
+              // Avatar o icono de persona
               CircleAvatar(
-                radius: 28, // Ajustar tamaño del avatar
-                backgroundColor: Colors.white, // Fondo blanco para el círculo exterior
+                radius: 28,
+                backgroundColor: Colors.white,
                 child: CircleAvatar(
-                  radius: 26, // Ajustar tamaño del avatar interior
-                  backgroundImage: imageUrl != null
-                      ? NetworkImage(imageUrl)
-                      : null,
-                  child: imageUrl == null
-                      ? const Icon(Icons.person, size: 28, color: Color(0xFF023E8A)) // Icono con color azul oscuro
-                      : null,
+                  radius: 26,
+                  backgroundImage: imageUrl != null ? NetworkImage(imageUrl) : null,
+                  child: imageUrl == null ? const Icon(Icons.person, size: 28, color: Color(0xFF023E8A)) : null,
                 ),
               ),
               const SizedBox(width: 16),
@@ -1294,38 +1287,52 @@ class _CustomDrawerHeader extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      userData?['user']?['profile']?['full_name'] ?? 'Usuario',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white, // Color blanco para el nombre
+                    // Mostrar nombre o botón de iniciar sesión
+                    if (userData != null) // Si el usuario está logueado, muestra el nombre
+                      Text(
+                        userData['user']?['profile']?['full_name'] ?? 'Usuario',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ) else // Si no está logueado, muestra el botón Iniciar sesión
+                      InkWell(
+                        onTap: () {
+                          // Navegar a la pantalla de login y remover las rutas anteriores
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(builder: (context) => LoginScreen()),
+                                (Route<dynamic> route) => false,
+                          );
+                          // Nota: El cajón se cerrará automáticamente ya que HomeScreen se removerá del stack.
+                        },
+                        child: Text(
+                          'Iniciar sesión',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
                       ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
                     const SizedBox(height: 4),
-                    Text(
-                      userData?['user']?['email'] ?? '',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: Colors.white70, // Color blanco translúcido para el email
+                    // Mostrar email si el usuario está logueado
+                    if (userData != null)
+                      Text(
+                        userData['user']?['email'] ?? '',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.white70,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
                   ],
                 ),
               ),
             ],
           ),
-          // Eliminar el Text widget de la descripción
-          // const SizedBox(height: 16),
-          // Text(
-          //   userData?['user']?['profile']?['description'] ?? 'Sin descripción',
-          //   style: const TextStyle(
-          //     fontSize: 14,
-          //     color: Color(0xFF023E8A),
-          //   ),
-          // ),
         ],
       ),
     );
