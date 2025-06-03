@@ -211,9 +211,11 @@ class AuthProvider with ChangeNotifier {
 
   Future<void> setUserData(Map<String, dynamic> userData) async {
     _userData = userData;
+    print('AuthProvider setUserData received: \$_userData');
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('userData', jsonEncode(userData));
     notifyListeners();
+    print('AuthProvider setUserData completed and notified listeners.');
   }
 
   Future<void> clearToken() async {

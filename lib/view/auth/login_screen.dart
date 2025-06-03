@@ -78,8 +78,10 @@ class _LoginScreenState extends State<LoginScreen>
 
       try {
         final response = await loginUser(email, password);
+        print('Login API Response: $response');
         final String token = response['data']['token'];
         final Map<String, dynamic> userData = response['data'];
+        print('Extracted User Data after login: $userData');
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
         await authProvider.setToken(token);
@@ -102,6 +104,7 @@ class _LoginScreenState extends State<LoginScreen>
           true,
         );
       } catch (error) {
+        print('Login API call failed: $error');
         showCustomToast(context, "${error.toString()}", false);
 
         setState(() {

@@ -27,6 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final Map<int, Uint8List?> _thumbnailCache = {};
   List<dynamic> alliances = [];
   bool isLoadingAlliances = true;
+  bool _isCustomDrawerOpen = false;
 
   // Define las rutas base
   final String baseImageUrl = 'http://192.168.0.199:8000/storage/profile_images/';
@@ -200,12 +201,14 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       body: Stack(
         children: [
+          // Background Image
           Positioned.fill(
             child: Image.asset(
               'assets/images/bg_pattern.png', // Cambia la ruta si tu asset es diferente
               fit: BoxFit.cover,
             ),
           ),
+          // Main content (ScrollView)
           SafeArea(
             child: SingleChildScrollView(
               controller: _scrollController,
@@ -226,7 +229,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         Builder(
                           builder: (context) => InkWell(
                             onTap: () {
-                              Scaffold.of(context).openEndDrawer();
+                              setState(() {
+                                _isCustomDrawerOpen = !_isCustomDrawerOpen;
+                              });
                             },
                             child: Container(
                               decoration: BoxDecoration(
@@ -559,7 +564,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                                 SizedBox(width: 18),
                                 _StartJourneyCard(),
-                                SizedBox(width: 8),
+                                SizedBox(width: 8), // Added SizedBox for spacing at the end
                               ],
                             ),
                           ),
@@ -591,7 +596,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ],
                             ),
                           ),
-                          SizedBox(height: 12),
+                          SizedBox(height: 12), // Added SizedBox for spacing
                           Center(
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
@@ -601,7 +606,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                                 padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                               ),
-                              onPressed: () {},
+                              onPressed: () {
+                                // TODO: Implement action for 'Comienza Ahora'
+                              },
                               child: Text('Comienza Ahora', style: TextStyle(fontWeight: FontWeight.bold)),
                             ),
                           ),
@@ -661,96 +668,110 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-        ],
-      ),
-      endDrawer: Drawer(
-        backgroundColor: Color(0xFF0B3C5D),
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: <Widget>[
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: AppColors.primaryGreen,
-              ),
-              child: Consumer<AuthProvider>(
-                builder: (context, authProvider, child) {
-                  final user = authProvider.userData;
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      CircleAvatar(
-                        radius: 30,
-                        backgroundImage: user != null && user['profile'] != null && user['profile']['profile_image'] != null
-                            ? NetworkImage(getFullUrl(user['profile']['profile_image'], baseImageUrl))
-                            : AssetImage('assets/images/default_avatar.png') as ImageProvider,
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        user != null ? user['name'] ?? 'Usuario' : 'Usuario',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        user != null ? user['email'] ?? '' : '',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  );
+          // Overlay to dismiss drawer when tapping outside
+          if (_isCustomDrawerOpen)
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _isCustomDrawerOpen = false;
+                  });
                 },
+                child: Container(color: Colors.black54), // Semi-transparent overlay
               ),
             ),
-            ListTile(
-              leading: Icon(Icons.dashboard, color: Colors.white),
-              title: Text('Panel', style: TextStyle(color: Colors.white)),
-              onTap: () {
-                Navigator.pop(context);
-              },
+          // Custom Drawer Implementation
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 300), // Animation duration
+            curve: Curves.easeInOut,
+            top: MediaQuery.of(context).padding.top + 62.0, // Position below status bar and header (estimated height)
+            right: _isCustomDrawerOpen ? 0 : -(MediaQuery.of(context).size.width * 0.7), // Slide in/out from the right
+            width: MediaQuery.of(context).size.width * 0.7, // Set width (adjust as needed)
+            child: Container(
+              height: 465.0, // Increased height to fit all options (adjust as needed)
+              decoration: BoxDecoration(
+                color: Color(0xFF0B3C5D), // Dark background color
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(16), // Apply border radius to bottom left
+                ),
+                border: Border.all(color: AppColors.lightBlueColor, width: 2.0), // Ensure light blue border with thickness 2.0
+                boxShadow: [ // Optional: Add shadow for depth
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 10,
+                    spreadRadius: 2,
+                    offset: Offset(-5, 0),
+                  ),
+                ],
+              ),
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: <Widget>[
+                  // Drawer Header (User Info)
+                  Consumer<AuthProvider>(
+                    builder: (context, authProvider, child) {
+                      print('_CustomDrawerHeader build called with userData: \${authProvider.userData}');
+                      return _CustomDrawerHeader(
+                        authProvider: authProvider,
+                      );
+                    },
+                  ),
+                  Divider(color: Colors.white54, thickness: 0.5), // Add a divider after header
+                  // Menu Items
+                  ListTile(
+                    leading: Icon(Icons.dashboard, color: Colors.white),
+                    title: Text('Panel', style: TextStyle(color: Colors.white)),
+                    onTap: () {
+                      // TODO: Implement navigation to Panel screen
+                      setState(() { _isCustomDrawerOpen = false; });
+                    },
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.settings, color: Colors.white),
+                    title: Text('Configuración del perfil', style: TextStyle(color: Colors.white)),
+                    onTap: () {
+                      // TODO: Implement navigation to Profile Settings screen
+                      setState(() { _isCustomDrawerOpen = false; });
+                    },
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.calendar_today, color: Colors.white),
+                    title: Text('Mis reservas', style: TextStyle(color: Colors.white)),
+                    onTap: () {
+                      // TODO: Implement navigation to My Bookings screen
+                      setState(() { _isCustomDrawerOpen = false; });
+                    },
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.receipt, color: Colors.white),
+                    title: Text('Facturas', style: TextStyle(color: Colors.white)),
+                    onTap: () {
+                      // TODO: Implement navigation to Invoices screen
+                      setState(() { _isCustomDrawerOpen = false; });
+                    },
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.inbox, color: Colors.white),
+                    title: Text('Bandeja de entrada', style: TextStyle(color: Colors.white)),
+                    onTap: () {
+                      // TODO: Implement navigation to Inbox screen
+                      setState(() { _isCustomDrawerOpen = false; });
+                    },
+                  ),
+                  Divider(color: Colors.white54, thickness: 0.5), // Add a divider
+                  ListTile(
+                    leading: Icon(Icons.logout, color: Colors.red),
+                    title: Text('Salir de aplicación', style: TextStyle(color: Colors.red)),
+                    onTap: () {
+                      // TODO: Implement logout functionality
+                      setState(() { _isCustomDrawerOpen = false; });
+                    },
+                  ),
+                ],
+              ),
             ),
-            ListTile(
-              leading: Icon(Icons.settings, color: Colors.white),
-              title: Text('Configuración del perfil', style: TextStyle(color: Colors.white)),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.calendar_today, color: Colors.white),
-              title: Text('Mis reservas', style: TextStyle(color: Colors.white)),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.receipt, color: Colors.white),
-              title: Text('Facturas', style: TextStyle(color: Colors.white)),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.inbox, color: Colors.white),
-              title: Text('Bandeja de entrada', style: TextStyle(color: Colors.white)),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            Divider(),
-            ListTile(
-              leading: Icon(Icons.logout, color: Colors.red),
-              title: Text('Salir de aplicación', style: TextStyle(color: Colors.red)),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -993,6 +1014,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Función para obtener la URL completa de imagen o video
   String getFullUrl(String path, String base) {
+    print('_CustomDrawerHeader getFullUrl called with path: \${path}, base: \${base}');
     if (path.startsWith('http')) {
       return path;
     }
@@ -1213,6 +1235,97 @@ class _StartJourneyCard extends StatelessWidget {
               label: Text('Empieza Ahora', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CustomDrawerHeader extends StatelessWidget {
+  final AuthProvider authProvider;
+
+  const _CustomDrawerHeader({required this.authProvider});
+
+  @override
+  Widget build(BuildContext context) {
+    final userData = authProvider.userData;
+    print('\n=== DATOS DEL USUARIO LOGUEADO ===');
+    print('Token: ${userData?['token']}');
+    print('ID: ${userData?['user']?['id']}');
+    print('Email: ${userData?['user']?['email']}');
+    print('Estado: ${userData?['user']?['status']}');
+    print('Rol: ${userData?['user']?['role']}');
+    print('Nombre Completo: ${userData?['user']?['profile']?['full_name']}');
+    print('Nombre Corto: ${userData?['user']?['profile']?['short_name']}');
+    print('Descripción: ${userData?['user']?['profile']?['description']}');
+    print('Imagen: ${userData?['user']?['profile']?['image']}');
+    print('================================\n');
+
+    // Corregir la URL de la imagen si es necesario
+    String? imageUrl = userData?['user']?['profile']?['image'];
+    if (imageUrl != null && imageUrl.contains('http://192.168.0.199:8000/storage/thumbnails/http://192.168.0.199:8000/storage/thumbnails/')) {
+      imageUrl = imageUrl.replaceFirst('http://192.168.0.199:8000/storage/thumbnails/http://192.168.0.199:8000/storage/thumbnails/', 'http://192.168.0.199:8000/storage/thumbnails/');
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20), // Ajustar padding
+      // Eliminar la decoración con fondo blanco, borde y borderRadius
+      // La decoración del cajón principal manejará el fondo y el borderRadius.
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 28, // Ajustar tamaño del avatar
+                backgroundColor: Colors.white, // Fondo blanco para el círculo exterior
+                child: CircleAvatar(
+                  radius: 26, // Ajustar tamaño del avatar interior
+                  backgroundImage: imageUrl != null
+                      ? NetworkImage(imageUrl)
+                      : null,
+                  child: imageUrl == null
+                      ? const Icon(Icons.person, size: 28, color: Color(0xFF023E8A)) // Icono con color azul oscuro
+                      : null,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      userData?['user']?['profile']?['full_name'] ?? 'Usuario',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white, // Color blanco para el nombre
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      userData?['user']?['email'] ?? '',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.white70, // Color blanco translúcido para el email
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          // Eliminar el Text widget de la descripción
+          // const SizedBox(height: 16),
+          // Text(
+          //   userData?['user']?['profile']?['description'] ?? 'Sin descripción',
+          //   style: const TextStyle(
+          //     fontSize: 14,
+          //     color: Color(0xFF023E8A),
+          //   ),
+          // ),
         ],
       ),
     );
