@@ -52,6 +52,15 @@ android {
         versionName flutterVersionName
     }
 
+    signingConfigs {
+        release {
+            storeFile file(System.env.KEYSTORE_PATH ?: project.properties['storeFilePath'])
+            storePassword System.env.KEYSTORE_PASSWORD ?: project.properties['storePassword']
+            keyAlias System.env.KEY_ALIAS ?: project.properties['keyAlias']
+            keyPassword System.env.KEY_PASSWORD ?: project.properties['keyPassword']
+        }
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
@@ -59,6 +68,9 @@ android {
             minifyEnabled false
             shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+        debug {
             signingConfig signingConfigs.debug
         }
     }

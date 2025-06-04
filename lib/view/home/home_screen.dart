@@ -29,6 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<dynamic> alliances = [];
   bool isLoadingAlliances = true;
   bool _isCustomDrawerOpen = false;
+  bool _isLeftDrawerOpen = false;
 
   // Define las rutas base
   final String baseImageUrl = 'http://192.168.0.199:8000/storage/profile_images/';
@@ -222,16 +223,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Icon(Icons.menu, color: Colors.white, size: 32),
-                        Image.asset(
-                          'assets/images/logo_classgo.png',
-                          height: 38, // Ajusta el tamaño según tu diseño
-                        ),
+                        // Left menu icon
                         Builder(
                           builder: (context) => InkWell(
                             onTap: () {
                               setState(() {
-                                _isCustomDrawerOpen = !_isCustomDrawerOpen;
+                                _isLeftDrawerOpen = !_isLeftDrawerOpen; // Toggle left drawer state
+                                _isCustomDrawerOpen = false; // Close right drawer if open
                               });
                             },
                             child: Container(
@@ -240,7 +238,30 @@ class _HomeScreenState extends State<HomeScreen> {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               padding: EdgeInsets.all(6),
-                              child: Icon(Icons.person_outline, color: Colors.white, size: 26),
+                              child: Icon(Icons.menu, color: Colors.white, size: 26), // Adjusted size to match person icon
+                            ),
+                          ),
+                        ),
+                        Image.asset(
+                          'assets/images/logo_classgo.png',
+                          height: 38, // Ajusta el tamaño según tu diseño
+                        ),
+                        // Right person icon
+                        Builder(
+                          builder: (context) => InkWell(
+                            onTap: () {
+                              setState(() {
+                                _isCustomDrawerOpen = !_isCustomDrawerOpen; // Toggle right drawer state
+                                _isLeftDrawerOpen = false; // Close left drawer if open
+                              });
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              padding: EdgeInsets.all(6),
+                              child: Icon(Icons.person_outline, color: Colors.white, size: 26), // Adjusted size to match menu icon
                             ),
                           ),
                         ),
@@ -669,8 +690,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          // Overlay to dismiss drawer when tapping outside
-          if (_isCustomDrawerOpen)
+          // Overlay to dismiss right drawer when tapping outside
+          if (_isCustomDrawerOpen) // Existing overlay for the right drawer
             Positioned.fill(
               child: GestureDetector(
                 onTap: () {
@@ -681,7 +702,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Container(color: Colors.black54), // Semi-transparent overlay
               ),
             ),
-          // Custom Drawer Implementation
+          // Custom Drawer Implementation (Right) - Existing
           AnimatedPositioned(
             duration: const Duration(milliseconds: 300), // Animation duration
             curve: Curves.easeInOut,
@@ -711,7 +732,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   // Drawer Header (User Info)
                   Consumer<AuthProvider>(
                     builder: (context, authProvider, child) {
-                      print('_CustomDrawerHeader build called with userData: \${authProvider.userData}');
                       return _CustomDrawerHeader(
                         authProvider: authProvider,
                       );
@@ -775,6 +795,120 @@ class _HomeScreenState extends State<HomeScreen> {
                       );
                       setState(() { _isCustomDrawerOpen = false; }); // Close the drawer
                     },
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Custom Drawer Implementation (Left) - Mover este bloque después del overlay
+          if (_isLeftDrawerOpen)
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _isLeftDrawerOpen = false;
+                  });
+                },
+                child: Container(color: Colors.black.withOpacity(0.5)), // Overlay semi-transparente
+              ),
+            ),
+
+          // Custom Drawer Implementation (Left) - Código movido aquí
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 300), // Animation duration
+            curve: Curves.easeInOut,
+            top: MediaQuery.of(context).padding.top + 62.0, // Position below status bar and header
+            left: _isLeftDrawerOpen ? 0 : -(MediaQuery.of(context).size.width * 0.7), // Slide in/out from the left
+            width: MediaQuery.of(context).size.width * 0.7, // Set width (adjust as needed)
+            child: Container(
+              height: 480.0, // Set a specific height (adjust as needed based on content)
+              decoration: BoxDecoration(
+                color: const Color(0xFF00B4D8), // Teal background color from Figma
+                borderRadius: BorderRadius.only(
+                  topRight: Radius.circular(16), // Apply border radius to top right
+                  bottomRight: Radius.circular(16), // Apply border radius to bottom right
+                ),
+                boxShadow: [ // Optional: Add shadow for depth
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 10,
+                    spreadRadius: 2,
+                    offset: Offset(5, 0),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: ListView(
+                      padding: EdgeInsets.zero,
+                      children: [
+                        // Menu Items
+                        ListTile(
+                          title: Text('Inicio', style: TextStyle(color: Colors.white, fontSize: 16)),
+                          onTap: () {
+                            // TODO: Implement navigation for Inicio
+                            setState(() { _isLeftDrawerOpen = false; });
+                          },
+                        ),
+                        Divider(color: Colors.white54, thickness: 0.5), // Divider
+                        ListTile(
+                          title: Text('Buscar Tutores', style: TextStyle(color: Colors.white, fontSize: 16)),
+                          onTap: () {
+                            // TODO: Implement navigation for Buscar Tutores
+                            setState(() { _isLeftDrawerOpen = false; });
+                          },
+                        ),
+                        Divider(color: Colors.white54, thickness: 0.5), // Divider
+                        ListTile(
+                          title: Text('Sobre Nosotros', style: TextStyle(color: Colors.white, fontSize: 16)),
+                          onTap: () {
+                            // TODO: Implement navigation for Sobre Nosotros
+                            setState(() { _isLeftDrawerOpen = false; });
+                          },
+                        ),
+                        Divider(color: Colors.white54, thickness: 0.5), // Divider
+                        ListTile(
+                          title: Text('Como Trabajamos', style: TextStyle(color: Colors.white, fontSize: 16)),
+                          onTap: () {
+                            // TODO: Implement navigation for Como Trabajamos
+                            setState(() { _isLeftDrawerOpen = false; });
+                          },
+                        ),
+                        Divider(color: Colors.white54, thickness: 0.5), // Divider
+                        ListTile(
+                          title: Text('Preguntas', style: TextStyle(color: Colors.white, fontSize: 16)),
+                          onTap: () {
+                            // TODO: Implement navigation for Preguntas
+                            setState(() { _isLeftDrawerOpen = false; });
+                          },
+                        ),
+                        Divider(color: Colors.white54, thickness: 0.5), // Divider
+                        ListTile(
+                          title: Text('Blogs', style: TextStyle(color: Colors.white, fontSize: 16)),
+                          onTap: () {
+                            // TODO: Implement navigation for Blogs
+                            setState(() { _isLeftDrawerOpen = false; });
+                          },
+                        ),
+                        Divider(color: Colors.white54, thickness: 0.5), // Divider
+                      ],
+                    ),
+                  ),
+                  // Social Media Icons Section
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 16.0), // Adjust padding
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        // TODO: Replace with actual social media icon widgets and onTap functionality
+                        Icon(Icons.tiktok, color: Colors.white, size: 30), // Placeholder icon
+                        Icon(Icons.facebook, color: Colors.white, size: 30), // Placeholder icon
+                        Icon(Icons.camera_alt, color: Colors.white, size: 30), // Usar icono genérico para Instagram
+                        Icon(Icons.chat, color: Colors.white, size: 30), // Usar icono genérico para Whatsapp
+                      ],
+                    ),
                   ),
                 ],
               ),
