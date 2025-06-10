@@ -13,6 +13,7 @@ import 'package:flutter_projects/view/tutor/component/filter_turtor_bottom_sheet
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../../provider/auth_provider.dart';
+import 'package:flutter_projects/view/components/main_header.dart';
 
 class SearchTutorsScreen extends StatefulWidget {
   final String? initialKeyword;
@@ -462,51 +463,13 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
             if (selectedIndex == 0)
               Column(
                 children: [
-                  Container(
-                    color: AppColors.primaryGreen,
-                    padding: EdgeInsets.only(left: 20, right: 10.0),
-                    child: AppBar(
-                      backgroundColor: AppColors.primaryGreen,
-                      automaticallyImplyLeading: false,
-                      elevation: 0,
-                      titleSpacing: 0,
-                      centerTitle: false,
-                      title: Text(
-                        'Tutores',
-                        style: TextStyle(
-                          color: AppColors.whiteColor,
-                          fontSize: FontSize.scale(context, 20),
-                          fontFamily: 'SF-Pro-Text',
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      actions: [
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8.0),
-                          child: Container(
-                            padding: EdgeInsets.all(0),
-                            width: 35,
-                            height:35,
-                            decoration: BoxDecoration(
-                              color: AppColors.navbar,
-                              borderRadius: BorderRadius.all(Radius.circular(10))
-                            ),
-                            child: IconButton(
-                              padding: EdgeInsets.zero,
-                              icon: SvgPicture.asset(
-                                AppImages.filterIcon,
-                                color: AppColors.whiteColor,
-                                width: 15,
-                                height: 15,
-                              ),
-                              onPressed: () {
-                                openFilterBottomSheet();
-                              },
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                  MainHeader(
+                    onMenuPressed: () { // TODO: Implementar la lógica del menú
+                      _scaffoldKey.currentState?.openDrawer();
+                    },
+                    onProfilePressed: () {
+                      _onItemTapped(2); // Navega a la pantalla de perfil
+                    },
                   ),
                   Padding(
                     padding: const EdgeInsets.only(right: 10.0,left : 10,bottom: 5),
@@ -514,9 +477,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                       decoration: BoxDecoration(
                           color: AppColors.navbar,
                         borderRadius: BorderRadius.circular(15)
-
                       ),
-
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 10.0),
                         child: _gradeSelector(),
