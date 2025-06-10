@@ -1402,3 +1402,42 @@ Future<Map<String, dynamic>> fetchAlliances() async {
     throw 'Error al obtener alianzas: $e';
   }
 }
+
+Future<Map<String, dynamic>> getAllSubjects(String? token, {int page = 1, int perPage = 10, String? keyword}) async {
+  try {
+    final Map<String, dynamic> queryParams = {
+      'page': page.toString(),
+      'per_page': perPage.toString(),
+      'keyword': keyword,
+    };
+
+    queryParams.removeWhere((key, value) => value == null);
+
+    final Uri uri = Uri.parse('$baseUrl/all-subjects').replace(queryParameters: queryParams);
+    final headers = <String, String>{
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+
+    print('DEBUG API: Solicitando materias - URL: $uri');
+
+    final response = await http.get(uri, headers: headers);
+
+    print('DEBUG API: Respuesta materias - Status: ${response.statusCode}, Body: ${response.body}');
+
+    if (response.statusCode == 200) {
+      final decodedBody = json.decode(response.body);
+      // Asume que tu API devuelve los datos paginados con una clave 'data' que contiene la lista de materias
+      // y quizás otras claves como 'last_page' o 'total' para la paginación.
+      return decodedBody;
+    } else {
+      final error = json.decode(response.body);
+      throw Exception(error['message'] ?? 'Failed to get all subjects');
+    }
+  } catch (e) {
+    throw 'Failed to get all subjects: $e';
+  }
+}

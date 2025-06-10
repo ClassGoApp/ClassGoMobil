@@ -31,6 +31,16 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isCustomDrawerOpen = false;
   bool _isLeftDrawerOpen = false;
 
+  List<dynamic> _subjects = []; // Lista para almacenar las materias
+  bool _isLoadingSubjects = false; // Indicador de carga para las materias
+  int _currentPageSubjects = 1; // Página actual de materias
+  bool _hasMoreSubjects = true; // Indica si hay más materias para cargar
+  bool _isFetchingMoreSubjects = false; // Indica si se están cargando más materias
+
+  TextEditingController _searchController = TextEditingController(); // Controlador para el TextField de búsqueda
+  String _searchQuery = ''; // Almacena la consulta de búsqueda
+  Timer? _debounce; // Para el debouncing
+
   // Define las rutas base
   final String baseImageUrl = 'http://192.168.0.199:8000/storage/profile_images/';
   final String baseVideoUrl = 'http://192.168.0.199:8000/storage/profile_videos/';
@@ -43,6 +53,71 @@ class _HomeScreenState extends State<HomeScreen> {
     fetchFeaturedTutors();
     _scrollController.addListener(_onScroll);
     fetchAlliancesData();
+  }
+
+  Future<void> _fetchSubjects({bool isInitialLoad = true}) async {
+    if (!isInitialLoad && (!_hasMoreSubjects || _isFetchingMoreSubjects)) {
+      return; // No cargar más si no hay o ya se están cargando
+    }
+
+    setState(() {
+      if (isInitialLoad) {
+        _isLoadingSubjects = true;
+      } else {
+        _isFetchingMoreSubjects = true; // Solo para carga adicional
+      }
+    });
+    print('DEBUG: _fetchSubjects() - Iniciando carga de materias (Página: $_currentPageSubjects, Consulta: $_searchQuery)');
+
+    try {
+      final response = await getAllSubjects(
+        null, // Asumiendo que no se requiere token o se obtiene de AuthProvider
+        page: _currentPageSubjects,
+        perPage: 10, // Define cuántas materias cargar por página
+        keyword: _searchQuery, // Añadir la consulta de búsqueda
+      );
+
+      print('DEBUG: _fetchSubjects() - Respuesta completa de la API: $response');
+
+      if (response.containsKey('data') && response['data'] is List) {
+        final newSubjects = response['data'];
+        setState(() {
+          if (isInitialLoad) {
+            _subjects = newSubjects;
+          } else {
+            // Verificar que no haya duplicados antes de agregar
+            for (var subject in newSubjects) {
+              if (!_subjects.any((existing) => existing['id'] == subject['id'])) {
+                _subjects.add(subject);
+              }
+            }
+          }
+          // Verificar si hay más páginas basado en la respuesta de la API
+          _hasMoreSubjects = newSubjects.length >= 10;
+          _currentPageSubjects++;
+          print('DEBUG: _fetchSubjects() - Materias cargadas: ${_subjects.length}, HasMore: $_hasMoreSubjects');
+        });
+      } else {
+        print('DEBUG: _fetchSubjects() - La respuesta de getAllSubjects no contiene la clave "data" o "data" no es una lista: $response');
+        setState(() {
+          _hasMoreSubjects = false;
+        });
+      }
+    } catch (e) {
+      print('DEBUG: _fetchSubjects() - Error al obtener las materias: $e');
+      setState(() {
+        _hasMoreSubjects = false;
+      });
+    } finally {
+      setState(() {
+        if (isInitialLoad) {
+          _isLoadingSubjects = false;
+        } else {
+          _isFetchingMoreSubjects = false;
+        }
+        print('DEBUG: _fetchSubjects() - Carga de materias finalizada. _isLoadingSubjects: $_isLoadingSubjects, _isFetchingMoreSubjects: $_isFetchingMoreSubjects');
+      });
+    }
   }
 
   void _onScroll() {
@@ -294,31 +369,39 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         SizedBox(height: 18),
                         // Barra de búsqueda
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                                  child: TextField(
-                                    style: TextStyle(color: Colors.white),
-                                    decoration: InputDecoration(
-                                      hintText: 'Buscar Tutores',
-                                      hintStyle: TextStyle(color: Colors.white70),
-                                      border: InputBorder.none,
+                        InkWell(
+                          onTap: () {
+                            _showSearchModal();
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                                    child: TextField(
+                                      enabled: false, // Deshabilita la edición directa
+                                      style: TextStyle(color: Colors.white),
+                                      decoration: InputDecoration(
+                                        hintText: 'Buscar Tutores',
+                                        hintStyle: TextStyle(color: Colors.white70),
+                                        border: InputBorder.none,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                              IconButton(
-                                icon: Icon(Icons.search, color: Colors.white),
-                                onPressed: () {},
-                              ),
-                            ],
+                                IconButton(
+                                  icon: Icon(Icons.search, color: Colors.white),
+                                  onPressed: () {
+                                    _showSearchModal();
+                                  },
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
@@ -1152,6 +1235,8 @@ class _HomeScreenState extends State<HomeScreen> {
       _activeController!.dispose();
     }
     _thumbnailCache.clear();
+    _searchController.dispose(); // Disponer del controlador de texto
+    _debounce?.cancel(); // Cancelar cualquier debounce activo
     super.dispose();
   }
 
@@ -1162,6 +1247,159 @@ class _HomeScreenState extends State<HomeScreen> {
       return path;
     }
     return base + path;
+  }
+
+  void _showSearchModal() {
+    // Reiniciar el estado de paginación al abrir el modal
+    _currentPageSubjects = 1;
+    _subjects.clear();
+    _hasMoreSubjects = true;
+    _isFetchingMoreSubjects = false;
+
+    _fetchSubjects(isInitialLoad: true); // Llama a la función para cargar las materias al abrir el modal
+    print('DEBUG: _showSearchModal() - Modal de búsqueda abierto.');
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true, // Permite que el modal ocupe casi toda la altura
+      backgroundColor: Colors.transparent, // Fondo transparente para ver el borde redondeado
+      builder: (BuildContext context) {
+        print('DEBUG: _showSearchModal() builder - Construyendo modal. _isLoadingSubjects: $_isLoadingSubjects, _subjects.length: ${_subjects.length}');
+        final modalScrollController = ScrollController(); // Nuevo ScrollController para el modal
+
+        modalScrollController.addListener(() {
+          if (modalScrollController.position.pixels == modalScrollController.position.maxScrollExtent) {
+            // Si el usuario ha llegado al final de la lista
+            _fetchSubjects(isInitialLoad: false); // Cargar más materias
+          }
+        });
+
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return DraggableScrollableSheet(
+              initialChildSize: 0.7, // Altura inicial del modal (70% de la pantalla)
+              minChildSize: 0.5, // Altura mínima al arrastrar
+              maxChildSize: 0.9, // Altura máxima al arrastrar
+              expand: false,
+              builder: (BuildContext context, ScrollController scrollController) {
+                return Container(
+                  decoration: BoxDecoration(
+                    color: Color(0xFF062B3A), // Color de fondo del modal
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Elige tu materia',
+                              style: TextStyle(color: Colors.white, fontSize: 16),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Divider(color: Colors.white54, thickness: 0.5),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                        child: Row(
+                          children: [
+                            Icon(Icons.auto_stories, color: AppColors.lightBlueColor),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: TextField(
+                                autofocus: true,
+                                controller: _searchController,
+                                onChanged: (value) {
+                                  if (_debounce?.isActive ?? false) _debounce!.cancel();
+                                  _debounce = Timer(const Duration(milliseconds: 500), () {
+                                    setState(() {
+                                      _searchQuery = value;
+                                      _currentPageSubjects = 1;
+                                      _subjects.clear();
+                                      _hasMoreSubjects = true;
+                                    });
+                                    _fetchSubjects(isInitialLoad: true).then((_) {
+                                      setModalState(() {}); // Forzar actualización del modal
+                                    });
+                                  });
+                                },
+                                style: TextStyle(color: Colors.white),
+                                decoration: InputDecoration(
+                                  hintText: '¿De que materia quieres tutoría?',
+                                  hintStyle: TextStyle(color: Colors.white70),
+                                  border: InputBorder.none,
+                                  suffixIcon: Icon(Icons.search, color: Colors.white),
+                                ),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                if (_debounce?.isActive ?? false) _debounce!.cancel();
+                                setState(() {
+                                  _currentPageSubjects = 1;
+                                  _subjects.clear();
+                                  _hasMoreSubjects = true;
+                                });
+                                _fetchSubjects(isInitialLoad: true).then((_) {
+                                  setModalState(() {}); // Forzar actualización del modal
+                                });
+                              },
+                              child: Text('Buscar', style: TextStyle(color: AppColors.lightBlueColor)),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Divider(color: Colors.white54, thickness: 0.5),
+                      _isLoadingSubjects
+                          ? Expanded(child: Center(child: CircularProgressIndicator(color: AppColors.lightBlueColor)))
+                          : _subjects.isEmpty && !_hasMoreSubjects && !_isLoadingSubjects
+                              ? Expanded(child: Center(child: Text('No hay materias disponibles', style: TextStyle(color: Colors.white))))
+                              : Expanded(
+                                  child: ListView.builder(
+                                    controller: modalScrollController,
+                                    itemCount: _subjects.length + (_hasMoreSubjects || _isFetchingMoreSubjects ? 1 : 0),
+                                    itemBuilder: (context, index) {
+                                      if (index == _subjects.length) {
+                                        return Padding(
+                                          padding: const EdgeInsets.symmetric(vertical: 16.0),
+                                          child: Center(
+                                            child: CircularProgressIndicator(color: AppColors.lightBlueColor),
+                                          ),
+                                        );
+                                      }
+
+                                      final subject = _subjects[index];
+                                      final subjectName = subject['name'] ?? 'Materia desconocida';
+                                      return ListTile(
+                                        leading: Icon(Icons.menu_book, color: Colors.white54, size: 20),
+                                        title: Text(subjectName, style: TextStyle(color: Colors.white)),
+                                        onTap: () {
+                                          _searchController.text = subjectName;
+                                          Navigator.pop(context);
+                                        },
+                                      );
+                                    },
+                                  ),
+                                ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
+    ).whenComplete(() {
+      if (_debounce?.isActive ?? false) _debounce!.cancel();
+      _searchController.clear();
+      _searchQuery = '';
+    });
   }
 }
 
