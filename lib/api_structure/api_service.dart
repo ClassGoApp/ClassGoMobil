@@ -196,31 +196,29 @@ Future<Map<String, dynamic>> updatePassword(
 Future<Map<String, dynamic>> findTutors(
   String? token, {
   int page = 1,
-  int perPage = 5,
-  String? sortBy,
+  int perPage = 10,
   String? keyword,
+  int? subjectId,
   double? maxPrice,
   int? country,
   int? groupId,
   String? sessionType,
-  List<int>? subjectIds,
   List<int>? languageIds,
 }) async {
   try {
     final Map<String, dynamic> queryParams = {
       'page': page.toString(),
       'per_page': perPage.toString(),
-      'sort_by': sortBy,
       'keyword': keyword,
+      'subject_id': subjectId?.toString(),
       'max_price': maxPrice?.toString(),
       'country': country?.toString(),
       'group_id': groupId?.toString(),
       'session_type': sessionType,
-      'subject_id': subjectIds != null ? subjectIds.join(',') : null,
       'language_id': languageIds != null ? languageIds.join(',') : null,
     };
 
-    queryParams.removeWhere((key, value) => value == null);
+    queryParams.removeWhere((key, value) => value == null || (value is String && value.isEmpty));
 
     final Uri uri = Uri.parse('$baseUrl/find-tutors').replace(queryParameters: queryParams);
 
@@ -233,12 +231,7 @@ Future<Map<String, dynamic>> findTutors(
       headers['Authorization'] = 'Bearer $token';
     }
 
-    print('Realizando petición a: ${uri.toString()}');
-    print('Headers: $headers');
-
     final response = await http.get(uri, headers: headers);
-    print('Código de respuesta: ${response.statusCode}');
-    print('Cuerpo de la respuesta: ${response.body}');
 
     if (response.statusCode == 200) {
       return json.decode(response.body);
@@ -247,7 +240,6 @@ Future<Map<String, dynamic>> findTutors(
       throw Exception(error['message'] ?? 'Error al obtener tutores: ${response.statusCode}');
     }
   } catch (e) {
-    print('Error en findTutors: $e');
     throw 'Error al obtener tutores: $e';
   }
 }
@@ -1139,7 +1131,6 @@ Future<Map<String, dynamic>> getStudentReviews(String? token, int id,
     }
 
     final response = await http.get(uri, headers: headers);
-    print(response.body.toString());
     if (response.statusCode == 200) {
       final decodedBody = json.decode(response.body);
       return decodedBody;
@@ -1311,7 +1302,6 @@ Future<Map<String, dynamic>> deleteBookingCart(String token, int id) async {
         'Content-Type': 'application/json',
       },
     );
-    print('hola : ${response.body}');
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
@@ -1422,16 +1412,10 @@ Future<Map<String, dynamic>> getAllSubjects(String? token, {int page = 1, int pe
       headers['Authorization'] = 'Bearer $token';
     }
 
-    print('DEBUG API: Solicitando materias - URL: $uri');
-
     final response = await http.get(uri, headers: headers);
-
-    print('DEBUG API: Respuesta materias - Status: ${response.statusCode}, Body: ${response.body}');
 
     if (response.statusCode == 200) {
       final decodedBody = json.decode(response.body);
-      // Asume que tu API devuelve los datos paginados con una clave 'data' que contiene la lista de materias
-      // y quizás otras claves como 'last_page' o 'total' para la paginación.
       return decodedBody;
     } else {
       final error = json.decode(response.body);

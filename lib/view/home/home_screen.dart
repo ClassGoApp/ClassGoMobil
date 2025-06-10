@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/view/auth/login_screen.dart';
+import 'package:flutter_projects/view/tutor/search_tutors_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -1340,15 +1341,18 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             TextButton(
                               onPressed: () {
-                                if (_debounce?.isActive ?? false) _debounce!.cancel();
-                                setState(() {
-                                  _currentPageSubjects = 1;
-                                  _subjects.clear();
-                                  _hasMoreSubjects = true;
-                                });
-                                _fetchSubjects(isInitialLoad: true).then((_) {
-                                  setModalState(() {}); // Forzar actualización del modal
-                                });
+                                if (_searchController.text.trim().isNotEmpty) {
+                                  final searchKeyword = _searchController.text.trim();
+                                  print('Valor de búsqueda enviado a SearchTutorsScreen: $searchKeyword');
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => SearchTutorsScreen(
+                                        initialKeyword: searchKeyword,
+                                      ),
+                                    ),
+                                  );
+                                }
                               },
                               child: Text('Buscar', style: TextStyle(color: AppColors.lightBlueColor)),
                             ),

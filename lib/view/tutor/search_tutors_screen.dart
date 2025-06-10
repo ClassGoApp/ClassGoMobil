@@ -15,6 +15,13 @@ import 'package:provider/provider.dart';
 import '../../provider/auth_provider.dart';
 
 class SearchTutorsScreen extends StatefulWidget {
+  final String? initialKeyword;
+
+  const SearchTutorsScreen({
+    Key? key,
+    this.initialKeyword,
+  }) : super(key: key);
+
   @override
   State<SearchTutorsScreen> createState() => _SearchTutorsScreenState();
 }
@@ -36,9 +43,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   String? selectedSubjectGroup;
 
   List<String> subjects = [];
-
   List<String> languages = [];
-
   List<Map<String, dynamic>> countries = [];
   int? selectedCountryId;
   String? selectedCountryName;
@@ -47,10 +52,6 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   late PageController _pageController;
   String profileImageUrl = '';
 
-  String? _selectedSorting;
-  String? sortingValue;
-  String? sortBy;
-
   String? keyword;
   double? maxPrice;
   int? selectedGroupId;
@@ -58,34 +59,21 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   List<int>? selectedSubjectIds;
   List<int>? selectedLanguageIds;
 
-  final List<String> sortingOptions = [
-    'Más recientes',
-    'Más antiguos',
-    'Orden de la A-Z',
-    'Orden de la Z-A',
-  ];
-
-  final Map<String, String> sortingMap = {
-    'Más recientes': 'newest',
-    'Más antiguos': 'oldest',
-    'Orden de la A-Z': 'asc',
-    'Orden de la Z-A': 'desc',
-  };
-
-  void _onSortSelected(String value) {
-    setState(() {
-      _selectedSorting = value;
-      sortBy = sortingMap[value];
-    });
-    fetchInitialTutors(sortBy: sortBy);
-  }
-
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
     super.initState();
-    fetchInitialTutors();
+    print('DEBUG en initState: widget.initialKeyword = ${widget.initialKeyword}');
+    keyword = widget.initialKeyword;
+    fetchInitialTutors(
+      maxPrice: maxPrice,
+      country: selectedCountryId,
+      groupId: selectedGroupId,
+      sessionType: sessionType,
+      subjectIds: selectedSubjectIds,
+      languageIds: selectedLanguageIds,
+    );
     fetchSubjects();
     fetchLanguages();
     fetchSubjectGroups();
@@ -107,6 +95,18 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     final userData = authProvider.userData;
     profileImageUrl = userData?['user']?['profile']?['image'] ?? '';
     precacheImage(NetworkImage(profileImageUrl), context);
+  }
+
+  @override
+  void didUpdateWidget(covariant SearchTutorsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialKeyword != oldWidget.initialKeyword) {
+      setState(() {
+        keyword = widget.initialKeyword;
+      });
+      print('DEBUG en didUpdateWidget: widget.initialKeyword = ${widget.initialKeyword}, this.keyword = ${this.keyword}');
+      fetchInitialTutors();
+    }
   }
 
   Future<void> fetchSubjects() async {
@@ -185,8 +185,6 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   }
 
   Future<void> fetchInitialTutors({
-    String? sortBy,
-    String? keyword,
     double? maxPrice,
     int? country,
     int? groupId,
@@ -195,13 +193,10 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     List<int>? languageIds,
     bool isRefresh = false,
   }) async {
+    print('DEBUG en fetchInitialTutors: keyword = $keyword');
     if (!isRefresh) {
       setState(() {
         isInitialLoading = true;
-      });
-    } else {
-      setState(() {
-        isRefreshing = false;
       });
     }
 
@@ -212,28 +207,36 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
       final response = await findTutors(
         token,
         page: currentPage,
-        perPage: 5,
-        sortBy: sortBy,
-        keyword: keyword,
+        perPage: 10,
+        keyword: this.keyword,
         maxPrice: maxPrice,
         country: country,
         groupId: groupId,
         sessionType: sessionType,
-        subjectIds: subjectIds,
+        subjectId: subjectIds?.isNotEmpty == true ? subjectIds!.first : null,
         languageIds: languageIds,
       );
 
-      if (response.containsKey('data') && response['data']['list'] is List) {
-        setState(() {
-          tutors = (response['data']['list'] as List)
-              .map((item) => item as Map<String, dynamic>)
-              .toList();
-          currentPage = response['data']['pagination']['currentPage'];
-          totalPages = response['data']['pagination']['totalPages'];
-          totalTutors = response['data']['pagination']['total'];
-        });
+      print('DEBUG - API Response: $response');
+
+      if (response.containsKey('data') && response['data'] is Map) {
+        final data = response['data'];
+        if (data.containsKey('list') && data['list'] is List) {
+          final tutorsList = data['list'] as List;
+          setState(() {
+            if (isRefresh) {
+              tutors = tutorsList.map((tutor) => tutor as Map<String, dynamic>).toList();
+            } else {
+              tutors.addAll(tutorsList.map((tutor) => tutor as Map<String, dynamic>).toList());
+            }
+            totalTutors = data['total'] ?? 0;
+            totalPages = data['last_page'] ?? 1;
+            currentPage = data['current_page'] ?? 1;
+          });
+        }
       }
     } catch (e) {
+      print('Error fetching tutors: $e');
     } finally {
       setState(() {
         isInitialLoading = false;
@@ -260,20 +263,30 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         final token = authProvider.token;
 
-        final response =
-            await findTutors(token, page: currentPage + 1, perPage: 5);
+        final response = await findTutors(
+          token, 
+          page: currentPage + 1, 
+          perPage: 10,
+          keyword: this.keyword,
+          maxPrice: maxPrice,
+          country: selectedCountryId,
+          groupId: selectedGroupId,
+          sessionType: sessionType,
+          languageIds: selectedLanguageIds,
+        );
 
         if (response.containsKey('data') && response['data']['list'] is List) {
           setState(() {
             tutors.addAll((response['data']['list'] as List)
                 .map((item) => item as Map<String, dynamic>)
                 .toList());
-            currentPage = response['data']['pagination']['currentPage'];
-            totalPages = response['data']['pagination']['totalPages'];
-            totalTutors = response['data']['pagination']['total'];
+            currentPage = response['data']['current_page'] ?? currentPage + 1;
+            totalPages = response['data']['last_page'] ?? totalPages;
+            totalTutors = response['data']['total'] ?? totalTutors;
           });
         }
       } catch (e) {
+        print('Error loading more tutors: $e');
       } finally {
         setState(() {
           isLoading = false;
@@ -351,7 +364,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
         subjectGroups: subjectGroups,
         selectedSubjectGroup: selectedSubjectGroup,
         selectedCountryId: selectedCountryId,
-        keyword: keyword,
+        keyword: this.keyword,
         maxPrice: maxPrice,
         sessionType: null,
         subjectIds: selectedSubjectIds,
@@ -385,12 +398,10 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
             this.selectedLanguageIds = languageIds;
           });
           fetchInitialTutors(
-            keyword: keyword,
             maxPrice: maxPrice,
             country: country,
             groupId: groupId,
             sessionType: sessionType,
-            subjectIds: subjectIds,
             languageIds: languageIds,
           );
         },
@@ -585,20 +596,31 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                       final languages = (tutor['languages'] is List) ? tutor['languages'] : [];
                                       final subjects = (tutor['subjects'] is List) ? tutor['subjects'] : [];
 
-                                      // Validación para saber si la API respondió mal
-                                      if (tutor.isEmpty) {
-                                        return Center(
-                                          child: Text(
-                                            "No hay tutores disponibles o hubo un error con la respuesta de la API.",
-                                            style: TextStyle(
-                                              fontSize: FontSize.scale(context, 18),
-                                              fontWeight: FontWeight.w500,
-                                              color: AppColors.greyColor,
-                                              fontFamily: 'SF-Pro-Text',
-                                            ),
-                                          ),
-                                        );
+                                      print('DEBUG - Tutor data:');
+                                      print('Tutor: $tutor');
+                                      print('Profile: $profile');
+                                      print('Country: $country');
+                                      print('Languages: $languages');
+                                      print('Subjects: $subjects');
+
+                                      // Validación para saber si la API respondió mal o si el tutor no tiene materias
+                                      if (tutor.isEmpty || subjects.isEmpty || subjects.every((subject) => subject == null)) {
+                                        print('DEBUG - Tutor no válido: tutor vacío o sin materias');
+                                        return SizedBox.shrink(); // No mostrar tutores sin materias
                                       }
+
+                                      // Filtrar materias nulas y obtener solo las materias válidas
+                                      final validSubjects = subjects
+                                          .where((subject) => subject != null && subject is Map && subject['name'] != null)
+                                          .map((subject) => subject['name'])
+                                          .toList();
+
+                                      if (validSubjects.isEmpty) {
+                                        print('DEBUG - No hay materias válidas');
+                                        return SizedBox.shrink(); // No mostrar tutores sin materias válidas
+                                      }
+
+                                      print('DEBUG - Materias válidas: $validSubjects');
 
                                       return Padding(
                                         padding:
@@ -627,12 +649,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                                 (tutor['avg_rating'] is String
                                                     ? double.tryParse(tutor['avg_rating']) == 5.0
                                                     : (tutor['avg_rating'] is num && tutor['avg_rating'].toDouble() == 5.0))),
-                                            description: subjects.isNotEmpty
-                                                ? subjects
-                                                    .where((subject) => subject != null && subject is Map && subject['name'] != null)
-                                                    .map((subject) => subject['name'])
-                                                    .join(', ')
-                                                : 'No hay materias disponibles',
+                                            description: validSubjects.join(', '),
                                             rating: tutor['avg_rating'] != null
                                                 ? (tutor['avg_rating'] is String
                                                     ? double.tryParse(tutor['avg_rating']) ?? 0.0
@@ -742,12 +759,6 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                   fontStyle: FontStyle.normal,
                   color: AppColors.whiteColor,
                 ),
-              ),
-              CustomDropdown(
-                hint: "Elige uno",
-                selectedValue: _selectedSorting,
-                items: sortingOptions,
-                onSelected: _onSortSelected,
               ),
             ],
           ),
