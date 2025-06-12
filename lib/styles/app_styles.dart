@@ -43,6 +43,11 @@ class AppColors {
   static const navbar=Color(0xff219EBC);
   static const blurprimary=Color(0xff0E3A4F);
   static const orangeprimary=Color(0xffFB8500);
+  static const darkGreyColor = Color(0xFF2C2C2C);
+  static const mediumGreyColor = Color(0xFF424242);
+  static const accentOrange = Color(0xFFFF9800);
+  static const starYellow = Color(0xFFFFC107);
+  static const lightGreyColor = Color(0xFFB0B0B0);
 }
 
 class AppImages {
@@ -133,4 +138,23 @@ class FontSize {
 
     return size * scaleFactor;
   }
+}
+
+class AppTextStyles {
+  static const TextStyle heading2 = TextStyle(
+    fontSize: 18,
+    fontWeight: FontWeight.bold,
+  );
+  static const TextStyle body = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.normal,
+  );
+  static const TextStyle display = TextStyle(
+    fontSize: 32,
+    fontWeight: FontWeight.bold,
+  );
+  static const TextStyle button = TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.bold,
+  );
 }

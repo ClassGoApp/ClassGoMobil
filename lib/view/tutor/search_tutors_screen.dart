@@ -14,6 +14,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../../provider/auth_provider.dart';
 import 'package:flutter_projects/view/components/main_header.dart';
+import 'dart:async';
 
 class SearchTutorsScreen extends StatefulWidget {
   final String? initialKeyword;
@@ -59,6 +60,10 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   String? sessionType = 'group';
   List<int>? selectedSubjectIds;
   List<int>? selectedLanguageIds;
+  String? _selectedSortOption;
+  final List<String> _sortOptions = ['Más relevantes', 'Precio (asc)', 'Precio (desc)', 'Calificación'];
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _debounce;
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -67,6 +72,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     super.initState();
     print('DEBUG en initState: widget.initialKeyword = ${widget.initialKeyword}');
     keyword = widget.initialKeyword;
+    _searchController.text = keyword ?? '';
     fetchInitialTutors(
       maxPrice: maxPrice,
       country: selectedCountryId,
@@ -86,6 +92,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   @override
   void dispose() {
     _pageController.dispose();
+    _searchController.dispose();
+    _debounce?.cancel();
     super.dispose();
   }
 
@@ -205,34 +213,37 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final token = authProvider.token;
 
-      final response = await findTutors(
+      print('DEBUG - Llamando a la API para la página inicial');
+      final response = await getVerifiedTutors(
         token,
-        page: currentPage,
+        page: 1,
         perPage: 10,
         keyword: this.keyword,
         maxPrice: maxPrice,
         country: country,
         groupId: groupId,
         sessionType: sessionType,
-        subjectId: subjectIds?.isNotEmpty == true ? subjectIds!.first : null,
+        subjectId: null,
         languageIds: languageIds,
       );
-
-      print('DEBUG - API Response: $response');
 
       if (response.containsKey('data') && response['data'] is Map) {
         final data = response['data'];
         if (data.containsKey('list') && data['list'] is List) {
           final tutorsList = data['list'] as List;
+          print('DEBUG - API devolvió ${tutorsList.length} tutores para la página inicial');
+          
           setState(() {
             if (isRefresh) {
               tutors = tutorsList.map((tutor) => tutor as Map<String, dynamic>).toList();
             } else {
-              tutors.addAll(tutorsList.map((tutor) => tutor as Map<String, dynamic>).toList());
+              tutors = tutorsList.map((tutor) => tutor as Map<String, dynamic>).toList();
             }
-            totalTutors = data['total'] ?? 0;
-            totalPages = data['last_page'] ?? 1;
-            currentPage = data['current_page'] ?? 1;
+            final paginationData = data['pagination'] is Map ? data['pagination'] : {};
+            totalTutors = paginationData['total'] ?? 0;
+            totalPages = paginationData['totalPages'] ?? 1;
+            currentPage = 1;
+            print('DEBUG - Paginación inicial: Total tutores: $totalTutors, Total páginas: $totalPages, Tutores cargados: ${tutors.length}');
           });
         }
       }
@@ -255,7 +266,10 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   }
 
   Future<void> loadMoreTutors() async {
-    if (currentPage < totalPages && !isLoading) {
+    print('DEBUG - Intentando cargar más tutores. Página actual: $currentPage, Total páginas: $totalPages, Tutores actuales: ${tutors.length}');
+    
+    // Intentamos cargar más tutores si no estamos cargando y hay menos de 100 tutores
+    if (!isLoading && tutors.length < 100) {
       setState(() {
         isLoading = true;
       });
@@ -264,7 +278,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         final token = authProvider.token;
 
-        final response = await findTutors(
+        print('DEBUG - Llamando a la API para la página ${currentPage + 1}');
+        final response = await getVerifiedTutors(
           token, 
           page: currentPage + 1, 
           perPage: 10,
@@ -273,18 +288,29 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
           country: selectedCountryId,
           groupId: selectedGroupId,
           sessionType: sessionType,
+          subjectId: null,
           languageIds: selectedLanguageIds,
         );
 
-        if (response.containsKey('data') && response['data']['list'] is List) {
-          setState(() {
-            tutors.addAll((response['data']['list'] as List)
-                .map((item) => item as Map<String, dynamic>)
-                .toList());
-            currentPage = response['data']['current_page'] ?? currentPage + 1;
-            totalPages = response['data']['last_page'] ?? totalPages;
-            totalTutors = response['data']['total'] ?? totalTutors;
-          });
+        if (response.containsKey('data') && response['data'] is Map) {
+          final data = response['data'];
+          if (data.containsKey('list') && data['list'] is List) {
+            final tutorsList = data['list'] as List;
+            print('DEBUG - API devolvió ${tutorsList.length} tutores para la página ${currentPage + 1}');
+            
+            if (tutorsList.isNotEmpty) {
+              setState(() {
+                tutors.addAll(tutorsList.map((item) => item as Map<String, dynamic>).toList());
+                final paginationData = data['pagination'] is Map ? data['pagination'] : {};
+                currentPage = paginationData['currentPage'] ?? currentPage + 1;
+                totalPages = paginationData['totalPages'] ?? totalPages;
+                totalTutors = paginationData['total'] ?? totalTutors;
+                print('DEBUG - Tutores cargados exitosamente. Nuevo total: ${tutors.length} de $totalTutors');
+              });
+            } else {
+              print('DEBUG - No se encontraron más tutores en la página ${currentPage + 1}');
+            }
+          }
         }
       } catch (e) {
         print('Error loading more tutors: $e');
@@ -293,6 +319,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
           isLoading = false;
         });
       }
+    } else {
+      print('DEBUG - No se cargaron más tutores. Condiciones: !isLoading: ${!isLoading}, tutors.length < 100: ${tutors.length < 100}');
     }
   }
 
@@ -472,16 +500,105 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                     },
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(right: 10.0,left : 10,bottom: 5),
-                    child: Container(
-                      decoration: BoxDecoration(
-                          color: AppColors.navbar,
-                        borderRadius: BorderRadius.circular(15)
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
+                    child: TextField(
+                      controller: _searchController,
+                      cursorColor: AppColors.greyColor,
+                      onChanged: (value) {
+                        if (_debounce?.isActive ?? false) _debounce!.cancel();
+                        _debounce = Timer(const Duration(milliseconds: 500), () {
+                          if (keyword != value) {
+                            setState(() {
+                              keyword = value;
+                              currentPage = 1;
+                              tutors.clear();
+                            });
+                            fetchInitialTutors();
+                          }
+                        });
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'Buscar Tutor...',
+                        hintStyle: AppTextStyles.body.copyWith(color: AppColors.lightGreyColor),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 15),
+                        prefixIcon: Icon(Icons.search, color: AppColors.lightGreyColor),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15.0),
+                          borderSide: BorderSide.none,
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 10.0),
-                        child: _gradeSelector(),
+                        filled: true,
+                        fillColor: AppColors.navbar,
                       ),
+                      style: AppTextStyles.body.copyWith(color: AppColors.whiteColor),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '${totalTutors} Tutores',
+                        style: AppTextStyles.body.copyWith(
+                          color: AppColors.whiteColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            height: 50,
+                            padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                            decoration: BoxDecoration(
+                              color: AppColors.navbar,
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: _selectedSortOption,
+                                hint: Text('Ordenar por: Elige uno', style: AppTextStyles.body.copyWith(color: AppColors.whiteColor)),
+                                icon: Icon(Icons.arrow_drop_down, color: AppColors.whiteColor),
+                                dropdownColor: AppColors.navbar,
+                                style: AppTextStyles.body.copyWith(color: AppColors.whiteColor),
+                                isExpanded: true,
+                                items: _sortOptions.map((String value) {
+                                  return DropdownMenuItem<String>(
+                                    value: value,
+                                    child: Text(value),
+                                  );
+                                }).toList(),
+                                onChanged: (String? newValue) {
+                                  setState(() {
+                                    _selectedSortOption = newValue;
+                                  });
+                                },
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: AppColors.navbar,
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: IconButton(
+                            icon: SvgPicture.asset(
+                              AppImages.filterIcon,
+                              color: AppColors.whiteColor,
+                            ),
+                            onPressed: () {
+                              openFilterBottomSheet();
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -522,11 +639,12 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                 ),
                               )
                             : NotificationListener<ScrollNotification>(
-                                onNotification:
-                                    (ScrollNotification scrollInfo) {
-                                  if (scrollInfo.metrics.pixels ==
-                                      scrollInfo.metrics.maxScrollExtent) {
-                                    loadMoreTutors();
+                                onNotification: (ScrollNotification scrollInfo) {
+                                  if (scrollInfo is ScrollEndNotification) {
+                                    if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent * 0.8) {
+                                      print('DEBUG - Scroll alcanzó el 80% del final');
+                                      loadMoreTutors();
+                                    }
                                   }
                                   return true;
                                 },
@@ -534,58 +652,27 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                   onRefresh: _onRefresh,
                                   color: AppColors.primaryGreen,
                                   child: ListView.builder(
-                                    padding:
-                                        EdgeInsets.symmetric(vertical: 2.0),
-                                    itemCount:
-                                        tutors.length + (isLoading ? 1 : 0),
+                                    padding: const EdgeInsets.only(bottom: 16),
+                                    itemCount: tutors.length + (isLoading ? 1 : 0),
                                     itemBuilder: (context, index) {
                                       if (index == tutors.length) {
-                                        return Center(
+                                        return const Center(
                                           child: Padding(
-                                            padding: const EdgeInsets.all(10.0),
-                                            child: CircularProgressIndicator(
-                                              color: AppColors.primaryGreen,
-                                              strokeWidth: 2.0,
-                                            ),
+                                            padding: EdgeInsets.all(8.0),
+                                            child: CircularProgressIndicator(),
                                           ),
                                         );
                                       }
-
-                                      final tutor = tutors[index] ?? {};
-                                      final profile = (tutor['profile'] is Map) ? tutor['profile'] : {};
-                                      final country = (tutor['country'] is Map) ? tutor['country'] : {};
-                                      final languages = (tutor['languages'] is List) ? tutor['languages'] : [];
-                                      final subjects = (tutor['subjects'] is List) ? tutor['subjects'] : [];
-
-                                      print('DEBUG - Tutor data:');
-                                      print('Tutor: $tutor');
-                                      print('Profile: $profile');
-                                      print('Country: $country');
-                                      print('Languages: $languages');
-                                      print('Subjects: $subjects');
-
-                                      // Validación para saber si la API respondió mal o si el tutor no tiene materias
-                                      if (tutor.isEmpty || subjects.isEmpty || subjects.every((subject) => subject == null)) {
-                                        print('DEBUG - Tutor no válido: tutor vacío o sin materias');
-                                        return SizedBox.shrink(); // No mostrar tutores sin materias
-                                      }
-
-                                      // Filtrar materias nulas y obtener solo las materias válidas
+                                      final tutor = tutors[index];
+                                      final profile = tutor['profile'] as Map<String, dynamic>;
+                                      final subjects = tutor['subjects'] as List;
                                       final validSubjects = subjects
-                                          .where((subject) => subject != null && subject is Map && subject['name'] != null)
-                                          .map((subject) => subject['name'])
+                                          .where((subject) => subject['status'] == 'active' && subject['deleted_at'] == null)
+                                          .map((subject) => subject['name'] as String)
                                           .toList();
-
-                                      if (validSubjects.isEmpty) {
-                                        print('DEBUG - No hay materias válidas');
-                                        return SizedBox.shrink(); // No mostrar tutores sin materias válidas
-                                      }
-
                                       print('DEBUG - Materias válidas: $validSubjects');
-
                                       return Padding(
-                                        padding:
-                                            const EdgeInsets.symmetric(vertical: 10.0),
+                                        padding: const EdgeInsets.symmetric(vertical: 10.0),
                                         child: GestureDetector(
                                           onTap: () {
                                             if (profile != null &&
@@ -601,44 +688,46 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                             }
                                           },
                                           child: TutorCard(
-                                            tutorId: tutor['id'] ?? '',
                                             name: profile['full_name'] ?? 'No name available',
-                                            price: tutor['min_price'] != null
-                                                ? '\$${tutor['min_price'].toString()}'
-                                                : 'N/A',
-                                            filledStar: (tutor['avg_rating'] != null &&
-                                                (tutor['avg_rating'] is String
-                                                    ? double.tryParse(tutor['avg_rating']) == 5.0
-                                                    : (tutor['avg_rating'] is num && tutor['avg_rating'].toDouble() == 5.0))),
-                                            description: validSubjects.join(', '),
                                             rating: tutor['avg_rating'] != null
                                                 ? (tutor['avg_rating'] is String
                                                     ? double.tryParse(tutor['avg_rating']) ?? 0.0
                                                     : (tutor['avg_rating'] is num ? tutor['avg_rating'].toDouble() : 0.0))
                                                 : 0.0,
-                                            reviews: '${tutor['total_reviews'] ?? 0}',
-                                            activeStudents: '${tutor['active_students'] ?? 0}',
-                                            sessions: '${tutor['sessions'] ?? 'N/A'}',
-                                            languages: languages.isNotEmpty
-                                                ? languages
-                                                    .where((lang) => lang != null && lang is Map && lang['name'] != null)
-                                                    .map((lang) => lang['name'])
-                                                    .join(', ')
-                                                : 'No hay idiomas disponibles',
-                                            image: profile['image'] ?? AppImages.placeHolderImage,
-                                            countryFlag: country['short_code'] != null
-                                                ? 'https://flagcdn.com/w20/${country['short_code'].toLowerCase()}.png'
-                                                : '',
-                                            verificationIcon:
-                                                profile['verified_at'] != null
-                                                    ? AppImages.active
-                                                    : '',
-                                            onlineIndicator:
-                                                tutor['is_online'] == true
-                                                    ? AppImages.onlineIndicator
-                                                    : '',
-                                            isFullWidth: true,
-                                            languagesText: true,
+                                            reviews: int.tryParse('${tutor['total_reviews'] ?? 0}') ?? 0,
+                                            imageUrl: profile['image'] ?? AppImages.placeHolderImage,
+                                            onRejectPressed: () {
+                                              // Lógica para el botón 'Ver Perfil'
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(content: Text('Ver Perfil de ${profile['full_name'] ?? 'Tutor'}')),
+                                              );
+                                               if (profile != null &&
+                                                profile is Map<String, dynamic>) {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      TutorDetailScreen(
+                                                          profile: profile, tutor: tutor,),
+                                                ),
+                                              );
+                                            }
+                                            },
+                                            onAcceptPressed: () {
+                                              // Lógica para el botón 'Reservar'
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(content: Text('Reservar con ${profile['full_name'] ?? 'Tutor'}')),
+                                              );
+                                            },
+                                            tutorProfession: validSubjects.isNotEmpty ? validSubjects.first : 'Profesión no disponible',
+                                            sessionDuration: 'Clases de 20 minutos',
+                                            isFavoriteInitial: tutor['is_favorite'] ?? false,
+                                            onFavoritePressed: (isFavorite) {
+                                              print('Tutor ${profile['full_name'] ?? ''} es favorito: $isFavorite');
+                                              // Aquí puedes añadir la lógica para actualizar el estado de favorito en la API
+                                            },
+                                            description: validSubjects.join(', '), // Mantener la descripción de materias
+                                            isVerified: true, // Todos los tutores tendrán el logo de verificación
                                           ),
                                         ),
                                       );
@@ -700,31 +789,4 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   }
 
   bool get wantKeepAlive => true;
-
-  Widget _gradeSelector() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 20.0, right: 10),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '${tutors.length} Tutores',
-                style: TextStyle(
-                  fontFamily: 'SF-Pro-Text',
-                  fontWeight: FontWeight.w500,
-                  fontSize: FontSize.scale(context, 14),
-                  fontStyle: FontStyle.normal,
-                  color: AppColors.whiteColor,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
 }

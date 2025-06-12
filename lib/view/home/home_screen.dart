@@ -18,260 +18,42 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _debounce;
+  String _searchQuery = '';
+  List<dynamic> _subjects = [];
+  bool _isLoadingSubjects = false;
+  bool _isFetchingMoreSubjects = false;
+  int _currentPageSubjects = 1;
+  bool _hasMoreSubjects = true;
+  bool _isModalLoading = true;
+  final int _subjectsPerPage = 20; // Ajustado a 20 para coincidir con el backend
+
+  // Variables para el manejo de videos y scroll
+  final ScrollController _scrollController = ScrollController();
+  bool _isManualPlay = false;
+  Map<int, bool> _visibleItems = {};
+  Map<int, Uint8List?> _thumbnailCache = {};
   List<dynamic> featuredTutors = [];
-  bool isLoadingTutors = true;
+  bool isLoadingTutors = false;
+  List<dynamic> alliances = [];
+  bool isLoadingAlliances = false;
   VideoPlayerController? _activeController;
   bool _isVideoLoading = true;
   int _playingIndex = -1;
-  ScrollController _scrollController = ScrollController();
-  final Map<int, bool> _visibleItems = {};
-  bool _isManualPlay = false;
-  final Map<int, Uint8List?> _thumbnailCache = {};
-  List<dynamic> alliances = [];
-  bool isLoadingAlliances = true;
   bool _isCustomDrawerOpen = false;
   bool _isLeftDrawerOpen = false;
 
-  List<dynamic> _subjects = []; // Lista para almacenar las materias
-  bool _isLoadingSubjects = false; // Indicador de carga para las materias
-  int _currentPageSubjects = 1; // Página actual de materias
-  bool _hasMoreSubjects = true; // Indica si hay más materias para cargar
-  bool _isFetchingMoreSubjects = false; // Indica si se están cargando más materias
-
-  TextEditingController _searchController = TextEditingController(); // Controlador para el TextField de búsqueda
-  String _searchQuery = ''; // Almacena la consulta de búsqueda
-  Timer? _debounce; // Para el debouncing
-
   // Define las rutas base
-  final String baseImageUrl = 'http://192.168.0.199:8000/storage/profile_images/';
-  final String baseVideoUrl = 'http://192.168.0.199:8000/storage/profile_videos/';
+  final String baseImageUrl = 'https://classgoapp.com/storage/profile_images/';
+  final String baseVideoUrl = 'https://classgoapp.com/storage/profile_videos/';
 
   @override
   void initState() {
     super.initState();
-    print('*** INICIO DE LA VISTA HOME ***');
-    debugPrint('*** INICIO DE LA VISTA HOME (debugPrint) ***');
-    fetchFeaturedTutors();
     _scrollController.addListener(_onScroll);
+    fetchFeaturedTutors();
     fetchAlliancesData();
-  }
-
-  Future<void> _fetchSubjects({bool isInitialLoad = true}) async {
-    if (!isInitialLoad && (!_hasMoreSubjects || _isFetchingMoreSubjects)) {
-      return; // No cargar más si no hay o ya se están cargando
-    }
-
-    setState(() {
-      if (isInitialLoad) {
-        _isLoadingSubjects = true;
-      } else {
-        _isFetchingMoreSubjects = true; // Solo para carga adicional
-      }
-    });
-    print('DEBUG: _fetchSubjects() - Iniciando carga de materias (Página: $_currentPageSubjects, Consulta: $_searchQuery)');
-
-    try {
-      final response = await getAllSubjects(
-        null, // Asumiendo que no se requiere token o se obtiene de AuthProvider
-        page: _currentPageSubjects,
-        perPage: 10, // Define cuántas materias cargar por página
-        keyword: _searchQuery, // Añadir la consulta de búsqueda
-      );
-
-      print('DEBUG: _fetchSubjects() - Respuesta completa de la API: $response');
-
-      if (response.containsKey('data') && response['data'] is List) {
-        final newSubjects = response['data'];
-        setState(() {
-          if (isInitialLoad) {
-            _subjects = newSubjects;
-          } else {
-            // Verificar que no haya duplicados antes de agregar
-            for (var subject in newSubjects) {
-              if (!_subjects.any((existing) => existing['id'] == subject['id'])) {
-                _subjects.add(subject);
-              }
-            }
-          }
-          // Verificar si hay más páginas basado en la respuesta de la API
-          _hasMoreSubjects = newSubjects.length >= 10;
-          _currentPageSubjects++;
-          print('DEBUG: _fetchSubjects() - Materias cargadas: ${_subjects.length}, HasMore: $_hasMoreSubjects');
-        });
-      } else {
-        print('DEBUG: _fetchSubjects() - La respuesta de getAllSubjects no contiene la clave "data" o "data" no es una lista: $response');
-        setState(() {
-          _hasMoreSubjects = false;
-        });
-      }
-    } catch (e) {
-      print('DEBUG: _fetchSubjects() - Error al obtener las materias: $e');
-      setState(() {
-        _hasMoreSubjects = false;
-      });
-    } finally {
-      setState(() {
-        if (isInitialLoad) {
-          _isLoadingSubjects = false;
-        } else {
-          _isFetchingMoreSubjects = false;
-        }
-        print('DEBUG: _fetchSubjects() - Carga de materias finalizada. _isLoadingSubjects: $_isLoadingSubjects, _isFetchingMoreSubjects: $_isFetchingMoreSubjects');
-      });
-    }
-  }
-
-  void _onScroll() {
-    if (!mounted || _isManualPlay) return;
-    
-    // Actualizar la visibilidad de los items
-    for (int i = 0; i < featuredTutors.length; i++) {
-      final isVisible = _isItemVisible(i);
-      if (_visibleItems[i] != isVisible) {
-        _visibleItems[i] = isVisible;
-        if (isVisible && !_thumbnailCache.containsKey(i)) {
-          final tutor = featuredTutors[i];
-          final profile = tutor['profile'] ?? {};
-          final videoPath = profile['intro_video'] ?? '';
-          if (videoPath.isNotEmpty) {
-            final videoUrl = getFullUrl(videoPath, baseVideoUrl);
-            _preloadThumbnail(videoUrl, i);
-          }
-        }
-      }
-    }
-  }
-
-  bool _isItemVisible(int index) {
-    if (!_scrollController.hasClients) return false;
-    
-    final itemPosition = index * 212.0; // 200 (ancho) + 12 (separación)
-    final screenWidth = MediaQuery.of(context).size.width;
-    final scrollOffset = _scrollController.offset;
-    
-    return itemPosition >= scrollOffset && 
-           itemPosition <= scrollOffset + screenWidth;
-  }
-
-  Future<void> _preloadThumbnail(String videoUrl, int index) async {
-    if (_thumbnailCache.containsKey(index)) return;
-    
-    try {
-      // Verificar si la URL del video es válida
-      if (videoUrl.isEmpty) {
-        setState(() {
-          _thumbnailCache[index] = null;
-        });
-        return;
-      }
-
-      print('Generando thumbnail para: $videoUrl');
-      
-      final thumbnail = await VideoThumbnail.thumbnailData(
-        video: videoUrl,
-        imageFormat: ImageFormat.JPEG,
-        maxWidth: 200,
-        quality: 50,
-      );
-      
-      if (mounted) {
-        setState(() {
-          _thumbnailCache[index] = thumbnail;
-        });
-        print('Thumbnail generado exitosamente para el índice $index');
-      }
-    } catch (e) {
-      print('Error al cargar thumbnail: $e');
-      // Si hay error, establecemos null para usar la imagen por defecto
-      if (mounted) {
-        setState(() {
-          _thumbnailCache[index] = null;
-        });
-      }
-    }
-  }
-
-  Future<void> fetchFeaturedTutors() async {
-    setState(() {
-      isLoadingTutors = true;
-    });
-    try {
-      print('*** OBTENIENDO TUTORES ***');
-      debugPrint('*** OBTENIENDO TUTORES (debugPrint) ***');
-      
-      final response = await findTutors(null, perPage: 1000);
-      print('Respuesta de la API de tutores:');
-      print(response);
-      
-      if (response.containsKey('data') && response['data']['list'] is List) {
-        final tutors = response['data']['list'];
-        setState(() {
-          featuredTutors = tutors;
-        });
-        
-        // Precargar thumbnails para los primeros tutores visibles
-        for (var i = 0; i < tutors.length; i++) {
-          final tutor = tutors[i];
-          final profile = tutor['profile'] ?? {};
-          final videoPath = profile['intro_video'] ?? '';
-          if (videoPath.isNotEmpty) {
-            final videoUrl = getFullUrl(videoPath, baseVideoUrl);
-            _preloadThumbnail(videoUrl, i);
-          }
-        }
-      } else {
-        print('La respuesta no contiene la lista de tutores esperada:');
-        print(response);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('No se pudieron cargar los tutores. Por favor, intente más tarde.'),
-              duration: Duration(seconds: 3),
-            ),
-          );
-        }
-      }
-    } catch (e, stack) {
-      print('Error al obtener tutores:');
-      print(e);
-      print('Stack trace:');
-      print(stack);
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al cargar los tutores. Por favor, intente más tarde.'),
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
-    } finally {
-      setState(() {
-        isLoadingTutors = false;
-      });
-    }
-  }
-
-  Future<void> fetchAlliancesData() async {
-    setState(() {
-      isLoadingAlliances = true;
-    });
-    try {
-      final response = await fetchAlliances();
-      print('Respuesta de alianzas: $response');
-      if (response.containsKey('data')) {
-        setState(() {
-          alliances = response['data'];
-        });
-      }
-    } catch (e) {
-      print('Error al obtener alianzas:');
-      print(e);
-    } finally {
-      setState(() {
-        isLoadingAlliances = false;
-      });
-    }
   }
 
   @override
@@ -370,7 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         SizedBox(height: 18),
                         // Barra de búsqueda
-                        InkWell(
+                        GestureDetector(
                           onTap: () {
                             _showSearchModal();
                           },
@@ -385,7 +167,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(horizontal: 12.0),
                                     child: TextField(
-                                      enabled: false, // Deshabilita la edición directa
+                                      enabled: false,
                                       style: TextStyle(color: Colors.white),
                                       decoration: InputDecoration(
                                         hintText: 'Buscar Tutores',
@@ -650,7 +432,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   title: 'Inscríbete',
                                   description: 'Crea tu cuenta rápidamente para comenzar a utilizar nuestra plataforma.',
                                   buttonText: 'Empezar',
-                                  imageUrl: 'http://192.168.0.199:8000/storage/optionbuilder/uploads/927102-18-2025_1202amPASO_1.jpg',
+                                  imageUrl: 'https://classgoapp.com/storage/optionbuilder/uploads/927102-18-2025_1202amPASO_1.jpg',
                                 ),
                                 SizedBox(width: 18),
                                 _StepCard(
@@ -658,7 +440,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   title: 'Encuentra un Tutor',
                                   description: 'Busca y selecciona entre tutores calificados según tus necesidades.',
                                   buttonText: 'Buscar Ahora',
-                                  imageUrl: 'http://192.168.0.199:8000/storage/optionbuilder/uploads/776302-18-2025_1203amPASO_2.jpg',
+                                  imageUrl: 'https://classgoapp.com/storage/optionbuilder/uploads/776302-18-2025_1203amPASO_2.jpg',
                                 ),
                                 SizedBox(width: 18),
                                 _StepCard(
@@ -666,7 +448,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   title: 'Programar una Sesión',
                                   description: 'Reserva fácilmente un horario conveniente para tu sesión.',
                                   buttonText: 'Empecemos',
-                                  imageUrl: 'http://192.168.0.199:8000/storage/optionbuilder/uploads/229502-18-2025_1204amPASO_3.jpg',
+                                  imageUrl: 'https://classgoapp.com/storage/optionbuilder/uploads/229502-18-2025_1204amPASO_3.jpg',
                                 ),
                                 SizedBox(width: 18),
                                 _StartJourneyCard(),
@@ -723,7 +505,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ClipRRect(
                             borderRadius: BorderRadius.circular(12),
                             child: Image.network(
-                              'http://192.168.0.199:8000/storage/optionbuilder/uploads/229502-18-2025_1204amPASO_3.jpg',
+                              'https://classgoapp.com/storage/optionbuilder/uploads/229502-18-2025_1204amPASO_3.jpg',
                               height: 220,
                               width: double.infinity,
                               fit: BoxFit.cover,
@@ -744,7 +526,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         itemCount: alliances.length,
                                         separatorBuilder: (_, __) => SizedBox(width: 10),
                                         itemBuilder: (context, index) {
-                                          print('Mostrando alianza: ${alliances[index]}');
+                                          
                                           final alianza = alliances[index];
                                           final logoUrl = alianza['imagen'] ?? '';
                                           final name = alianza['titulo'] ?? '';
@@ -1014,14 +796,10 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     try {
-      print('Intentando reproducir video: $url');
-      
-      // Verificar si la URL es válida
       if (url.isEmpty) {
         throw Exception('URL del video vacía');
       }
 
-      // Crear un nuevo controlador con configuración específica
       final controller = VideoPlayerController.network(
         url,
         videoPlayerOptions: VideoPlayerOptions(
@@ -1035,7 +813,6 @@ class _HomeScreenState extends State<HomeScreen> {
         },
       );
       
-      // Inicializar el controlador con timeout
       await controller.initialize().timeout(
         Duration(seconds: 10),
         onTimeout: () {
@@ -1056,13 +833,9 @@ class _HomeScreenState extends State<HomeScreen> {
         _isVideoLoading = false;
       });
       
-      print('Video inicializado correctamente');
       await controller.play();
       
-    } catch (e, stack) {
-      print('Error al reproducir el video: $e');
-      print('Stack trace: $stack');
-      
+    } catch (e) {
       if (!mounted) return;
       
       setState(() {
@@ -1104,7 +877,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     
     final videoUrl = getFullUrl(videoPath, baseVideoUrl);
-    print('URL del video a reproducir: $videoUrl');
     
     if (_playingIndex == index && _activeController != null) {
       if (_activeController!.value.isPlaying) {
@@ -1243,7 +1015,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Función para obtener la URL completa de imagen o video
   String getFullUrl(String path, String base) {
-    print('_CustomDrawerHeader getFullUrl called with path: \${path}, base: \${base}');
     if (path.startsWith('http')) {
       return path;
     }
@@ -1251,150 +1022,197 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showSearchModal() {
-    // Reiniciar el estado de paginación al abrir el modal
     _currentPageSubjects = 1;
     _subjects.clear();
     _hasMoreSubjects = true;
     _isFetchingMoreSubjects = false;
-
-    _fetchSubjects(isInitialLoad: true); // Llama a la función para cargar las materias al abrir el modal
-    print('DEBUG: _showSearchModal() - Modal de búsqueda abierto.');
+    _isModalLoading = true;
 
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true, // Permite que el modal ocupe casi toda la altura
-      backgroundColor: Colors.transparent, // Fondo transparente para ver el borde redondeado
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (BuildContext context) {
-        print('DEBUG: _showSearchModal() builder - Construyendo modal. _isLoadingSubjects: $_isLoadingSubjects, _subjects.length: ${_subjects.length}');
-        final modalScrollController = ScrollController(); // Nuevo ScrollController para el modal
+        final modalScrollController = ScrollController();
+
+        // Cargar materias iniciales cuando el modal se construye
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          try {
+            final response = await getAllSubjects(
+              null,
+              page: 1,
+              perPage: _subjectsPerPage,
+            );
+            
+            if (response != null && response.containsKey('data')) {
+              final responseData = response['data'];
+              if (responseData is Map<String, dynamic> && responseData.containsKey('data')) {
+                final subjectsList = responseData['data'];
+                final totalPages = responseData['last_page'] ?? 1;
+                
+                _subjects.addAll(subjectsList);
+                _hasMoreSubjects = 1 < totalPages;
+                if (_hasMoreSubjects) {
+                  _currentPageSubjects = 2;
+                }
+              }
+            }
+          } catch (e) {
+            print('Error al cargar materias iniciales: $e');
+          } finally {
+            _isModalLoading = false;
+            if (mounted) {
+              setState(() {});
+            }
+          }
+        });
 
         modalScrollController.addListener(() {
-          if (modalScrollController.position.pixels == modalScrollController.position.maxScrollExtent) {
-            // Si el usuario ha llegado al final de la lista
-            _fetchSubjects(isInitialLoad: false); // Cargar más materias
+          if (modalScrollController.position.pixels >= 
+              modalScrollController.position.maxScrollExtent * 0.9) {
+            if (!_isFetchingMoreSubjects && _hasMoreSubjects) {
+              _fetchMoreSubjects();
+            }
           }
         });
 
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
-            return DraggableScrollableSheet(
-              initialChildSize: 0.7, // Altura inicial del modal (70% de la pantalla)
-              minChildSize: 0.5, // Altura mínima al arrastrar
-              maxChildSize: 0.9, // Altura máxima al arrastrar
-              expand: false,
-              builder: (BuildContext context, ScrollController scrollController) {
-                return Container(
-                  decoration: BoxDecoration(
-                    color: Color(0xFF062B3A), // Color de fondo del modal
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20),
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.9,
+              decoration: BoxDecoration(
+                color: AppColors.darkBlue,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+              ),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Elige tu materia',
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
+                      ],
                     ),
                   ),
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Elige tu materia',
-                              style: TextStyle(color: Colors.white, fontSize: 16),
+                  Divider(color: Colors.white54, thickness: 0.5),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                    child: Row(
+                      children: [
+                        Icon(Icons.auto_stories, color: AppColors.lightBlueColor),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: TextField(
+                            autofocus: true,
+                            controller: _searchController,
+                            onChanged: (value) {
+                              if (_debounce?.isActive ?? false) _debounce!.cancel();
+                              _debounce = Timer(const Duration(milliseconds: 200), () {
+                                setModalState(() {
+                                  _searchQuery = value;
+                                  _currentPageSubjects = 1;
+                                  _subjects.clear();
+                                  _hasMoreSubjects = true;
+                                  _isModalLoading = true;
+                                });
+                                _fetchSubjects(isInitialLoad: true, keyword: value).then((_) {
+                                  setModalState(() {});
+                                });
+                              });
+                            },
+                            style: TextStyle(color: Colors.white),
+                            decoration: InputDecoration(
+                              hintText: '¿De que materia quieres tutoría?',
+                              hintStyle: TextStyle(color: Colors.white70),
+                              border: InputBorder.none,
+                              suffixIcon: Icon(Icons.search, color: Colors.white),
                             ),
-                          ],
+                          ),
                         ),
-                      ),
-                      Divider(color: Colors.white54, thickness: 0.5),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                        child: Row(
-                          children: [
-                            Icon(Icons.auto_stories, color: AppColors.lightBlueColor),
-                            SizedBox(width: 12),
-                            Expanded(
-                              child: TextField(
-                                autofocus: true,
-                                controller: _searchController,
-                                onChanged: (value) {
-                                  if (_debounce?.isActive ?? false) _debounce!.cancel();
-                                  _debounce = Timer(const Duration(milliseconds: 500), () {
-                                    setState(() {
-                                      _searchQuery = value;
-                                      _currentPageSubjects = 1;
-                                      _subjects.clear();
-                                      _hasMoreSubjects = true;
-                                    });
-                                    _fetchSubjects(isInitialLoad: true).then((_) {
-                                      setModalState(() {}); // Forzar actualización del modal
-                                    });
-                                  });
-                                },
-                                style: TextStyle(color: Colors.white),
-                                decoration: InputDecoration(
-                                  hintText: '¿De que materia quieres tutoría?',
-                                  hintStyle: TextStyle(color: Colors.white70),
-                                  border: InputBorder.none,
-                                  suffixIcon: Icon(Icons.search, color: Colors.white),
-                                ),
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                if (_searchController.text.trim().isNotEmpty) {
-                                  final searchKeyword = _searchController.text.trim();
-                                  print('Valor de búsqueda enviado a SearchTutorsScreen: $searchKeyword');
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => SearchTutorsScreen(
-                                        initialKeyword: searchKeyword,
-                                      ),
-                                    ),
-                                  );
-                                }
-                              },
-                              child: Text('Buscar', style: TextStyle(color: AppColors.lightBlueColor)),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Divider(color: Colors.white54, thickness: 0.5),
-                      _isLoadingSubjects
-                          ? Expanded(child: Center(child: CircularProgressIndicator(color: AppColors.lightBlueColor)))
-                          : _subjects.isEmpty && !_hasMoreSubjects && !_isLoadingSubjects
-                              ? Expanded(child: Center(child: Text('No hay materias disponibles', style: TextStyle(color: Colors.white))))
-                              : Expanded(
-                                  child: ListView.builder(
-                                    controller: modalScrollController,
-                                    itemCount: _subjects.length + (_hasMoreSubjects || _isFetchingMoreSubjects ? 1 : 0),
-                                    itemBuilder: (context, index) {
-                                      if (index == _subjects.length) {
-                                        return Padding(
-                                          padding: const EdgeInsets.symmetric(vertical: 16.0),
-                                          child: Center(
-                                            child: CircularProgressIndicator(color: AppColors.lightBlueColor),
-                                          ),
-                                        );
-                                      }
-
-                                      final subject = _subjects[index];
-                                      final subjectName = subject['name'] ?? 'Materia desconocida';
-                                      return ListTile(
-                                        leading: Icon(Icons.menu_book, color: Colors.white54, size: 20),
-                                        title: Text(subjectName, style: TextStyle(color: Colors.white)),
-                                        onTap: () {
-                                          _searchController.text = subjectName;
-                                          Navigator.pop(context);
-                                        },
-                                      );
-                                    },
+                        TextButton(
+                          onPressed: () {
+                            if (_searchController.text.trim().isNotEmpty) {
+                              final searchKeyword = _searchController.text.trim();
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => SearchTutorsScreen(
+                                    initialKeyword: searchKeyword,
                                   ),
                                 ),
-                    ],
+                              );
+                            }
+                          },
+                          child: Text('Buscar', style: TextStyle(color: AppColors.lightBlueColor)),
+                        ),
+                      ],
+                    ),
                   ),
-                );
-              },
+                  Expanded(
+                    child: _isModalLoading && _subjects.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                CircularProgressIndicator(color: AppColors.lightBlueColor),
+                                SizedBox(height: 16),
+                                Text(
+                                  'Cargando materias...',
+                                  style: TextStyle(color: Colors.white70),
+                                ),
+                              ],
+                            ),
+                          )
+                        : _subjects.isEmpty && !_hasMoreSubjects && !_isModalLoading
+                            ? Center(
+                                child: Text(
+                                  'No hay materias disponibles',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              )
+                            : ListView.builder(
+                                controller: modalScrollController,
+                                itemCount: _subjects.length + (_hasMoreSubjects || _isFetchingMoreSubjects ? 1 : 0),
+                                itemBuilder: (context, index) {
+                                  if (index == _subjects.length) {
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                                      child: Center(
+                                        child: CircularProgressIndicator(color: AppColors.lightBlueColor),
+                                      ),
+                                    );
+                                  }
+
+                                  final subject = _subjects[index];
+                                  final subjectName = subject['name'] ?? 'Materia desconocida';
+                                  return ListTile(
+                                    leading: Icon(Icons.menu_book, color: Colors.white54, size: 20),
+                                    title: Text(subjectName, style: TextStyle(color: Colors.white)),
+                                    onTap: () {
+                                      _searchController.text = subjectName;
+                                      Navigator.pop(context);
+                                      Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => SearchTutorsScreen(
+                                            initialKeyword: subjectName,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
+                  ),
+                ],
+              ),
             );
           },
         );
@@ -1403,7 +1221,231 @@ class _HomeScreenState extends State<HomeScreen> {
       if (_debounce?.isActive ?? false) _debounce!.cancel();
       _searchController.clear();
       _searchQuery = '';
+      _isModalLoading = false;
     });
+  }
+
+  Future<void> _fetchMoreSubjects() async {
+    if (_isFetchingMoreSubjects || !_hasMoreSubjects) return;
+
+    _isFetchingMoreSubjects = true;
+    try {
+      final response = await getAllSubjects(
+        null,
+        page: _currentPageSubjects,
+        perPage: _subjectsPerPage,
+        keyword: _searchQuery,
+      );
+      
+      if (response != null && response.containsKey('data')) {
+        final responseData = response['data'];
+        if (responseData is Map<String, dynamic> && responseData.containsKey('data')) {
+          final subjectsList = responseData['data'];
+          final totalPages = responseData['last_page'] ?? 1;
+          final currentPage = responseData['current_page'] ?? 1;
+
+          _subjects.addAll(subjectsList);
+          
+          _hasMoreSubjects = currentPage < totalPages;
+          if (_hasMoreSubjects) {
+            _currentPageSubjects = currentPage + 1;
+          }
+        } else {
+          _hasMoreSubjects = false;
+        }
+      } else {
+        _hasMoreSubjects = false;
+      }
+    } catch (e) {
+      _hasMoreSubjects = false;
+    } finally {
+      _isFetchingMoreSubjects = false;
+      if (mounted) {
+        setState(() {});
+      }
+    }
+  }
+
+  Future<void> _fetchSubjects({bool isInitialLoad = true, String? keyword}) async {
+    if (!isInitialLoad && (!_hasMoreSubjects || _isFetchingMoreSubjects)) {
+      return;
+    }
+
+    if (isInitialLoad) {
+      _isLoadingSubjects = true;
+      _isModalLoading = true;
+      _subjects.clear();
+    } else {
+      _isFetchingMoreSubjects = true;
+    }
+
+    try {
+      final response = await getAllSubjects(
+        null,
+        page: _currentPageSubjects,
+        perPage: _subjectsPerPage,
+        keyword: keyword ?? _searchQuery,
+      );
+      
+      if (response != null && response.containsKey('data')) {
+        final responseData = response['data'];
+        if (responseData is Map<String, dynamic> && responseData.containsKey('data')) {
+          final subjectsList = responseData['data'];
+          final totalPages = responseData['last_page'] ?? 1;
+          final currentPage = responseData['current_page'] ?? 1;
+
+          _subjects.addAll(subjectsList);
+          
+          _hasMoreSubjects = currentPage < totalPages;
+          if (_hasMoreSubjects) {
+            _currentPageSubjects = currentPage + 1;
+          }
+        } else {
+          _hasMoreSubjects = false;
+        }
+      } else {
+        _hasMoreSubjects = false;
+      }
+    } catch (e) {
+      _hasMoreSubjects = false;
+    } finally {
+      _isModalLoading = false;
+      _isFetchingMoreSubjects = false;
+      _isLoadingSubjects = false;
+    }
+  }
+
+  void _onScroll() {
+    if (!mounted || _isManualPlay) return;
+    
+    // Actualizar la visibilidad de los items
+    for (int i = 0; i < featuredTutors.length; i++) {
+      final isVisible = _isItemVisible(i);
+      if (_visibleItems[i] != isVisible) {
+        _visibleItems[i] = isVisible;
+        if (isVisible && !_thumbnailCache.containsKey(i)) {
+          final tutor = featuredTutors[i];
+          final profile = tutor['profile'] ?? {};
+          final videoPath = profile['intro_video'] ?? '';
+          if (videoPath.isNotEmpty) {
+            final videoUrl = getFullUrl(videoPath, baseVideoUrl);
+            _preloadThumbnail(videoUrl, i);
+          }
+        }
+      }
+    }
+  }
+
+  bool _isItemVisible(int index) {
+    if (!_scrollController.hasClients) return false;
+    
+    final itemPosition = index * 212.0; // 200 (ancho) + 12 (separación)
+    final screenWidth = MediaQuery.of(context).size.width;
+    final scrollOffset = _scrollController.offset;
+    
+    return itemPosition >= scrollOffset && 
+           itemPosition <= scrollOffset + screenWidth;
+  }
+
+  Future<void> _preloadThumbnail(String videoUrl, int index) async {
+    if (_thumbnailCache.containsKey(index)) return;
+    
+    try {
+      if (videoUrl.isEmpty) {
+        setState(() {
+          _thumbnailCache[index] = null;
+        });
+        return;
+      }
+
+      final thumbnail = await VideoThumbnail.thumbnailData(
+        video: videoUrl,
+        imageFormat: ImageFormat.JPEG,
+        maxWidth: 200,
+        quality: 50,
+      );
+      
+      if (mounted) {
+        setState(() {
+          _thumbnailCache[index] = thumbnail;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _thumbnailCache[index] = null;
+        });
+      }
+    }
+  }
+
+  Future<void> fetchFeaturedTutors() async {
+    setState(() {
+      isLoadingTutors = true;
+    });
+    try {
+      final response = await findTutors(null, perPage: 1000);
+      
+      if (response.containsKey('data') && response['data']['list'] is List) {
+        final tutors = response['data']['list'];
+        setState(() {
+          featuredTutors = tutors;
+        });
+        
+        // Precargar thumbnails para los primeros tutores visibles
+        for (var i = 0; i < tutors.length; i++) {
+          final tutor = tutors[i];
+          final profile = tutor['profile'] ?? {};
+          final videoPath = profile['intro_video'] ?? '';
+          if (videoPath.isNotEmpty) {
+            final videoUrl = getFullUrl(videoPath, baseVideoUrl);
+            _preloadThumbnail(videoUrl, i);
+          }
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('No se pudieron cargar los tutores. Por favor, intente más tarde.'),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cargar los tutores. Por favor, intente más tarde.'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } finally {
+      setState(() {
+        isLoadingTutors = false;
+      });
+    }
+  }
+
+  Future<void> fetchAlliancesData() async {
+    setState(() {
+      isLoadingAlliances = true;
+    });
+    try {
+      final response = await fetchAlliances();
+      if (response.containsKey('data')) {
+        setState(() {
+          alliances = response['data'];
+        });
+      }
+    } catch (e) {
+      // Error silencioso para alianzas
+    } finally {
+      setState(() {
+        isLoadingAlliances = false;
+      });
+    }
   }
 }
 
@@ -1637,8 +1679,8 @@ class _CustomDrawerHeader extends StatelessWidget {
 
     // Corregir la URL de la imagen si es necesario
     String? imageUrl = userData?['user']?['profile']?['image'];
-    if (imageUrl != null && imageUrl.contains('http://192.168.0.199:8000/storage/thumbnails/http://192.168.0.199:8000/storage/thumbnails/')) {
-      imageUrl = imageUrl.replaceFirst('http://192.168.0.199:8000/storage/thumbnails/http://192.168.0.199:8000/storage/thumbnails/', 'http://192.168.0.199:8000/storage/thumbnails/');
+    if (imageUrl != null && imageUrl.contains('https://classgoapp.com/storage/thumbnails/https://classgoapp.com/storage/thumbnails/')) {
+      imageUrl = imageUrl.replaceFirst('https://classgoapp.com/storage/thumbnails/https://classgoapp.com/storage/thumbnails/', 'https://classgoapp.com/storage/thumbnails/');
     }
 
     return Container(

@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
 
-final String baseUrl = 'http://192.168.0.199:8000/api';
+final String baseUrl = 'https://classgoapp.com/api';
 
 Future<Map<String, dynamic>> registerUser(Map<String, dynamic> userData) async {
   try {
@@ -218,7 +218,7 @@ Future<Map<String, dynamic>> findTutors(
       'language_id': languageIds != null ? languageIds.join(',') : null,
     };
 
-    queryParams.removeWhere((key, value) => value == null || (value is String && value.isEmpty));
+    queryParams.removeWhere((key, value) => value == null);
 
     final Uri uri = Uri.parse('$baseUrl/find-tutors').replace(queryParameters: queryParams);
 
@@ -241,6 +241,57 @@ Future<Map<String, dynamic>> findTutors(
     }
   } catch (e) {
     throw 'Error al obtener tutores: $e';
+  }
+}
+
+Future<Map<String, dynamic>> getVerifiedTutors(
+  String? token, {
+  int page = 1,
+  int perPage = 10,
+  String? keyword,
+  int? subjectId,
+  double? maxPrice,
+  int? country,
+  int? groupId,
+  String? sessionType,
+  List<int>? languageIds,
+}) async {
+  try {
+    final Map<String, dynamic> queryParams = {
+      'page': page.toString(),
+      'per_page': perPage.toString(),
+      'keyword': keyword,
+      'subject_id': subjectId?.toString(),
+      'max_price': maxPrice?.toString(),
+      'country': country?.toString(),
+      'group_id': groupId?.toString(),
+      'session_type': sessionType,
+      'language_id': languageIds != null ? languageIds.join(',') : null,
+    };
+
+    queryParams.removeWhere((key, value) => value == null);
+
+    final Uri uri = Uri.parse('$baseUrl/verified-tutors').replace(queryParameters: queryParams);
+
+    final headers = <String, String>{
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
+    
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+
+    final response = await http.get(uri, headers: headers);
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      final error = json.decode(response.body);
+      throw Exception(error['message'] ?? 'Error al obtener tutores verificados: ${response.statusCode}');
+    }
+  } catch (e) {
+    throw 'Error al obtener tutores verificados: $e';
   }
 }
 
