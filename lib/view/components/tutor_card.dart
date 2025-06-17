@@ -48,9 +48,11 @@ class _TutorCardState extends State<TutorCard> {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0),
-      color: AppColors.whiteColor,
+      color: AppColors.primaryGreen,
+      elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15.0),
+        side: BorderSide(color: AppColors.dividerColor, width: 1.2),
       ),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
@@ -88,7 +90,7 @@ class _TutorCardState extends State<TutorCard> {
                                 Flexible(
                                   child: Text(
                                     widget.name,
-                                    style: AppTextStyles.heading2.copyWith(color: AppColors.blackColor),
+                                    style: AppTextStyles.heading2.copyWith(color: AppColors.whiteColor),
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
@@ -108,7 +110,7 @@ class _TutorCardState extends State<TutorCard> {
                           Icon(Icons.star, color: AppColors.starYellow, size: 16),
                           Text(
                             '${widget.rating}',
-                            style: AppTextStyles.body.copyWith(color: AppColors.blackColor),
+                            style: AppTextStyles.body.copyWith(color: AppColors.whiteColor),
                           ),
                           const SizedBox(width: 8),
                           GestureDetector(
@@ -142,12 +144,7 @@ class _TutorCardState extends State<TutorCard> {
                 Icon(Icons.book, color: AppColors.greyColor, size: 20),
                 const SizedBox(width: 5),
                 Expanded(
-                  child: Text(
-                    widget.description,
-                    style: AppTextStyles.body.copyWith(color: AppColors.greyColor),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 2,
-                  ),
+                  child: _buildSubjectChipsHorizontal(widget.description),
                 ),
               ],
             ),
@@ -193,6 +190,33 @@ class _TutorCardState extends State<TutorCard> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSubjectChipsHorizontal(String description) {
+    // Separa las materias por coma y limpia espacios
+    final subjects = description.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: subjects.map((subject) => Container(
+          margin: EdgeInsets.only(right: 6),
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2), // chips más pequeños
+          decoration: BoxDecoration(
+            color: AppColors.primaryGreen,
+            border: Border.all(color: AppColors.blueColor, width: 1.2),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Text(
+            subject,
+            style: AppTextStyles.body.copyWith(
+              color: AppColors.whiteColor,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+          ),
+        )).toList(),
       ),
     );
   }
