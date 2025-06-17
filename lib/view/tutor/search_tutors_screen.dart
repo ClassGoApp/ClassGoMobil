@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
 import 'package:flutter_projects/base_components/custom_dropdown.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
@@ -36,6 +37,11 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   bool isLoading = false;
   bool isInitialLoading = false;
   bool isRefreshing = false;
+  late ScrollController _scrollController;
+
+  final GlobalKey _searchFilterContentKey = GlobalKey();
+  double _initialSearchFilterHeight = 0.0;
+  double _opacity = 1.0; // Añadido para controlar la opacidad
 
   late double screenWidth;
   late double screenHeight;
@@ -70,6 +76,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
+    _scrollController.addListener(_scrollListener);
     print('DEBUG en initState: widget.initialKeyword = ${widget.initialKeyword}');
     keyword = widget.initialKeyword;
     _searchController.text = keyword ?? '';
@@ -87,6 +95,14 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     fetchCountries();
 
     _pageController = PageController(initialPage: selectedIndex);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_searchFilterContentKey.currentContext != null) {
+        setState(() {
+          _initialSearchFilterHeight = _searchFilterContentKey.currentContext!.size!.height;
+        });
+      }
+    });
   }
 
   @override
@@ -94,6 +110,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     _pageController.dispose();
     _searchController.dispose();
     _debounce?.cancel();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -268,7 +285,6 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   Future<void> loadMoreTutors() async {
     print('DEBUG - Intentando cargar más tutores. Página actual: $currentPage, Total páginas: $totalPages, Tutores actuales: ${tutors.length}');
     
-    // Intentamos cargar más tutores si no estamos cargando y hay menos de 100 tutores
     if (!isLoading && tutors.length < 100) {
       setState(() {
         isLoading = true;
@@ -348,27 +364,6 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
       return;
     }
 
-    /*if (index == 1) {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return CustomAlertDialog(
-            title: "No diponible",
-            content: "Funcionalidad en desarrollo",
-            buttonText: "Ir a login",
-            buttonAction: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => LoginScreen()),
-              );
-            },
-          );
-        },
-      );
-      return;
-    }
-     */
-
     setState(() {
       selectedIndex = index;
     });
@@ -438,6 +433,257 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     );
   }
 
+  void _scrollListener() {
+    // Lógica para ocultar filtros al hacer scroll
+    final offset = _scrollController.offset;
+    final maxScrollExtent = _scrollController.position.maxScrollExtent;
+    
+    // Calcular la opacidad basada en el scroll
+    // Los filtros se ocultan gradualmente en los primeros 150 píxeles de scroll
+    double newOpacity = 1.0;
+    if (offset > 0) {
+      newOpacity = (1 - (offset / 150)).clamp(0.0, 1.0);
+    }
+    
+    // Solo actualizar si la opacidad cambió significativamente
+    if ((_opacity - newOpacity).abs() > 0.01) {
+      setState(() {
+        _opacity = newOpacity;
+      });
+    }
+    
+    // Lógica para cargar más tutores
+    if (offset >= maxScrollExtent * 0.8) {
+      print('DEBUG - Scroll alcanzó el 80% del final (en ListView.builder)');
+      loadMoreTutors();
+    }
+  }
+
+  Widget _buildFiltrosYBuscador() {
+    return AnimatedContainer(
+      duration: Duration(milliseconds: 200),
+      height: _opacity > 0.1 ? null : 0,
+      child: AnimatedOpacity(
+        duration: Duration(milliseconds: 200),
+        opacity: _opacity,
+        child: Container(
+          color: AppColors.primaryGreen,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 2.0),
+                child: TextField(
+                  controller: _searchController,
+                  cursorColor: AppColors.greyColor,
+                  onChanged: (value) {
+                    setState(() {
+                      keyword = value;
+                      currentPage = 1;
+                      tutors.clear();
+                    });
+                    fetchInitialTutors();
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Buscar Tutor...',
+                    hintStyle: AppTextStyles.body.copyWith(color: AppColors.lightGreyColor),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 15),
+                    prefixIcon: Icon(Icons.search, color: AppColors.lightGreyColor),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15.0),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: AppColors.navbar,
+                  ),
+                  style: AppTextStyles.body.copyWith(color: AppColors.whiteColor),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 5.0),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '${totalTutors} Tutores',
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.whiteColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 0.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 50,
+                        padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                        decoration: BoxDecoration(
+                          color: AppColors.navbar,
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _selectedSortOption,
+                            hint: Text('Ordenar por: Elige uno', style: AppTextStyles.body.copyWith(color: AppColors.whiteColor)),
+                            icon: Icon(Icons.arrow_drop_down, color: AppColors.whiteColor),
+                            dropdownColor: AppColors.navbar,
+                            style: AppTextStyles.body.copyWith(color: AppColors.whiteColor),
+                            isExpanded: true,
+                            items: _sortOptions.map((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              );
+                            }).toList(),
+                            onChanged: (newValue) {
+                              setState(() {
+                                _selectedSortOption = newValue;
+                              });
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: AppColors.navbar,
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: IconButton(
+                        icon: SvgPicture.asset(
+                          AppImages.filterIcon,
+                          color: AppColors.whiteColor,
+                        ),
+                        onPressed: openFilterBottomSheet,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTutoresList() {
+    if (isInitialLoading) {
+      return ListView.builder(
+        itemCount: 5,
+        itemBuilder: (context, index) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10.0),
+            child: TutorCardSkeleton(isFullWidth: true),
+          );
+        },
+      );
+    } else if (tutors.isEmpty) {
+      return Center(
+        child: Text(
+          "No tutors available",
+          style: TextStyle(
+            fontSize: FontSize.scale(context, 18),
+            fontWeight: FontWeight.w500,
+            color: AppColors.greyColor,
+            fontFamily: 'SF-Pro-Text',
+          ),
+        ),
+      );
+    } else {
+      return RefreshIndicator(
+        onRefresh: _onRefresh,
+        color: AppColors.primaryGreen,
+        child: ListView.builder(
+          controller: _scrollController, // Usar el mismo scrollController
+          itemCount: tutors.length + (isLoading ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index == tutors.length) {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            }
+            final tutor = tutors[index];
+            final profile = tutor['profile'] as Map<String, dynamic>;
+            final subjects = tutor['subjects'] as List;
+            final validSubjects = subjects
+                .where((subject) => subject['status'] == 'active' && subject['deleted_at'] == null)
+                .map((subject) => subject['name'] as String)
+                .toList();
+            print('DEBUG - Materias válidas: $validSubjects');
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10.0),
+              child: GestureDetector(
+                onTap: () {
+                  if (profile != null &&
+                      profile is Map<String, dynamic>) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            TutorDetailScreen(
+                                profile: profile, tutor: tutor,),
+                      ),
+                    );
+                  }
+                },
+                child: TutorCard(
+                  name: profile['full_name'] ?? 'No name available',
+                  rating: tutor['avg_rating'] != null
+                      ? (tutor['avg_rating'] is String
+                          ? double.tryParse(tutor['avg_rating']) ?? 0.0
+                          : (tutor['avg_rating'] is num ? tutor['avg_rating'].toDouble() : 0.0))
+                      : 0.0,
+                  reviews: int.tryParse('${tutor['total_reviews'] ?? 0}') ?? 0,
+                  imageUrl: profile['image'] ?? AppImages.placeHolderImage,
+                  onRejectPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Ver Perfil de ${profile['full_name'] ?? 'Tutor'}')),
+                    );
+                     if (profile != null &&
+                      profile is Map<String, dynamic>) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            TutorDetailScreen(
+                                profile: profile, tutor: tutor,),
+                      ),
+                    );
+                  }
+                  },
+                  onAcceptPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Reservar con ${profile['full_name'] ?? 'Tutor'}')),
+                    );
+                  },
+                  tutorProfession: validSubjects.isNotEmpty ? validSubjects.first : 'Profesión no disponible',
+                  sessionDuration: 'Clases de 20 minutos',
+                  isFavoriteInitial: tutor['is_favorite'] ?? false,
+                  onFavoritePressed: (isFavorite) {
+                    print('Tutor ${profile['full_name'] ?? ''} es favorito: $isFavorite');
+                  },
+                  description: validSubjects.join(', '),
+                  isVerified: true,
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     screenWidth = MediaQuery.of(context).size.width;
@@ -488,263 +734,40 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
         backgroundColor: AppColors.primaryGreen,
         body: Column(
           children: [
-            if (selectedIndex == 0)
-              Column(
+            MainHeader(
+              onMenuPressed: () {
+                _scaffoldKey.currentState?.openDrawer();
+              },
+              onProfilePressed: () {
+                _onItemTapped(2);
+              },
+            ),
+            Expanded(
+              child: PageView(
+                controller: _pageController,
+                onPageChanged: (index) {
+                  setState(() {
+                    selectedIndex = index;
+                  });
+                },
                 children: [
-                  MainHeader(
-                    onMenuPressed: () { // TODO: Implementar la lógica del menú
-                      _scaffoldKey.currentState?.openDrawer();
+                  Column( // Cambiado de NotificationListener a Column
+                    children: [
+                      _buildFiltrosYBuscador(),
+                      Expanded(
+                        child: _buildTutoresList(),
+                      ),
+                    ],
+                  ),
+                  BookingScreen(
+                    onBackPressed: () {
+                      _pageController.jumpToPage(0);
                     },
-                    onProfilePressed: () {
-                      _onItemTapped(2); // Navega a la pantalla de perfil
-                    },
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
-                    child: TextField(
-                      controller: _searchController,
-                      cursorColor: AppColors.greyColor,
-                      onChanged: (value) {
-                        if (_debounce?.isActive ?? false) _debounce!.cancel();
-                        _debounce = Timer(const Duration(milliseconds: 500), () {
-                          if (keyword != value) {
-                            setState(() {
-                              keyword = value;
-                              currentPage = 1;
-                              tutors.clear();
-                            });
-                            fetchInitialTutors();
-                          }
-                        });
-                      },
-                      decoration: InputDecoration(
-                        hintText: 'Buscar Tutor...',
-                        hintStyle: AppTextStyles.body.copyWith(color: AppColors.lightGreyColor),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 15),
-                        prefixIcon: Icon(Icons.search, color: AppColors.lightGreyColor),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15.0),
-                          borderSide: BorderSide.none,
-                      ),
-                        filled: true,
-                        fillColor: AppColors.navbar,
-                      ),
-                      style: AppTextStyles.body.copyWith(color: AppColors.whiteColor),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        '${totalTutors} Tutores',
-                        style: AppTextStyles.body.copyWith(
-                          color: AppColors.whiteColor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            height: 50,
-                            padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                            decoration: BoxDecoration(
-                              color: AppColors.navbar,
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                value: _selectedSortOption,
-                                hint: Text('Ordenar por: Elige uno', style: AppTextStyles.body.copyWith(color: AppColors.whiteColor)),
-                                icon: Icon(Icons.arrow_drop_down, color: AppColors.whiteColor),
-                                dropdownColor: AppColors.navbar,
-                                style: AppTextStyles.body.copyWith(color: AppColors.whiteColor),
-                                isExpanded: true,
-                                items: _sortOptions.map((String value) {
-                                  return DropdownMenuItem<String>(
-                                    value: value,
-                                    child: Text(value),
-                                  );
-                                }).toList(),
-                                onChanged: (String? newValue) {
-                                  setState(() {
-                                    _selectedSortOption = newValue;
-                                  });
-                                },
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Container(
-                          width: 50,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: AppColors.navbar,
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          child: IconButton(
-                            icon: SvgPicture.asset(
-                              AppImages.filterIcon,
-                              color: AppColors.whiteColor,
-                            ),
-                            onPressed: () {
-                              openFilterBottomSheet();
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  ProfileScreen(),
                 ],
               ),
-            Expanded(
-              child: GestureDetector(
-                onHorizontalDragUpdate: (_) {},
-                child: PageView(
-                  controller: _pageController,
-                  onPageChanged: (index) {
-                    setState(() {
-                      selectedIndex = index;
-                    });
-                  },
-                  physics: NeverScrollableScrollPhysics(),
-                  children: [
-                    isInitialLoading
-                        ? ListView.builder(
-                            padding: EdgeInsets.symmetric(vertical: 2.0),
-                            itemCount: 5,
-                            itemBuilder: (context, index) {
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 10.0),
-                                child: TutorCardSkeleton(isFullWidth: true),
-                              );
-                            },
-                          )
-                        : tutors.isEmpty
-                            ? Center(
-                                child: Text(
-                                  "No tutors available",
-                                  style: TextStyle(
-                                    fontSize: FontSize.scale(context, 18),
-                                    fontWeight: FontWeight.w500,
-                                    color: AppColors.greyColor,
-                                    fontFamily: 'SF-Pro-Text',
-                                  ),
-                                ),
-                              )
-                            : NotificationListener<ScrollNotification>(
-                                onNotification: (ScrollNotification scrollInfo) {
-                                  if (scrollInfo is ScrollEndNotification) {
-                                    if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent * 0.8) {
-                                      print('DEBUG - Scroll alcanzó el 80% del final');
-                                      loadMoreTutors();
-                                    }
-                                  }
-                                  return true;
-                                },
-                                child: RefreshIndicator(
-                                  onRefresh: _onRefresh,
-                                  color: AppColors.primaryGreen,
-                                  child: ListView.builder(
-                                    padding: const EdgeInsets.only(bottom: 16),
-                                    itemCount: tutors.length + (isLoading ? 1 : 0),
-                                    itemBuilder: (context, index) {
-                                      if (index == tutors.length) {
-                                        return const Center(
-                                          child: Padding(
-                                            padding: EdgeInsets.all(8.0),
-                                            child: CircularProgressIndicator(),
-                                          ),
-                                        );
-                                      }
-                                      final tutor = tutors[index];
-                                      final profile = tutor['profile'] as Map<String, dynamic>;
-                                      final subjects = tutor['subjects'] as List;
-                                      final validSubjects = subjects
-                                          .where((subject) => subject['status'] == 'active' && subject['deleted_at'] == null)
-                                          .map((subject) => subject['name'] as String)
-                                          .toList();
-                                      print('DEBUG - Materias válidas: $validSubjects');
-                                      return Padding(
-                                        padding: const EdgeInsets.symmetric(vertical: 10.0),
-                                        child: GestureDetector(
-                                          onTap: () {
-                                            if (profile != null &&
-                                                profile is Map<String, dynamic>) {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      TutorDetailScreen(
-                                                          profile: profile, tutor: tutor,),
-                                                ),
-                                              );
-                                            }
-                                          },
-                                          child: TutorCard(
-                                            name: profile['full_name'] ?? 'No name available',
-                                            rating: tutor['avg_rating'] != null
-                                                ? (tutor['avg_rating'] is String
-                                                    ? double.tryParse(tutor['avg_rating']) ?? 0.0
-                                                    : (tutor['avg_rating'] is num ? tutor['avg_rating'].toDouble() : 0.0))
-                                                : 0.0,
-                                            reviews: int.tryParse('${tutor['total_reviews'] ?? 0}') ?? 0,
-                                            imageUrl: profile['image'] ?? AppImages.placeHolderImage,
-                                            onRejectPressed: () {
-                                              // Lógica para el botón 'Ver Perfil'
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(content: Text('Ver Perfil de ${profile['full_name'] ?? 'Tutor'}')),
-                                              );
-                                               if (profile != null &&
-                                                profile is Map<String, dynamic>) {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      TutorDetailScreen(
-                                                          profile: profile, tutor: tutor,),
-                                                ),
-                                              );
-                                            }
-                                            },
-                                            onAcceptPressed: () {
-                                              // Lógica para el botón 'Reservar'
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(content: Text('Reservar con ${profile['full_name'] ?? 'Tutor'}')),
-                                              );
-                                            },
-                                            tutorProfession: validSubjects.isNotEmpty ? validSubjects.first : 'Profesión no disponible',
-                                            sessionDuration: 'Clases de 20 minutos',
-                                            isFavoriteInitial: tutor['is_favorite'] ?? false,
-                                            onFavoritePressed: (isFavorite) {
-                                              print('Tutor ${profile['full_name'] ?? ''} es favorito: $isFavorite');
-                                              // Aquí puedes añadir la lógica para actualizar el estado de favorito en la API
-                                            },
-                                            description: validSubjects.join(', '), // Mantener la descripción de materias
-                                            isVerified: true, // Todos los tutores tendrán el logo de verificación
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ),
-                    BookingScreen(
-                      onBackPressed: () {
-                        _pageController.jumpToPage(0);
-                      },
-                    ),
-                    ProfileScreen(),
-                  ],
-                ),
-              ),
-            )
+            ),
           ],
         ),
         bottomNavigationBar: BottomNavigationBar(
@@ -787,6 +810,4 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
       ),
     );
   }
-
-  bool get wantKeepAlive => true;
 }

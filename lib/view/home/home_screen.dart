@@ -27,7 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentPageSubjects = 1;
   bool _hasMoreSubjects = true;
   bool _isModalLoading = true;
-  final int _subjectsPerPage = 20; // Ajustado a 20 para coincidir con el backend
+  final int _subjectsPerPage = 100; // Aumentado a 100 para cargar más materias de una vez
 
   // Variables para el manejo de videos y scroll
   final ScrollController _scrollController = ScrollController();
@@ -667,7 +667,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-          // Custom Drawer Implementation (Left) - Mover este bloque después del overlay
+          // Custom Drawer Implementation (Left) - Existing
           if (_isLeftDrawerOpen)
             Positioned.fill(
               child: GestureDetector(
@@ -1022,6 +1022,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showSearchModal() {
+    print('DEBUG: Iniciando _showSearchModal');
     _currentPageSubjects = 1;
     _subjects.clear();
     _hasMoreSubjects = true;
@@ -1033,51 +1034,45 @@ class _HomeScreenState extends State<HomeScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (BuildContext context) {
-        final modalScrollController = ScrollController();
+        print('DEBUG: Construyendo modal');
+        bool initialLoadDone = false;
 
-        // Cargar materias iniciales cuando el modal se construye
-        WidgetsBinding.instance.addPostFrameCallback((_) async {
+        Future<void> cargarMateriasIniciales() async {
+          if (initialLoadDone) {
+            print('DEBUG: Carga inicial ya realizada, retornando');
+            return;
+          }
+          initialLoadDone = true;
+          print('DEBUG: Iniciando carga de materias iniciales - Página 1');
           try {
             final response = await getAllSubjects(
               null,
               page: 1,
               perPage: _subjectsPerPage,
             );
-            
             if (response != null && response.containsKey('data')) {
               final responseData = response['data'];
               if (responseData is Map<String, dynamic> && responseData.containsKey('data')) {
                 final subjectsList = responseData['data'];
-                final totalPages = responseData['last_page'] ?? 1;
-                
+                print('DEBUG: Materias recibidas de la API: ${subjectsList.length}');
                 _subjects.addAll(subjectsList);
-                _hasMoreSubjects = 1 < totalPages;
-                if (_hasMoreSubjects) {
-                  _currentPageSubjects = 2;
-                }
+                print('DEBUG: Materias totales: ${_subjects.length}');
               }
             }
           } catch (e) {
-            print('Error al cargar materias iniciales: $e');
+            print('DEBUG: Error al cargar materias iniciales: $e');
           } finally {
             _isModalLoading = false;
-            if (mounted) {
-              setState(() {});
-            }
+            if (mounted) setState(() {});
           }
-        });
+        }
 
-        modalScrollController.addListener(() {
-          if (modalScrollController.position.pixels >= 
-              modalScrollController.position.maxScrollExtent * 0.9) {
-            if (!_isFetchingMoreSubjects && _hasMoreSubjects) {
-              _fetchMoreSubjects();
-            }
-          }
-        });
+        // Cargar materias inmediatamente al abrir el modal
+        cargarMateriasIniciales();
 
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
+            print('DEBUG: Construyendo StatefulBuilder - Materias actuales: ${_subjects.length}');
             return Container(
               height: MediaQuery.of(context).size.height * 0.9,
               decoration: BoxDecoration(
@@ -1177,38 +1172,28 @@ class _HomeScreenState extends State<HomeScreen> {
                                   style: TextStyle(color: Colors.white),
                                 ),
                               )
-                            : ListView.builder(
-                                controller: modalScrollController,
-                                itemCount: _subjects.length + (_hasMoreSubjects || _isFetchingMoreSubjects ? 1 : 0),
-                                itemBuilder: (context, index) {
-                                  if (index == _subjects.length) {
-                                    return Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 16.0),
-                                      child: Center(
-                                        child: CircularProgressIndicator(color: AppColors.lightBlueColor),
-                                      ),
-                                    );
-                                  }
-
-                                  final subject = _subjects[index];
-                                  final subjectName = subject['name'] ?? 'Materia desconocida';
-                                  return ListTile(
-                                    leading: Icon(Icons.menu_book, color: Colors.white54, size: 20),
-                                    title: Text(subjectName, style: TextStyle(color: Colors.white)),
-                                    onTap: () {
-                                      _searchController.text = subjectName;
-                                      Navigator.pop(context);
-                                      Navigator.pushReplacement(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => SearchTutorsScreen(
-                                            initialKeyword: subjectName,
+                            : SingleChildScrollView(
+                                child: Column(
+                                  children: _subjects.map((subject) {
+                                    final subjectName = subject['name'] ?? 'Materia desconocida';
+                                    return ListTile(
+                                      leading: Icon(Icons.menu_book, color: Colors.white54, size: 20),
+                                      title: Text(subjectName, style: TextStyle(color: Colors.white)),
+                                      onTap: () {
+                                        _searchController.text = subjectName;
+                                        Navigator.pop(context);
+                                        Navigator.pushReplacement(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => SearchTutorsScreen(
+                                              initialKeyword: subjectName,
+                                            ),
                                           ),
-                                        ),
-                                      );
-                                    },
-                                  );
-                                },
+                                        );
+                                      },
+                                    );
+                                  }).toList(),
+                                ),
                               ),
                   ),
                 ],
@@ -1218,6 +1203,7 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
     ).whenComplete(() {
+      print('DEBUG: Modal cerrado - Limpiando estado');
       if (_debounce?.isActive ?? false) _debounce!.cancel();
       _searchController.clear();
       _searchQuery = '';
@@ -1225,44 +1211,50 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Future<void> _fetchMoreSubjects() async {
-    if (_isFetchingMoreSubjects || !_hasMoreSubjects) return;
-
+  Future<void> _loadMoreSubjects() async {
+    if (_isFetchingMoreSubjects || !_hasMoreSubjects) {
+      print('DEBUG: _loadMoreSubjects cancelado - Fetching: $_isFetchingMoreSubjects, HasMore: $_hasMoreSubjects');
+      return;
+    }
     _isFetchingMoreSubjects = true;
+    if (mounted) setState(() {});
     try {
+      print('DEBUG: Cargando más materias - Página $_currentPageSubjects');
       final response = await getAllSubjects(
         null,
         page: _currentPageSubjects,
         perPage: _subjectsPerPage,
         keyword: _searchQuery,
       );
-      
       if (response != null && response.containsKey('data')) {
         final responseData = response['data'];
         if (responseData is Map<String, dynamic> && responseData.containsKey('data')) {
           final subjectsList = responseData['data'];
           final totalPages = responseData['last_page'] ?? 1;
           final currentPage = responseData['current_page'] ?? 1;
-
-          _subjects.addAll(subjectsList);
-          
+          print('DEBUG: Materias recibidas de la API: ${subjectsList.length}');
+          print('DEBUG: IDs de materias recibidas: ${subjectsList.map((s) => s['id']).toList()}');
+          // Filtrar duplicados
+          final nuevos = subjectsList.where((s) => !_subjects.any((e) => e['id'] == s['id'])).toList();
+          print('DEBUG: Materias nuevas a agregar: ${nuevos.length}');
+          print('DEBUG: IDs nuevas: ${nuevos.map((s) => s['id']).toList()}');
+          _subjects.addAll(nuevos);
+          print('DEBUG: Materias totales tras agregar: ${_subjects.length}');
+          print('DEBUG: IDs totales: ${_subjects.map((s) => s['id']).toList()}');
           _hasMoreSubjects = currentPage < totalPages;
           if (_hasMoreSubjects) {
             _currentPageSubjects = currentPage + 1;
+            print('DEBUG: Siguiente página: $_currentPageSubjects');
+          } else {
+            print('DEBUG: No hay más páginas disponibles');
           }
-        } else {
-          _hasMoreSubjects = false;
         }
-      } else {
-        _hasMoreSubjects = false;
       }
     } catch (e) {
-      _hasMoreSubjects = false;
+      print('DEBUG: Error al cargar más materias: $e');
     } finally {
       _isFetchingMoreSubjects = false;
-      if (mounted) {
-        setState(() {});
-      }
+      if (mounted) setState(() {});
     }
   }
 
@@ -1280,6 +1272,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     try {
+      print('DEBUG: Buscando materias - Página $_currentPageSubjects, Keyword: ${keyword ?? _searchQuery}');
       final response = await getAllSubjects(
         null,
         page: _currentPageSubjects,
@@ -1295,19 +1288,26 @@ class _HomeScreenState extends State<HomeScreen> {
           final currentPage = responseData['current_page'] ?? 1;
 
           _subjects.addAll(subjectsList);
+          print('DEBUG: Materias encontradas: ${subjectsList.length}');
           
           _hasMoreSubjects = currentPage < totalPages;
           if (_hasMoreSubjects) {
             _currentPageSubjects = currentPage + 1;
+            print('DEBUG: Siguiente página: $_currentPageSubjects');
+          } else {
+            print('DEBUG: No hay más páginas disponibles');
           }
         } else {
           _hasMoreSubjects = false;
+          print('DEBUG: Estructura de respuesta inválida');
         }
       } else {
         _hasMoreSubjects = false;
+        print('DEBUG: Respuesta de API inválida');
       }
     } catch (e) {
       _hasMoreSubjects = false;
+      print('DEBUG: Error al buscar materias: $e');
     } finally {
       _isModalLoading = false;
       _isFetchingMoreSubjects = false;
