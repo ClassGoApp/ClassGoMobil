@@ -72,6 +72,29 @@ class _TutorCardState extends State<TutorCard> {
                         width: 60,
                         height: 60,
                         fit: BoxFit.cover,
+                        filterQuality: FilterQuality.high,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            width: 60,
+                            height: 60,
+                            color: AppColors.dividerColor,
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                value: loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded / (loadingProgress.expectedTotalBytes ?? 1)
+                                    : null,
+                                strokeWidth: 2,
+                              ),
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          width: 60,
+                          height: 60,
+                          color: AppColors.dividerColor,
+                          child: Icon(Icons.person, color: AppColors.greyColor, size: 32),
+                        ),
                       ),
                     ),
                   ],
@@ -159,8 +182,8 @@ class _TutorCardState extends State<TutorCard> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10.0),
                       ),
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      minimumSize: const Size(double.infinity, 35),
+                      padding: const EdgeInsets.symmetric(vertical: 4.0),
+                      minimumSize: const Size(double.infinity, 28),
                     ),
                     child: Text(
                       'Ver Perfil',
@@ -177,8 +200,8 @@ class _TutorCardState extends State<TutorCard> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10.0),
                       ),
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      minimumSize: const Size(double.infinity, 35),
+                      padding: const EdgeInsets.symmetric(vertical: 4.0),
+                      minimumSize: const Size(double.infinity, 28),
                     ),
                     child: Text(
                       'Reservar',

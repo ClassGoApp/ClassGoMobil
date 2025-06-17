@@ -1476,3 +1476,25 @@ Future<Map<String, dynamic>> getAllSubjects(String? token, {int page = 1, int pe
     throw 'Failed to get all subjects: $e';
   }
 }
+
+Future<Map<String, dynamic>> getVerifiedTutorsPhotos(String? token) async {
+  try {
+    final Uri uri = Uri.parse('$baseUrl/verified-tutors-photos');
+    final headers = <String, String>{
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    final response = await http.get(uri, headers: headers);
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      final error = json.decode(response.body);
+      throw Exception(error['message'] ?? 'Error al obtener fotos de tutores verificados: ${response.statusCode}');
+    }
+  } catch (e) {
+    throw 'Error al obtener fotos de tutores verificados: $e';
+  }
+}

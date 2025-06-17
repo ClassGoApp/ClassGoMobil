@@ -79,6 +79,9 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
+  // Mapa para asociar id de tutor con su imagen de alta resolución
+  Map<int, String> highResTutorImages = {};
+
   @override
   void initState() {
     super.initState();
@@ -87,6 +90,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     print('DEBUG en initState: widget.initialKeyword = ${widget.initialKeyword}');
     keyword = widget.initialKeyword;
     _searchController.text = keyword ?? '';
+    fetchHighResTutorImages();
     fetchInitialTutors(
       maxPrice: maxPrice,
       country: selectedCountryId,
@@ -717,7 +721,9 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                 .where((subject) => subject['status'] == 'active' && subject['deleted_at'] == null)
                 .map((subject) => subject['name'] as String)
                 .toList();
-            print('DEBUG - Materias válidas: $validSubjects');
+            // Depuración de imágenes de tutores
+            final hdUrl = highResTutorImages[tutor['id']];
+            print('Tutor: ${profile['full_name']} - tutor["id"]: ${tutor['id']} - HD URL: $hdUrl');
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 10.0),
               child: GestureDetector(
@@ -742,7 +748,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                           : (tutor['avg_rating'] is num ? tutor['avg_rating'].toDouble() : 0.0))
                       : 0.0,
                   reviews: int.tryParse('${tutor['total_reviews'] ?? 0}') ?? 0,
-                  imageUrl: profile['image'] ?? AppImages.placeHolderImage,
+                  imageUrl: highResTutorImages[tutor['id']] ?? profile['image'] ?? AppImages.placeHolderImage,
                   onRejectPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('Ver Perfil de ${profile['full_name'] ?? 'Tutor'}')),
@@ -781,6 +787,25 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     }
   }
 
+  Future<void> fetchHighResTutorImages() async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final token = authProvider.token;
+      final response = await getVerifiedTutorsPhotos(token);
+      if (response.containsKey('data') && response['data'] is List) {
+        final List<dynamic> data = response['data'];
+        setState(() {
+          highResTutorImages = {
+            for (var item in data)
+              if (item['id'] != null && item['profile_image'] != null)
+                item['id'] as int: item['profile_image'] as String
+          };
+        });
+      }
+    } catch (e) {
+      print('Error fetching high-res tutor images: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
