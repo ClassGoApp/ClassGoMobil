@@ -42,6 +42,12 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   final GlobalKey _searchFilterContentKey = GlobalKey();
   double _initialSearchFilterHeight = 0.0;
   double _opacity = 1.0; // Añadido para controlar la opacidad
+  double _lastScrollOffset = 0.0; // Para rastrear la dirección del scroll
+  
+  // Opacidades separadas para cada elemento
+  double _searchOpacity = 1.0;
+  double _counterOpacity = 1.0;
+  double _filtersOpacity = 1.0;
 
   late double screenWidth;
   late double screenHeight;
@@ -438,19 +444,68 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     final offset = _scrollController.offset;
     final maxScrollExtent = _scrollController.position.maxScrollExtent;
     
-    // Calcular la opacidad basada en el scroll
-    // Los filtros se ocultan gradualmente en los primeros 150 píxeles de scroll
-    double newOpacity = 1.0;
-    if (offset > 0) {
-      newOpacity = (1 - (offset / 150)).clamp(0.0, 1.0);
+    // Detectar dirección del scroll
+    final isScrollingUp = offset < _lastScrollOffset;
+    final isScrollingDown = offset > _lastScrollOffset;
+    
+    // Calcular la velocidad del scroll para ajustar la animación
+    final scrollDelta = (_lastScrollOffset - offset).abs();
+    final animationSpeed = (scrollDelta * 0.08).clamp(0.03, 0.15); // Velocidad ajustada
+    
+    // Calcular las opacidades basadas en el scroll
+    double newSearchOpacity = _searchOpacity;
+    double newCounterOpacity = _counterOpacity;
+    double newFiltersOpacity = _filtersOpacity;
+    
+    if (isScrollingUp) {
+      // Al hacer scroll hacia arriba, mostrar secuencialmente con deslizamiento
+      // Primero el buscador
+      newSearchOpacity = (_searchOpacity + animationSpeed).clamp(0.0, 1.0);
+      
+      // Luego el contador (cuando el buscador esté casi visible)
+      if (_searchOpacity > 0.2) {
+        newCounterOpacity = (_counterOpacity + animationSpeed).clamp(0.0, 1.0);
+      }
+      
+      // Finalmente los filtros (cuando el contador esté casi visible)
+      if (_counterOpacity > 0.2) {
+        newFiltersOpacity = (_filtersOpacity + animationSpeed).clamp(0.0, 1.0);
+      }
+      
+    } else if (isScrollingDown && offset > 0) {
+      // Al hacer scroll hacia abajo, ocultar todos juntos gradualmente
+      final baseOpacity = (1 - (offset / 150)).clamp(0.0, 1.0);
+      newSearchOpacity = baseOpacity;
+      newCounterOpacity = baseOpacity;
+      newFiltersOpacity = baseOpacity;
+    } else if (offset <= 0) {
+      // En la parte superior, mostrar completamente
+      newSearchOpacity = 1.0;
+      newCounterOpacity = 1.0;
+      newFiltersOpacity = 1.0;
     }
     
-    // Solo actualizar si la opacidad cambió significativamente
-    if ((_opacity - newOpacity).abs() > 0.01) {
-      setState(() {
-        _opacity = newOpacity;
-      });
+    // Solo actualizar si alguna opacidad cambió significativamente
+    bool needsUpdate = false;
+    if ((_searchOpacity - newSearchOpacity).abs() > 0.01) {
+      _searchOpacity = newSearchOpacity;
+      needsUpdate = true;
     }
+    if ((_counterOpacity - newCounterOpacity).abs() > 0.01) {
+      _counterOpacity = newCounterOpacity;
+      needsUpdate = true;
+    }
+    if ((_filtersOpacity - newFiltersOpacity).abs() > 0.01) {
+      _filtersOpacity = newFiltersOpacity;
+      needsUpdate = true;
+    }
+    
+    if (needsUpdate) {
+      setState(() {});
+    }
+    
+    // Actualizar la posición del scroll anterior
+    _lastScrollOffset = offset;
     
     // Lógica para cargar más tutores
     if (offset >= maxScrollExtent * 0.8) {
@@ -460,110 +515,153 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   }
 
   Widget _buildFiltrosYBuscador() {
+    // Alturas aproximadas de cada sección (ajusta según tu UI real)
+    const double searchHeight = 60.0;
+    const double counterHeight = 35.0;
+    const double filtersHeight = 60.0;
+    const double verticalPadding = 10.0;
+
+    // Calcula la altura total visible según las opacidades
+    double totalHeight =
+        (searchHeight * _searchOpacity) +
+        (counterHeight * _counterOpacity) +
+        (filtersHeight * _filtersOpacity) +
+        verticalPadding;
+
     return AnimatedContainer(
       duration: Duration(milliseconds: 200),
-      height: _opacity > 0.1 ? null : 0,
-      child: AnimatedOpacity(
-        duration: Duration(milliseconds: 200),
-        opacity: _opacity,
+      curve: Curves.ease,
+      height: totalHeight > 10 ? totalHeight : 0,
+      child: Opacity(
+        opacity: (_searchOpacity + _counterOpacity + _filtersOpacity) / 3,
         child: Container(
           color: AppColors.primaryGreen,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 2.0),
-                child: TextField(
-                  controller: _searchController,
-                  cursorColor: AppColors.greyColor,
-                  onChanged: (value) {
-                    setState(() {
-                      keyword = value;
-                      currentPage = 1;
-                      tutors.clear();
-                    });
-                    fetchInitialTutors();
-                  },
-                  decoration: InputDecoration(
-                    hintText: 'Buscar Tutor...',
-                    hintStyle: AppTextStyles.body.copyWith(color: AppColors.lightGreyColor),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 15),
-                    prefixIcon: Icon(Icons.search, color: AppColors.lightGreyColor),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15.0),
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: AppColors.navbar,
-                  ),
-                  style: AppTextStyles.body.copyWith(color: AppColors.whiteColor),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 5.0),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    '${totalTutors} Tutores',
-                    style: AppTextStyles.body.copyWith(
-                      color: AppColors.whiteColor,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 0.0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        height: 50,
-                        padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                        decoration: BoxDecoration(
-                          color: AppColors.navbar,
-                          borderRadius: BorderRadius.circular(15),
+              // Buscador
+              AnimatedContainer(
+                duration: Duration(milliseconds: 300),
+                height: searchHeight * _searchOpacity,
+                transform: Matrix4.translationValues(0, _searchOpacity < 1.0 ? -50 * (1 - _searchOpacity) : 0, 0),
+                child: AnimatedOpacity(
+                  duration: Duration(milliseconds: 200),
+                  opacity: _searchOpacity,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 2.0),
+                    child: TextField(
+                      controller: _searchController,
+                      cursorColor: AppColors.greyColor,
+                      onChanged: (value) {
+                        setState(() {
+                          keyword = value;
+                          currentPage = 1;
+                          tutors.clear();
+                        });
+                        fetchInitialTutors();
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'Buscar Tutor...',
+                        hintStyle: AppTextStyles.body.copyWith(color: AppColors.lightGreyColor),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 15),
+                        prefixIcon: Icon(Icons.search, color: AppColors.lightGreyColor),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15.0),
+                          borderSide: BorderSide.none,
                         ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: _selectedSortOption,
-                            hint: Text('Ordenar por: Elige uno', style: AppTextStyles.body.copyWith(color: AppColors.whiteColor)),
-                            icon: Icon(Icons.arrow_drop_down, color: AppColors.whiteColor),
-                            dropdownColor: AppColors.navbar,
-                            style: AppTextStyles.body.copyWith(color: AppColors.whiteColor),
-                            isExpanded: true,
-                            items: _sortOptions.map((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value),
-                              );
-                            }).toList(),
-                            onChanged: (newValue) {
-                              setState(() {
-                                _selectedSortOption = newValue;
-                              });
-                            },
+                        filled: true,
+                        fillColor: AppColors.navbar,
+                      ),
+                      style: AppTextStyles.body.copyWith(color: AppColors.whiteColor),
+                    ),
+                  ),
+                ),
+              ),
+              // Contador de tutores
+              AnimatedContainer(
+                duration: Duration(milliseconds: 300),
+                height: counterHeight * _counterOpacity,
+                transform: Matrix4.translationValues(0, _counterOpacity < 1.0 ? -50 * (1 - _counterOpacity) : 0, 0),
+                child: AnimatedOpacity(
+                  duration: Duration(milliseconds: 200),
+                  opacity: _counterOpacity,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 5.0),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '${totalTutors} Tutores',
+                        style: AppTextStyles.body.copyWith(
+                          color: AppColors.whiteColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              // Filtros
+              AnimatedContainer(
+                duration: Duration(milliseconds: 300),
+                height: filtersHeight * _filtersOpacity,
+                transform: Matrix4.translationValues(0, _filtersOpacity < 1.0 ? -50 * (1 - _filtersOpacity) : 0, 0),
+                child: AnimatedOpacity(
+                  duration: Duration(milliseconds: 200),
+                  opacity: _filtersOpacity,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 0.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            height: 50,
+                            padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                            decoration: BoxDecoration(
+                              color: AppColors.navbar,
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: _selectedSortOption,
+                                hint: Text('Ordenar por: Elige uno', style: AppTextStyles.body.copyWith(color: AppColors.whiteColor)),
+                                icon: Icon(Icons.arrow_drop_down, color: AppColors.whiteColor),
+                                dropdownColor: AppColors.navbar,
+                                style: AppTextStyles.body.copyWith(color: AppColors.whiteColor),
+                                isExpanded: true,
+                                items: _sortOptions.map((String value) {
+                                  return DropdownMenuItem<String>(
+                                    value: value,
+                                    child: Text(value),
+                                  );
+                                }).toList(),
+                                onChanged: (newValue) {
+                                  setState(() {
+                                    _selectedSortOption = newValue;
+                                  });
+                                },
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: AppColors.navbar,
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: IconButton(
-                        icon: SvgPicture.asset(
-                          AppImages.filterIcon,
-                          color: AppColors.whiteColor,
+                        const SizedBox(width: 10),
+                        Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: AppColors.navbar,
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: IconButton(
+                            icon: SvgPicture.asset(
+                              AppImages.filterIcon,
+                              color: AppColors.whiteColor,
+                            ),
+                            onPressed: openFilterBottomSheet,
+                          ),
                         ),
-                        onPressed: openFilterBottomSheet,
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ],
