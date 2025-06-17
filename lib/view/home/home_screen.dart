@@ -54,6 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _scrollController.addListener(_onScroll);
     fetchFeaturedTutors();
     fetchAlliancesData();
+    fetchInitialSubjects(); // Precargar 20 materias
   }
 
   @override
@@ -1022,57 +1023,76 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showSearchModal() {
-    print('DEBUG: Iniciando _showSearchModal');
-    _currentPageSubjects = 1;
-    _subjects.clear();
-    _hasMoreSubjects = true;
-    _isFetchingMoreSubjects = false;
-    _isModalLoading = true;
-
+    print('DEBUG: Iniciando _showSearchModal con ${_subjects.length} materias precargadas');
+    
+    // No limpiar las materias precargadas, solo resetear el estado de búsqueda
+    _searchQuery = '';
+    _searchController.clear();
+    _isModalLoading = false; // Las materias ya están cargadas
+    
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (BuildContext context) {
-        print('DEBUG: Construyendo modal');
-        bool initialLoadDone = false;
-
-        Future<void> cargarMateriasIniciales() async {
-          if (initialLoadDone) {
-            print('DEBUG: Carga inicial ya realizada, retornando');
-            return;
-          }
-          initialLoadDone = true;
-          print('DEBUG: Iniciando carga de materias iniciales - Página 1');
-          try {
-            final response = await getAllSubjects(
-              null,
-              page: 1,
-              perPage: _subjectsPerPage,
-            );
-            if (response != null && response.containsKey('data')) {
-              final responseData = response['data'];
-              if (responseData is Map<String, dynamic> && responseData.containsKey('data')) {
-                final subjectsList = responseData['data'];
-                print('DEBUG: Materias recibidas de la API: ${subjectsList.length}');
-                _subjects.addAll(subjectsList);
-                print('DEBUG: Materias totales: ${_subjects.length}');
-              }
-            }
-          } catch (e) {
-            print('DEBUG: Error al cargar materias iniciales: $e');
-          } finally {
-            _isModalLoading = false;
-            if (mounted) setState(() {});
-          }
-        }
-
-        // Cargar materias inmediatamente al abrir el modal
-        cargarMateriasIniciales();
-
+        print('DEBUG: Construyendo modal con ${_subjects.length} materias');
+        
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
-            print('DEBUG: Construyendo StatefulBuilder - Materias actuales: ${_subjects.length}');
+            // Función para cargar más materias desde el modal
+            Future<void> loadMoreSubjectsFromModal() async {
+              if (_isFetchingMoreSubjects || !_hasMoreSubjects) {
+                return;
+              }
+              _isFetchingMoreSubjects = true;
+              setModalState(() {}); // Actualizar el estado del modal
+              
+              try {
+                print('DEBUG: Cargando más materias desde modal - Página $_currentPageSubjects');
+                final response = await getAllSubjects(
+                  null,
+                  page: _currentPageSubjects,
+                  perPage: _subjectsPerPage,
+                  keyword: _searchQuery,
+                );
+                if (response != null && response.containsKey('data')) {
+                  final responseData = response['data'];
+                  if (responseData is Map<String, dynamic> && responseData.containsKey('data')) {
+                    final subjectsList = responseData['data'];
+                    final totalPages = responseData['last_page'] ?? 1;
+                    final currentPage = responseData['current_page'] ?? 1;
+                    
+                    // Filtrar duplicados
+                    final nuevos = subjectsList.where((s) => !_subjects.any((e) => e['id'] == s['id'])).toList();
+                    _subjects.addAll(nuevos);
+                    
+                    _hasMoreSubjects = currentPage < totalPages;
+                    if (_hasMoreSubjects) {
+                      _currentPageSubjects = currentPage + 1;
+                    }
+                    
+                    setModalState(() {}); // Actualizar el estado del modal
+                  }
+                }
+              } catch (e) {
+                print('DEBUG: Error al cargar más materias desde modal: $e');
+              } finally {
+                _isFetchingMoreSubjects = false;
+                setModalState(() {}); // Actualizar el estado del modal
+              }
+            }
+            
+            // Crear un ScrollController para el modal
+            final ScrollController modalScrollController = ScrollController();
+            
+            // Añadir listener para carga infinita
+            modalScrollController.addListener(() {
+              if (modalScrollController.position.pixels >= 
+                  modalScrollController.position.maxScrollExtent - 200) {
+                loadMoreSubjectsFromModal();
+              }
+            });
+            
             return Container(
               height: MediaQuery.of(context).size.height * 0.9,
               decoration: BoxDecoration(
@@ -1172,28 +1192,40 @@ class _HomeScreenState extends State<HomeScreen> {
                                   style: TextStyle(color: Colors.white),
                                 ),
                               )
-                            : SingleChildScrollView(
-                                child: Column(
-                                  children: _subjects.map((subject) {
-                                    final subjectName = subject['name'] ?? 'Materia desconocida';
-                                    return ListTile(
-                                      leading: Icon(Icons.menu_book, color: Colors.white54, size: 20),
-                                      title: Text(subjectName, style: TextStyle(color: Colors.white)),
-                                      onTap: () {
-                                        _searchController.text = subjectName;
-                                        Navigator.pop(context);
-                                        Navigator.pushReplacement(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => SearchTutorsScreen(
-                                              initialKeyword: subjectName,
-                                            ),
-                                          ),
-                                        );
-                                      },
+                            : ListView.builder(
+                                controller: modalScrollController,
+                                itemCount: _subjects.length + (_hasMoreSubjects ? 1 : 0),
+                                itemBuilder: (context, index) {
+                                  if (index == _subjects.length) {
+                                    // Mostrar indicador de carga al final
+                                    return Padding(
+                                      padding: const EdgeInsets.all(16.0),
+                                      child: Center(
+                                        child: CircularProgressIndicator(color: AppColors.lightBlueColor),
+                                      ),
                                     );
-                                  }).toList(),
-                                ),
+                                  }
+                                  
+                                  final subject = _subjects[index];
+                                  final subjectName = subject['name'] ?? 'Materia desconocida';
+                                  return ListTile(
+                                    leading: Icon(Icons.menu_book, color: Colors.white54, size: 20),
+                                    title: Text(subjectName, style: TextStyle(color: Colors.white)),
+                                    onTap: () {
+                                      _searchController.text = subjectName;
+                                      Navigator.pop(context);
+                                      Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => SearchTutorsScreen(
+                                            initialKeyword: subjectName,
+                                            initialSubjectId: subject['id'],
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
                               ),
                   ),
                 ],
@@ -1445,6 +1477,32 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         isLoadingAlliances = false;
       });
+    }
+  }
+
+  // Función para precargar las primeras 20 materias
+  Future<void> fetchInitialSubjects() async {
+    try {
+      print('DEBUG: Precargando 20 materias iniciales');
+      final response = await getAllSubjects(
+        null,
+        page: 1,
+        perPage: 20, // Solo 20 materias para precarga rápida
+      );
+      if (response != null && response.containsKey('data')) {
+        final responseData = response['data'];
+        if (responseData is Map<String, dynamic> && responseData.containsKey('data')) {
+          final subjectsList = responseData['data'];
+          setState(() {
+            _subjects = subjectsList;
+            _currentPageSubjects = 2; // La siguiente página será la 2
+            _hasMoreSubjects = responseData['last_page'] > 1;
+          });
+          print('DEBUG: Precargadas ${subjectsList.length} materias iniciales');
+        }
+      }
+    } catch (e) {
+      print('DEBUG: Error al precargar materias iniciales: $e');
     }
   }
 }

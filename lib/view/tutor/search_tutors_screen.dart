@@ -19,10 +19,12 @@ import 'dart:async';
 
 class SearchTutorsScreen extends StatefulWidget {
   final String? initialKeyword;
+  final int? initialSubjectId;
 
   const SearchTutorsScreen({
     Key? key,
     this.initialKeyword,
+    this.initialSubjectId,
   }) : super(key: key);
 
   @override
@@ -72,6 +74,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   String? sessionType = 'group';
   List<int>? selectedSubjectIds;
   List<int>? selectedLanguageIds;
+  int? selectedSubjectId;
   String? _selectedSortOption;
   final List<String> _sortOptions = ['Más relevantes', 'Precio (asc)', 'Precio (desc)', 'Calificación'];
   final TextEditingController _searchController = TextEditingController();
@@ -89,6 +92,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     _scrollController.addListener(_scrollListener);
     print('DEBUG en initState: widget.initialKeyword = ${widget.initialKeyword}');
     keyword = widget.initialKeyword;
+    selectedSubjectId = widget.initialSubjectId;
     _searchController.text = keyword ?? '';
     fetchHighResTutorImages();
     fetchInitialTutors(
@@ -96,7 +100,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
       country: selectedCountryId,
       groupId: selectedGroupId,
       sessionType: sessionType,
-      subjectIds: selectedSubjectIds,
+      subjectId: selectedSubjectId,
       languageIds: selectedLanguageIds,
     );
     fetchSubjects();
@@ -136,12 +140,14 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   @override
   void didUpdateWidget(covariant SearchTutorsScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.initialKeyword != oldWidget.initialKeyword) {
+    if (widget.initialKeyword != oldWidget.initialKeyword || 
+        widget.initialSubjectId != oldWidget.initialSubjectId) {
       setState(() {
         keyword = widget.initialKeyword;
+        selectedSubjectId = widget.initialSubjectId;
       });
-      print('DEBUG en didUpdateWidget: widget.initialKeyword = ${widget.initialKeyword}, this.keyword = ${this.keyword}');
-      fetchInitialTutors();
+      print('DEBUG en didUpdateWidget: widget.initialKeyword = ${widget.initialKeyword}, widget.initialSubjectId = ${widget.initialSubjectId}');
+      fetchInitialTutors(subjectId: widget.initialSubjectId);
     }
   }
 
@@ -227,9 +233,10 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     String? sessionType,
     List<int>? subjectIds,
     List<int>? languageIds,
+    int? subjectId,
     bool isRefresh = false,
   }) async {
-    print('DEBUG en fetchInitialTutors: keyword = $keyword');
+    print('DEBUG en fetchInitialTutors: keyword = $keyword, subjectId = $subjectId');
     if (!isRefresh) {
       setState(() {
         isInitialLoading = true;
@@ -250,7 +257,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
         country: country,
         groupId: groupId,
         sessionType: sessionType,
-        subjectId: null,
+        subjectId: subjectId,
         languageIds: languageIds,
       );
 
@@ -314,7 +321,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
           country: selectedCountryId,
           groupId: selectedGroupId,
           sessionType: sessionType,
-          subjectId: null,
+          subjectId: selectedSubjectId,
           languageIds: selectedLanguageIds,
         );
 
