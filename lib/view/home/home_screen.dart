@@ -171,7 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       enabled: false,
                                       style: TextStyle(color: Colors.white),
                                       decoration: InputDecoration(
-                                        hintText: 'Buscar Tutores',
+                                        hintText: '¿De que materia quieres tutoría?',
                                         hintStyle: TextStyle(color: Colors.white70),
                                         border: InputBorder.none,
                                       ),
