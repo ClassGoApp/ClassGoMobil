@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/view/tutor/tutor_profile_screen.dart';
 
 class TutorCard extends StatefulWidget {
   final String name;
@@ -14,6 +15,8 @@ class TutorCard extends StatefulWidget {
   final ValueChanged<bool> onFavoritePressed;
   final String description;
   final bool isVerified;
+  final String? tutorId;
+  final String? tutorVideo;
 
   const TutorCard({
     Key? key,
@@ -29,6 +32,8 @@ class TutorCard extends StatefulWidget {
     required this.onFavoritePressed,
     required this.description,
     required this.isVerified,
+    this.tutorId,
+    this.tutorVideo,
   }) : super(key: key);
 
   @override
@@ -55,7 +60,7 @@ class _TutorCardState extends State<TutorCard> {
         side: BorderSide(color: AppColors.dividerColor, width: 1.2),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(12.0),
+        padding: const EdgeInsets.all(8.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -155,13 +160,13 @@ class _TutorCardState extends State<TutorCard> {
                         'Bs. 15',
                         style: AppTextStyles.heading2.copyWith(color: AppColors.orangeprimary),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 4),
                     ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 6),
             Row(
               children: [
                 Icon(Icons.book, color: AppColors.greyColor, size: 20),
@@ -171,12 +176,27 @@ class _TutorCardState extends State<TutorCard> {
                 ),
               ],
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: widget.onRejectPressed,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => TutorProfileScreen(
+                            tutorId: widget.tutorId ?? '',
+                            tutorName: widget.name,
+                            tutorImage: widget.imageUrl,
+                            tutorVideo: widget.tutorVideo ?? '',
+                            description: widget.description,
+                            rating: widget.rating,
+                            subjects: widget.description.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList(),
+                          ),
+                        ),
+                      );
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.darkBlue,
                       shape: RoundedRectangleBorder(

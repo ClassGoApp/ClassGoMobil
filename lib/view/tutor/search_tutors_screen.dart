@@ -16,6 +16,7 @@ import 'package:provider/provider.dart';
 import '../../provider/auth_provider.dart';
 import 'package:flutter_projects/view/components/main_header.dart';
 import 'dart:async';
+import 'package:flutter_projects/view/tutor/tutor_profile_screen.dart';
 
 class SearchTutorsScreen extends StatefulWidget {
   final String? initialKeyword;
@@ -526,11 +527,11 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   }
 
   Widget _buildFiltrosYBuscador() {
-    // Alturas aproximadas de cada sección (ajusta según tu UI real)
-    const double searchHeight = 60.0;
-    const double counterHeight = 35.0;
-    const double filtersHeight = 60.0;
-    const double verticalPadding = 10.0;
+    // Alturas reducidas para hacer más compacto
+    const double searchHeight = 45.0; // Reducido de 60 a 45
+    const double counterHeight = 25.0; // Reducido de 35 a 25
+    const double filtersHeight = 45.0; // Reducido de 60 a 45
+    const double verticalPadding = 5.0; // Reducido de 10 a 5
 
     // Calcula la altura total visible según las opacidades
     double totalHeight =
@@ -559,7 +560,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                   duration: Duration(milliseconds: 200),
                   opacity: _searchOpacity,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 2.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 1.0), // Reducido vertical de 2 a 1
                     child: TextField(
                       controller: _searchController,
                       cursorColor: AppColors.greyColor,
@@ -574,7 +575,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                       decoration: InputDecoration(
                         hintText: 'Buscar Tutor...',
                         hintStyle: AppTextStyles.body.copyWith(color: AppColors.lightGreyColor),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 15),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 12), // Reducido vertical de 15 a 12
                         prefixIcon: Icon(Icons.search, color: AppColors.lightGreyColor),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(15.0),
@@ -597,7 +598,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                   duration: Duration(milliseconds: 200),
                   opacity: _counterOpacity,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 5.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 2.0), // Reducido vertical de 5 a 2
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
@@ -605,6 +606,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                         style: AppTextStyles.body.copyWith(
                           color: AppColors.whiteColor,
                           fontWeight: FontWeight.bold,
+                          fontSize: 13, // Reducido el tamaño de fuente
                         ),
                       ),
                     ),
@@ -620,12 +622,12 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                   duration: Duration(milliseconds: 200),
                   opacity: _filtersOpacity,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 0.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 1.0), // Reducido vertical de 0 a 1
                     child: Row(
                       children: [
                         Expanded(
                           child: Container(
-                            height: 50,
+                            height: 40, // Reducido de 50 a 40
                             padding: const EdgeInsets.symmetric(horizontal: 12.0),
                             decoration: BoxDecoration(
                               color: AppColors.navbar,
@@ -634,15 +636,15 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
                                 value: _selectedSortOption,
-                                hint: Text('Ordenar por: Elige uno', style: AppTextStyles.body.copyWith(color: AppColors.whiteColor)),
-                                icon: Icon(Icons.arrow_drop_down, color: AppColors.whiteColor),
+                                hint: Text('Ordenar por: Elige uno', style: AppTextStyles.body.copyWith(color: AppColors.whiteColor, fontSize: 13)), // Reducido tamaño de fuente
+                                icon: Icon(Icons.arrow_drop_down, color: AppColors.whiteColor, size: 20), // Reducido tamaño del icono
                                 dropdownColor: AppColors.navbar,
-                                style: AppTextStyles.body.copyWith(color: AppColors.whiteColor),
+                                style: AppTextStyles.body.copyWith(color: AppColors.whiteColor, fontSize: 13), // Reducido tamaño de fuente
                                 isExpanded: true,
                                 items: _sortOptions.map((String value) {
                                   return DropdownMenuItem<String>(
                                     value: value,
-                                    child: Text(value),
+                                    child: Text(value, style: TextStyle(fontSize: 13)), // Reducido tamaño de fuente
                                   );
                                 }).toList(),
                                 onChanged: (newValue) {
@@ -656,16 +658,19 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                         ),
                         const SizedBox(width: 10),
                         Container(
-                          width: 50,
-                          height: 50,
+                          width: 40, // Reducido de 50 a 40
+                          height: 40, // Reducido de 50 a 40
                           decoration: BoxDecoration(
                             color: AppColors.navbar,
                             borderRadius: BorderRadius.circular(15),
                           ),
                           child: IconButton(
+                            padding: EdgeInsets.zero, // Eliminar padding interno
                             icon: SvgPicture.asset(
                               AppImages.filterIcon,
                               color: AppColors.whiteColor,
+                              width: 18, // Reducido tamaño del icono
+                              height: 18,
                             ),
                             onPressed: openFilterBottomSheet,
                           ),
@@ -688,7 +693,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
         itemCount: 5,
         itemBuilder: (context, index) {
           return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10.0),
+            padding: const EdgeInsets.symmetric(vertical: 2.0),
             child: TutorCardSkeleton(isFullWidth: true),
           );
         },
@@ -732,7 +737,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
             final hdUrl = highResTutorImages[tutor['id']];
             print('Tutor: ${profile['full_name']} - tutor["id"]: ${tutor['id']} - HD URL: $hdUrl');
             return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10.0),
+              padding: const EdgeInsets.symmetric(vertical: 2.0),
               child: GestureDetector(
                 onTap: () {
                   if (profile != null &&
@@ -756,21 +761,29 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                       : 0.0,
                   reviews: int.tryParse('${tutor['total_reviews'] ?? 0}') ?? 0,
                   imageUrl: highResTutorImages[tutor['id']] ?? profile['image'] ?? AppImages.placeHolderImage,
+                  tutorId: tutor['id'].toString(),
+                  tutorVideo: profile['intro_video'] ?? '',
                   onRejectPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Ver Perfil de ${profile['full_name'] ?? 'Tutor'}')),
-                    );
-                     if (profile != null &&
-                      profile is Map<String, dynamic>) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            TutorDetailScreen(
-                                profile: profile, tutor: tutor,),
-                      ),
-                    );
-                  }
+                    if (profile != null && profile is Map<String, dynamic>) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => TutorProfileScreen(
+                            tutorId: tutor['id'].toString(),
+                            tutorName: profile['full_name'] ?? 'No name available',
+                            tutorImage: highResTutorImages[tutor['id']] ?? profile['image'] ?? AppImages.placeHolderImage,
+                            tutorVideo: profile['intro_video'] ?? '',
+                            description: validSubjects.join(', '),
+                            rating: tutor['avg_rating'] != null
+                                ? (tutor['avg_rating'] is String
+                                    ? double.tryParse(tutor['avg_rating']) ?? 0.0
+                                    : (tutor['avg_rating'] is num ? tutor['avg_rating'].toDouble() : 0.0))
+                                : 0.0,
+                            subjects: validSubjects,
+                          ),
+                        ),
+                      );
+                    }
                   },
                   onAcceptPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -860,83 +873,142 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
         }
       },
       child: Scaffold(
+        resizeToAvoidBottomInset: false, // Evita que la barra suba con el teclado
         key: _scaffoldKey,
         backgroundColor: AppColors.primaryGreen,
-        body: Column(
+        body: Stack(
           children: [
-            MainHeader(
-              onMenuPressed: () {
-                _scaffoldKey.currentState?.openDrawer();
-              },
-              onProfilePressed: () {
-                _onItemTapped(2);
-              },
-            ),
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                onPageChanged: (index) {
-                  setState(() {
-                    selectedIndex = index;
-                  });
-                },
-                children: [
-                  Column( // Cambiado de NotificationListener a Column
+            Column(
+              children: [
+                MainHeader(
+                  onMenuPressed: () {
+                    _scaffoldKey.currentState?.openDrawer();
+                  },
+                  onProfilePressed: () {
+                    _onItemTapped(2);
+                  },
+                ),
+                Expanded(
+                  child: PageView(
+                    controller: _pageController,
+                    physics: NeverScrollableScrollPhysics(),
+                    onPageChanged: (index) {
+                      setState(() {
+                        selectedIndex = index;
+                      });
+                    },
                     children: [
-                      _buildFiltrosYBuscador(),
-                      Expanded(
-                        child: _buildTutoresList(),
+                      Column(
+                        children: [
+                          _buildFiltrosYBuscador(),
+                          Expanded(
+                            child: _buildTutoresList(),
+                          ),
+                        ],
                       ),
+                      BookingScreen(
+                        onBackPressed: () {
+                          _pageController.jumpToPage(0);
+                        },
+                      ),
+                      ProfileScreen(),
                     ],
                   ),
-                  BookingScreen(
-                    onBackPressed: () {
-                      _pageController.jumpToPage(0);
-                    },
-                  ),
-                  ProfileScreen(),
-                ],
+                ),
+              ],
+            ),
+            // Barra flotante
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: _CustomBubbleNavBar(
+                currentIndex: selectedIndex,
+                onTap: _onItemTapped,
               ),
             ),
           ],
         ),
-        bottomNavigationBar: BottomNavigationBar(
-          backgroundColor: AppColors.navbar,
-          currentIndex: selectedIndex,
-          onTap: _onItemTapped,
-          unselectedItemColor: AppColors.whiteColor,
-          selectedItemColor: AppColors.whiteColor,
-          selectedLabelStyle: TextStyle(
-              color: AppColors.whiteColor,
-              fontSize: FontSize.scale(context, 12),
-              fontFamily: 'SF-Pro-Text',
-              fontWeight: FontWeight.w500,
-              fontStyle: FontStyle.normal),
-          showSelectedLabels: true,
-          showUnselectedLabels: true,
-          type: BottomNavigationBarType.fixed,
-          items: [
-            BottomNavigationBarItem(
-              icon: selectedIndex == 0
-                  ? SvgPicture.asset(AppImages.searchBottomFilled,
-                      width: 20, height: 20)
-                  : SvgPicture.asset(AppImages.search, width: 20, height: 20,color: AppColors.whiteColor,),
-              label: 'Buscar',
-            ),
-            BottomNavigationBarItem(
-              icon: selectedIndex == 1
-                  ? SvgPicture.asset(AppImages.calenderIcon,
-                      width: 20, height: 20)
-                  : SvgPicture.asset(AppImages.bookingIcon,
-                      color: AppColors.whiteColor, width: 20, height: 20,),
-              label: 'Reservar',
-            ),
-            BottomNavigationBarItem(
-              icon: buildProfileIcon(),
-              label: 'Perfil',
-            ),
-          ],
-        ),
+      ),
+    );
+  }
+}
+
+class _CustomBubbleNavBar extends StatelessWidget {
+  final int currentIndex;
+  final Function(int) onTap;
+
+  const _CustomBubbleNavBar({
+    required this.currentIndex,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final navItems = [
+      Icons.search_outlined,
+      Icons.calendar_today_outlined,
+      Icons.person_outline,
+    ];
+
+    return Container(
+      height: 60,
+      margin: EdgeInsets.symmetric(horizontal: 60, vertical: 24), // Barra mucho más estrecha
+      decoration: BoxDecoration(
+        color: Color(0xFF00A7C7), // Mismo color que los filtros
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0xFF00A7C7).withOpacity(0.4), // Sombra a juego con el nuevo color
+            blurRadius: 15,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final double barWidth = constraints.maxWidth;
+          final double itemWidth = barWidth / navItems.length;
+          const double circleDiameter = 48.0;
+          final double indicatorLeft = (currentIndex * itemWidth) + (itemWidth / 2) - (circleDiameter / 2);
+
+          return Stack(
+            alignment: Alignment.center,
+            children: [
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 350),
+                curve: Curves.elasticOut,
+                left: indicatorLeft,
+                child: Container(
+                  width: circleDiameter,
+                  height: circleDiameter,
+                  decoration: BoxDecoration(
+                    color: AppColors.darkBlue, // Círculo de color oscuro de la paleta
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+              Row(
+                children: List.generate(navItems.length, (index) {
+                  final isSelected = currentIndex == index;
+                  return GestureDetector(
+                    onTap: () => onTap(index),
+                    behavior: HitTestBehavior.opaque,
+                    child: SizedBox(
+                      width: itemWidth,
+                      height: 60,
+                      child: Icon(
+                        navItems[index],
+                        color: Colors.white, // Iconos siempre blancos para mejor contraste
+                        size: 26,
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
