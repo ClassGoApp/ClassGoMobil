@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_projects/helpers/slide_up_route.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/tutor/tutor_profile_screen.dart';
 
@@ -68,41 +69,44 @@ class _TutorCardState extends State<TutorCard> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Stack(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(10.0),
-                      child: Image.network(
-                        widget.imageUrl,
-                        width: 60,
-                        height: 60,
-                        fit: BoxFit.cover,
-                        filterQuality: FilterQuality.high,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Container(
+                Hero(
+                  tag: 'tutor-image-${widget.tutorId}',
+                  child: Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10.0),
+                        child: Image.network(
+                          widget.imageUrl,
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                          filterQuality: FilterQuality.high,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              width: 60,
+                              height: 60,
+                              color: AppColors.dividerColor,
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  value: loadingProgress.expectedTotalBytes != null
+                                      ? loadingProgress.cumulativeBytesLoaded / (loadingProgress.expectedTotalBytes ?? 1)
+                                      : null,
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) => Container(
                             width: 60,
                             height: 60,
                             color: AppColors.dividerColor,
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                value: loadingProgress.expectedTotalBytes != null
-                                    ? loadingProgress.cumulativeBytesLoaded / (loadingProgress.expectedTotalBytes ?? 1)
-                                    : null,
-                                strokeWidth: 2,
-                              ),
-                            ),
-                          );
-                        },
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          width: 60,
-                          height: 60,
-                          color: AppColors.dividerColor,
-                          child: Icon(Icons.person, color: AppColors.greyColor, size: 32),
+                            child: Icon(Icons.person, color: AppColors.greyColor, size: 32),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -184,8 +188,8 @@ class _TutorCardState extends State<TutorCard> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => TutorProfileScreen(
+                        SlideUpRoute(
+                          page: TutorProfileScreen(
                             tutorId: widget.tutorId ?? '',
                             tutorName: widget.name,
                             tutorImage: widget.imageUrl,

@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
@@ -1064,30 +1065,27 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void _showSearchModal() {
     print('DEBUG: Iniciando _showSearchModal con ${_subjects.length} materias precargadas');
     
-    // No limpiar las materias precargadas, solo resetear el estado de búsqueda
     _searchQuery = '';
     _searchController.clear();
-    _isModalLoading = false; // Las materias ya están cargadas
+    _isModalLoading = false;
     
+    Map<String, dynamic>? _selectedSubject; // Variable de estado para la materia seleccionada
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (BuildContext context) {
-        print('DEBUG: Construyendo modal con ${_subjects.length} materias');
-        
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
-            // Función para cargar más materias desde el modal
+            
             Future<void> loadMoreSubjectsFromModal() async {
-              if (_isFetchingMoreSubjects || !_hasMoreSubjects) {
-                return;
-              }
+              if (_isFetchingMoreSubjects || !_hasMoreSubjects) return;
+              
               _isFetchingMoreSubjects = true;
-              setModalState(() {}); // Actualizar el estado del modal
+              setModalState(() {});
               
               try {
-                print('DEBUG: Cargando más materias desde modal - Página $_currentPageSubjects');
                 final response = await getAllSubjects(
                   null,
                   page: _currentPageSubjects,
@@ -1101,171 +1099,253 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     final totalPages = responseData['last_page'] ?? 1;
                     final currentPage = responseData['current_page'] ?? 1;
                     
-                    // Filtrar duplicados
                     final nuevos = subjectsList.where((s) => !_subjects.any((e) => e['id'] == s['id'])).toList();
                     _subjects.addAll(nuevos);
                     
                     _hasMoreSubjects = currentPage < totalPages;
-                    if (_hasMoreSubjects) {
-                      _currentPageSubjects = currentPage + 1;
-                    }
+                    if (_hasMoreSubjects) _currentPageSubjects = currentPage + 1;
                     
-                    setModalState(() {}); // Actualizar el estado del modal
+                    setModalState(() {});
                   }
                 }
               } catch (e) {
-                print('DEBUG: Error al cargar más materias desde modal: $e');
+                print('DEBUG: Error al cargar más materias: $e');
               } finally {
                 _isFetchingMoreSubjects = false;
-                setModalState(() {}); // Actualizar el estado del modal
+                setModalState(() {});
               }
             }
             
-            // Crear un ScrollController para el modal
             final ScrollController modalScrollController = ScrollController();
-            
-            // Añadir listener para carga infinita
             modalScrollController.addListener(() {
               if (modalScrollController.position.pixels >= 
                   modalScrollController.position.maxScrollExtent - 200) {
-                loadMoreSubjectsFromModal();
+                // loadMoreSubjectsFromModal(); // Descomentar si se implementa paginación
               }
             });
             
             return Container(
               height: MediaQuery.of(context).size.height * 0.9,
               decoration: BoxDecoration(
-                color: AppColors.darkBlue,
+                color: AppColors.darkBlue, // Color oscuro de la paleta
                 borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
                 ),
               ),
               child: Column(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Elige tu materia',
-                          style: TextStyle(color: Colors.white, fontSize: 16),
-                        ),
-                      ],
+                  Container(
+                    width: 40,
+                    height: 5,
+                    margin: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  Divider(color: Colors.white54, thickness: 0.5),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                     child: Row(
                       children: [
-                        Icon(Icons.auto_stories, color: AppColors.lightBlueColor),
-                        SizedBox(width: 12),
                         Expanded(
                           child: TextField(
                             autofocus: true,
                             controller: _searchController,
                             onChanged: (value) {
                               if (_debounce?.isActive ?? false) _debounce!.cancel();
-                              _debounce = Timer(const Duration(milliseconds: 200), () {
+                              _debounce = Timer(const Duration(milliseconds: 300), () {
                                 setModalState(() {
                                   _searchQuery = value;
                                   _currentPageSubjects = 1;
                                   _subjects.clear();
                                   _hasMoreSubjects = true;
                                   _isModalLoading = true;
+                                  _selectedSubject = null;
                                 });
                                 _fetchSubjects(isInitialLoad: true, keyword: value).then((_) {
                                   setModalState(() {});
                                 });
                               });
                             },
-                            style: TextStyle(color: Colors.white),
+                            onSubmitted: (value) {
+                              if (value.trim().isNotEmpty) {
+                                Navigator.pop(context);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => SearchTutorsScreen(initialKeyword: value.trim()),
+                                  ),
+                                );
+                              }
+                            },
+                            style: TextStyle(color: Colors.white, fontSize: 16),
                             decoration: InputDecoration(
-                              hintText: '¿De que materia quieres tutoría?',
-                              hintStyle: TextStyle(color: Colors.white70),
-                              border: InputBorder.none,
-                              suffixIcon: Icon(Icons.search, color: Colors.white),
+                              hintText: 'Busca tu materia...',
+                              hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
+                              prefixIcon: Icon(Icons.search, color: Colors.white.withOpacity(0.6)),
+                              filled: true,
+                              fillColor: Colors.white.withOpacity(0.1),
+                              contentPadding: EdgeInsets.symmetric(vertical: 14),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(30),
+                                borderSide: BorderSide.none,
+                              ),
                             ),
                           ),
                         ),
+                        SizedBox(width: 8),
                         TextButton(
                           onPressed: () {
                             if (_searchController.text.trim().isNotEmpty) {
                               final searchKeyword = _searchController.text.trim();
-                              Navigator.pushReplacement(
+                              Navigator.pop(context);
+                              Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => SearchTutorsScreen(
-                                    initialKeyword: searchKeyword,
-                                  ),
+                                  builder: (context) => SearchTutorsScreen(initialKeyword: searchKeyword),
                                 ),
                               );
                             }
                           },
-                          child: Text('Buscar', style: TextStyle(color: AppColors.lightBlueColor)),
-                        ),
+                          child: Text(
+                            'Buscar',
+                            style: TextStyle(
+                              color: AppColors.lightBlueColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        )
                       ],
                     ),
                   ),
+                  Divider(color: Colors.white.withOpacity(0.1), height: 1),
                   Expanded(
-                    child: _isModalLoading && _subjects.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                CircularProgressIndicator(color: AppColors.lightBlueColor),
-                                SizedBox(height: 16),
-                                Text(
-                                  'Cargando materias...',
-                                  style: TextStyle(color: Colors.white70),
-                                ),
-                              ],
-                            ),
-                          )
-                        : _subjects.isEmpty && !_hasMoreSubjects && !_isModalLoading
+                    child: Stack(
+                      children: [
+                        _isModalLoading && _subjects.isEmpty
                             ? Center(
-                                child: Text(
-                                  'No hay materias disponibles',
-                                  style: TextStyle(color: Colors.white),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    CircularProgressIndicator(color: AppColors.lightBlueColor),
+                                    SizedBox(height: 16),
+                                    Text('Buscando materias...', style: TextStyle(color: Colors.white70)),
+                                  ],
                                 ),
                               )
-                            : ListView.builder(
-                                controller: modalScrollController,
-                                itemCount: _subjects.length + (_hasMoreSubjects ? 1 : 0),
-                                itemBuilder: (context, index) {
-                                  if (index == _subjects.length) {
-                                    // Mostrar indicador de carga al final
-                                    return Padding(
-                                      padding: const EdgeInsets.all(16.0),
-                                      child: Center(
-                                        child: CircularProgressIndicator(color: AppColors.lightBlueColor),
-                                      ),
-                                    );
-                                  }
-                                  
-                                  final subject = _subjects[index];
-                                  final subjectName = subject['name'] ?? 'Materia desconocida';
-                                  return ListTile(
-                                    leading: Icon(Icons.menu_book, color: Colors.white54, size: 20),
-                                    title: Text(subjectName, style: TextStyle(color: Colors.white)),
-                                    onTap: () {
-                                      _searchController.text = subjectName;
-                                      Navigator.pop(context);
-                                      Navigator.pushReplacement(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => SearchTutorsScreen(
-                                            initialKeyword: subjectName,
-                                            initialSubjectId: subject['id'],
+                            : _subjects.isEmpty && !_hasMoreSubjects && !_isModalLoading
+                                ? Center(
+                                    child: Text('No se encontraron materias', style: TextStyle(color: Colors.white, fontSize: 16)),
+                                  )
+                                : ListView.separated(
+                                    controller: modalScrollController,
+                                    padding: EdgeInsets.only(bottom: _selectedSubject != null ? 100 : 0),
+                                    itemCount: _subjects.length + (_hasMoreSubjects ? 1 : 0),
+                                    separatorBuilder: (context, index) => Divider(
+                                      color: Colors.white.withOpacity(0.1),
+                                      height: 1,
+                                      indent: 16,
+                                      endIndent: 16,
+                                    ),
+                                    itemBuilder: (context, index) {
+                                      if (index == _subjects.length) {
+                                        return Padding(
+                                          padding: const EdgeInsets.all(16.0),
+                                          child: Center(child: CircularProgressIndicator(color: AppColors.lightBlueColor)),
+                                        );
+                                      }
+                                      
+                                      final subject = _subjects[index];
+                                      final subjectName = subject['name'] ?? 'Materia desconocida';
+                                      final isSelected = _selectedSubject != null && _selectedSubject!['id'] == subject['id'];
+
+                                      return ListTile(
+                                        contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                        tileColor: isSelected ? AppColors.lightBlueColor.withOpacity(0.15) : Colors.transparent,
+                                        title: Text(
+                                          subjectName,
+                                          style: TextStyle(
+                                            color: isSelected ? AppColors.lightBlueColor : Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                                           ),
                                         ),
+                                        onTap: () {
+                                          FocusScope.of(context).unfocus(); // Cierra el teclado
+                                          setModalState(() {
+                                            _selectedSubject = subject;
+                                          });
+                                        },
                                       );
                                     },
-                                  );
-                                },
+                                  ),
+                        if (_selectedSubject != null)
+                          Positioned(
+                            bottom: 20,
+                            left: 16,
+                            right: 16,
+                            child: Container(
+                              padding: EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.4),
+                                borderRadius: BorderRadius.circular(30),
+                                border: Border.all(color: Colors.white.withOpacity(0.2)),
+                                backgroundBlendMode: BlendMode.overlay,
                               ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(30),
+                                child: BackdropFilter(
+                                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: ElevatedButton(
+                                          onPressed: () {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(content: Text('Función de selección automática próximamente.')),
+                                            );
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: AppColors.orangeprimary,
+                                            shape: StadiumBorder(),
+                                            padding: EdgeInsets.symmetric(vertical: 14),
+                                          ),
+                                          child: Text('Selección Automática', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                                        ),
+                                      ),
+                                      SizedBox(width: 12),
+                                      Expanded(
+                                        child: ElevatedButton(
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => SearchTutorsScreen(
+                                                  initialKeyword: _selectedSubject!['name'],
+                                                  initialSubjectId: _selectedSubject!['id'],
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: AppColors.lightBlueColor,
+                                            shape: StadiumBorder(),
+                                            padding: EdgeInsets.symmetric(vertical: 14),
+                                          ),
+                                          child: Text('Elegir Tutor', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -1273,63 +1353,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           },
         );
       },
-    ).whenComplete(() {
-      print('DEBUG: Modal cerrado - Limpiando estado');
-      if (_debounce?.isActive ?? false) _debounce!.cancel();
-      _searchController.clear();
-      _searchQuery = '';
-      _isModalLoading = false;
-    });
+    );
   }
 
-  Future<void> _loadMoreSubjects() async {
-    if (_isFetchingMoreSubjects || !_hasMoreSubjects) {
-      print('DEBUG: _loadMoreSubjects cancelado - Fetching: $_isFetchingMoreSubjects, HasMore: $_hasMoreSubjects');
-      return;
-    }
-    _isFetchingMoreSubjects = true;
-    if (mounted) setState(() {});
-    try {
-      print('DEBUG: Cargando más materias - Página $_currentPageSubjects');
-      final response = await getAllSubjects(
-        null,
-        page: _currentPageSubjects,
-        perPage: _subjectsPerPage,
-        keyword: _searchQuery,
-      );
-      if (response != null && response.containsKey('data')) {
-        final responseData = response['data'];
-        if (responseData is Map<String, dynamic> && responseData.containsKey('data')) {
-          final subjectsList = responseData['data'];
-          final totalPages = responseData['last_page'] ?? 1;
-          final currentPage = responseData['current_page'] ?? 1;
-          print('DEBUG: Materias recibidas de la API: ${subjectsList.length}');
-          print('DEBUG: IDs de materias recibidas: ${subjectsList.map((s) => s['id']).toList()}');
-          // Filtrar duplicados
-          final nuevos = subjectsList.where((s) => !_subjects.any((e) => e['id'] == s['id'])).toList();
-          print('DEBUG: Materias nuevas a agregar: ${nuevos.length}');
-          print('DEBUG: IDs nuevas: ${nuevos.map((s) => s['id']).toList()}');
-          _subjects.addAll(nuevos);
-          print('DEBUG: Materias totales tras agregar: ${_subjects.length}');
-          print('DEBUG: IDs totales: ${_subjects.map((s) => s['id']).toList()}');
-          _hasMoreSubjects = currentPage < totalPages;
-          if (_hasMoreSubjects) {
-            _currentPageSubjects = currentPage + 1;
-            print('DEBUG: Siguiente página: $_currentPageSubjects');
-          } else {
-            print('DEBUG: No hay más páginas disponibles');
-          }
-        }
-      }
-    } catch (e) {
-      print('DEBUG: Error al cargar más materias: $e');
-    } finally {
-      _isFetchingMoreSubjects = false;
-      if (mounted) setState(() {});
-    }
-  }
-
-  Future<void> _fetchSubjects({bool isInitialLoad = true, String? keyword}) async {
+  Future<void> _fetchSubjects({bool isInitialLoad = false, String keyword = ''}) async {
     if (!isInitialLoad && (!_hasMoreSubjects || _isFetchingMoreSubjects)) {
       return;
     }
