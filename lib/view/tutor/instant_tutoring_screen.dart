@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:image_picker/image_picker.dart';
 import 'payment_qr_screen.dart';
+import 'package:overlay_support/overlay_support.dart';
 
 class InstantTutoringScreen extends StatefulWidget {
   final String tutorName;
@@ -31,6 +32,13 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> with Tick
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
+  // Nuevas variables para el dropdown personalizado
+  final GlobalKey _subjectSelectorKey = GlobalKey();
+  OverlayEntry? _overlayEntry;
+  bool _isDropdownOpen = false;
+  late AnimationController _dropdownAnimController;
+  late Animation<double> _dropdownAnimation;
+
   @override
   void initState() {
     super.initState();
@@ -50,10 +58,21 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> with Tick
     _animationController.forward();
     
     _scrollController.addListener(() {
-      if (_scrollController.size <= 0.62) {
-        Navigator.of(context).pop();
+      if (_scrollController.size <= 0.8) {
+        if(Navigator.canPop(context)) Navigator.of(context).pop();
       }
     });
+
+    // Controlador de animación para el nuevo dropdown
+    _dropdownAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+
+    _dropdownAnimation = CurvedAnimation(
+      parent: _dropdownAnimController,
+      curve: Curves.easeInOut,
+    );
   }
 
   @override
@@ -61,48 +80,148 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> with Tick
     _scrollController.dispose();
     _pageController.dispose();
     _animationController.dispose();
+    _dropdownAnimController.dispose();
     super.dispose();
   }
 
-  void _showSubjectPicker() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.darkBlue.withOpacity(0.95),
+  void _toggleDropdown() {
+    if (_isDropdownOpen) {
+      _closeDropdown();
+    } else {
+      _openDropdown();
+    }
+  }
+
+  void _openDropdown() {
+    // Cierra el dropdown si ya hay uno abierto (seguridad)
+    if (_overlayEntry != null) {
+      _closeDropdown();
+    }
+
+    final RenderBox renderBox = _subjectSelectorKey.currentContext!.findRenderObject() as RenderBox;
+    final size = renderBox.size;
+    final offset = renderBox.localToGlobal(Offset.zero);
+
+    _overlayEntry = OverlayEntry(
       builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  'Elige una materia',
-                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+        return GestureDetector(
+          onTap: _toggleDropdown, // Cierra el dropdown al tocar fuera
+          child: Material(
+            color: Colors.transparent,
+            child: Stack(
+              children: [
+                Positioned(
+                  left: offset.dx,
+                  top: offset.dy + size.height + 8, // 8px de espacio
+                  width: size.width,
+                  child: FadeTransition(
+                    opacity: _dropdownAnimation,
+                    child: ScaleTransition(
+                      alignment: Alignment.topCenter,
+                      scale: _dropdownAnimation,
+                      child: _buildDropdownList(),
+                    ),
+                  ),
                 ),
-              ),
-              Divider(color: Colors.white.withOpacity(0.2)),
-              Flexible(
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: widget.subjects.length,
-                  itemBuilder: (context, index) {
-                    final subject = widget.subjects[index];
-                    return ListTile(
-                      title: Text(subject, style: TextStyle(color: Colors.white)),
-                      onTap: () {
-                        setState(() {
-                          _selectedSubject = subject;
-                        });
-                        Navigator.pop(context);
-                      },
-                    );
-                  },
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
+    );
+
+    Overlay.of(context).insert(_overlayEntry!);
+    setState(() {
+      _isDropdownOpen = true;
+    });
+    _dropdownAnimController.forward();
+  }
+
+  void _closeDropdown() {
+    if (_overlayEntry != null) {
+      _dropdownAnimController.reverse().then((value) {
+        _overlayEntry?.remove();
+        _overlayEntry = null;
+        setState(() {
+          _isDropdownOpen = false;
+        });
+      });
+    }
+  }
+
+  Widget _buildDropdownList() {
+    return Container(
+      constraints: BoxConstraints(maxHeight: 250), // Evita que la lista sea demasiado larga
+      decoration: BoxDecoration(
+        color: AppColors.darkBlue.withOpacity(0.98),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 20,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Material(
+          color: Colors.transparent,
+          child: ListView.separated(
+            itemCount: widget.subjects.length,
+            shrinkWrap: true,
+            padding: EdgeInsets.symmetric(vertical: 8),
+            separatorBuilder: (context, index) => Divider(
+              color: Colors.white.withOpacity(0.1),
+              height: 1,
+              indent: 16,
+              endIndent: 16,
+            ),
+            itemBuilder: (context, index) {
+              final subject = widget.subjects[index];
+              final isSelected = subject == _selectedSubject;
+              return InkWell(
+                onTap: () {
+                  setState(() {
+                    _selectedSubject = subject;
+                  });
+                  _toggleDropdown();
+                },
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  color: isSelected ? AppColors.lightBlueColor.withOpacity(0.2) : Colors.transparent,
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.book_outlined,
+                        color: isSelected ? AppColors.lightBlueColor : Colors.white70,
+                        size: 20,
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          subject,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                      ),
+                      if (isSelected)
+                        Icon(
+                          Icons.check,
+                          color: AppColors.lightBlueColor,
+                          size: 20,
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
     );
   }
 
@@ -243,13 +362,17 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> with Tick
                         ),
                         SizedBox(height: 12),
                         GestureDetector(
-                          onTap: _showSubjectPicker,
+                          key: _subjectSelectorKey,
+                          onTap: _toggleDropdown,
                           child: Container(
                             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                             decoration: BoxDecoration(
                               color: Colors.white.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.white.withOpacity(0.2)),
+                              border: Border.all(color: _isDropdownOpen 
+                                ? AppColors.lightBlueColor
+                                : Colors.white.withOpacity(0.2)
+                              ),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -258,7 +381,11 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> with Tick
                                   _selectedSubject ?? 'Seleccionar materia',
                                   style: TextStyle(color: _selectedSubject != null ? Colors.white : Colors.white70, fontSize: 16),
                                 ),
-                                Icon(Icons.unfold_more, color: Colors.white70),
+                                AnimatedRotation(
+                                  turns: _isDropdownOpen ? 0.5 : 0,
+                                  duration: const Duration(milliseconds: 300),
+                                  child: Icon(Icons.keyboard_arrow_down, color: Colors.white70),
+                                ),
                               ],
                             ),
                           ),
@@ -565,9 +692,11 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> with Tick
                       ElevatedButton(
                         onPressed: _selectedSubject != null
                             ? () {
-                                // Navegar a la pantalla de pago con animación
-                                Navigator.of(context).push(
+                                // Reemplaza el modal actual con la pantalla de pago
+                                Navigator.of(context).pushReplacement(
                                   PageRouteBuilder(
+                                    opaque: false,
+                                    barrierColor: Colors.black.withOpacity(0.5),
                                     pageBuilder: (context, animation, secondaryAnimation) {
                                       return PaymentQRScreen(
                                         tutorName: widget.tutorName,
@@ -577,19 +706,23 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> with Tick
                                         sessionDuration: "20 min",
                                       );
                                     },
-                                    transitionDuration: Duration(milliseconds: 300),
-                                    reverseTransitionDuration: Duration(milliseconds: 300),
+                                    transitionDuration: Duration(milliseconds: 400),
+                                    reverseTransitionDuration: Duration(milliseconds: 400),
                                     transitionsBuilder: (context, animation, secondaryAnimation, child) {
                                       const begin = Offset(1.0, 0.0);
                                       const end = Offset.zero;
-                                      const curve = Curves.easeInOutCubic;
+                                      const curve = Curves.easeOutCubic;
                                       
                                       var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
                                       var offsetAnimation = animation.drive(tween);
                                       
-                                      return SlideTransition(
-                                        position: offsetAnimation,
-                                        child: child,
+                                      // Usa un FadeTransition para que la pantalla anterior no desaparezca bruscamente
+                                      return FadeTransition(
+                                        opacity: secondaryAnimation.drive(Tween(begin: 1.0, end: 0.0)),
+                                        child: SlideTransition(
+                                          position: offsetAnimation,
+                                          child: child,
+                                        ),
                                       );
                                     },
                                   ),
@@ -654,7 +787,9 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> with Tick
   Widget makeDismissible({required Widget child, required BuildContext context}) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => Navigator.of(context).pop(),
+      onTap: () {
+        if(Navigator.canPop(context)) Navigator.of(context).pop();
+      },
       child: GestureDetector(onTap: () {}, child: child),
     );
   }

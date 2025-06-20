@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:overlay_support/overlay_support.dart';
 
 class PaymentQRScreen extends StatefulWidget {
   final String tutorName;
@@ -185,21 +186,21 @@ class _PaymentQRScreenState extends State<PaymentQRScreen> with TickerProviderSt
       final filePath = '${directory.path}/$fileName';
 
       // Aquí normalmente generarías y guardarías el QR
-      // Por ahora simulamos el proceso
-      await Future.delayed(Duration(seconds: 1));
+      await Future.delayed(Duration(seconds: 1)); // Simulación
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('QR descargado como $fileName'),
-          backgroundColor: AppColors.lightBlueColor,
-        ),
+      // Notificación moderna que ahora usa el CONTEXTO LOCAL
+      showSimpleNotification(
+        Text("¡QR guardado en tu galería!", style: TextStyle(color: Colors.white)),
+        leading: Icon(Icons.download_done, color: Colors.white),
+        background: AppColors.lightBlueColor,
+        duration: Duration(seconds: 4),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al descargar: $e'),
-          backgroundColor: Colors.red,
-        ),
+      showSimpleNotification(
+        Text("Error al descargar el QR", style: TextStyle(color: Colors.white)),
+        leading: Icon(Icons.error_outline, color: Colors.white),
+        background: Colors.redAccent,
+        duration: Duration(seconds: 4),
       );
     }
   }
@@ -221,464 +222,332 @@ class _PaymentQRScreenState extends State<PaymentQRScreen> with TickerProviderSt
 
     // Simular procesamiento
     Future.delayed(Duration(seconds: 2), () {
-      Navigator.of(context).pop(); // Cerrar modal
-      // Aquí podrías navegar a la pantalla de confirmación
+      Navigator.of(context).pop(); // Volver a la pantalla anterior (tutor_profile)
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return makeDismissible(
-      context: context,
-      child: SlideTransition(
-        position: _slideAnimation,
-        child: DraggableScrollableSheet(
-          initialChildSize: 0.9,
-          minChildSize: 0.6,
-          maxChildSize: 0.9,
-          expand: false,
-          controller: _scrollController,
-          builder: (context, scrollController) {
-            return Container(
-              decoration: BoxDecoration(
-                color: AppColors.darkBlue,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(24),
-                  topRight: Radius.circular(24),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 20,
-                    offset: Offset(0, -8),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 5,
-                    margin: const EdgeInsets.symmetric(vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(10),
+    return Material(
+      color: Colors.transparent,
+      child: makeDismissible(
+        context: context,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: DraggableScrollableSheet(
+            initialChildSize: 0.9,
+            minChildSize: 0.6,
+            maxChildSize: 0.9,
+            expand: false,
+            controller: _scrollController,
+            builder: (context, scrollController) {
+              // Se envuelve el contenido en OverlaySupport.local para que
+              // las notificaciones se muestren DENTRO de este modal.
+              return OverlaySupport.local(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.darkBlue,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(24),
+                      topRight: Radius.circular(24),
                     ),
                   ),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      controller: scrollController,
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Header con información del tutor
-                          Row(
+                  child: Column(
+                    children: [
+                      // Handle para arrastrar
+                      Container(
+                        width: 40,
+                        height: 5,
+                        margin: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      // Contenido principal que es desplazable
+                      Expanded(
+                        child: SingleChildScrollView(
+                          controller: scrollController,
+                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              CircleAvatar(
-                                radius: 28,
-                                backgroundImage: NetworkImage(widget.tutorImage),
-                              ),
-                              SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      widget.tutorName,
-                                      style: AppTextStyles.heading2.copyWith(color: Colors.white),
+                              // Header con información del tutor
+                              Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 28,
+                                    backgroundImage: NetworkImage(widget.tutorImage),
+                                  ),
+                                  SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          widget.tutorName,
+                                          style: AppTextStyles.heading2.copyWith(color: Colors.white),
+                                        ),
+                                        SizedBox(height: 4),
+                                        Text(
+                                          widget.selectedSubject,
+                                          style: AppTextStyles.body.copyWith(color: Colors.white70),
+                                        ),
+                                      ],
                                     ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      widget.selectedSubject,
-                                      style: AppTextStyles.body.copyWith(color: Colors.white70),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 30),
+
+                              // Información del pago
+                              Container(
+                                padding: EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.05),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: Colors.white.withOpacity(0.1)),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text('Monto a pagar:', style: TextStyle(color: Colors.white70, fontSize: 16)),
+                                        Text('15 Bs', style: TextStyle(color: AppColors.lightBlueColor, fontSize: 24, fontWeight: FontWeight.bold)),
+                                      ],
+                                    ),
+                                    SizedBox(height: 12),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text('Duración:', style: TextStyle(color: Colors.white70, fontSize: 16)),
+                                        Text('20 min', style: TextStyle(color: Colors.white, fontSize: 16)),
+                                      ],
                                     ),
                                   ],
                                 ),
                               ),
+                              SizedBox(height: 30),
+
+                              // Scroll Horizontal para QR y Comprobante
+                              Container(
+                                height: 350,
+                                child: Column(
+                                  children: [
+                                    Expanded(
+                                      child: PageView(
+                                        controller: _pageController,
+                                        onPageChanged: (index) {
+                                          setState(() {
+                                            _currentPage = index;
+                                          });
+                                        },
+                                        children: [
+                                          // Página 1: QR Code (Compacto)
+                                          _buildQRPage(),
+                                          // Página 2: Subir comprobante (Con Scroll)
+                                          _buildReceiptPage(),
+                                        ],
+                                      ),
+                                    ),
+                                    SizedBox(height: 16),
+                                    // Barra de indicadores
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        GestureDetector(
+                                          onTap: () => _pageController.animateToPage(0, duration: Duration(milliseconds: 300), curve: Curves.easeInOut),
+                                          child: _HorizontalStepBar(isActive: _currentPage == 0, label: 'QR'),
+                                        ),
+                                        SizedBox(width: 20),
+                                        GestureDetector(
+                                          onTap: () => _pageController.animateToPage(1, duration: Duration(milliseconds: 300), curve: Curves.easeInOut),
+                                          child: _HorizontalStepBar(isActive: _currentPage == 1, label: 'Comprobante'),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(height: 30),
                             ],
                           ),
-                          SizedBox(height: 30),
+                        ),
+                      ),
+                      // Contenido fijo en la parte inferior (Botón de pago y Stepper)
+                      _buildBottomBar(),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
 
-                          // Información del pago
-                          Container(
-                            padding: EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.05),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.white.withOpacity(0.1)),
-                            ),
-                            child: Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Monto a pagar:',
-                                      style: TextStyle(color: Colors.white70, fontSize: 16),
-                                    ),
-                                    Text(
-                                      '15 Bs',
-                                      style: TextStyle(
-                                        color: AppColors.lightBlueColor,
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 12),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Duración:',
-                                      style: TextStyle(color: Colors.white70, fontSize: 16),
-                                    ),
-                                    Text(
-                                      '20 min',
-                                      style: TextStyle(color: Colors.white, fontSize: 16),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(height: 30),
+  // Widget para la página del QR
+  Widget _buildQRPage() {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text('💳 Escanea para pagar', style: TextStyle(color: AppColors.darkBlue, fontSize: 16, fontWeight: FontWeight.bold)),
+          SizedBox(height: 16),
+          Expanded(
+            child: ScaleTransition(
+              scale: _qrScaleAnimation,
+              child: QrImageView(data: _qrData, version: QrVersions.auto, size: 200.0, backgroundColor: Colors.white, foregroundColor: AppColors.darkBlue),
+            ),
+          ),
+          SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: _downloadQR,
+            icon: Icon(Icons.download, color: AppColors.darkBlue),
+            label: Text('Descargar QR', style: TextStyle(color: AppColors.darkBlue)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              side: BorderSide(color: AppColors.darkBlue),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-                          // Scroll Horizontal para QR y Comprobante
-                          Container(
-                            height: 400,
-                            child: Column(
-                              children: [
-                                // PageView para el contenido
-                                Expanded(
-                                  child: PageView(
-                                    controller: _pageController,
-                                    onPageChanged: (index) {
-                                      setState(() {
-                                        _currentPage = index;
-                                      });
-                                    },
-                                    children: [
-                                      // Página 1: QR Code
-                                      Container(
-                                        padding: EdgeInsets.all(24),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius: BorderRadius.circular(20),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black.withOpacity(0.1),
-                                              blurRadius: 10,
-                                              offset: Offset(0, 4),
-                                            ),
-                                          ],
-                                        ),
-                                        child: Column(
-                                          children: [
-                                            Text(
-                                              '💳 Escanea para pagar',
-                                              style: TextStyle(
-                                                color: AppColors.darkBlue,
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                            SizedBox(height: 20),
-                                            ScaleTransition(
-                                              scale: _qrScaleAnimation,
-                                              child: QrImageView(
-                                                data: _qrData,
-                                                version: QrVersions.auto,
-                                                size: 200.0,
-                                                backgroundColor: Colors.white,
-                                                foregroundColor: AppColors.darkBlue,
-                                              ),
-                                            ),
-                                            SizedBox(height: 20),
-                                            Row(
-                                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                              children: [
-                                                ElevatedButton.icon(
-                                                  onPressed: _downloadQR,
-                                                  icon: Icon(Icons.download, color: AppColors.darkBlue),
-                                                  label: Text(
-                                                    'Descargar QR',
-                                                    style: TextStyle(color: AppColors.darkBlue),
-                                                  ),
-                                                  style: ElevatedButton.styleFrom(
-                                                    backgroundColor: Colors.white,
-                                                    side: BorderSide(color: AppColors.darkBlue),
-                                                    shape: RoundedRectangleBorder(
-                                                      borderRadius: BorderRadius.circular(25),
-                                                    ),
-                                                  ),
-                                                ),
-                                                ElevatedButton.icon(
-                                                  onPressed: () {
-                                                    Clipboard.setData(ClipboardData(text: _qrData));
-                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                      SnackBar(content: Text('Enlace copiado al portapapeles')),
-                                                    );
-                                                  },
-                                                  icon: Icon(Icons.copy, color: Colors.white),
-                                                  label: Text('Copiar enlace'),
-                                                  style: ElevatedButton.styleFrom(
-                                                    backgroundColor: AppColors.darkBlue,
-                                                    shape: RoundedRectangleBorder(
-                                                      borderRadius: BorderRadius.circular(25),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      
-                                      // Página 2: Subir comprobante
-                                      Container(
-                                        padding: EdgeInsets.all(20),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.05),
-                                          borderRadius: BorderRadius.circular(16),
-                                          border: Border.all(color: Colors.white.withOpacity(0.1)),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Icon(Icons.receipt_long, color: AppColors.lightBlueColor, size: 20),
-                                                SizedBox(width: 8),
-                                                Text(
-                                                  '📸 Sube el comprobante',
-                                                  style: AppTextStyles.heading2.copyWith(
-                                                    color: Colors.white,
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            SizedBox(height: 12),
-                                            Text(
-                                              'Una vez realizado el pago, sube una captura del comprobante para verificar la transacción.',
-                                              style: TextStyle(
-                                                color: Colors.white70,
-                                                fontSize: 14,
-                                                height: 1.4,
-                                              ),
-                                            ),
-                                            SizedBox(height: 20),
-                                            
-                                            if (_receiptImage != null) ...[
-                                              Stack(
-                                                children: [
-                                                  Container(
-                                                    width: double.infinity,
-                                                    height: 160,
-                                                    decoration: BoxDecoration(
-                                                      borderRadius: BorderRadius.circular(12),
-                                                      image: DecorationImage(
-                                                        image: FileImage(_receiptImage!),
-                                                        fit: BoxFit.cover,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  Positioned(
-                                                    top: 8,
-                                                    right: 8,
-                                                    child: GestureDetector(
-                                                      onTap: () {
-                                                        setState(() {
-                                                          _receiptImage = null;
-                                                        });
-                                                      },
-                                                      child: Container(
-                                                        padding: EdgeInsets.all(6),
-                                                        decoration: BoxDecoration(
-                                                          color: Colors.black.withOpacity(0.7),
-                                                          shape: BoxShape.circle,
-                                                        ),
-                                                        child: Icon(Icons.close, color: Colors.white, size: 16),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              SizedBox(height: 12),
-                                              Text(
-                                                '✅ Comprobante subido correctamente',
-                                                style: TextStyle(
-                                                  color: AppColors.lightBlueColor,
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                              ),
-                                            ] else ...[
-                                              GestureDetector(
-                                                onTap: _showReceiptSourceDialog,
-                                                child: Container(
-                                                  width: double.infinity,
-                                                  height: 120,
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.white.withOpacity(0.1),
-                                                    borderRadius: BorderRadius.circular(12),
-                                                    border: Border.all(
-                                                      color: Colors.white.withOpacity(0.2),
-                                                      style: BorderStyle.solid,
-                                                    ),
-                                                  ),
-                                                  child: Column(
-                                                    mainAxisAlignment: MainAxisAlignment.center,
-                                                    children: [
-                                                      Icon(
-                                                        Icons.add_a_photo,
-                                                        color: AppColors.lightBlueColor,
-                                                        size: 32,
-                                                      ),
-                                                      SizedBox(height: 8),
-                                                      Text(
-                                                        'Toca para subir comprobante',
-                                                        style: TextStyle(
-                                                          color: Colors.white70,
-                                                          fontSize: 14,
-                                                        ),
-                                                      ),
-                                                      SizedBox(height: 4),
-                                                      Text(
-                                                        'Cámara o Galería',
-                                                        style: TextStyle(
-                                                          color: Colors.white54,
-                                                          fontSize: 12,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                
-                                // Barra de indicadores del scroll horizontal
-                                SizedBox(height: 16),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    GestureDetector(
-                                      onTap: () {
-                                        _pageController.animateToPage(
-                                          0,
-                                          duration: Duration(milliseconds: 300),
-                                          curve: Curves.easeInOut,
-                                        );
-                                      },
-                                      child: _HorizontalStepBar(isActive: _currentPage == 0, label: 'QR'),
-                                    ),
-                                    SizedBox(width: 20),
-                                    GestureDetector(
-                                      onTap: () {
-                                        _pageController.animateToPage(
-                                          1,
-                                          duration: Duration(milliseconds: 300),
-                                          curve: Curves.easeInOut,
-                                        );
-                                      },
-                                      child: _HorizontalStepBar(isActive: _currentPage == 1, label: 'Comprobante'),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(height: 30),
-
-                          // Botón de confirmar pago
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                            child: Column(
-                              children: [
-                                ElevatedButton(
-                                  onPressed: (_receiptImage != null && !_isPaymentCompleted) ? _submitPayment : null,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: _receiptImage != null && !_isPaymentCompleted
-                                        ? AppColors.lightBlueColor
-                                        : Colors.grey,
-                                    disabledBackgroundColor: Colors.grey,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                                    padding: EdgeInsets.symmetric(vertical: 16),
-                                    minimumSize: Size(double.infinity, 50),
-                                  ),
-                                  child: _isPaymentCompleted
-                                      ? Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            SizedBox(
-                                              width: 20,
-                                              height: 20,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                              ),
-                                            ),
-                                            SizedBox(width: 12),
-                                            Text(
-                                              'Procesando pago...',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 16,
-                                              ),
-                                            ),
-                                          ],
-                                        )
-                                      : Text(
-                                          _receiptImage != null ? 'Confirmar Pago' : 'Sube el comprobante primero',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                ),
-                                SizedBox(height: 16),
-                                Text(
-                                  'La sesión comenzará automáticamente una vez confirmado el pago.',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(color: Colors.white70, fontSize: 13),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+  // Widget para la página de subir comprobante
+  Widget _buildReceiptPage() {
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+      ),
+      child: SingleChildScrollView( // <-- Soluciona el overflow
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.receipt_long, color: AppColors.lightBlueColor, size: 20),
+                SizedBox(width: 8),
+                Text('📸 Sube el comprobante', style: AppTextStyles.heading2.copyWith(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            SizedBox(height: 12),
+            Text('Una vez realizado el pago, sube una captura del comprobante para verificar la transacción.', style: TextStyle(color: Colors.white70, fontSize: 14, height: 1.4)),
+            SizedBox(height: 20),
+            if (_receiptImage != null)
+              Stack(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    height: 160,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      image: DecorationImage(image: FileImage(_receiptImage!), fit: BoxFit.cover),
+                    ),
+                  ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: GestureDetector(
+                      onTap: () => setState(() => _receiptImage = null),
+                      child: Container(
+                        padding: EdgeInsets.all(6),
+                        decoration: BoxDecoration(color: Colors.black.withOpacity(0.7), shape: BoxShape.circle),
+                        child: Icon(Icons.close, color: Colors.white, size: 16),
                       ),
                     ),
                   ),
-                  
-                  // Stepper de pasos
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 18, top: 2),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _StepBar(isActive: false),
-                        SizedBox(width: 12),
-                        _StepBar(isActive: true),
-                      ],
-                    ),
-                  ),
                 ],
+              )
+            else
+              GestureDetector(
+                onTap: _showReceiptSourceDialog,
+                child: Container(
+                  width: double.infinity,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white.withOpacity(0.2), style: BorderStyle.solid),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.add_a_photo, color: AppColors.lightBlueColor, size: 32),
+                      SizedBox(height: 8),
+                      Text('Toca para subir comprobante', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                      SizedBox(height: 4),
+                      Text('Cámara o Galería', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                    ],
+                  ),
+                ),
               ),
-            );
-          },
+            if (_receiptImage != null) ...[
+              SizedBox(height: 12),
+              Text('✅ Comprobante subido correctamente', style: TextStyle(color: AppColors.lightBlueColor, fontSize: 14, fontWeight: FontWeight.w500)),
+            ],
+          ],
         ),
+      ),
+    );
+  }
+
+  // Widget para la barra inferior
+  Widget _buildBottomBar() {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      child: Column(
+        children: [
+          ElevatedButton(
+            onPressed: (_receiptImage != null && !_isPaymentCompleted) ? _submitPayment : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: (_receiptImage != null && !_isPaymentCompleted) ? AppColors.lightBlueColor : Colors.grey,
+              disabledBackgroundColor: Colors.grey,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+              padding: EdgeInsets.symmetric(vertical: 16),
+              minimumSize: Size(double.infinity, 50),
+            ),
+            child: _isPaymentCompleted
+                ? Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white))),
+                    SizedBox(width: 12),
+                    Text('Procesando pago...', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                  ])
+                : Text(
+                    _receiptImage != null ? 'Confirmar Pago' : 'Sube el comprobante primero',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+          ),
+          SizedBox(height: 16),
+          Text('La sesión comenzará automáticamente una vez confirmado el pago.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white70, fontSize: 13)),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 0, top: 18),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _StepBar(isActive: false),
+                SizedBox(width: 12),
+                _StepBar(isActive: true),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -741,14 +610,13 @@ class _HorizontalStepBar extends StatelessWidget {
           ),
         ),
         SizedBox(height: 8),
-        AnimatedDefaultTextStyle(
-          duration: Duration(milliseconds: 300),
+        Text(
+          label,
           style: TextStyle(
             color: isActive ? AppColors.lightBlueColor : Colors.white54,
             fontSize: 12,
             fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
           ),
-          child: Text(label),
         ),
       ],
     );
