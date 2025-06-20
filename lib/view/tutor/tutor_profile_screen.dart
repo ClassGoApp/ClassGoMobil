@@ -36,6 +36,9 @@ class TutorProfileScreen extends StatefulWidget {
 class _TutorProfileScreenState extends State<TutorProfileScreen> {
   late VideoPlayerController _videoController;
   bool _isVideoInitialized = false;
+  final ScrollController _scrollController = ScrollController();
+  bool _areAllSubjectsShown = false;
+  static const int _initialSubjectCount = 6;
 
   @override
   void initState() {
@@ -55,6 +58,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
   @override
   void dispose() {
     _videoController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -65,6 +69,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     // Valor de ejemplo para cursos completados
     final int cursosCompletados = 4;
     final int totalCursosTutor = 18;
+    // Altura total del header visual (video + mitad avatar + margen + nombre + valoración)
+    final double headerHeight = videoHeight + avatarRadius * 0.85 + 24;
     return NotificationListener<OverscrollNotification>(
       onNotification: (notification) {
         if (notification.dragDetails != null && notification.dragDetails!.delta.dy > 15) {
@@ -75,223 +81,254 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
       child: Scaffold(
         backgroundColor: AppColors.primaryGreen,
         body: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            // HEADER: video + fondo azul + avatar superpuesto + info a la derecha
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                // Video (sin overlays ni fondos encima)
-                Container(
-                  width: double.infinity,
-                  height: videoHeight,
-                  child: _isVideoInitialized
-                      ? AspectRatio(
-                          aspectRatio: _videoController.value.aspectRatio,
-                          child: VideoPlayer(_videoController),
-                        )
-                      : Center(child: CircularProgressIndicator(color: Colors.white)),
-                ),
-                // Fondo azul para la info (empieza justo donde termina el video)
-                Positioned(
-                  top: videoHeight,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    color: AppColors.primaryGreen,
-                    height: avatarRadius + 32,
+            // HEADER FIJO
+            Container(
+              width: double.infinity,
+              height: headerHeight,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  // Video
+                  Container(
+                    width: double.infinity,
+                    height: videoHeight,
+                    child: _isVideoInitialized
+                        ? AspectRatio(
+                            aspectRatio: _videoController.value.aspectRatio,
+                            child: VideoPlayer(_videoController),
+                          )
+                        : Center(child: CircularProgressIndicator(color: Colors.white)),
                   ),
-                ),
-                // Avatar superpuesto (mitad sobre video, mitad sobre azul)
-                Positioned(
-                  top: videoHeight - avatarRadius,
-                  left: 32,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 3),
-                    ),
-                    child: CircleAvatar(
-                      radius: avatarRadius,
-                      backgroundColor: Colors.white,
-                      backgroundImage: NetworkImage(widget.tutorImage),
-                    ),
-                  ),
-                ),
-                // Info a la derecha del avatar, alineada verticalmente al centro de la mitad inferior del avatar
-                Positioned(
-                  top: videoHeight + 2,
-                  left: 32 + avatarRadius + 68,
-                  right: 24,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.tutorName,
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                  // Botón de play sobre el video
+                  if (_isVideoInitialized)
+                    Positioned.fill(
+                      child: Center(
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              if (_videoController.value.isPlaying) {
+                                _videoController.pause();
+                              } else {
+                                _videoController.play();
+                              }
+                            });
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.35),
+                              shape: BoxShape.circle,
+                            ),
+                            padding: EdgeInsets.all(16),
+                            child: Icon(
+                              _videoController.value.isPlaying ? Icons.pause : Icons.play_arrow,
+                              color: Colors.white,
+                              size: 40,
+                            ),
+                          ),
                         ),
                       ),
-                      SizedBox(height: 2),
-                      Row(
-                        children: [
-                          Icon(Icons.star, color: Colors.amber, size: 14),
-                          SizedBox(width: 2),
-                          Text(
-                            widget.rating.toStringAsFixed(1),
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                          SizedBox(width: 3),
-                          Text(
-                            'Valoración',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.white.withOpacity(0.7),
-                            ),
-                          ),
-                          SizedBox(width: 8),
-                          Icon(Icons.school, color: AppColors.blueColor, size: 13),
-                          SizedBox(width: 2),
-                          Text(
-                            '$cursosCompletados/$totalCursosTutor cursos de tutor',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: AppColors.blueColor,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
+                    ),
+                  // Fondo azul para la info
+                  Positioned(
+                    top: videoHeight,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      color: AppColors.primaryGreen,
+                      height: avatarRadius + 40,
+                    ),
+                  ),
+                  // Avatar superpuesto
+                  Positioned(
+                    top: videoHeight - avatarRadius,
+                    left: 32,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 3),
                       ),
+                      child: CircleAvatar(
+                        radius: avatarRadius,
+                        backgroundColor: Colors.white,
+                        backgroundImage: NetworkImage(widget.tutorImage),
+                      ),
+                    ),
+                  ),
+                  // Info a la derecha del avatar
+                  Positioned(
+                    top: videoHeight + 2,
+                    left: 32 + avatarRadius + 68,
+                    right: 24,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.tutorName,
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Row(
+                          children: [
+                            Icon(Icons.star, color: Colors.amber, size: 14),
+                            SizedBox(width: 2),
+                            Text(
+                              widget.rating.toStringAsFixed(1),
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                            SizedBox(width: 3),
+                            Text(
+                              'Valoración',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.white.withOpacity(0.7),
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Icon(Icons.school, color: AppColors.blueColor, size: 13),
+                            SizedBox(width: 2),
+                            Text(
+                              '$cursosCompletados/$totalCursosTutor cursos de tutor',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: AppColors.blueColor,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Botón de regreso
+                  Positioned(
+                    top: 32,
+                    left: 12,
+                    child: SafeArea(
+                      child: IconButton(
+                        icon: Container(
+                          padding: EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.4),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.arrow_back, color: Colors.white),
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // CONTENIDO SCROLLABLE
+            Expanded(
+              child: ScrollConfiguration(
+                behavior: NoGlowScrollBehavior(),
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  physics: ClampingScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      SizedBox(height: 8),
+                      // Materias primero
+                      Align(
+                        alignment: Alignment.center,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Materias',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            SizedBox(height: 10),
+                            _buildSubjectsSection(),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      // Idiomas después
+                      Align(
+                        alignment: Alignment.center,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Idiomas',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            SizedBox(height: 6),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 4,
+                              children: widget.languages.map((lang) => Chip(
+                                label: Text(lang, style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold, fontSize: 13)),
+                                backgroundColor: Colors.white,
+                                avatar: Icon(Icons.language, color: AppColors.primaryGreen, size: 16),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              )).toList(),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      // Descripción
+                      Align(
+                        alignment: Alignment.center,
+                        child: Card(
+                          color: Colors.white.withOpacity(0.12),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                          child: Padding(
+                            padding: const EdgeInsets.all(18.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Acerca del tutor',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  widget.description,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.white.withOpacity(0.95),
+                                    height: 1.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 20),
                     ],
                   ),
-                ),
-                // Botón de regreso
-                Positioned(
-                  top: 32,
-                  left: 12,
-                  child: SafeArea(
-                    child: IconButton(
-                      icon: Container(
-                        padding: EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.4),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(Icons.arrow_back, color: Colors.white),
-                      ),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            // SOLO ESTO ES SCROLLABLE
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // Espacio justo para que no tape el header
-                    SizedBox(height: avatarRadius / 2 + 40),
-                    // Idiomas
-                    Align(
-                      alignment: Alignment.center,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Idiomas',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          Wrap(
-                            spacing: 10,
-                            runSpacing: 8,
-                            children: widget.languages.map((lang) => Chip(
-                              label: Text(lang, style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold)),
-                              backgroundColor: Colors.white,
-                              avatar: Icon(Icons.language, color: AppColors.primaryGreen, size: 18),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            )).toList(),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 18),
-                    // Materias
-                    Align(
-                      alignment: Alignment.center,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Materias',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          Wrap(
-                            spacing: 10,
-                            runSpacing: 8,
-                            children: widget.subjects.map((subject) => Chip(
-                              label: Text(subject, style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.w600)),
-                              backgroundColor: Colors.white.withOpacity(0.9),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            )).toList(),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 18),
-                    // Descripción
-                    Align(
-                      alignment: Alignment.center,
-                      child: Card(
-                        color: Colors.white.withOpacity(0.12),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                        child: Padding(
-                          padding: const EdgeInsets.all(18.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Acerca del tutor',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                widget.description,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.white.withOpacity(0.95),
-                                  height: 1.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 160),
-                  ],
                 ),
               ),
             ),
@@ -303,39 +340,65 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     );
   }
 
+  Widget _buildSubjectsSection() {
+    final subjectsToShow = _areAllSubjectsShown
+        ? widget.subjects
+        : widget.subjects.take(_initialSubjectCount).toList();
+
+    return Wrap(
+      spacing: 6,
+      runSpacing: 2,
+      alignment: WrapAlignment.center,
+      children: [
+        ...subjectsToShow.map((subject) => Chip(
+              label: Text(subject, style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.w600, fontSize: 12)),
+              backgroundColor: Colors.white.withOpacity(0.9),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            )),
+        if (widget.subjects.length > _initialSubjectCount)
+          ActionChip(
+            onPressed: () {
+              setState(() {
+                _areAllSubjectsShown = !_areAllSubjectsShown;
+              });
+            },
+            label: Text(
+              _areAllSubjectsShown ? 'Ver menos' : '+${widget.subjects.length - _initialSubjectCount} más',
+              style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold, fontSize: 12)
+            ),
+            backgroundColor: Colors.white.withOpacity(0.9),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          )
+      ],
+    );
+  }
+
   // Extraigo la parte inferior a una función para mantener el código limpio
   Widget bottomNavigationBar(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.primaryGreen,
+        color: AppColors.primaryGreen.withOpacity(0.8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 20,
-            offset: Offset(0, -8),
-            spreadRadius: 2,
+            color: Colors.black.withOpacity(0.4),
+            blurRadius: 30,
+            offset: Offset(0, -10),
+            spreadRadius: -5,
           ),
         ],
-        border: Border(
-          top: BorderSide(
-            color: Colors.white.withOpacity(0.15),
-            width: 1,
-          ),
-        ),
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            AppColors.primaryGreen.withOpacity(0.95),
-            AppColors.primaryGreen,
-          ],
-        ),
       ),
       child: ClipRRect(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
-            padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.of(context).padding.bottom),
+            padding: EdgeInsets.fromLTRB(16, 20, 16, 20 + MediaQuery.of(context).padding.bottom),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -362,7 +425,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                                 '/ tutoría',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.white.withOpacity(0.7),
+                                  color: Colors.white.withOpacity(0.8),
                                 ),
                               ),
                             ],
@@ -372,13 +435,13 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                             children: [
                               Icon(Icons.timer_outlined, 
                                   size: 16, 
-                                  color: Colors.white.withOpacity(0.7)),
+                                  color: Colors.white.withOpacity(0.8)),
                               SizedBox(width: 4),
                               Text(
                                 '20 min',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.white.withOpacity(0.7),
+                                  color: Colors.white.withOpacity(0.8),
                                 ),
                               ),
                               SizedBox(width: 12),
@@ -390,8 +453,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                                 'Tutor verificado',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.white.withOpacity(0.7),
-                                  decoration: TextDecoration.underline,
+                                  color: Colors.white.withOpacity(0.8),
                                 ),
                               ),
                             ],
@@ -401,7 +463,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                     ),
                   ],
                 ),
-                SizedBox(height: 16),
+                SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
@@ -510,5 +572,12 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
         ),
       ),
     );
+  }
+}
+
+class NoGlowScrollBehavior extends ScrollBehavior {
+  @override
+  Widget buildViewportChrome(BuildContext context, Widget child, AxisDirection axisDirection) {
+    return child;
   }
 } 
