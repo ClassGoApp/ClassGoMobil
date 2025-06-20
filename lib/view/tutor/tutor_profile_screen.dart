@@ -14,6 +14,9 @@ class TutorProfileScreen extends StatefulWidget {
   final double rating;
   final List<String> subjects;
 
+  // Idiomas por defecto
+  final List<String> languages;
+
   const TutorProfileScreen({
     Key? key,
     required this.tutorId,
@@ -23,6 +26,7 @@ class TutorProfileScreen extends StatefulWidget {
     required this.description,
     required this.rating,
     required this.subjects,
+    this.languages = const ['Español', 'Inglés'],
   }) : super(key: key);
 
   @override
@@ -56,9 +60,13 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final double avatarRadius = 54;
+    final double videoHeight = 210;
+    // Valor de ejemplo para cursos completados
+    final int cursosCompletados = 4;
+    final int totalCursosTutor = 18;
     return NotificationListener<OverscrollNotification>(
       onNotification: (notification) {
-        // Si el usuario arrastra hacia abajo en el tope de la pantalla (overscroll)
         if (notification.dragDetails != null && notification.dragDetails!.delta.dy > 15) {
           Navigator.of(context).pop();
         }
@@ -66,416 +74,437 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
       },
       child: Scaffold(
         backgroundColor: AppColors.primaryGreen,
-        body: CustomScrollView(
-          slivers: [
-            // Video Header
-            SliverAppBar(
-              expandedHeight: 300,
-              pinned: true,
-              backgroundColor: AppColors.primaryGreen,
-              flexibleSpace: FlexibleSpaceBar(
-                background: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    _isVideoInitialized
-                        ? AspectRatio(
-                            aspectRatio: _videoController.value.aspectRatio,
-                            child: VideoPlayer(_videoController),
-                          )
-                        : Center(child: CircularProgressIndicator(color: Colors.white)),
-                    // Overlay gradient
-                    Positioned(
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      height: 100,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.bottomCenter,
-                            end: Alignment.topCenter,
-                            colors: [
-                              AppColors.primaryGreen,
-                              Colors.transparent,
-                            ],
-                          ),
+        body: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // HEADER: video + fondo azul + avatar superpuesto + info a la derecha
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                // Video (sin overlays ni fondos encima)
+                Container(
+                  width: double.infinity,
+                  height: videoHeight,
+                  child: _isVideoInitialized
+                      ? AspectRatio(
+                          aspectRatio: _videoController.value.aspectRatio,
+                          child: VideoPlayer(_videoController),
+                        )
+                      : Center(child: CircularProgressIndicator(color: Colors.white)),
+                ),
+                // Fondo azul para la info (empieza justo donde termina el video)
+                Positioned(
+                  top: videoHeight,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    color: AppColors.primaryGreen,
+                    height: avatarRadius + 32,
+                  ),
+                ),
+                // Avatar superpuesto (mitad sobre video, mitad sobre azul)
+                Positioned(
+                  top: videoHeight - avatarRadius,
+                  left: 32,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 3),
+                    ),
+                    child: CircleAvatar(
+                      radius: avatarRadius,
+                      backgroundColor: Colors.white,
+                      backgroundImage: NetworkImage(widget.tutorImage),
+                    ),
+                  ),
+                ),
+                // Info a la derecha del avatar, alineada verticalmente al centro de la mitad inferior del avatar
+                Positioned(
+                  top: videoHeight + 2,
+                  left: 32 + avatarRadius + 68,
+                  right: 24,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.tutorName,
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              leading: IconButton(
-                icon: Container(
-                  padding: EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.4),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.arrow_back, color: Colors.white),
-                ),
-                onPressed: () => Navigator.pop(context),
-              ),
-              actions: [
-                IconButton(
-                  icon: Container(
-                    padding: EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.4),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      _videoController.value.isPlaying ? Icons.pause : Icons.play_arrow,
-                      color: Colors.white
-                    ),
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _videoController.value.isPlaying
-                          ? _videoController.pause()
-                          : _videoController.play();
-                    });
-                  },
-                ),
-              ],
-            ),
-
-            // Contenido del perfil
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.only(bottom: 140), // Espacio para el contenido fijo inferior
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Información del tutor
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Row(
+                      SizedBox(height: 2),
+                      Row(
                         children: [
-                          Hero(
-                            tag: 'tutor-image-${widget.tutorId}',
-                            child: CircleAvatar(
-                              radius: 30,
-                              backgroundImage: NetworkImage(widget.tutorImage),
+                          Icon(Icons.star, color: Colors.amber, size: 14),
+                          SizedBox(width: 2),
+                          Text(
+                            widget.rating.toStringAsFixed(1),
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
                             ),
                           ),
-                          SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  widget.tutorName,
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                Row(
-                                  children: [
-                                    Icon(Icons.star, color: Colors.amber, size: 20),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      widget.rating.toString(),
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                          SizedBox(width: 3),
+                          Text(
+                            'Valoración',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.white.withOpacity(0.7),
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Icon(Icons.school, color: AppColors.blueColor, size: 13),
+                          SizedBox(width: 2),
+                          Text(
+                            '$cursosCompletados/$totalCursosTutor cursos de tutor',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: AppColors.blueColor,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
                       ),
+                    ],
+                  ),
+                ),
+                // Botón de regreso
+                Positioned(
+                  top: 32,
+                  left: 12,
+                  child: SafeArea(
+                    child: IconButton(
+                      icon: Container(
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.4),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.arrow_back, color: Colors.white),
+                      ),
+                      onPressed: () => Navigator.pop(context),
                     ),
-
-                    Divider(color: Colors.white.withOpacity(0.1)),
-
-                    // Materias que enseña
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
+                  ),
+                ),
+              ],
+            ),
+            // SOLO ESTO ES SCROLLABLE
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Espacio justo para que no tape el header
+                    SizedBox(height: avatarRadius / 2 + 40),
+                    // Idiomas
+                    Align(
+                      alignment: Alignment.center,
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Text(
-                            'Materias',
+                            'Idiomas',
                             style: TextStyle(
-                              fontSize: 20,
+                              fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),
                           ),
                           SizedBox(height: 8),
                           Wrap(
-                            spacing: 8,
+                            spacing: 10,
                             runSpacing: 8,
-                            children: widget.subjects.map((subject) {
-                              return Container(
-                                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: Colors.white.withOpacity(0.2),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Text(
-                                  subject,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              );
-                            }).toList(),
+                            children: widget.languages.map((lang) => Chip(
+                              label: Text(lang, style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold)),
+                              backgroundColor: Colors.white,
+                              avatar: Icon(Icons.language, color: AppColors.primaryGreen, size: 18),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            )).toList(),
                           ),
                         ],
                       ),
                     ),
-
-                    Divider(color: Colors.white.withOpacity(0.1)),
-
-                    // Descripción
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
+                    SizedBox(height: 18),
+                    // Materias
+                    Align(
+                      alignment: Alignment.center,
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Text(
-                            'Acerca del tutor',
+                            'Materias',
                             style: TextStyle(
-                              fontSize: 20,
+                              fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),
                           ),
                           SizedBox(height: 8),
-                          Text(
-                            widget.description,
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.white.withOpacity(0.9),
-                              height: 1.5,
-                            ),
+                          Wrap(
+                            spacing: 10,
+                            runSpacing: 8,
+                            children: widget.subjects.map((subject) => Chip(
+                              label: Text(subject, style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.w600)),
+                              backgroundColor: Colors.white.withOpacity(0.9),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            )).toList(),
                           ),
                         ],
                       ),
                     ),
+                    SizedBox(height: 18),
+                    // Descripción
+                    Align(
+                      alignment: Alignment.center,
+                      child: Card(
+                        color: Colors.white.withOpacity(0.12),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                        child: Padding(
+                          padding: const EdgeInsets.all(18.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Acerca del tutor',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                widget.description,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.white.withOpacity(0.95),
+                                  height: 1.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 160),
                   ],
                 ),
               ),
             ),
           ],
         ),
-        bottomNavigationBar: Container(
-          decoration: BoxDecoration(
-            color: AppColors.primaryGreen,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.3),
-                blurRadius: 20,
-                offset: Offset(0, -8),
-                spreadRadius: 2,
-              ),
-            ],
-            border: Border(
-              top: BorderSide(
-                color: Colors.white.withOpacity(0.15),
-                width: 1,
-              ),
-            ),
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                AppColors.primaryGreen.withOpacity(0.95),
-                AppColors.primaryGreen,
-              ],
-            ),
+        // Botones y precio (sin cambios)
+        bottomNavigationBar: bottomNavigationBar(context),
+      ),
+    );
+  }
+
+  // Extraigo la parte inferior a una función para mantener el código limpio
+  Widget bottomNavigationBar(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.primaryGreen,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 20,
+            offset: Offset(0, -8),
+            spreadRadius: 2,
           ),
-          child: ClipRRect(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: Container(
-                padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.of(context).padding.bottom),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
+        ],
+        border: Border(
+          top: BorderSide(
+            color: Colors.white.withOpacity(0.15),
+            width: 1,
+          ),
+        ),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            AppColors.primaryGreen.withOpacity(0.95),
+            AppColors.primaryGreen,
+          ],
+        ),
+      ),
+      child: ClipRRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.of(context).padding.bottom),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    '15 Bs',
-                                    style: TextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    '/ tutoría',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.white.withOpacity(0.7),
-                                    ),
-                                  ),
-                                ],
+                              Text(
+                                '15 Bs',
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
                               ),
-                              SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  Icon(Icons.timer_outlined, 
-                                      size: 16, 
-                                      color: Colors.white.withOpacity(0.7)),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    '20 min',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.white.withOpacity(0.7),
-                                    ),
-                                  ),
-                                  SizedBox(width: 12),
-                                  Icon(Icons.verified, 
-                                      size: 16, 
-                                      color: AppColors.blueColor),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    'Tutor verificado',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.white.withOpacity(0.7),
-                                      decoration: TextDecoration.underline,
-                                    ),
-                                  ),
-                                ],
+                              SizedBox(width: 4),
+                              Text(
+                                '/ tutoría',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.white.withOpacity(0.7),
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(Icons.timer_outlined, 
+                                  size: 16, 
+                                  color: Colors.white.withOpacity(0.7)),
+                              SizedBox(width: 4),
+                              Text(
+                                '20 min',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.white.withOpacity(0.7),
+                                ),
+                              ),
+                              SizedBox(width: 12),
+                              Icon(Icons.verified, 
+                                  size: 16, 
+                                  color: AppColors.blueColor),
+                              SizedBox(width: 4),
+                              Text(
+                                'Tutor verificado',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.white.withOpacity(0.7),
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.orangeprimary.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: ElevatedButton(
+                          onPressed: () {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (context) => InstantTutoringScreen(
+                                tutorName: widget.tutorName,
+                                tutorImage: widget.tutorImage,
+                                subjects: widget.subjects,
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.orangeprimary,
+                            padding: EdgeInsets.symmetric(vertical: 12),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.play_circle_outline, 
+                                  color: Colors.white, 
+                                  size: 20),
+                              SizedBox(width: 8),
+                              Text(
+                                'Tutoría ahora',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
                               ),
                             ],
                           ),
                         ),
-                      ],
+                      ),
                     ),
-                    SizedBox(height: 16),
-                    Row(
-                      children: [
-                        // Botón de tutoría inmediata
-                        Expanded(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.orangeprimary.withOpacity(0.3),
-                                  blurRadius: 8,
-                                  offset: Offset(0, 4),
-                                ),
-                              ],
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 8,
+                              offset: Offset(0, 4),
                             ),
-                            child: ElevatedButton(
-                              onPressed: () {
-                                showModalBottomSheet(
-                                  context: context,
-                                  isScrollControlled: true,
-                                  backgroundColor: Colors.transparent,
-                                  builder: (context) => InstantTutoringScreen(
-                                    tutorName: widget.tutorName,
-                                    tutorImage: widget.tutorImage,
-                                    subjects: widget.subjects,
-                                  ),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.orangeprimary,
-                                padding: EdgeInsets.symmetric(vertical: 12),
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.play_circle_outline, 
-                                      color: Colors.white, 
-                                      size: 20),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'Tutoría ahora',
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                          ],
+                        ),
+                        child: ElevatedButton(
+                          onPressed: () {
+                            // Aquí irá la lógica para reservar
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(vertical: 12),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                        ),
-                        SizedBox(width: 12),
-                        // Botón de reserva
-                        Expanded(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
-                                  blurRadius: 8,
-                                  offset: Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: ElevatedButton(
-                              onPressed: () {
-                                // Aquí irá la lógica para reservar
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                padding: EdgeInsets.symmetric(vertical: 12),
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.calendar_today_outlined, 
+                                  color: AppColors.primaryGreen, 
+                                  size: 18),
+                              SizedBox(width: 8),
+                              Text(
+                                'Reservar',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primaryGreen,
                                 ),
                               ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.calendar_today_outlined, 
-                                      color: AppColors.primaryGreen, 
-                                      size: 18),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'Reservar',
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.primaryGreen,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                            ],
                           ),
                         ),
-                      ],
+                      ),
                     ),
                   ],
                 ),
-              ),
+              ],
             ),
           ),
         ),
