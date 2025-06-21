@@ -19,7 +19,6 @@ import 'package:flutter_projects/view/components/main_header.dart';
 import 'dart:async';
 import 'package:flutter_projects/view/tutor/tutor_profile_screen.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import '../home/home_screen.dart';
 
 class SearchTutorsScreen extends StatefulWidget {
   final String? initialKeyword;
@@ -382,7 +381,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final token = authProvider.token;
 
-    if (token == null && index != 0) { // 0 is Home, so index != 0 means other pages
+    if (token == null && index != 0) {
       showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -885,7 +884,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     final token = authProvider.token;
 
     Widget buildProfileIcon() {
-      final isSelected = selectedIndex == 3; // 3 is Profile
+      final isSelected = selectedIndex == 2;
       return Container(
         padding: EdgeInsets.all(2.0),
         decoration: BoxDecoration(
@@ -935,7 +934,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                     _scaffoldKey.currentState?.openDrawer();
                   },
                   onProfilePressed: () {
-                    _onItemTapped(3); // Actualizado a 3 para el perfil
+                    _onItemTapped(2);
                   },
                 ),
                 Expanded(
@@ -948,8 +947,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                       });
                     },
                     children: [
-                      HomeScreen(), // 0. Home
-                      Column(      // 1. Búsqueda
+                      Column(
                         children: [
                           _buildFiltrosYBuscador(),
                           Expanded(
@@ -957,12 +955,12 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                           ),
                         ],
                       ),
-                      BookingScreen( // 2. Bookings
+                      BookingScreen(
                         onBackPressed: () {
-                          _pageController.jumpToPage(1); // Volver a búsqueda
+                          _pageController.jumpToPage(0);
                         },
                       ),
-                      ProfileScreen(), // 3. Perfil
+                      ProfileScreen(),
                     ],
                   ),
                 ),
@@ -997,23 +995,33 @@ class _CustomBubbleNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final navItems = [
-      Icons.home_outlined,       // 0. Home
-      Icons.search_outlined,     // 1. Búsqueda
-      Icons.calendar_today_outlined, // 2. Bookings
-      Icons.person_outline,      // 3. Perfil
+      Icons.search_outlined,
+      Icons.calendar_today_outlined,
+      Icons.person_outline,
     ];
 
     return Container(
       height: 60,
       margin: EdgeInsets.symmetric(horizontal: 60, vertical: 24), // Barra mucho más estrecha
       decoration: BoxDecoration(
-        color: Color(0xFF00A7C7), // Mismo color que los filtros
+        gradient: LinearGradient(
+          colors: [
+            AppColors.primaryGreen,
+            AppColors.navbar,
+          ],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
         borderRadius: BorderRadius.circular(30),
+        border: Border.all(
+          color: AppColors.navbar.withOpacity(0.5),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Color(0xFF00A7C7).withOpacity(0.4), // Sombra a juego con el nuevo color
-            blurRadius: 15,
-            offset: Offset(0, 8),
+            color: AppColors.navbar.withOpacity(0.5), // Sombra a juego con el nuevo color
+            blurRadius: 20,
+            offset: Offset(0, 10),
           ),
         ],
       ),
@@ -1031,28 +1039,36 @@ class _CustomBubbleNavBar extends StatelessWidget {
                 duration: const Duration(milliseconds: 350),
                 curve: Curves.elasticOut,
                 left: indicatorLeft,
+                top: (60 - circleDiameter) / 2,
                 child: Container(
                   width: circleDiameter,
                   height: circleDiameter,
                   decoration: BoxDecoration(
-                    color: AppColors.darkBlue, // Círculo de color oscuro de la paleta
+                    color: AppColors.orangeprimary,
                     shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.orangeprimary.withOpacity(0.6),
+                        blurRadius: 10,
+                        spreadRadius: 1,
+                      )
+                    ],
                   ),
                 ),
               ),
               Row(
                 children: List.generate(navItems.length, (index) {
-                  final isSelected = currentIndex == index;
+                  final bool isSelected = currentIndex == index;
                   return GestureDetector(
                     onTap: () => onTap(index),
                     behavior: HitTestBehavior.opaque,
-                    child: SizedBox(
+                    child: Container(
                       width: itemWidth,
                       height: 60,
                       child: Icon(
                         navItems[index],
-                        color: Colors.white, // Iconos siempre blancos para mejor contraste
-                        size: 26,
+                        color: isSelected ? Colors.white : AppColors.whiteColor.withOpacity(0.7),
+                        size: 24,
                       ),
                     ),
                   );
