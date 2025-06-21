@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:ui';
@@ -39,6 +40,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _areAllSubjectsShown = false;
   static const int _initialSubjectCount = 6;
+  static final _cacheManager = DefaultCacheManager();
 
   @override
   void initState() {
@@ -46,13 +48,31 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     _initializeVideo();
   }
 
-  void _initializeVideo() {
-    _videoController = VideoPlayerController.network(widget.tutorVideo)
-      ..initialize().then((_) {
+  void _initializeVideo() async {
+    if (widget.tutorVideo.isEmpty) return;
+
+    try {
+      final fileInfo = await _cacheManager.getFileFromCache(widget.tutorVideo);
+
+      if (fileInfo != null) {
+        // Video encontrado en el caché, usar el archivo local
+        _videoController = VideoPlayerController.file(fileInfo.file);
+      } else {
+        // Video no está en caché, descargarlo y guardarlo
+        final downloadedFile = await _cacheManager.downloadFile(widget.tutorVideo);
+        _videoController = VideoPlayerController.file(downloadedFile.file);
+      }
+
+      await _videoController.initialize();
+      if (mounted) {
         setState(() {
           _isVideoInitialized = true;
         });
-      });
+      }
+    } catch (e) {
+      // Manejar el error, por ejemplo si la URL del video es inválida
+      print('Error al inicializar el video: $e');
+    }
   }
 
   @override
@@ -60,6 +80,49 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     _videoController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Widget _buildStyledChip(String label) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFF1E88E5).withOpacity(0.85),
+            Color(0xFF0D47A1).withOpacity(0.9),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+        borderRadius: BorderRadius.circular(25.0),
+        border: Border.all(
+          color: Colors.lightBlueAccent.withOpacity(0.7),
+          width: 0.8,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.lightBlueAccent.withOpacity(0.4),
+            spreadRadius: 2,
+            blurRadius: 6,
+            offset: Offset(0, 0),
+          ),
+        ],
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+            color: Colors.white,
+            fontSize: 11.5,
+            fontWeight: FontWeight.w500,
+            shadows: [
+              Shadow(
+                blurRadius: 3.0,
+                color: Colors.black.withOpacity(0.2),
+                offset: Offset(1, 1),
+              ),
+            ]),
+      ),
+    );
   }
 
   @override
@@ -89,16 +152,71 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  // Video
+                  // Video con placeholder de imagen
                   Container(
                     width: double.infinity,
                     height: videoHeight,
-                    child: _isVideoInitialized
-                        ? AspectRatio(
-                            aspectRatio: _videoController.value.aspectRatio,
-                            child: VideoPlayer(_videoController),
-                          )
-                        : Center(child: CircularProgressIndicator(color: Colors.white)),
+                    color: AppColors.primaryGreen,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // El video se mostrará aquí cuando esté listo
+                        if (_isVideoInitialized)
+                          // Lógica condicional para el tipo de video
+                          _videoController.value.aspectRatio > 1.1
+                              ? // Video Horizontal: Rellena la pantalla
+                                SizedBox.expand(
+                                  child: FittedBox(
+                                    fit: BoxFit.cover,
+                                    child: SizedBox(
+                                      width: _videoController.value.size.width,
+                                      height: _videoController.value.size.height,
+                                      child: VideoPlayer(_videoController),
+                                    ),
+                                  ),
+                                )
+                              : // Video Vertical: Fondo desenfocado
+                                Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    // Fondo con imagen del tutor, expandida y desenfocada
+                                    SizedBox.expand(
+                                      child: Image.network(
+                                        widget.tutorImage,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                    ClipRRect(
+                                      child: BackdropFilter(
+                                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                        child: Container(
+                                          color: Colors.black.withOpacity(0.2),
+                                        ),
+                                      ),
+                                    ),
+                                    // Video contenido encima del fondo
+                                    SizedBox.expand(
+                                      child: FittedBox(
+                                        fit: BoxFit.contain,
+                                        child: SizedBox(
+                                          width: _videoController.value.size.width,
+                                          height: _videoController.value.size.height,
+                                          child: VideoPlayer(_videoController),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                        // Animación de carga personalizada mientras el video no está listo
+                        if (!_isVideoInitialized)
+                          Center(
+                            child: Image.asset(
+                              'assets/images/ave_animada.gif',
+                              width: 80, // ajusta el tamaño como prefieras
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                   // Botón de play sobre el video
                   if (_isVideoInitialized)
@@ -143,15 +261,18 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                   Positioned(
                     top: videoHeight - avatarRadius,
                     left: 32,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 3),
-                      ),
-                      child: CircleAvatar(
-                        radius: avatarRadius,
-                        backgroundColor: Colors.white,
-                        backgroundImage: NetworkImage(widget.tutorImage),
+                    child: Hero(
+                      tag: 'tutor-image-${widget.tutorId}',
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 3),
+                        ),
+                        child: CircleAvatar(
+                          radius: avatarRadius,
+                          backgroundColor: Colors.white,
+                          backgroundImage: NetworkImage(widget.tutorImage),
+                        ),
                       ),
                     ),
                   ),
@@ -244,89 +365,17 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                       // Materias primero
                       Align(
                         alignment: Alignment.center,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Materias',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            SizedBox(height: 10),
-                            _buildSubjectsSection(),
-                          ],
-                        ),
+                        child: _buildMaterias(),
                       ),
-                      SizedBox(height: 10),
+                      SizedBox(height: 12),
                       // Idiomas después
                       Align(
                         alignment: Alignment.center,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Idiomas',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            SizedBox(height: 6),
-                            Wrap(
-                              spacing: 6,
-                              runSpacing: 4,
-                              children: widget.languages.map((lang) => Chip(
-                                label: Text(lang, style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold, fontSize: 13)),
-                                backgroundColor: Colors.white,
-                                avatar: Icon(Icons.language, color: AppColors.primaryGreen, size: 16),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              )).toList(),
-                            ),
-                          ],
-                        ),
+                        child: _buildIdiomas(),
                       ),
-                      SizedBox(height: 10),
-                      // Descripción
-                      Align(
-                        alignment: Alignment.center,
-                        child: Card(
-                          color: Colors.white.withOpacity(0.12),
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                          child: Padding(
-                            padding: const EdgeInsets.all(18.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Acerca del tutor',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                SizedBox(height: 8),
-                                Text(
-                                  widget.description,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.white.withOpacity(0.95),
-                                    height: 1.5,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 20),
+                      SizedBox(height: 24),
+                      _buildDescription(widget.description),
+                      SizedBox(height: 100), // Espacio para el bottom bar
                     ],
                   ),
                 ),
@@ -335,52 +384,123 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
           ],
         ),
         // Botones y precio (sin cambios)
-        bottomNavigationBar: bottomNavigationBar(context),
+        bottomNavigationBar: _buildBottomBar(context, widget.tutorName, widget.tutorImage),
       ),
     );
   }
 
-  Widget _buildSubjectsSection() {
-    final subjectsToShow = _areAllSubjectsShown
+  Widget _buildMaterias() {
+    final displayedSubjects = _areAllSubjectsShown
         ? widget.subjects
         : widget.subjects.take(_initialSubjectCount).toList();
 
-    return Wrap(
-      spacing: 6,
-      runSpacing: 2,
-      alignment: WrapAlignment.center,
+    return Column(
       children: [
-        ...subjectsToShow.map((subject) => Chip(
-              label: Text(subject, style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.w600, fontSize: 12)),
-              backgroundColor: Colors.white.withOpacity(0.9),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            )),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Text(
+            'Materias que imparte',
+            style: TextStyle(
+                fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+        ),
+        SizedBox(height: 8),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Wrap(
+            spacing: 10.0,
+            runSpacing: 10.0,
+            alignment: WrapAlignment.center,
+            children: displayedSubjects.map((subject) {
+              return _buildStyledChip(subject);
+            }).toList(),
+          ),
+        ),
         if (widget.subjects.length > _initialSubjectCount)
-          ActionChip(
+          TextButton(
+            child: Text(
+              _areAllSubjectsShown ? 'Ver menos' : 'Ver más...',
+              style: TextStyle(color: Colors.white70),
+            ),
             onPressed: () {
               setState(() {
                 _areAllSubjectsShown = !_areAllSubjectsShown;
               });
             },
-            label: Text(
-              _areAllSubjectsShown ? 'Ver menos' : '+${widget.subjects.length - _initialSubjectCount} más',
-              style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold, fontSize: 12)
-            ),
-            backgroundColor: Colors.white.withOpacity(0.9),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          )
+          ),
       ],
     );
   }
 
+  Widget _buildIdiomas() {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Text(
+            'Idiomas',
+            style: TextStyle(
+                fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+        ),
+        SizedBox(height: 8),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Wrap(
+            spacing: 10.0,
+            runSpacing: 10.0,
+            alignment: WrapAlignment.center,
+            children: widget.languages.map((lang) {
+              return _buildStyledChip(lang);
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDescription(String description) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      child: Card(
+        color: Colors.white.withOpacity(0.12),
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        child: SizedBox(
+          width: double.infinity, // Asegura que ocupe todo el ancho
+          child: Padding(
+            padding: const EdgeInsets.all(18.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Acerca del Tutor',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  description, // Usar la descripción obtenida de la API
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white.withOpacity(0.85),
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   // Extraigo la parte inferior a una función para mantener el código limpio
-  Widget bottomNavigationBar(BuildContext context) {
+  Widget _buildBottomBar(BuildContext context, String tutorName, String tutorImage) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.primaryGreen.withOpacity(0.8),

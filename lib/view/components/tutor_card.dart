@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/helpers/slide_up_route.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
@@ -14,7 +15,9 @@ class TutorCard extends StatefulWidget {
   final String sessionDuration;
   final bool isFavoriteInitial;
   final ValueChanged<bool> onFavoritePressed;
-  final String description;
+  final String subjectsString; // Renombrado
+  final String description; // Nuevo campo para la descripción real
+  final String? tagline; // Nuevo campo para el tagline
   final bool isVerified;
   final String? tutorId;
   final String? tutorVideo;
@@ -31,7 +34,9 @@ class TutorCard extends StatefulWidget {
     required this.sessionDuration,
     this.isFavoriteInitial = false,
     required this.onFavoritePressed,
-    required this.description,
+    required this.subjectsString, // Renombrado
+    required this.description, // Nuevo
+    this.tagline,
     required this.isVerified,
     this.tutorId,
     this.tutorVideo,
@@ -75,33 +80,24 @@ class _TutorCardState extends State<TutorCard> {
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(10.0),
-                        child: Image.network(
-                          widget.imageUrl,
+                        child: CachedNetworkImage(
+                          imageUrl: widget.imageUrl,
                           width: 60,
                           height: 60,
                           fit: BoxFit.cover,
-                          filterQuality: FilterQuality.high,
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Container(
-                              width: 60,
-                              height: 60,
-                              color: AppColors.dividerColor,
-                              child: Center(
-                                child: CircularProgressIndicator(
-                                  value: loadingProgress.expectedTotalBytes != null
-                                      ? loadingProgress.cumulativeBytesLoaded / (loadingProgress.expectedTotalBytes ?? 1)
-                                      : null,
-                                  strokeWidth: 2,
-                                ),
-                              ),
-                            );
-                          },
-                          errorBuilder: (context, error, stackTrace) => Container(
+                          placeholder: (context, url) => Container(
                             width: 60,
                             height: 60,
                             color: AppColors.dividerColor,
-                            child: Icon(Icons.person, color: AppColors.greyColor, size: 32),
+                            child: const Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            width: 60,
+                            height: 60,
+                            color: AppColors.dividerColor,
+                            child: const Icon(Icons.person, color: AppColors.greyColor, size: 32),
                           ),
                         ),
                       ),
@@ -161,8 +157,14 @@ class _TutorCardState extends State<TutorCard> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Bs. 15',
-                        style: AppTextStyles.heading2.copyWith(color: AppColors.orangeprimary),
+                        widget.tagline ?? 'Tutor de ClassGo',
+                        style: AppTextStyles.body.copyWith(
+                          color: AppColors.lightGreyColor,
+                          fontSize: 13,
+                          fontStyle: FontStyle.italic,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
                     ],
@@ -176,7 +178,7 @@ class _TutorCardState extends State<TutorCard> {
                 Icon(Icons.book, color: AppColors.greyColor, size: 20),
                 const SizedBox(width: 5),
                 Expanded(
-                  child: _buildSubjectChipsHorizontal(widget.description),
+                  child: _buildSubjectChipsHorizontal(widget.subjectsString),
                 ),
               ],
             ),
@@ -185,22 +187,7 @@ class _TutorCardState extends State<TutorCard> {
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        SlideUpRoute(
-                          page: TutorProfileScreen(
-                            tutorId: widget.tutorId ?? '',
-                            tutorName: widget.name,
-                            tutorImage: widget.imageUrl,
-                            tutorVideo: widget.tutorVideo ?? '',
-                            description: widget.description,
-                            rating: widget.rating,
-                            subjects: widget.description.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList(),
-                          ),
-                        ),
-                      );
-                    },
+                    onPressed: widget.onRejectPressed, // Llamar al callback
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.darkBlue,
                       shape: RoundedRectangleBorder(
@@ -241,13 +228,13 @@ class _TutorCardState extends State<TutorCard> {
     );
   }
 
-  Widget _buildSubjectChipsHorizontal(String description) {
+  Widget _buildSubjectChipsHorizontal(String subjects) {
     // Separa las materias por coma y limpia espacios
-    final subjects = description.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+    final subjectList = subjects.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
-        children: subjects.map((subject) => Container(
+        children: subjectList.map((subject) => Container(
           margin: EdgeInsets.only(right: 6),
           padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2), // chips más pequeños
           decoration: BoxDecoration(

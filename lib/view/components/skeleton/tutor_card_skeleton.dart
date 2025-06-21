@@ -16,11 +16,11 @@ class TutorCardSkeleton extends StatelessWidget {
         width: isFullWidth ? MediaQuery.of(context).size.width : 360,
         margin: EdgeInsets.only(right: isFullWidth ? 0 : 16),
         decoration: BoxDecoration(
-          color: AppColors.whiteColor,
+          color: AppColors.darkGreyColor, // Cambiado de whiteColor a darkGreyColor
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.black.withOpacity(0.2),
               spreadRadius: 2,
               blurRadius: 5,
             ),
@@ -38,7 +38,7 @@ class TutorCardSkeleton extends StatelessWidget {
                       width: 60,
                       height: 60,
                       decoration: BoxDecoration(
-                        color: Colors.grey[300],
+                        color: AppColors.mediumGreyColor,
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
@@ -53,7 +53,7 @@ class TutorCardSkeleton extends StatelessWidget {
                             child: Container(
                               width: 100,
                               height: 15,
-                              color: Colors.grey[300],
+                              color: AppColors.mediumGreyColor,
                             ),
                           ),
                           SizedBox(width: 10),
@@ -62,7 +62,7 @@ class TutorCardSkeleton extends StatelessWidget {
                               width: 15,
                               height: 20,
                               decoration: BoxDecoration(
-                                color: Colors.grey[300],
+                                color: AppColors.mediumGreyColor,
                                 borderRadius: BorderRadius.circular(4),
                               ),
                             ),
@@ -73,7 +73,7 @@ class TutorCardSkeleton extends StatelessWidget {
                               width: 25,
                               height: 15,
                               decoration: BoxDecoration(
-                                color: Colors.grey[300],
+                                color: AppColors.mediumGreyColor,
                                 shape: BoxShape.rectangle,
                                 borderRadius: BorderRadius.circular(4),
                               ),
@@ -86,7 +86,7 @@ class TutorCardSkeleton extends StatelessWidget {
                         child: Container(
                           width: 100,
                           height: 15,
-                          color: Colors.grey[300],
+                          color: AppColors.mediumGreyColor,
                         ),
                       ),
                     ],
@@ -98,7 +98,7 @@ class TutorCardSkeleton extends StatelessWidget {
                 child: Container(
                   width: 300,
                   height: 12,
-                  color: Colors.grey[300],
+                  color: AppColors.mediumGreyColor,
                 ),
               ),
               SizedBox(height: 8),
@@ -106,7 +106,7 @@ class TutorCardSkeleton extends StatelessWidget {
                 child: Container(
                   width: 200,
                   height: 12,
-                  color: Colors.grey[300],
+                  color: AppColors.mediumGreyColor,
                 ),
               ),
               SizedBox(height: 12),
@@ -116,7 +116,7 @@ class TutorCardSkeleton extends StatelessWidget {
                     child: Container(
                       width: 16,
                       height: 16,
-                      color: Colors.grey[300],
+                      color: AppColors.mediumGreyColor,
                     ),
                   ),
                   SizedBox(width: 5),
@@ -124,7 +124,7 @@ class TutorCardSkeleton extends StatelessWidget {
                     child: Container(
                       width: 120,
                       height: 12,
-                      color: Colors.grey[300],
+                      color: AppColors.mediumGreyColor,
                     ),
                   ),
                 ],
@@ -180,7 +180,7 @@ class TutorCardSkeleton extends StatelessWidget {
                     child: Container(
                       width: 16,
                       height: 16,
-                      color: Colors.grey[300],
+                      color: AppColors.mediumGreyColor,
                     ),
                   ),
                   SizedBox(width: 8),
@@ -189,7 +189,7 @@ class TutorCardSkeleton extends StatelessWidget {
                       child: Container(
                         width: MediaQuery.of(context).size.width * 0.5,
                         height: 12,
-                        color: Colors.grey[300],
+                        color: AppColors.mediumGreyColor,
                       ),
                     ),
                   ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
 import 'package:flutter_projects/base_components/custom_dropdown.dart';
+import 'package:flutter_projects/helpers/slide_up_route.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/auth/login_screen.dart';
 import 'package:flutter_projects/view/bookings/bookings.dart';
@@ -17,6 +18,7 @@ import '../../provider/auth_provider.dart';
 import 'package:flutter_projects/view/components/main_header.dart';
 import 'dart:async';
 import 'package:flutter_projects/view/tutor/tutor_profile_screen.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
 class SearchTutorsScreen extends StatefulWidget {
   final String? initialKeyword;
@@ -33,6 +35,7 @@ class SearchTutorsScreen extends StatefulWidget {
 }
 
 class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
+  final FocusNode _searchFocusNode = FocusNode(); // 1. Crear el FocusNode
   List<Map<String, dynamic>> tutors = [];
   int currentPage = 1;
   int totalPages = 1;
@@ -86,6 +89,21 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   // Mapa para asociar id de tutor con su imagen de alta resolución
   Map<int, String> highResTutorImages = {};
 
+  void _onSearchChanged(String value) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      if (keyword != value) {
+        setState(() {
+          keyword = value;
+          currentPage = 1;
+          tutors.clear();
+          isInitialLoading = true;
+        });
+        fetchInitialTutors();
+      }
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -122,6 +140,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
 
   @override
   void dispose() {
+    _searchFocusNode.dispose(); // 4. Liberar el FocusNode
     _pageController.dispose();
     _searchController.dispose();
     _debounce?.cancel();
@@ -300,7 +319,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     await fetchInitialTutors(isRefresh: true);
   }
 
-  Future<void> loadMoreTutors() async {
+  void _loadMoreTutors() async {
     print('DEBUG - Intentando cargar más tutores. Página actual: $currentPage, Total páginas: $totalPages, Tutores actuales: ${tutors.length}');
     
     if (!isLoading && tutors.length < 100) {
@@ -452,7 +471,6 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   }
 
   void _scrollListener() {
-    // Lógica para ocultar filtros al hacer scroll
     final offset = _scrollController.offset;
     final maxScrollExtent = _scrollController.position.maxScrollExtent;
     
@@ -462,39 +480,51 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     
     // Calcular la velocidad del scroll para ajustar la animación
     final scrollDelta = (_lastScrollOffset - offset).abs();
-    final animationSpeed = (scrollDelta * 0.08).clamp(0.03, 0.15); // Velocidad ajustada
+    final animationSpeed = (scrollDelta * 0.1).clamp(0.05, 0.2); // Velocidad ajustada
     
     // Calcular las opacidades basadas en el scroll
     double newSearchOpacity = _searchOpacity;
     double newCounterOpacity = _counterOpacity;
     double newFiltersOpacity = _filtersOpacity;
     
-    if (isScrollingUp) {
+    // PRIORIDAD: Si estamos en la parte superior, mostrar completamente
+    if (offset <= 0) {
+      newSearchOpacity = 1.0;
+      newCounterOpacity = 1.0;
+      newFiltersOpacity = 1.0;
+    } else if (isScrollingUp) {
       // Al hacer scroll hacia arriba, mostrar secuencialmente con deslizamiento
       // Primero el buscador
       newSearchOpacity = (_searchOpacity + animationSpeed).clamp(0.0, 1.0);
       
       // Luego el contador (cuando el buscador esté casi visible)
-      if (_searchOpacity > 0.2) {
+      if (_searchOpacity > 0.3) {
         newCounterOpacity = (_counterOpacity + animationSpeed).clamp(0.0, 1.0);
       }
       
       // Finalmente los filtros (cuando el contador esté casi visible)
-      if (_counterOpacity > 0.2) {
+      if (_counterOpacity > 0.3) {
         newFiltersOpacity = (_filtersOpacity + animationSpeed).clamp(0.0, 1.0);
       }
       
     } else if (isScrollingDown && offset > 0) {
-      // Al hacer scroll hacia abajo, ocultar todos juntos gradualmente
-      final baseOpacity = (1 - (offset / 150)).clamp(0.0, 1.0);
-      newSearchOpacity = baseOpacity;
-      newCounterOpacity = baseOpacity;
-      newFiltersOpacity = baseOpacity;
-    } else if (offset <= 0) {
-      // En la parte superior, mostrar completamente
-      newSearchOpacity = 1.0;
-      newCounterOpacity = 1.0;
-      newFiltersOpacity = 1.0;
+      // Al hacer scroll hacia abajo, ocultar gradualmente
+      // Los elementos se ocultan en orden inverso: filtros -> contador -> buscador
+      
+      // Los filtros se ocultan primero
+      if (_filtersOpacity > 0.0) {
+        newFiltersOpacity = (_filtersOpacity - animationSpeed).clamp(0.0, 1.0);
+      }
+      
+      // Luego el contador (cuando los filtros estén casi ocultos)
+      if (_filtersOpacity < 0.3) {
+        newCounterOpacity = (_counterOpacity - animationSpeed).clamp(0.0, 1.0);
+      }
+      
+      // Finalmente el buscador (cuando el contador esté casi oculto)
+      if (_counterOpacity < 0.3) {
+        newSearchOpacity = (_searchOpacity - animationSpeed).clamp(0.0, 1.0);
+      }
     }
     
     // Solo actualizar si alguna opacidad cambió significativamente
@@ -518,11 +548,11 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     
     // Actualizar la posición del scroll anterior
     _lastScrollOffset = offset;
-    
-    // Lógica para cargar más tutores
-    if (offset >= maxScrollExtent * 0.8) {
-      print('DEBUG - Scroll alcanzó el 80% del final (en ListView.builder)');
-      loadMoreTutors();
+
+    // Lógica para cargar más tutores (paginación infinita)
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent * 0.8) {
+      _loadMoreTutors();
     }
   }
 
@@ -562,16 +592,10 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 1.0), // Reducido vertical de 2 a 1
                     child: TextField(
+                      focusNode: _searchFocusNode, // 2. Asignar el FocusNode
                       controller: _searchController,
                       cursorColor: AppColors.greyColor,
-                      onChanged: (value) {
-                        setState(() {
-                          keyword = value;
-                          currentPage = 1;
-                          tutors.clear();
-                        });
-                        fetchInitialTutors();
-                      },
+                      onChanged: _onSearchChanged,
                       decoration: InputDecoration(
                         hintText: 'Buscar Tutor...',
                         hintStyle: AppTextStyles.body.copyWith(color: AppColors.lightGreyColor),
@@ -689,14 +713,25 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
 
   Widget _buildTutoresList() {
     if (isInitialLoading) {
-      return ListView.builder(
-        itemCount: 5,
-        itemBuilder: (context, index) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2.0),
-            child: TutorCardSkeleton(isFullWidth: true),
-          );
-        },
+      return AnimationLimiter(
+        child: ListView.builder(
+          itemCount: 5,
+          itemBuilder: (context, index) {
+            return AnimationConfiguration.staggeredList(
+              position: index,
+              duration: const Duration(milliseconds: 600),
+              child: SlideAnimation(
+                verticalOffset: 50.0,
+                child: FadeInAnimation(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2.0),
+                    child: TutorCardSkeleton(isFullWidth: true),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
       );
     } else if (tutors.isEmpty) {
       return Center(
@@ -714,94 +749,108 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
       return RefreshIndicator(
         onRefresh: _onRefresh,
         color: AppColors.primaryGreen,
-        child: ListView.builder(
-          controller: _scrollController, // Usar el mismo scrollController
-          itemCount: tutors.length + (isLoading ? 1 : 0),
-          itemBuilder: (context, index) {
-            if (index == tutors.length) {
-              return const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(8.0),
-                  child: CircularProgressIndicator(),
+        child: AnimationLimiter(
+          child: ListView.builder(
+            controller: _scrollController, // Usar el mismo scrollController
+            itemCount: tutors.length + (isLoading ? 1 : 0),
+            itemBuilder: (context, index) {
+              if (index == tutors.length) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: CircularProgressIndicator(),
+                  ),
+                );
+              }
+              final tutor = tutors[index];
+              final profile = tutor['profile'] as Map<String, dynamic>;
+              final subjects = tutor['subjects'] as List;
+              final validSubjects = subjects
+                  .where((subject) => subject['status'] == 'active' && subject['deleted_at'] == null)
+                  .map((subject) => subject['name'] as String)
+                  .toList();
+              // Depuración de imágenes de tutores
+              final hdUrl = highResTutorImages[tutor['id']];
+              print('Tutor: ${profile['full_name']} - tutor["id"]: ${tutor['id']} - HD URL: $hdUrl');
+              
+              return AnimationConfiguration.staggeredList(
+                position: index,
+                duration: const Duration(milliseconds: 600),
+                child: SlideAnimation(
+                  verticalOffset: 50.0,
+                  child: FadeInAnimation(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2.0),
+                      child: GestureDetector(
+                        onTap: () {
+                          _searchFocusNode.unfocus(); // 3. Quitar el foco
+                          if (profile != null &&
+                              profile is Map<String, dynamic>) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    TutorDetailScreen(
+                                        profile: profile, tutor: tutor,),
+                              ),
+                            );
+                          }
+                        },
+                        child: TutorCard(
+                          name: profile['full_name'] ?? 'No name available',
+                          rating: tutor['avg_rating'] != null
+                              ? (tutor['avg_rating'] is String
+                                  ? double.tryParse(tutor['avg_rating']) ?? 0.0
+                                  : (tutor['avg_rating'] is num ? tutor['avg_rating'].toDouble() : 0.0))
+                              : 0.0,
+                          reviews: int.tryParse('${tutor['total_reviews'] ?? 0}') ?? 0,
+                          imageUrl: highResTutorImages[tutor['id']] ?? profile['image'] ?? AppImages.placeHolderImage,
+                          tutorId: tutor['id'].toString(),
+                          tutorVideo: profile['intro_video'] ?? '',
+                          tagline: profile['tagline'] as String?,
+                          onRejectPressed: () {
+                            _searchFocusNode.unfocus(); // Quitar el foco
+                            Navigator.push(
+                              context,
+                              SlideUpRoute(
+                                page: TutorProfileScreen(
+                                  tutorId: tutor['id'].toString(),
+                                  tutorName: profile['full_name'] ?? 'No name available',
+                                  tutorImage: highResTutorImages[tutor['id']] ?? profile['image'] ?? AppImages.placeHolderImage,
+                                  tutorVideo: profile['intro_video'] ?? '',
+                                  description: profile['description'] ?? 'No hay descripción disponible.',
+                                  rating: tutor['avg_rating'] != null
+                                      ? (tutor['avg_rating'] is String
+                                          ? double.tryParse(tutor['avg_rating']) ?? 0.0
+                                          : (tutor['avg_rating'] is num ? tutor['avg_rating'].toDouble() : 0.0))
+                                      : 0.0,
+                                  subjects: validSubjects,
+                                ),
+                              ),
+                            );
+                          },
+                          onAcceptPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Reservar con ${profile['full_name'] ?? 'Tutor'}')),
+                            );
+                          },
+                          tutorProfession: validSubjects.isNotEmpty ? validSubjects.first : 'Profesión no disponible',
+                          sessionDuration: 'Clases de 20 minutos',
+                          isFavoriteInitial: tutor['is_favorite'] ?? false,
+                          onFavoritePressed: (isFavorite) {
+                            print('Tutor ${profile['full_name'] ?? ''} es favorito: $isFavorite');
+                          },
+                          subjectsString: validSubjects.join(', '),
+                          description: profile['description'] ?? 'No hay descripción disponible.',
+                          isVerified: true,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               );
-            }
-            final tutor = tutors[index];
-            final profile = tutor['profile'] as Map<String, dynamic>;
-            final subjects = tutor['subjects'] as List;
-            final validSubjects = subjects
-                .where((subject) => subject['status'] == 'active' && subject['deleted_at'] == null)
-                .map((subject) => subject['name'] as String)
-                .toList();
-            // Depuración de imágenes de tutores
-            final hdUrl = highResTutorImages[tutor['id']];
-            print('Tutor: ${profile['full_name']} - tutor["id"]: ${tutor['id']} - HD URL: $hdUrl');
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 2.0),
-              child: GestureDetector(
-                onTap: () {
-                  if (profile != null &&
-                      profile is Map<String, dynamic>) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            TutorDetailScreen(
-                                profile: profile, tutor: tutor,),
-                      ),
-                    );
-                  }
-                },
-                child: TutorCard(
-                  name: profile['full_name'] ?? 'No name available',
-                  rating: tutor['avg_rating'] != null
-                      ? (tutor['avg_rating'] is String
-                          ? double.tryParse(tutor['avg_rating']) ?? 0.0
-                          : (tutor['avg_rating'] is num ? tutor['avg_rating'].toDouble() : 0.0))
-                      : 0.0,
-                  reviews: int.tryParse('${tutor['total_reviews'] ?? 0}') ?? 0,
-                  imageUrl: highResTutorImages[tutor['id']] ?? profile['image'] ?? AppImages.placeHolderImage,
-                  tutorId: tutor['id'].toString(),
-                  tutorVideo: profile['intro_video'] ?? '',
-                  onRejectPressed: () {
-                    if (profile != null && profile is Map<String, dynamic>) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => TutorProfileScreen(
-                            tutorId: tutor['id'].toString(),
-                            tutorName: profile['full_name'] ?? 'No name available',
-                            tutorImage: highResTutorImages[tutor['id']] ?? profile['image'] ?? AppImages.placeHolderImage,
-                            tutorVideo: profile['intro_video'] ?? '',
-                            description: validSubjects.join(', '),
-                            rating: tutor['avg_rating'] != null
-                                ? (tutor['avg_rating'] is String
-                                    ? double.tryParse(tutor['avg_rating']) ?? 0.0
-                                    : (tutor['avg_rating'] is num ? tutor['avg_rating'].toDouble() : 0.0))
-                                : 0.0,
-                            subjects: validSubjects,
-                          ),
-                        ),
-                      );
-                    }
-                  },
-                  onAcceptPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Reservar con ${profile['full_name'] ?? 'Tutor'}')),
-                    );
-                  },
-                  tutorProfession: validSubjects.isNotEmpty ? validSubjects.first : 'Profesión no disponible',
-                  sessionDuration: 'Clases de 20 minutos',
-                  isFavoriteInitial: tutor['is_favorite'] ?? false,
-                  onFavoritePressed: (isFavorite) {
-                    print('Tutor ${profile['full_name'] ?? ''} es favorito: $isFavorite');
-                  },
-                  description: validSubjects.join(', '),
-                  isVerified: true,
-                ),
-              ),
-            );
-          },
+            },
+          ),
         ),
       );
     }
