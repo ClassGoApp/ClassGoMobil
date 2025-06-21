@@ -557,155 +557,163 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   }
 
   Widget _buildFiltrosYBuscador() {
-    // Alturas reducidas para hacer más compacto
-    const double searchHeight = 45.0; // Reducido de 60 a 45
-    const double counterHeight = 25.0; // Reducido de 35 a 25
-    const double filtersHeight = 45.0; // Reducido de 60 a 45
-    const double verticalPadding = 5.0; // Reducido de 10 a 5
+    double searchHeight = 60.0;
+    double counterHeight = 35.0;
+    double filtersHeight = 55.0;
 
-    // Calcula la altura total visible según las opacidades
-    double totalHeight =
-        (searchHeight * _searchOpacity) +
-        (counterHeight * _counterOpacity) +
-        (filtersHeight * _filtersOpacity) +
-        verticalPadding;
-
-    return AnimatedContainer(
-      duration: Duration(milliseconds: 200),
-      curve: Curves.ease,
-      height: totalHeight > 10 ? totalHeight : 0,
-      child: Opacity(
-        opacity: (_searchOpacity + _counterOpacity + _filtersOpacity) / 3,
-        child: Container(
-          color: AppColors.primaryGreen,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Buscador
-              AnimatedContainer(
-                duration: Duration(milliseconds: 300),
-                height: searchHeight * _searchOpacity,
-                transform: Matrix4.translationValues(0, _searchOpacity < 1.0 ? -50 * (1 - _searchOpacity) : 0, 0),
-                child: AnimatedOpacity(
-                  duration: Duration(milliseconds: 200),
-                  opacity: _searchOpacity,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 1.0), // Reducido vertical de 2 a 1
-                    child: TextField(
-                      focusNode: _searchFocusNode, // 2. Asignar el FocusNode
-                      controller: _searchController,
-                      cursorColor: AppColors.greyColor,
-                      onChanged: _onSearchChanged,
-                      decoration: InputDecoration(
-                        hintText: 'Buscar Tutor...',
-                        hintStyle: AppTextStyles.body.copyWith(color: AppColors.lightGreyColor),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 12), // Reducido vertical de 15 a 12
-                        prefixIcon: Icon(Icons.search, color: AppColors.lightGreyColor),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15.0),
-                          borderSide: BorderSide.none,
-                        ),
-                        filled: true,
-                        fillColor: AppColors.navbar,
+    return ClipRRect(
+      borderRadius: const BorderRadius.only(
+        bottomLeft: Radius.circular(30.0),
+        bottomRight: Radius.circular(30.0),
+      ),
+      child: Container(
+        padding: const EdgeInsets.only(bottom: 10),
+        decoration: BoxDecoration(
+          color: AppColors.blurprimary.withOpacity(0.5),
+          borderRadius: const BorderRadius.only(
+            bottomLeft: Radius.circular(30.0),
+            bottomRight: Radius.circular(30.0),
+          ),
+          border: Border(
+            bottom: BorderSide(color: AppColors.navbar.withOpacity(0.3), width: 1.5),
+            left: BorderSide(color: AppColors.navbar.withOpacity(0.3), width: 1.5),
+            right: BorderSide(color: AppColors.navbar.withOpacity(0.3), width: 1.5),
+          ),
+        ),
+        child: Column(
+          key: _searchFilterContentKey,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Buscador
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              height: searchHeight * _searchOpacity,
+              transform: Matrix4.translationValues(0, _searchOpacity < 1.0 ? -50 * (1 - _searchOpacity) : 0, 0),
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 200),
+                opacity: _searchOpacity,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 5),
+                  child: TextField(
+                    controller: _searchController,
+                    focusNode: _searchFocusNode,
+                    onChanged: _onSearchChanged,
+                    decoration: InputDecoration(
+                      hintText: 'Buscar Tutor...',
+                      hintStyle: AppTextStyles.body.copyWith(color: AppColors.whiteColor.withOpacity(0.7)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12),
+                      prefixIcon: Icon(Icons.search, color: AppColors.whiteColor.withOpacity(0.7)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15.0),
+                        borderSide: BorderSide.none,
                       ),
-                      style: AppTextStyles.body.copyWith(color: AppColors.whiteColor),
+                      filled: true,
+                      fillColor: Colors.black.withOpacity(0.2),
+                    ),
+                    style: AppTextStyles.body.copyWith(color: AppColors.whiteColor),
+                  ),
+                ),
+              ),
+            ),
+            // Contador de tutores
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              height: counterHeight * _counterOpacity,
+              transform: Matrix4.translationValues(0, _counterOpacity < 1.0 ? -50 * (1 - _counterOpacity) : 0, 0),
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 200),
+                opacity: _counterOpacity,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 2.0),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      '${totalTutors} Tutores Encontrados',
+                      style: AppTextStyles.body.copyWith(
+                        color: AppColors.whiteColor.withOpacity(0.9),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
                     ),
                   ),
                 ),
               ),
-              // Contador de tutores
-              AnimatedContainer(
-                duration: Duration(milliseconds: 300),
-                height: counterHeight * _counterOpacity,
-                transform: Matrix4.translationValues(0, _counterOpacity < 1.0 ? -50 * (1 - _counterOpacity) : 0, 0),
-                child: AnimatedOpacity(
-                  duration: Duration(milliseconds: 200),
-                  opacity: _counterOpacity,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 2.0), // Reducido vertical de 5 a 2
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        '${totalTutors} Tutores',
-                        style: AppTextStyles.body.copyWith(
-                          color: AppColors.whiteColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13, // Reducido el tamaño de fuente
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              // Filtros
-              AnimatedContainer(
-                duration: Duration(milliseconds: 300),
-                height: filtersHeight * _filtersOpacity,
-                transform: Matrix4.translationValues(0, _filtersOpacity < 1.0 ? -50 * (1 - _filtersOpacity) : 0, 0),
-                child: AnimatedOpacity(
-                  duration: Duration(milliseconds: 200),
-                  opacity: _filtersOpacity,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 1.0), // Reducido vertical de 0 a 1
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            height: 40, // Reducido de 50 a 40
-                            padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                            decoration: BoxDecoration(
-                              color: AppColors.navbar,
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                value: _selectedSortOption,
-                                hint: Text('Ordenar por: Elige uno', style: AppTextStyles.body.copyWith(color: AppColors.whiteColor, fontSize: 13)), // Reducido tamaño de fuente
-                                icon: Icon(Icons.arrow_drop_down, color: AppColors.whiteColor, size: 20), // Reducido tamaño del icono
-                                dropdownColor: AppColors.navbar,
-                                style: AppTextStyles.body.copyWith(color: AppColors.whiteColor, fontSize: 13), // Reducido tamaño de fuente
-                                isExpanded: true,
-                                items: _sortOptions.map((String value) {
-                                  return DropdownMenuItem<String>(
-                                    value: value,
-                                    child: Text(value, style: TextStyle(fontSize: 13)), // Reducido tamaño de fuente
-                                  );
-                                }).toList(),
-                                onChanged: (newValue) {
-                                  setState(() {
-                                    _selectedSortOption = newValue;
-                                  });
-                                },
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Container(
-                          width: 40, // Reducido de 50 a 40
-                          height: 40, // Reducido de 50 a 40
+            ),
+            // Filtros
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              height: filtersHeight * _filtersOpacity,
+              transform: Matrix4.translationValues(0, _filtersOpacity < 1.0 ? -50 * (1 - _filtersOpacity) : 0, 0),
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 200),
+                opacity: _filtersOpacity,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 5, 20, 0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          height: 40,
+                          padding: const EdgeInsets.symmetric(horizontal: 12.0),
                           decoration: BoxDecoration(
-                            color: AppColors.navbar,
+                            color: Colors.black.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(15),
                           ),
-                          child: IconButton(
-                            padding: EdgeInsets.zero, // Eliminar padding interno
-                            icon: SvgPicture.asset(
-                              AppImages.filterIcon,
-                              color: AppColors.whiteColor,
-                              width: 18, // Reducido tamaño del icono
-                              height: 18,
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: _selectedSortOption,
+                              hint: Text('Ordenar por', style: AppTextStyles.body.copyWith(color: AppColors.whiteColor.withOpacity(0.7), fontSize: 14)),
+                              icon: Icon(Icons.arrow_drop_down, color: AppColors.whiteColor.withOpacity(0.7), size: 20),
+                              dropdownColor: AppColors.darkGreyColor,
+                              style: AppTextStyles.body.copyWith(color: AppColors.whiteColor, fontSize: 14),
+                              isExpanded: true,
+                              items: _sortOptions.map((String value) {
+                                return DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Text(value, style: const TextStyle(fontSize: 14)),
+                                );
+                              }).toList(),
+                              onChanged: (newValue) {
+                                setState(() {
+                                  _selectedSortOption = newValue;
+                                });
+                              },
                             ),
-                            onPressed: openFilterBottomSheet,
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 10),
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.orangeprimary,
+                          borderRadius: BorderRadius.circular(15),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.orangeprimary.withOpacity(0.5),
+                              blurRadius: 10,
+                              spreadRadius: 1,
+                            ),
+                          ],
+                        ),
+                        child: IconButton(
+                          padding: EdgeInsets.zero,
+                          icon: SvgPicture.asset(
+                            AppImages.filterIcon,
+                            color: AppColors.whiteColor,
+                            width: 18,
+                            height: 18,
+                          ),
+                          onPressed: openFilterBottomSheet,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
