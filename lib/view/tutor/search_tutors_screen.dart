@@ -19,6 +19,7 @@ import 'package:flutter_projects/view/components/main_header.dart';
 import 'dart:async';
 import 'package:flutter_projects/view/tutor/tutor_profile_screen.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import '../home/home_screen.dart';
 
 class SearchTutorsScreen extends StatefulWidget {
   final String? initialKeyword;
@@ -381,7 +382,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final token = authProvider.token;
 
-    if (token == null && index != 0) {
+    if (token == null && index != 0) { // 0 is Home, so index != 0 means other pages
       showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -884,7 +885,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     final token = authProvider.token;
 
     Widget buildProfileIcon() {
-      final isSelected = selectedIndex == 2;
+      final isSelected = selectedIndex == 3; // 3 is Profile
       return Container(
         padding: EdgeInsets.all(2.0),
         decoration: BoxDecoration(
@@ -934,7 +935,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                     _scaffoldKey.currentState?.openDrawer();
                   },
                   onProfilePressed: () {
-                    _onItemTapped(2);
+                    _onItemTapped(3); // Actualizado a 3 para el perfil
                   },
                 ),
                 Expanded(
@@ -947,7 +948,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                       });
                     },
                     children: [
-                      Column(
+                      HomeScreen(), // 0. Home
+                      Column(      // 1. Búsqueda
                         children: [
                           _buildFiltrosYBuscador(),
                           Expanded(
@@ -955,12 +957,12 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                           ),
                         ],
                       ),
-                      BookingScreen(
+                      BookingScreen( // 2. Bookings
                         onBackPressed: () {
-                          _pageController.jumpToPage(0);
+                          _pageController.jumpToPage(1); // Volver a búsqueda
                         },
                       ),
-                      ProfileScreen(),
+                      ProfileScreen(), // 3. Perfil
                     ],
                   ),
                 ),
@@ -995,9 +997,10 @@ class _CustomBubbleNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final navItems = [
-      Icons.search_outlined,
-      Icons.calendar_today_outlined,
-      Icons.person_outline,
+      Icons.home_outlined,       // 0. Home
+      Icons.search_outlined,     // 1. Búsqueda
+      Icons.calendar_today_outlined, // 2. Bookings
+      Icons.person_outline,      // 3. Perfil
     ];
 
     return Container(
