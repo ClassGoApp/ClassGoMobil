@@ -59,7 +59,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
         _videoController = VideoPlayerController.file(fileInfo.file);
       } else {
         // Video no está en caché, descargarlo y guardarlo
-        final downloadedFile = await _cacheManager.downloadFile(widget.tutorVideo);
+        final downloadedFile =
+            await _cacheManager.downloadFile(widget.tutorVideo);
         _videoController = VideoPlayerController.file(downloadedFile.file);
       }
 
@@ -88,39 +89,34 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Color(0xFF1E88E5).withOpacity(0.85),
-            Color(0xFF0D47A1).withOpacity(0.9),
+            AppColors.blueColor.withOpacity(0.9),
+            AppColors.blueColor.withOpacity(0.7),
           ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(25.0),
+        borderRadius: BorderRadius.circular(20.0),
         border: Border.all(
-          color: Colors.lightBlueAccent.withOpacity(0.7),
-          width: 0.8,
+          color: AppColors.blueColor.withOpacity(0.3),
+          width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.lightBlueAccent.withOpacity(0.4),
-            spreadRadius: 2,
-            blurRadius: 6,
-            offset: Offset(0, 0),
+            color: AppColors.blueColor.withOpacity(0.3),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: Offset(0, 2),
           ),
         ],
       ),
       child: Text(
         label,
         style: TextStyle(
-            color: Colors.white,
-            fontSize: 11.5,
-            fontWeight: FontWeight.w500,
-            shadows: [
-              Shadow(
-                blurRadius: 3.0,
-                color: Colors.black.withOpacity(0.2),
-                offset: Offset(1, 1),
-              ),
-            ]),
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.3,
+        ),
       ),
     );
   }
@@ -136,7 +132,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     final double headerHeight = videoHeight + avatarRadius * 0.85 + 24;
     return NotificationListener<OverscrollNotification>(
       onNotification: (notification) {
-        if (notification.dragDetails != null && notification.dragDetails!.delta.dy > 15) {
+        if (notification.dragDetails != null &&
+            notification.dragDetails!.delta.dy > 15) {
           Navigator.of(context).pop();
         }
         return true;
@@ -165,18 +162,19 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                           // Lógica condicional para el tipo de video
                           _videoController.value.aspectRatio > 1.1
                               ? // Video Horizontal: Rellena la pantalla
-                                SizedBox.expand(
+                              SizedBox.expand(
                                   child: FittedBox(
                                     fit: BoxFit.cover,
                                     child: SizedBox(
                                       width: _videoController.value.size.width,
-                                      height: _videoController.value.size.height,
+                                      height:
+                                          _videoController.value.size.height,
                                       child: VideoPlayer(_videoController),
                                     ),
                                   ),
                                 )
                               : // Video Vertical: Fondo desenfocado
-                                Stack(
+                              Stack(
                                   alignment: Alignment.center,
                                   children: [
                                     // Fondo con imagen del tutor, expandida y desenfocada
@@ -188,7 +186,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                                     ),
                                     ClipRRect(
                                       child: BackdropFilter(
-                                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                        filter: ImageFilter.blur(
+                                            sigmaX: 10, sigmaY: 10),
                                         child: Container(
                                           color: Colors.black.withOpacity(0.2),
                                         ),
@@ -199,8 +198,10 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                                       child: FittedBox(
                                         fit: BoxFit.contain,
                                         child: SizedBox(
-                                          width: _videoController.value.size.width,
-                                          height: _videoController.value.size.height,
+                                          width:
+                                              _videoController.value.size.width,
+                                          height: _videoController
+                                              .value.size.height,
                                           child: VideoPlayer(_videoController),
                                         ),
                                       ),
@@ -239,7 +240,9 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                             ),
                             padding: EdgeInsets.all(16),
                             child: Icon(
-                              _videoController.value.isPlaying ? Icons.pause : Icons.play_arrow,
+                              _videoController.value.isPlaying
+                                  ? Icons.pause
+                                  : Icons.play_arrow,
                               color: Colors.white,
                               size: 40,
                             ),
@@ -315,7 +318,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                               ),
                             ),
                             SizedBox(width: 8),
-                            Icon(Icons.school, color: AppColors.blueColor, size: 13),
+                            Icon(Icons.school,
+                                color: AppColors.blueColor, size: 13),
                             SizedBox(width: 2),
                             Text(
                               '$cursosCompletados/$totalCursosTutor cursos de tutor',
@@ -363,10 +367,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                     children: [
                       SizedBox(height: 8),
                       // Materias primero
-                      Align(
-                        alignment: Alignment.center,
-                        child: _buildMaterias(),
-                      ),
+                      _buildMaterias(),
                       SizedBox(height: 12),
                       // Idiomas después
                       Align(
@@ -384,7 +385,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
           ],
         ),
         // Botones y precio (sin cambios)
-        bottomNavigationBar: _buildBottomBar(context, widget.tutorName, widget.tutorImage),
+        bottomNavigationBar:
+            _buildBottomBar(context, widget.tutorName, widget.tutorImage),
       ),
     );
   }
@@ -398,35 +400,70 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Text(
-            'Materias que imparte',
-            style: TextStyle(
-                fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Materias que imparte',
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white),
+              ),
+              if (widget.subjects.length > _initialSubjectCount)
+                TextButton(
+                  child: Text(
+                    _areAllSubjectsShown ? 'Ver menos' : 'Ver más...',
+                    style: TextStyle(
+                      color: AppColors.orangeprimary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _areAllSubjectsShown = !_areAllSubjectsShown;
+                    });
+                  },
+                ),
+            ],
           ),
         ),
-        SizedBox(height: 8),
+        SizedBox(height: 12),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Wrap(
-            spacing: 10.0,
-            runSpacing: 10.0,
-            alignment: WrapAlignment.center,
-            children: displayedSubjects.map((subject) {
-              return _buildStyledChip(subject);
-            }).toList(),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.1),
+                width: 1,
+              ),
+            ),
+            padding: EdgeInsets.all(16),
+            child: Wrap(
+              spacing: 8.0,
+              runSpacing: 8.0,
+              alignment: WrapAlignment.start,
+              children: displayedSubjects.map((subject) {
+                return _buildStyledChip(subject);
+              }).toList(),
+            ),
           ),
         ),
-        if (widget.subjects.length > _initialSubjectCount)
-          TextButton(
+        if (widget.subjects.length > _initialSubjectCount &&
+            !_areAllSubjectsShown)
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
             child: Text(
-              _areAllSubjectsShown ? 'Ver menos' : 'Ver más...',
-              style: TextStyle(color: Colors.white70),
+              '${widget.subjects.length - _initialSubjectCount} materias más disponibles',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.7),
+                fontSize: 12,
+                fontStyle: FontStyle.italic,
+              ),
             ),
-            onPressed: () {
-              setState(() {
-                _areAllSubjectsShown = !_areAllSubjectsShown;
-              });
-            },
           ),
       ],
     );
@@ -443,16 +480,27 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                 fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
           ),
         ),
-        SizedBox(height: 8),
+        SizedBox(height: 12),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Wrap(
-            spacing: 10.0,
-            runSpacing: 10.0,
-            alignment: WrapAlignment.center,
-            children: widget.languages.map((lang) {
-              return _buildStyledChip(lang);
-            }).toList(),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.1),
+                width: 1,
+              ),
+            ),
+            padding: EdgeInsets.all(16),
+            child: Wrap(
+              spacing: 8.0,
+              runSpacing: 8.0,
+              alignment: WrapAlignment.start,
+              children: widget.languages.map((lang) {
+                return _buildStyledChip(lang);
+              }).toList(),
+            ),
           ),
         ),
       ],
@@ -500,7 +548,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
   }
 
   // Extraigo la parte inferior a una función para mantener el código limpio
-  Widget _buildBottomBar(BuildContext context, String tutorName, String tutorImage) {
+  Widget _buildBottomBar(
+      BuildContext context, String tutorName, String tutorImage) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.primaryGreen.withOpacity(0.8),
@@ -518,7 +567,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
-            padding: EdgeInsets.fromLTRB(16, 20, 16, 20 + MediaQuery.of(context).padding.bottom),
+            padding: EdgeInsets.fromLTRB(
+                16, 20, 16, 20 + MediaQuery.of(context).padding.bottom),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -553,8 +603,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                           SizedBox(height: 4),
                           Row(
                             children: [
-                              Icon(Icons.timer_outlined, 
-                                  size: 16, 
+                              Icon(Icons.timer_outlined,
+                                  size: 16,
                                   color: Colors.white.withOpacity(0.8)),
                               SizedBox(width: 4),
                               Text(
@@ -565,9 +615,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                                 ),
                               ),
                               SizedBox(width: 12),
-                              Icon(Icons.verified, 
-                                  size: 16, 
-                                  color: AppColors.blueColor),
+                              Icon(Icons.verified,
+                                  size: 16, color: AppColors.blueColor),
                               SizedBox(width: 4),
                               Text(
                                 'Tutor verificado',
@@ -622,9 +671,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.play_circle_outline, 
-                                  color: Colors.white, 
-                                  size: 20),
+                              Icon(Icons.play_circle_outline,
+                                  color: Colors.white, size: 20),
                               SizedBox(width: 8),
                               Text(
                                 'Tutoría ahora',
@@ -667,9 +715,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.calendar_today_outlined, 
-                                  color: AppColors.primaryGreen, 
-                                  size: 18),
+                              Icon(Icons.calendar_today_outlined,
+                                  color: AppColors.primaryGreen, size: 18),
                               SizedBox(width: 8),
                               Text(
                                 'Reservar',
@@ -697,7 +744,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
 
 class NoGlowScrollBehavior extends ScrollBehavior {
   @override
-  Widget buildViewportChrome(BuildContext context, Widget child, AxisDirection axisDirection) {
+  Widget buildViewportChrome(
+      BuildContext context, Widget child, AxisDirection axisDirection) {
     return child;
   }
-} 
+}

@@ -220,13 +220,14 @@ Future<Map<String, dynamic>> findTutors(
 
     queryParams.removeWhere((key, value) => value == null);
 
-    final Uri uri = Uri.parse('$baseUrl/find-tutors').replace(queryParameters: queryParams);
+    final Uri uri =
+        Uri.parse('$baseUrl/find-tutors').replace(queryParameters: queryParams);
 
     final headers = <String, String>{
       'Accept': 'application/json',
       'Content-Type': 'application/json',
     };
-    
+
     if (token != null && token.isNotEmpty) {
       headers['Authorization'] = 'Bearer $token';
     }
@@ -237,7 +238,8 @@ Future<Map<String, dynamic>> findTutors(
       return json.decode(response.body);
     } else {
       final error = json.decode(response.body);
-      throw Exception(error['message'] ?? 'Error al obtener tutores: ${response.statusCode}');
+      throw Exception(error['message'] ??
+          'Error al obtener tutores: ${response.statusCode}');
     }
   } catch (e) {
     throw 'Error al obtener tutores: $e';
@@ -249,46 +251,68 @@ Future<Map<String, dynamic>> getVerifiedTutors(
   int page = 1,
   int perPage = 10,
   String? keyword,
+  String? tutorName,
   int? subjectId,
+  int? groupId,
   double? maxPrice,
   int? country,
-  int? groupId,
   String? sessionType,
   List<int>? languageIds,
+  int? minCourses,
+  double? minRating,
 }) async {
   try {
     final Map<String, dynamic> queryParams = {
       'page': page.toString(),
       'per_page': perPage.toString(),
       'keyword': keyword,
+      'tutor_name': tutorName,
       'subject_id': subjectId?.toString(),
+      'group_id': groupId?.toString(),
       'max_price': maxPrice?.toString(),
       'country': country?.toString(),
-      'group_id': groupId?.toString(),
       'session_type': sessionType,
       'language_id': languageIds != null ? languageIds.join(',') : null,
+      'min_courses': minCourses?.toString(),
+      'min_rating': minRating?.toString(),
     };
 
     queryParams.removeWhere((key, value) => value == null);
 
-    final Uri uri = Uri.parse('$baseUrl/verified-tutors').replace(queryParameters: queryParams);
+    final Uri uri = Uri.parse('$baseUrl/verified-tutors')
+        .replace(queryParameters: queryParams);
+
+    // Log de depuración
+    print('DEBUG - API URL: $uri');
+    print('DEBUG - Query params: $queryParams');
 
     final headers = <String, String>{
       'Accept': 'application/json',
       'Content-Type': 'application/json',
     };
-    
+
     if (token != null && token.isNotEmpty) {
       headers['Authorization'] = 'Bearer $token';
     }
 
     final response = await http.get(uri, headers: headers);
 
+    print('DEBUG - Response status: ${response.statusCode}');
+    if (response.statusCode != 200) {
+      print('DEBUG - Error response body: ${response.body}');
+    }
+
     if (response.statusCode == 200) {
-      return json.decode(response.body);
+      final responseData = json.decode(response.body);
+      print('DEBUG - Response data keys: ${responseData.keys.toList()}');
+      if (responseData.containsKey('data')) {
+        print('DEBUG - Data keys: ${responseData['data'].keys.toList()}');
+      }
+      return responseData;
     } else {
       final error = json.decode(response.body);
-      throw Exception(error['message'] ?? 'Error al obtener tutores verificados: ${response.statusCode}');
+      throw Exception(error['message'] ??
+          'Error al obtener tutores verificados: ${response.statusCode}');
     }
   } catch (e) {
     throw 'Error al obtener tutores verificados: $e';
@@ -332,7 +356,6 @@ Future<Map<String, dynamic>> getTutorsEducation(String? token, int id) async {
       headers['Authorization'] = 'Bearer $token';
     }
     final response = await http.get(uri, headers: headers);
-
 
     if (response.statusCode == 200) {
       final decodedBody = json.decode(response.body);
@@ -1444,7 +1467,8 @@ Future<Map<String, dynamic>> fetchAlliances() async {
   }
 }
 
-Future<Map<String, dynamic>> getAllSubjects(String? token, {int page = 1, int perPage = 10, String? keyword}) async {
+Future<Map<String, dynamic>> getAllSubjects(String? token,
+    {int page = 1, int perPage = 10, String? keyword}) async {
   try {
     final Map<String, dynamic> queryParams = {
       'page': page.toString(),
@@ -1454,7 +1478,8 @@ Future<Map<String, dynamic>> getAllSubjects(String? token, {int page = 1, int pe
 
     queryParams.removeWhere((key, value) => value == null);
 
-    final Uri uri = Uri.parse('$baseUrl/all-subjects').replace(queryParameters: queryParams);
+    final Uri uri = Uri.parse('$baseUrl/all-subjects')
+        .replace(queryParameters: queryParams);
     final headers = <String, String>{
       'Accept': 'application/json',
       'Content-Type': 'application/json',
@@ -1492,7 +1517,8 @@ Future<Map<String, dynamic>> getVerifiedTutorsPhotos(String? token) async {
       return json.decode(response.body);
     } else {
       final error = json.decode(response.body);
-      throw Exception(error['message'] ?? 'Error al obtener fotos de tutores verificados: ${response.statusCode}');
+      throw Exception(error['message'] ??
+          'Error al obtener fotos de tutores verificados: ${response.statusCode}');
     }
   } catch (e) {
     throw 'Error al obtener fotos de tutores verificados: $e';

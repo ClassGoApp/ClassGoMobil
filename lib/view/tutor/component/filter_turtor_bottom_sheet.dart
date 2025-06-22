@@ -3,15 +3,15 @@ import 'package:flutter_projects/styles/app_styles.dart';
 
 class FilterTutorBottomSheet extends StatefulWidget {
   final List<String> subjectGroups;
-  
+
   final int? selectedGroupId;
-  final String? keyword;
+  final String? tutorName;
   final int? minCourses;
   final double? minRating;
 
-  final Function({
+  final void Function({
     int? groupId,
-    String? keyword,
+    String? tutorName,
     int? minCourses,
     double? minRating,
   }) onApplyFilters;
@@ -20,7 +20,7 @@ class FilterTutorBottomSheet extends StatefulWidget {
     Key? key,
     required this.subjectGroups,
     this.selectedGroupId,
-    this.keyword,
+    this.tutorName,
     this.minCourses,
     this.minRating,
     required this.onApplyFilters,
@@ -32,7 +32,7 @@ class FilterTutorBottomSheet extends StatefulWidget {
 
 class _FilterTutorBottomSheetState extends State<FilterTutorBottomSheet> {
   int? _selectedGroupId;
-  late TextEditingController _keywordController;
+  TextEditingController? _tutorNameController;
   double _minCourses = 0;
   double _minRating = 0.0;
 
@@ -40,21 +40,21 @@ class _FilterTutorBottomSheetState extends State<FilterTutorBottomSheet> {
   void initState() {
     super.initState();
     _selectedGroupId = widget.selectedGroupId;
-    _keywordController = TextEditingController(text: widget.keyword);
+    _tutorNameController = TextEditingController(text: widget.tutorName ?? '');
     _minCourses = widget.minCourses?.toDouble() ?? 0;
     _minRating = widget.minRating ?? 0.0;
   }
 
   @override
   void dispose() {
-    _keywordController.dispose();
+    _tutorNameController?.dispose();
     super.dispose();
   }
 
   void _clearFilters() {
     setState(() {
       _selectedGroupId = null;
-      _keywordController.clear();
+      _tutorNameController?.clear();
       _minCourses = 0;
       _minRating = 0.0;
     });
@@ -63,7 +63,7 @@ class _FilterTutorBottomSheetState extends State<FilterTutorBottomSheet> {
   void _applyFilters() {
     widget.onApplyFilters(
       groupId: _selectedGroupId,
-      keyword: _keywordController.text.trim(),
+      tutorName: _tutorNameController?.text.trim() ?? '',
       minCourses: _minCourses.toInt(),
       minRating: _minRating,
     );
@@ -107,14 +107,15 @@ class _FilterTutorBottomSheetState extends State<FilterTutorBottomSheet> {
                 onPressed: _clearFilters,
                 child: Text(
                   'Limpiar',
-                  style: TextStyle(color: AppColors.whiteColor.withOpacity(0.7)),
+                  style:
+                      TextStyle(color: AppColors.whiteColor.withOpacity(0.7)),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 20),
           _buildTextField(
-            controller: _keywordController,
+            controller: _tutorNameController!,
             hint: 'Nombre del Tutor',
           ),
           const SizedBox(height: 20),
@@ -136,7 +137,8 @@ class _FilterTutorBottomSheetState extends State<FilterTutorBottomSheet> {
           const SizedBox(height: 30),
           Text(
             'Cursos Completados (mínimo): ${_minCourses.toInt()}',
-            style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 16),
+            style:
+                TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 16),
           ),
           Slider(
             value: _minCourses,
@@ -153,9 +155,10 @@ class _FilterTutorBottomSheetState extends State<FilterTutorBottomSheet> {
             },
           ),
           const SizedBox(height: 20),
-           Text(
+          Text(
             'Calificación Mínima: ${_minRating.toStringAsFixed(1)} ★',
-            style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 16),
+            style:
+                TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 16),
           ),
           Slider(
             value: _minRating,
@@ -183,7 +186,11 @@ class _FilterTutorBottomSheetState extends State<FilterTutorBottomSheet> {
                   borderRadius: BorderRadius.circular(15),
                 ),
               ),
-              child: const Text('Aplicar Filtros', style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
+              child: const Text('Aplicar Filtros',
+                  style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold)),
             ),
           )
         ],
@@ -206,7 +213,8 @@ class _FilterTutorBottomSheetState extends State<FilterTutorBottomSheet> {
         style: AppTextStyles.body.copyWith(color: AppColors.whiteColor),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: AppTextStyles.body.copyWith(color: AppColors.whiteColor.withOpacity(0.7), fontSize: 14),
+          hintStyle: AppTextStyles.body.copyWith(
+              color: AppColors.whiteColor.withOpacity(0.7), fontSize: 14),
           border: InputBorder.none,
         ),
       ),
@@ -228,10 +236,14 @@ class _FilterTutorBottomSheetState extends State<FilterTutorBottomSheet> {
       child: DropdownButtonHideUnderline(
         child: DropdownButton<int>(
           value: value,
-          hint: Text(hint, style: AppTextStyles.body.copyWith(color: AppColors.whiteColor.withOpacity(0.7), fontSize: 14)),
-          icon: Icon(Icons.arrow_drop_down, color: AppColors.whiteColor.withOpacity(0.7)),
+          hint: Text(hint,
+              style: AppTextStyles.body.copyWith(
+                  color: AppColors.whiteColor.withOpacity(0.7), fontSize: 14)),
+          icon: Icon(Icons.arrow_drop_down,
+              color: AppColors.whiteColor.withOpacity(0.7)),
           dropdownColor: AppColors.blurprimary,
-          style: AppTextStyles.body.copyWith(color: AppColors.whiteColor, fontSize: 14),
+          style: AppTextStyles.body
+              .copyWith(color: AppColors.whiteColor, fontSize: 14),
           isExpanded: true,
           items: items,
           onChanged: onChanged,

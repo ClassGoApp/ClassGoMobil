@@ -49,7 +49,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   double _initialSearchFilterHeight = 0.0;
   double _opacity = 1.0; // Añadido para controlar la opacidad
   double _lastScrollOffset = 0.0; // Para rastrear la dirección del scroll
-  
+
   // Opacidades separadas para cada elemento
   double _searchOpacity = 1.0;
   double _counterOpacity = 1.0;
@@ -73,13 +73,19 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   String profileImageUrl = '';
 
   String? keyword;
+  String? tutorName;
   double? maxPrice;
   int? selectedGroupId;
   String? sessionType;
   List<int>? selectedLanguageIds;
   int? selectedSubjectId;
   String? _selectedSortOption;
-  final List<String> _sortOptions = ['Nombre (A-Z)', 'Nombre (Z-A)', 'Materia (A-Z)', 'Materia (Z-A)'];
+  final List<String> _sortOptions = [
+    'Nombre (A-Z)',
+    'Nombre (Z-A)',
+    'Materia (A-Z)',
+    'Materia (Z-A)'
+  ];
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
   int? _minCourses;
@@ -145,7 +151,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     super.initState();
     _scrollController = ScrollController();
     _scrollController.addListener(_scrollListener);
-    print('DEBUG en initState: widget.initialKeyword = ${widget.initialKeyword}');
+    print(
+        'DEBUG en initState: widget.initialKeyword = ${widget.initialKeyword}');
     keyword = widget.initialKeyword;
     selectedSubjectId = widget.initialSubjectId;
     _searchController.text = keyword ?? '';
@@ -157,6 +164,9 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
       sessionType: sessionType,
       subjectId: selectedSubjectId,
       languageIds: selectedLanguageIds,
+      tutorName: tutorName,
+      minCourses: _minCourses,
+      minRating: _minRating,
     );
     fetchSubjects();
     fetchLanguages();
@@ -168,7 +178,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_searchFilterContentKey.currentContext != null) {
         setState(() {
-          _initialSearchFilterHeight = _searchFilterContentKey.currentContext!.size!.height;
+          _initialSearchFilterHeight =
+              _searchFilterContentKey.currentContext!.size!.height;
         });
       }
     });
@@ -196,14 +207,25 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   @override
   void didUpdateWidget(covariant SearchTutorsScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.initialKeyword != oldWidget.initialKeyword || 
+    if (widget.initialKeyword != oldWidget.initialKeyword ||
         widget.initialSubjectId != oldWidget.initialSubjectId) {
       setState(() {
         keyword = widget.initialKeyword;
         selectedSubjectId = widget.initialSubjectId;
       });
-      print('DEBUG en didUpdateWidget: widget.initialKeyword = ${widget.initialKeyword}, widget.initialSubjectId = ${widget.initialSubjectId}');
-      fetchInitialTutors(subjectId: widget.initialSubjectId);
+      print(
+          'DEBUG en didUpdateWidget: widget.initialKeyword = ${widget.initialKeyword}, widget.initialSubjectId = ${widget.initialSubjectId}');
+      fetchInitialTutors(
+        maxPrice: maxPrice,
+        country: selectedCountryId,
+        groupId: selectedGroupId,
+        sessionType: sessionType,
+        subjectId: widget.initialSubjectId,
+        languageIds: selectedLanguageIds,
+        tutorName: tutorName,
+        minCourses: _minCourses,
+        minRating: _minRating,
+      );
     }
   }
 
@@ -288,7 +310,10 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     int? groupId,
     String? sessionType,
     List<int>? languageIds,
-    int? subjectId, // Añadido subjectId aquí
+    int? subjectId,
+    String? tutorName,
+    int? minCourses,
+    double? minRating,
   }) async {
     if (isLoading) return;
     setState(() {
@@ -302,34 +327,93 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final token = authProvider.token;
 
-      print('DEBUG - Llamando a la API para la página inicial');
-      final response = await findTutors(
+      print('DEBUG - Llamando a la API verifiedTutors para la página inicial');
+      print('DEBUG - keyword (materia): $keyword');
+      final response = await getVerifiedTutors(
         token,
         page: currentPage,
-        keyword: this.keyword,
+        keyword: keyword, // Usar keyword para buscar por materia
+        tutorName: tutorName, // Usar tutorName para buscar por nombre del tutor
         maxPrice: maxPrice,
         country: country,
         groupId: groupId,
         sessionType: sessionType,
         subjectId: subjectId,
         languageIds: languageIds,
-        // TODO: Añadir minCourses y minRating a la llamada a la API cuando esté lista
-        // minCourses: _minCourses,
-        // minRating: _minRating,
+        minCourses: minCourses ?? _minCourses,
+        minRating: minRating ?? _minRating,
       );
 
-      if (response['data'] != null && response['data']['data'] is List) {
-        final List<dynamic> fetchedTutors = response['data']['data'];
-        print('DEBUG - API devolvió ${fetchedTutors.length} tutores para la página inicial');
-        
+      print('DEBUG - Response completa: $response');
+
+      // Verificar diferentes estructuras posibles de la respuesta
+      List<dynamic> fetchedTutors = [];
+
+      if (response['data'] != null) {
+        if (response['data'] is List) {
+          // Si data es directamente una lista
+          fetchedTutors = response['data'] as List<dynamic>;
+          print(
+              'DEBUG - Data es directamente una lista con ${fetchedTutors.length} tutores');
+        } else if (response['data'] is Map &&
+            response['data']['data'] is List) {
+          // Si data es un objeto con una propiedad data que es una lista
+          fetchedTutors = response['data']['data'] as List<dynamic>;
+          print(
+              'DEBUG - Data está en response[\'data\'][\'data\'] con ${fetchedTutors.length} tutores');
+        } else if (response['data'] is Map &&
+            response['data']['list'] is List) {
+          // Si data es un objeto con una propiedad list que es una lista
+          fetchedTutors = response['data']['list'] as List<dynamic>;
+          print(
+              'DEBUG - Data está en response[\'data\'][\'list\'] con ${fetchedTutors.length} tutores');
+        }
+      }
+
+      if (fetchedTutors.isNotEmpty) {
+        print(
+            'DEBUG - API devolvió ${fetchedTutors.length} tutores para la página inicial');
+
+        // Log para ver la estructura del primer tutor
+        print(
+            'DEBUG - Estructura del primer tutor: ${fetchedTutors.first.keys.toList()}');
+        if (fetchedTutors.first.containsKey('profile')) {
+          print(
+              'DEBUG - Profile keys: ${fetchedTutors.first['profile'].keys.toList()}');
+        }
+        if (fetchedTutors.first.containsKey('subjects')) {
+          print(
+              'DEBUG - Subjects count: ${fetchedTutors.first['subjects'].length}');
+        }
+
         setState(() {
-          tutors = fetchedTutors.map((tutor) => tutor as Map<String, dynamic>).toList();
-          final paginationData = response['data']['pagination'] is Map ? response['data']['pagination'] : {};
-          totalTutors = paginationData['total'] ?? 0;
-          totalPages = paginationData['totalPages'] ?? 1;
+          tutors = fetchedTutors
+              .map((tutor) => tutor as Map<String, dynamic>)
+              .toList();
+
+          // Manejar paginación
+          int total = 0;
+          int totalPages = 1;
+
+          if (response['data'] is Map) {
+            final paginationData =
+                response['data']['pagination'] ?? response['data'];
+            total = paginationData['total'] ?? fetchedTutors.length;
+            totalPages = paginationData['totalPages'] ?? 1;
+          }
+
+          this.totalTutors = total;
+          this.totalPages = totalPages;
           currentPage = 1;
-          print('DEBUG - Paginación inicial: Total tutores: $totalTutors, Total páginas: $totalPages, Tutores cargados: ${tutors.length}');
+          print(
+              'DEBUG - Paginación inicial: Total tutores: $totalTutors, Total páginas: $totalPages, Tutores cargados: ${tutors.length}');
         });
+      } else {
+        print('DEBUG - No se encontraron tutores en la respuesta');
+        print('DEBUG - response[\'data\']: ${response['data']}');
+        if (response['data'] != null && response['data'] is Map) {
+          print('DEBUG - Data keys: ${response['data'].keys.toList()}');
+        }
       }
     } catch (e) {
       print('Error fetching tutors: $e');
@@ -354,8 +438,9 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   }
 
   void _loadMoreTutors() async {
-    print('DEBUG - Intentando cargar más tutores. Página actual: $currentPage, Total páginas: $totalPages, Tutores actuales: ${tutors.length}');
-    
+    print(
+        'DEBUG - Intentando cargar más tutores. Página actual: $currentPage, Total páginas: $totalPages, Tutores actuales: ${tutors.length}');
+
     if (!isLoading && tutors.length < 100) {
       setState(() {
         isLoading = true;
@@ -365,38 +450,53 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         final token = authProvider.token;
 
-        print('DEBUG - Llamando a la API para la página ${currentPage + 1}');
+        print(
+            'DEBUG - Llamando a la API verifiedTutors para la página ${currentPage + 1}');
         final response = await getVerifiedTutors(
-          token, 
-          page: currentPage + 1, 
+          token,
+          page: currentPage + 1,
           perPage: 10,
-          keyword: this.keyword,
+          keyword: keyword, // Usar keyword para buscar por materia
+          tutorName:
+              tutorName, // Usar tutorName para buscar por nombre del tutor
           maxPrice: maxPrice,
           country: selectedCountryId,
           groupId: selectedGroupId,
           sessionType: sessionType,
           subjectId: selectedSubjectId,
           languageIds: selectedLanguageIds,
+          minCourses: _minCourses,
+          minRating: _minRating,
         );
 
         if (response.containsKey('data') && response['data'] is Map) {
           final data = response['data'];
-          if (data.containsKey('list') && data['list'] is List) {
-            final tutorsList = data['list'] as List;
-            print('DEBUG - API devolvió ${tutorsList.length} tutores para la página ${currentPage + 1}');
-            
-            if (tutorsList.isNotEmpty) {
-              setState(() {
-                tutors.addAll(tutorsList.map((item) => item as Map<String, dynamic>).toList());
-                final paginationData = data['pagination'] is Map ? data['pagination'] : {};
-                currentPage = paginationData['currentPage'] ?? currentPage + 1;
-                totalPages = paginationData['totalPages'] ?? totalPages;
-                totalTutors = paginationData['total'] ?? totalTutors;
-                print('DEBUG - Tutores cargados exitosamente. Nuevo total: ${tutors.length} de $totalTutors');
-              });
-            } else {
-              print('DEBUG - No se encontraron más tutores en la página ${currentPage + 1}');
-            }
+          List<dynamic> tutorsList = [];
+
+          if (data.containsKey('data') && data['data'] is List) {
+            tutorsList = data['data'] as List;
+          } else if (data.containsKey('list') && data['list'] is List) {
+            tutorsList = data['list'] as List;
+          }
+
+          print(
+              'DEBUG - API devolvió ${tutorsList.length} tutores para la página ${currentPage + 1}');
+
+          if (tutorsList.isNotEmpty) {
+            setState(() {
+              tutors.addAll(tutorsList
+                  .map((item) => item as Map<String, dynamic>)
+                  .toList());
+              final paginationData = data['pagination'] ?? data;
+              currentPage = paginationData['currentPage'] ?? currentPage + 1;
+              totalPages = paginationData['totalPages'] ?? totalPages;
+              totalTutors = paginationData['total'] ?? totalTutors;
+              print(
+                  'DEBUG - Tutores cargados exitosamente. Nuevo total: ${tutors.length} de $totalTutors');
+            });
+          } else {
+            print(
+                'DEBUG - No se encontraron más tutores en la página ${currentPage + 1}');
           }
         }
       } catch (e) {
@@ -407,7 +507,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
         });
       }
     } else {
-      print('DEBUG - No se cargaron más tutores. Condiciones: !isLoading: ${!isLoading}, tutors.length < 100: ${tutors.length < 100}');
+      print(
+          'DEBUG - No se cargaron más tutores. Condiciones: !isLoading: ${!isLoading}, tutors.length < 100: ${tutors.length < 100}');
     }
   }
 
@@ -450,26 +551,35 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
       builder: (context) => FilterTutorBottomSheet(
         subjectGroups: subjectGroups,
         selectedGroupId: selectedGroupId,
-        keyword: keyword,
+        tutorName: tutorName,
         minCourses: _minCourses,
         minRating: _minRating,
-        onApplyFilters: ({int? groupId, String? keyword, int? minCourses, double? minRating}) {
+        onApplyFilters: (
+            {int? groupId,
+            String? tutorName,
+            int? minCourses,
+            double? minRating}) {
           setState(() {
             this.selectedGroupId = groupId;
-            this.keyword = keyword;
+            this.tutorName = tutorName;
             this._minCourses = minCourses;
             this._minRating = minRating;
-
-            // Actualizar el controlador del buscador principal si es necesario
-            if (_searchController.text != keyword) {
-              _searchController.text = keyword ?? '';
-            }
 
             currentPage = 1;
             tutors.clear();
             isInitialLoading = true;
           });
-          fetchInitialTutors();
+          fetchInitialTutors(
+            maxPrice: maxPrice,
+            country: selectedCountryId,
+            groupId: groupId,
+            sessionType: sessionType,
+            subjectId: selectedSubjectId,
+            languageIds: selectedLanguageIds,
+            tutorName: tutorName,
+            minCourses: minCourses,
+            minRating: minRating,
+          );
         },
       ),
     );
@@ -478,20 +588,21 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   void _scrollListener() {
     final offset = _scrollController.offset;
     final maxScrollExtent = _scrollController.position.maxScrollExtent;
-    
+
     // Detectar dirección del scroll
     final isScrollingUp = offset < _lastScrollOffset;
     final isScrollingDown = offset > _lastScrollOffset;
-    
+
     // Calcular la velocidad del scroll para ajustar la animación
     final scrollDelta = (_lastScrollOffset - offset).abs();
-    final animationSpeed = (scrollDelta * 0.1).clamp(0.05, 0.2); // Velocidad ajustada
-    
+    final animationSpeed =
+        (scrollDelta * 0.1).clamp(0.05, 0.2); // Velocidad ajustada
+
     // Calcular las opacidades basadas en el scroll
     double newSearchOpacity = _searchOpacity;
     double newCounterOpacity = _counterOpacity;
     double newFiltersOpacity = _filtersOpacity;
-    
+
     // PRIORIDAD: Si estamos en la parte superior, mostrar completamente
     if (offset <= 0) {
       newSearchOpacity = 1.0;
@@ -501,37 +612,36 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
       // Al hacer scroll hacia arriba, mostrar secuencialmente con deslizamiento
       // Primero el buscador
       newSearchOpacity = (_searchOpacity + animationSpeed).clamp(0.0, 1.0);
-      
+
       // Luego el contador (cuando el buscador esté casi visible)
       if (_searchOpacity > 0.3) {
         newCounterOpacity = (_counterOpacity + animationSpeed).clamp(0.0, 1.0);
       }
-      
+
       // Finalmente los filtros (cuando el contador esté casi visible)
       if (_counterOpacity > 0.3) {
         newFiltersOpacity = (_filtersOpacity + animationSpeed).clamp(0.0, 1.0);
       }
-      
     } else if (isScrollingDown && offset > 0) {
       // Al hacer scroll hacia abajo, ocultar gradualmente
       // Los elementos se ocultan en orden inverso: filtros -> contador -> buscador
-      
+
       // Los filtros se ocultan primero
       if (_filtersOpacity > 0.0) {
         newFiltersOpacity = (_filtersOpacity - animationSpeed).clamp(0.0, 1.0);
       }
-      
+
       // Luego el contador (cuando los filtros estén casi ocultos)
       if (_filtersOpacity < 0.3) {
         newCounterOpacity = (_counterOpacity - animationSpeed).clamp(0.0, 1.0);
       }
-      
+
       // Finalmente el buscador (cuando el contador esté casi oculto)
       if (_counterOpacity < 0.3) {
         newSearchOpacity = (_searchOpacity - animationSpeed).clamp(0.0, 1.0);
       }
     }
-    
+
     // Solo actualizar si alguna opacidad cambió significativamente
     bool needsUpdate = false;
     if ((_searchOpacity - newSearchOpacity).abs() > 0.01) {
@@ -546,11 +656,11 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
       _filtersOpacity = newFiltersOpacity;
       needsUpdate = true;
     }
-    
+
     if (needsUpdate) {
       setState(() {});
     }
-    
+
     // Actualizar la posición del scroll anterior
     _lastScrollOffset = offset;
 
@@ -580,9 +690,12 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
             bottomRight: Radius.circular(30.0),
           ),
           border: Border(
-            bottom: BorderSide(color: AppColors.navbar.withOpacity(0.3), width: 1.5),
-            left: BorderSide(color: AppColors.navbar.withOpacity(0.3), width: 1.5),
-            right: BorderSide(color: AppColors.navbar.withOpacity(0.3), width: 1.5),
+            bottom: BorderSide(
+                color: AppColors.navbar.withOpacity(0.3), width: 1.5),
+            left: BorderSide(
+                color: AppColors.navbar.withOpacity(0.3), width: 1.5),
+            right: BorderSide(
+                color: AppColors.navbar.withOpacity(0.3), width: 1.5),
           ),
         ),
         child: Column(
@@ -593,7 +706,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
             AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               height: searchHeight * _searchOpacity,
-              transform: Matrix4.translationValues(0, _searchOpacity < 1.0 ? -50 * (1 - _searchOpacity) : 0, 0),
+              transform: Matrix4.translationValues(
+                  0, _searchOpacity < 1.0 ? -50 * (1 - _searchOpacity) : 0, 0),
               child: AnimatedOpacity(
                 duration: const Duration(milliseconds: 200),
                 opacity: _searchOpacity,
@@ -605,9 +719,12 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                     onChanged: _onSearchChanged,
                     decoration: InputDecoration(
                       hintText: 'Buscar Tutor...',
-                      hintStyle: AppTextStyles.body.copyWith(color: AppColors.whiteColor.withOpacity(0.7)),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12),
-                      prefixIcon: Icon(Icons.search, color: AppColors.whiteColor.withOpacity(0.7)),
+                      hintStyle: AppTextStyles.body.copyWith(
+                          color: AppColors.whiteColor.withOpacity(0.7)),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20.0, vertical: 12),
+                      prefixIcon: Icon(Icons.search,
+                          color: AppColors.whiteColor.withOpacity(0.7)),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(15.0),
                         borderSide: BorderSide.none,
@@ -615,7 +732,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                       filled: true,
                       fillColor: Colors.black.withOpacity(0.2),
                     ),
-                    style: AppTextStyles.body.copyWith(color: AppColors.whiteColor),
+                    style: AppTextStyles.body
+                        .copyWith(color: AppColors.whiteColor),
                   ),
                 ),
               ),
@@ -624,12 +742,14 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
             AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               height: counterHeight * _counterOpacity,
-              transform: Matrix4.translationValues(0, _counterOpacity < 1.0 ? -50 * (1 - _counterOpacity) : 0, 0),
+              transform: Matrix4.translationValues(0,
+                  _counterOpacity < 1.0 ? -50 * (1 - _counterOpacity) : 0, 0),
               child: AnimatedOpacity(
                 duration: const Duration(milliseconds: 200),
                 opacity: _counterOpacity,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 2.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 20.0, vertical: 2.0),
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
@@ -648,7 +768,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
             AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               height: filtersHeight * _filtersOpacity,
-              transform: Matrix4.translationValues(0, _filtersOpacity < 1.0 ? -50 * (1 - _filtersOpacity) : 0, 0),
+              transform: Matrix4.translationValues(0,
+                  _filtersOpacity < 1.0 ? -50 * (1 - _filtersOpacity) : 0, 0),
               child: AnimatedOpacity(
                 duration: const Duration(milliseconds: 200),
                 opacity: _filtersOpacity,
@@ -667,29 +788,44 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                           child: DropdownButtonHideUnderline(
                             child: DropdownButton<String>(
                               value: _selectedSortOption,
-                              hint: Text('Ordenar por', style: AppTextStyles.body.copyWith(color: AppColors.whiteColor.withOpacity(0.7), fontSize: 14)),
-                              icon: Icon(Icons.arrow_drop_down, color: AppColors.whiteColor.withOpacity(0.7), size: 20),
+                              hint: Text('Ordenar por',
+                                  style: AppTextStyles.body.copyWith(
+                                      color:
+                                          AppColors.whiteColor.withOpacity(0.7),
+                                      fontSize: 14)),
+                              icon: Icon(Icons.arrow_drop_down,
+                                  color: AppColors.whiteColor.withOpacity(0.7),
+                                  size: 20),
                               dropdownColor: AppColors.blurprimary,
                               borderRadius: BorderRadius.circular(15.0),
-                              style: AppTextStyles.body.copyWith(color: AppColors.whiteColor, fontSize: 14),
+                              style: AppTextStyles.body.copyWith(
+                                  color: AppColors.whiteColor, fontSize: 14),
                               isExpanded: true,
                               items: _sortOptions.map((String value) {
                                 bool isLastOfGroup = value == 'Nombre (Z-A)';
                                 return DropdownMenuItem<String>(
                                   value: value,
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 8.0),
                                     decoration: BoxDecoration(
                                       border: isLastOfGroup
-                                          ? Border(bottom: BorderSide(color: AppColors.navbar.withOpacity(0.2), width: 1))
+                                          ? Border(
+                                              bottom: BorderSide(
+                                                  color: AppColors.navbar
+                                                      .withOpacity(0.2),
+                                                  width: 1))
                                           : null,
                                     ),
                                     child: Row(
                                       children: [
                                         Icon(
-                                          value.contains('(A-Z)') ? Icons.arrow_downward : Icons.arrow_upward,
+                                          value.contains('(A-Z)')
+                                              ? Icons.arrow_downward
+                                              : Icons.arrow_upward,
                                           size: 18,
-                                          color: AppColors.whiteColor.withOpacity(0.7),
+                                          color: AppColors.whiteColor
+                                              .withOpacity(0.7),
                                         ),
                                         const SizedBox(width: 10),
                                         Text(value),
@@ -800,14 +936,16 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
               final profile = tutor['profile'] as Map<String, dynamic>;
               final subjects = tutor['subjects'] as List;
               final validSubjects = subjects
-                  .where((subject) => subject['status'] == 'active' && subject['deleted_at'] == null)
+                  .where((subject) =>
+                      subject['status'] == 'active' &&
+                      subject['deleted_at'] == null)
                   .map((subject) => subject['name'] as String)
                   .toList();
               // Depuración de imágenes de tutores
               final hdUrl = highResTutorImages[tutor['id']];
               print(
                   'Tutor: ${profile['full_name']} - tutor["id"]: ${tutor['id']} - HD URL: $hdUrl');
-              
+
               return AnimationConfiguration.staggeredList(
                 position: index,
                 duration: const Duration(milliseconds: 600),
@@ -824,14 +962,22 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                             SlideUpRoute(
                               page: TutorProfileScreen(
                                 tutorId: tutor['id'].toString(),
-                                tutorName: profile['full_name'] ?? 'No name available',
-                                tutorImage: highResTutorImages[tutor['id']] ?? profile['image'] ?? AppImages.placeHolderImage,
+                                tutorName:
+                                    profile['full_name'] ?? 'No name available',
+                                tutorImage: highResTutorImages[tutor['id']] ??
+                                    profile['image'] ??
+                                    AppImages.placeHolderImage,
                                 tutorVideo: profile['intro_video'] ?? '',
-                                description: profile['description'] ?? 'No hay descripción disponible.',
+                                description: profile['description'] ??
+                                    'No hay descripción disponible.',
                                 rating: tutor['avg_rating'] != null
                                     ? (tutor['avg_rating'] is String
-                                        ? double.tryParse(tutor['avg_rating']) ?? 0.0
-                                        : (tutor['avg_rating'] is num ? tutor['avg_rating'].toDouble() : 0.0))
+                                        ? double.tryParse(
+                                                tutor['avg_rating']) ??
+                                            0.0
+                                        : (tutor['avg_rating'] is num
+                                            ? tutor['avg_rating'].toDouble()
+                                            : 0.0))
                                     : 0.0,
                                 subjects: validSubjects,
                               ),
@@ -843,10 +989,16 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                           rating: tutor['avg_rating'] != null
                               ? (tutor['avg_rating'] is String
                                   ? double.tryParse(tutor['avg_rating']) ?? 0.0
-                                  : (tutor['avg_rating'] is num ? tutor['avg_rating'].toDouble() : 0.0))
+                                  : (tutor['avg_rating'] is num
+                                      ? tutor['avg_rating'].toDouble()
+                                      : 0.0))
                               : 0.0,
-                          reviews: int.tryParse('${tutor['total_reviews'] ?? 0}') ?? 0,
-                          imageUrl: highResTutorImages[tutor['id']] ?? profile['image'] ?? AppImages.placeHolderImage,
+                          reviews:
+                              int.tryParse('${tutor['total_reviews'] ?? 0}') ??
+                                  0,
+                          imageUrl: highResTutorImages[tutor['id']] ??
+                              profile['image'] ??
+                              AppImages.placeHolderImage,
                           tutorId: tutor['id'].toString(),
                           tutorVideo: profile['intro_video'] ?? '',
                           tagline: profile['tagline'] as String?,
@@ -857,14 +1009,22 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                               SlideUpRoute(
                                 page: TutorProfileScreen(
                                   tutorId: tutor['id'].toString(),
-                                  tutorName: profile['full_name'] ?? 'No name available',
-                                  tutorImage: highResTutorImages[tutor['id']] ?? profile['image'] ?? AppImages.placeHolderImage,
+                                  tutorName: profile['full_name'] ??
+                                      'No name available',
+                                  tutorImage: highResTutorImages[tutor['id']] ??
+                                      profile['image'] ??
+                                      AppImages.placeHolderImage,
                                   tutorVideo: profile['intro_video'] ?? '',
-                                  description: profile['description'] ?? 'No hay descripción disponible.',
+                                  description: profile['description'] ??
+                                      'No hay descripción disponible.',
                                   rating: tutor['avg_rating'] != null
                                       ? (tutor['avg_rating'] is String
-                                          ? double.tryParse(tutor['avg_rating']) ?? 0.0
-                                          : (tutor['avg_rating'] is num ? tutor['avg_rating'].toDouble() : 0.0))
+                                          ? double.tryParse(
+                                                  tutor['avg_rating']) ??
+                                              0.0
+                                          : (tutor['avg_rating'] is num
+                                              ? tutor['avg_rating'].toDouble()
+                                              : 0.0))
                                       : 0.0,
                                   subjects: validSubjects,
                                 ),
@@ -873,17 +1033,23 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                           },
                           onAcceptPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Reservar con ${profile['full_name'] ?? 'Tutor'}')),
+                              SnackBar(
+                                  content: Text(
+                                      'Reservar con ${profile['full_name'] ?? 'Tutor'}')),
                             );
                           },
-                          tutorProfession: validSubjects.isNotEmpty ? validSubjects.first : 'Profesión no disponible',
+                          tutorProfession: validSubjects.isNotEmpty
+                              ? validSubjects.first
+                              : 'Profesión no disponible',
                           sessionDuration: 'Clases de 20 minutos',
                           isFavoriteInitial: tutor['is_favorite'] ?? false,
                           onFavoritePressed: (isFavorite) {
-                            print('Tutor ${profile['full_name'] ?? ''} es favorito: $isFavorite');
+                            print(
+                                'Tutor ${profile['full_name'] ?? ''} es favorito: $isFavorite');
                           },
                           subjectsString: validSubjects.join(', '),
-                          description: profile['description'] ?? 'No hay descripción disponible.',
+                          description: profile['description'] ??
+                              'No hay descripción disponible.',
                           isVerified: true,
                         ),
                       ),
@@ -964,7 +1130,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
         }
       },
       child: Scaffold(
-        resizeToAvoidBottomInset: false, // Evita que la barra suba con el teclado
+        resizeToAvoidBottomInset:
+            false, // Evita que la barra suba con el teclado
         key: _scaffoldKey,
         backgroundColor: AppColors.primaryGreen,
         body: Stack(
@@ -1044,7 +1211,8 @@ class _CustomBubbleNavBar extends StatelessWidget {
 
     return Container(
       height: 60,
-      margin: EdgeInsets.symmetric(horizontal: 60, vertical: 24), // Barra mucho más estrecha
+      margin: EdgeInsets.symmetric(
+          horizontal: 60, vertical: 24), // Barra mucho más estrecha
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -1061,7 +1229,8 @@ class _CustomBubbleNavBar extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.navbar.withOpacity(0.5), // Sombra a juego con el nuevo color
+            color: AppColors.navbar
+                .withOpacity(0.5), // Sombra a juego con el nuevo color
             blurRadius: 20,
             offset: Offset(0, 10),
           ),
@@ -1072,7 +1241,9 @@ class _CustomBubbleNavBar extends StatelessWidget {
           final double barWidth = constraints.maxWidth;
           final double itemWidth = barWidth / navItems.length;
           const double circleDiameter = 48.0;
-          final double indicatorLeft = (currentIndex * itemWidth) + (itemWidth / 2) - (circleDiameter / 2);
+          final double indicatorLeft = (currentIndex * itemWidth) +
+              (itemWidth / 2) -
+              (circleDiameter / 2);
 
           return Stack(
             alignment: Alignment.center,
@@ -1109,7 +1280,9 @@ class _CustomBubbleNavBar extends StatelessWidget {
                       height: 60,
                       child: Icon(
                         navItems[index],
-                        color: isSelected ? Colors.white : AppColors.whiteColor.withOpacity(0.7),
+                        color: isSelected
+                            ? Colors.white
+                            : AppColors.whiteColor.withOpacity(0.7),
                         size: 24,
                       ),
                     ),

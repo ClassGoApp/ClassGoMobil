@@ -97,7 +97,8 @@ class _TutorCardState extends State<TutorCard> {
                             width: 60,
                             height: 60,
                             color: AppColors.dividerColor,
-                            child: const Icon(Icons.person, color: AppColors.greyColor, size: 32),
+                            child: const Icon(Icons.person,
+                                color: AppColors.greyColor, size: 32),
                           ),
                         ),
                       ),
@@ -118,7 +119,8 @@ class _TutorCardState extends State<TutorCard> {
                                 Flexible(
                                   child: Text(
                                     widget.name,
-                                    style: AppTextStyles.heading2.copyWith(color: AppColors.whiteColor),
+                                    style: AppTextStyles.heading2
+                                        .copyWith(color: AppColors.whiteColor),
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
@@ -135,10 +137,12 @@ class _TutorCardState extends State<TutorCard> {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          Icon(Icons.star, color: AppColors.starYellow, size: 16),
+                          Icon(Icons.star,
+                              color: AppColors.starYellow, size: 16),
                           Text(
                             '${widget.rating}',
-                            style: AppTextStyles.body.copyWith(color: AppColors.whiteColor),
+                            style: AppTextStyles.body
+                                .copyWith(color: AppColors.whiteColor),
                           ),
                           const SizedBox(width: 8),
                           GestureDetector(
@@ -149,8 +153,12 @@ class _TutorCardState extends State<TutorCard> {
                               });
                             },
                             child: Icon(
-                              _isFavorite ? Icons.favorite : Icons.favorite_border,
-                              color: _isFavorite ? AppColors.blueColor : AppColors.lightGreyColor,
+                              _isFavorite
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
+                              color: _isFavorite
+                                  ? AppColors.blueColor
+                                  : AppColors.lightGreyColor,
                             ),
                           ),
                         ],
@@ -198,7 +206,8 @@ class _TutorCardState extends State<TutorCard> {
                     ),
                     child: Text(
                       'Ver Perfil',
-                      style: AppTextStyles.button.copyWith(color: AppColors.whiteColor),
+                      style: AppTextStyles.button
+                          .copyWith(color: AppColors.whiteColor),
                     ),
                   ),
                 ),
@@ -216,7 +225,8 @@ class _TutorCardState extends State<TutorCard> {
                     ),
                     child: Text(
                       'Reservar',
-                      style: AppTextStyles.button.copyWith(color: AppColors.whiteColor),
+                      style: AppTextStyles.button
+                          .copyWith(color: AppColors.whiteColor),
                     ),
                   ),
                 ),
@@ -230,27 +240,95 @@ class _TutorCardState extends State<TutorCard> {
 
   Widget _buildSubjectChipsHorizontal(String subjects) {
     // Separa las materias por coma y limpia espacios
-    final subjectList = subjects.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+    final subjectList = subjects
+        .split(',')
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+
+    if (subjectList.isEmpty) {
+      return Text(
+        'Sin materias especificadas',
+        style: AppTextStyles.body.copyWith(
+          color: AppColors.lightGreyColor,
+          fontSize: 12,
+          fontStyle: FontStyle.italic,
+        ),
+      );
+    }
+
+    // Si hay más de 4 materias, mostrar solo las primeras 3 + contador
+    final displaySubjects =
+        subjectList.length > 4 ? subjectList.take(3).toList() : subjectList;
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
-        children: subjectList.map((subject) => Container(
-          margin: EdgeInsets.only(right: 6),
-          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2), // chips más pequeños
-          decoration: BoxDecoration(
-            color: AppColors.primaryGreen,
-            border: Border.all(color: AppColors.blueColor, width: 1.2),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Text(
-            subject,
-            style: AppTextStyles.body.copyWith(
-              color: AppColors.whiteColor,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
+        children: [
+          ...displaySubjects
+              .map((subject) => Container(
+                    margin: EdgeInsets.only(right: 6),
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.blueColor.withOpacity(0.8),
+                          AppColors.blueColor.withOpacity(0.6),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      border: Border.all(
+                          color: AppColors.blueColor.withOpacity(0.3),
+                          width: 1),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.blueColor.withOpacity(0.2),
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      subject,
+                      style: AppTextStyles.body.copyWith(
+                        color: AppColors.whiteColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ))
+              .toList(),
+
+          // Mostrar contador si hay más de 4 materias
+          if (subjectList.length > 4)
+            Container(
+              margin: EdgeInsets.only(right: 6),
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: AppColors.orangeprimary.withOpacity(0.8),
+                border: Border.all(
+                    color: AppColors.orangeprimary.withOpacity(0.3), width: 1),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.orangeprimary.withOpacity(0.2),
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Text(
+                '+${subjectList.length - 3}',
+                style: AppTextStyles.body.copyWith(
+                  color: AppColors.whiteColor,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 11,
+                ),
+              ),
             ),
-          ),
-        )).toList(),
+        ],
       ),
     );
   }
