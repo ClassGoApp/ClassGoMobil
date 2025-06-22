@@ -718,7 +718,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                     focusNode: _searchFocusNode,
                     onChanged: _onSearchChanged,
                     decoration: InputDecoration(
-                      hintText: 'Buscar Tutor...',
+                      hintText: 'Busca por materia...',
                       hintStyle: AppTextStyles.body.copyWith(
                           color: AppColors.whiteColor.withOpacity(0.7)),
                       contentPadding: const EdgeInsets.symmetric(
@@ -753,7 +753,9 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      '${totalTutors} Tutores Encontrados',
+                      (keyword != null && keyword!.isNotEmpty)
+                          ? '${totalTutors} tutores para "${keyword!}"'
+                          : '${totalTutors} Tutores Encontrados',
                       style: AppTextStyles.body.copyWith(
                         color: AppColors.whiteColor.withOpacity(0.9),
                         fontWeight: FontWeight.w600,
@@ -1139,6 +1141,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
             Column(
               children: [
                 MainHeader(
+                  showMenuButton: false,
+                  showProfileButton: false,
                   onMenuPressed: () {
                     _scaffoldKey.currentState?.openDrawer();
                   },

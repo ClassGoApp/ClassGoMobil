@@ -5,6 +5,7 @@ import 'package:video_player/video_player.dart';
 import 'dart:ui';
 import 'package:flutter_projects/helpers/slide_up_route.dart';
 import 'package:flutter_projects/view/tutor/instant_tutoring_screen.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class TutorProfileScreen extends StatefulWidget {
   final String tutorId;
@@ -260,7 +261,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                       height: avatarRadius + 40,
                     ),
                   ),
-                  // Avatar superpuesto
+                  // Avatar (Circular)
                   Positioned(
                     top: videoHeight - avatarRadius,
                     left: 32,
@@ -274,7 +275,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                         child: CircleAvatar(
                           radius: avatarRadius,
                           backgroundColor: Colors.white,
-                          backgroundImage: NetworkImage(widget.tutorImage),
+                          backgroundImage:
+                              CachedNetworkImageProvider(widget.tutorImage),
                         ),
                       ),
                     ),

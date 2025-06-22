@@ -5,45 +5,55 @@ import 'package:flutter_svg/flutter_svg.dart';
 class MainHeader extends StatelessWidget {
   final VoidCallback? onMenuPressed;
   final VoidCallback? onProfilePressed;
+  final bool showMenuButton;
+  final bool showProfileButton;
 
   const MainHeader({
     Key? key,
     this.onMenuPressed,
     this.onProfilePressed,
+    this.showMenuButton = true,
+    this.showProfileButton = true,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
       backgroundColor: AppColors.primaryGreen, // Color de fondo del AppBar
-      automaticallyImplyLeading: false, // Controlado por el icono de menú personalizado
+      automaticallyImplyLeading:
+          false, // Controlado por el icono de menú personalizado
       elevation: 0, // Sin sombra
       titleSpacing: 0, // Sin espacio adicional para el título
       centerTitle: true, // Centrar el título/logo
-      leading: Padding(
-        padding: const EdgeInsets.only(left: 10.0),
-        child: IconButton(
-          icon: Icon(Icons.menu, color: AppColors.whiteColor), // Icono de menú de hamburguesa
-          onPressed: onMenuPressed,
-        ),
-      ),
+      leading: showMenuButton
+          ? Padding(
+              padding: const EdgeInsets.only(left: 10.0),
+              child: IconButton(
+                icon: Icon(Icons.menu,
+                    color:
+                        AppColors.whiteColor), // Icono de menú de hamburguesa
+                onPressed: onMenuPressed,
+              ),
+            )
+          : null,
       title: Image.asset(
         'assets/images/logo_classgo.png',
         height: 38, // Ajusta la altura según sea necesario
       ),
       actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 10.0),
-          child: IconButton(
-            icon: SvgPicture.asset(
-              AppImages.userIcon, // Tu icono de usuario
-              color: AppColors.whiteColor,
-              height: 24,
+        if (showProfileButton)
+          Padding(
+            padding: const EdgeInsets.only(right: 10.0),
+            child: IconButton(
+              icon: SvgPicture.asset(
+                AppImages.userIcon, // Tu icono de usuario
+                color: AppColors.whiteColor,
+                height: 24,
+              ),
+              onPressed: onProfilePressed,
             ),
-            onPressed: onProfilePressed,
           ),
-        ),
       ],
     );
   }
-} 
+}

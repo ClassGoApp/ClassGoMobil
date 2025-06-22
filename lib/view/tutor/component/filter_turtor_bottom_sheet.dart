@@ -65,7 +65,7 @@ class _FilterTutorBottomSheetState extends State<FilterTutorBottomSheet> {
       groupId: _selectedGroupId,
       tutorName: _tutorNameController?.text.trim() ?? '',
       minCourses: _minCourses.toInt(),
-      minRating: _minRating,
+      minRating: _minRating > 0 ? _minRating : null,
     );
     Navigator.pop(context);
   }
@@ -155,25 +155,7 @@ class _FilterTutorBottomSheetState extends State<FilterTutorBottomSheet> {
             },
           ),
           const SizedBox(height: 20),
-          Text(
-            'Calificación Mínima: ${_minRating.toStringAsFixed(1)} ★',
-            style:
-                TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 16),
-          ),
-          Slider(
-            value: _minRating,
-            min: 0,
-            max: 5,
-            divisions: 50,
-            label: '${_minRating.toStringAsFixed(1)} ★',
-            activeColor: AppColors.orangeprimary,
-            inactiveColor: AppColors.orangeprimary.withOpacity(0.3),
-            onChanged: (value) {
-              setState(() {
-                _minRating = value;
-              });
-            },
-          ),
+          _buildStarRating(),
           const SizedBox(height: 30),
           SizedBox(
             width: double.infinity,
@@ -248,6 +230,97 @@ class _FilterTutorBottomSheetState extends State<FilterTutorBottomSheet> {
           items: items,
           onChanged: onChanged,
         ),
+      ),
+    );
+  }
+
+  Widget _buildStarRating() {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 10),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Calificación mínima:',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              SizedBox(width: 10),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(5, (index) {
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        if (_minRating.floor() == index + 1) {
+                          _minRating = 0.0;
+                        } else {
+                          _minRating = index + 1.0;
+                        }
+                      });
+                    },
+                    child: Container(
+                      margin: EdgeInsets.symmetric(horizontal: 2),
+                      child: Icon(
+                        index < _minRating.floor()
+                            ? Icons.star
+                            : Icons.star_border,
+                        color: index < _minRating.floor()
+                            ? AppColors.orangeprimary
+                            : Colors.white.withOpacity(0.5),
+                        size: 28,
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          Center(
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.orangeprimary.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppColors.orangeprimary.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: Text(
+                _minRating > 0 ? '${_minRating.floor()} ★' : 'Sin filtro',
+                style: TextStyle(
+                  color: AppColors.orangeprimary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          if (_minRating > 0) ...[
+            SizedBox(height: 8),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _minRating = 0.0;
+                });
+              },
+              child: Text(
+                'Limpiar calificación',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
