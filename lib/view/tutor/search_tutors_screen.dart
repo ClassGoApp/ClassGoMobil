@@ -75,14 +75,15 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   String? keyword;
   double? maxPrice;
   int? selectedGroupId;
-  String? sessionType = 'group';
-  List<int>? selectedSubjectIds;
+  String? sessionType;
   List<int>? selectedLanguageIds;
   int? selectedSubjectId;
   String? _selectedSortOption;
-  final List<String> _sortOptions = ['Más relevantes', 'Precio (asc)', 'Precio (desc)', 'Calificación'];
+  final List<String> _sortOptions = ['Nombre (A-Z)', 'Nombre (Z-A)', 'Materia (A-Z)', 'Materia (Z-A)'];
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
+  int? _minCourses;
+  double? _minRating;
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -101,6 +102,41 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
         });
         fetchInitialTutors();
       }
+    });
+  }
+
+  String _getFirstValidSubject(List subjects) {
+    final validSubjects = subjects
+        .where((s) => s['status'] == 'active' && s['deleted_at'] == null)
+        .map((s) => s['name'] as String)
+        .toList();
+    return validSubjects.isNotEmpty ? validSubjects.first : '';
+  }
+
+  void _sortTutors(String? sortOption) {
+    if (sortOption == null) return;
+
+    setState(() {
+      tutors.sort((a, b) {
+        switch (sortOption) {
+          case 'Nombre (A-Z)':
+            return (a['profile']['full_name'] as String)
+                .compareTo(b['profile']['full_name'] as String);
+          case 'Nombre (Z-A)':
+            return (b['profile']['full_name'] as String)
+                .compareTo(a['profile']['full_name'] as String);
+          case 'Materia (A-Z)':
+            final aSubject = _getFirstValidSubject(a['subjects'] as List);
+            final bSubject = _getFirstValidSubject(b['subjects'] as List);
+            return aSubject.compareTo(bSubject);
+          case 'Materia (Z-A)':
+            final aSubject = _getFirstValidSubject(a['subjects'] as List);
+            final bSubject = _getFirstValidSubject(b['subjects'] as List);
+            return bSubject.compareTo(aSubject);
+          default:
+            return 0;
+        }
+      });
     });
   }
 
@@ -251,27 +287,25 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     int? country,
     int? groupId,
     String? sessionType,
-    List<int>? subjectIds,
     List<int>? languageIds,
-    int? subjectId,
-    bool isRefresh = false,
+    int? subjectId, // Añadido subjectId aquí
   }) async {
-    print('DEBUG en fetchInitialTutors: keyword = $keyword, subjectId = $subjectId');
-    if (!isRefresh) {
-      setState(() {
+    if (isLoading) return;
+    setState(() {
+      isInitialLoading = true;
+      if (tutors.isEmpty) {
         isInitialLoading = true;
-      });
-    }
+      }
+    });
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final token = authProvider.token;
 
       print('DEBUG - Llamando a la API para la página inicial');
-      final response = await getVerifiedTutors(
+      final response = await findTutors(
         token,
-        page: 1,
-        perPage: 10,
+        page: currentPage,
         keyword: this.keyword,
         maxPrice: maxPrice,
         country: country,
@@ -279,27 +313,23 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
         sessionType: sessionType,
         subjectId: subjectId,
         languageIds: languageIds,
+        // TODO: Añadir minCourses y minRating a la llamada a la API cuando esté lista
+        // minCourses: _minCourses,
+        // minRating: _minRating,
       );
 
-      if (response.containsKey('data') && response['data'] is Map) {
-        final data = response['data'];
-        if (data.containsKey('list') && data['list'] is List) {
-          final tutorsList = data['list'] as List;
-          print('DEBUG - API devolvió ${tutorsList.length} tutores para la página inicial');
-          
-          setState(() {
-            if (isRefresh) {
-              tutors = tutorsList.map((tutor) => tutor as Map<String, dynamic>).toList();
-            } else {
-              tutors = tutorsList.map((tutor) => tutor as Map<String, dynamic>).toList();
-            }
-            final paginationData = data['pagination'] is Map ? data['pagination'] : {};
-            totalTutors = paginationData['total'] ?? 0;
-            totalPages = paginationData['totalPages'] ?? 1;
-            currentPage = 1;
-            print('DEBUG - Paginación inicial: Total tutores: $totalTutors, Total páginas: $totalPages, Tutores cargados: ${tutors.length}');
-          });
-        }
+      if (response['data'] != null && response['data']['data'] is List) {
+        final List<dynamic> fetchedTutors = response['data']['data'];
+        print('DEBUG - API devolvió ${fetchedTutors.length} tutores para la página inicial');
+        
+        setState(() {
+          tutors = fetchedTutors.map((tutor) => tutor as Map<String, dynamic>).toList();
+          final paginationData = response['data']['pagination'] is Map ? response['data']['pagination'] : {};
+          totalTutors = paginationData['total'] ?? 0;
+          totalPages = paginationData['totalPages'] ?? 1;
+          currentPage = 1;
+          print('DEBUG - Paginación inicial: Total tutores: $totalTutors, Total páginas: $totalPages, Tutores cargados: ${tutors.length}');
+        });
       }
     } catch (e) {
       print('Error fetching tutors: $e');
@@ -313,10 +343,14 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
 
   Future<void> _onRefresh() async {
     setState(() {
+      isRefreshing = true;
       currentPage = 1;
+      tutors.clear();
     });
-
-    await fetchInitialTutors(isRefresh: true);
+    await fetchInitialTutors();
+    setState(() {
+      isRefreshing = false;
+    });
   }
 
   void _loadMoreTutors() async {
@@ -408,63 +442,34 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     _pageController.jumpToPage(index);
   }
 
-  void openFilterBottomSheet() async {
-    if (subjects.isEmpty) await fetchSubjects();
-    if (languages.isEmpty) await fetchLanguages();
-    if (countries.isEmpty) await fetchCountries();
-    if (subjectGroups.isEmpty) await fetchSubjectGroups();
-
+  void openFilterBottomSheet() {
     showModalBottomSheet(
-      backgroundColor: AppColors.sheetBackgroundColor,
       context: context,
       isScrollControlled: true,
-      builder: (context) => FilterBottomSheet(
-        subjects: subjects,
-        languages: languages,
-        location: countries,
+      backgroundColor: Colors.transparent,
+      builder: (context) => FilterTutorBottomSheet(
         subjectGroups: subjectGroups,
-        selectedSubjectGroup: selectedSubjectGroup,
-        selectedCountryId: selectedCountryId,
-        keyword: this.keyword,
-        maxPrice: maxPrice,
-        sessionType: null,
-        subjectIds: selectedSubjectIds,
-        languageIds: selectedLanguageIds,
-        onCountrySelected: (int countryId) {
+        selectedGroupId: selectedGroupId,
+        keyword: keyword,
+        minCourses: _minCourses,
+        minRating: _minRating,
+        onApplyFilters: ({int? groupId, String? keyword, int? minCourses, double? minRating}) {
           setState(() {
-            selectedCountryId = countryId;
-          });
-        },
-        onSubjectGroupSelected: (selectedGroup) {
-          setState(() {
-            selectedSubjectGroup = selectedGroup;
-          });
-        },
-        onApplyFilters: ({
-          String? keyword,
-          double? maxPrice,
-          int? country,
-          int? groupId,
-          String? sessionType,
-          List<int>? subjectIds,
-          List<int>? languageIds,
-        }) {
-          setState(() {
-            this.keyword = keyword;
-            this.maxPrice = maxPrice;
-            this.selectedCountryId = country;
             this.selectedGroupId = groupId;
-            this.sessionType = sessionType;
-            this.selectedSubjectIds = subjectIds;
-            this.selectedLanguageIds = languageIds;
+            this.keyword = keyword;
+            this._minCourses = minCourses;
+            this._minRating = minRating;
+
+            // Actualizar el controlador del buscador principal si es necesario
+            if (_searchController.text != keyword) {
+              _searchController.text = keyword ?? '';
+            }
+
+            currentPage = 1;
+            tutors.clear();
+            isInitialLoading = true;
           });
-          fetchInitialTutors(
-            maxPrice: maxPrice,
-            country: country,
-            groupId: groupId,
-            sessionType: sessionType,
-            languageIds: languageIds,
-          );
+          fetchInitialTutors();
         },
       ),
     );
@@ -664,18 +669,39 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                               value: _selectedSortOption,
                               hint: Text('Ordenar por', style: AppTextStyles.body.copyWith(color: AppColors.whiteColor.withOpacity(0.7), fontSize: 14)),
                               icon: Icon(Icons.arrow_drop_down, color: AppColors.whiteColor.withOpacity(0.7), size: 20),
-                              dropdownColor: AppColors.darkGreyColor,
+                              dropdownColor: AppColors.blurprimary,
+                              borderRadius: BorderRadius.circular(15.0),
                               style: AppTextStyles.body.copyWith(color: AppColors.whiteColor, fontSize: 14),
                               isExpanded: true,
                               items: _sortOptions.map((String value) {
+                                bool isLastOfGroup = value == 'Nombre (Z-A)';
                                 return DropdownMenuItem<String>(
                                   value: value,
-                                  child: Text(value, style: const TextStyle(fontSize: 14)),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                    decoration: BoxDecoration(
+                                      border: isLastOfGroup
+                                          ? Border(bottom: BorderSide(color: AppColors.navbar.withOpacity(0.2), width: 1))
+                                          : null,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          value.contains('(A-Z)') ? Icons.arrow_downward : Icons.arrow_upward,
+                                          size: 18,
+                                          color: AppColors.whiteColor.withOpacity(0.7),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Text(value),
+                                      ],
+                                    ),
+                                  ),
                                 );
                               }).toList(),
                               onChanged: (newValue) {
                                 setState(() {
                                   _selectedSortOption = newValue;
+                                  _sortTutors(newValue);
                                 });
                               },
                             ),
@@ -779,7 +805,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                   .toList();
               // Depuración de imágenes de tutores
               final hdUrl = highResTutorImages[tutor['id']];
-              print('Tutor: ${profile['full_name']} - tutor["id"]: ${tutor['id']} - HD URL: $hdUrl');
+              print(
+                  'Tutor: ${profile['full_name']} - tutor["id"]: ${tutor['id']} - HD URL: $hdUrl');
               
               return AnimationConfiguration.staggeredList(
                 position: index,
@@ -791,18 +818,25 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 2.0),
                       child: GestureDetector(
                         onTap: () {
-                          _searchFocusNode.unfocus(); // 3. Quitar el foco
-                          if (profile != null &&
-                              profile is Map<String, dynamic>) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    TutorDetailScreen(
-                                        profile: profile, tutor: tutor,),
+                          _searchFocusNode.unfocus(); // Quitar el foco
+                          Navigator.push(
+                            context,
+                            SlideUpRoute(
+                              page: TutorProfileScreen(
+                                tutorId: tutor['id'].toString(),
+                                tutorName: profile['full_name'] ?? 'No name available',
+                                tutorImage: highResTutorImages[tutor['id']] ?? profile['image'] ?? AppImages.placeHolderImage,
+                                tutorVideo: profile['intro_video'] ?? '',
+                                description: profile['description'] ?? 'No hay descripción disponible.',
+                                rating: tutor['avg_rating'] != null
+                                    ? (tutor['avg_rating'] is String
+                                        ? double.tryParse(tutor['avg_rating']) ?? 0.0
+                                        : (tutor['avg_rating'] is num ? tutor['avg_rating'].toDouble() : 0.0))
+                                    : 0.0,
+                                subjects: validSubjects,
                               ),
-                            );
-                          }
+                            ),
+                          );
                         },
                         child: TutorCard(
                           name: profile['full_name'] ?? 'No name available',
