@@ -28,7 +28,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   int _currentPageSubjects = 1;
   bool _hasMoreSubjects = true;
   bool _isModalLoading = true;
-  final int _subjectsPerPage = 100; // Aumentado a 100 para cargar más materias de una vez
+  final int _subjectsPerPage =
+      100; // Aumentado a 100 para cargar más materias de una vez
 
   // Variables para el manejo de videos y scroll
   final ScrollController _scrollController = ScrollController();
@@ -58,7 +59,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    
+
     // Inicializar animaciones
     _scrollAnimationController = AnimationController(
       duration: Duration(milliseconds: 200),
@@ -71,7 +72,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       parent: _scrollAnimationController,
       curve: Curves.easeOutCubic,
     ));
-    
+
     fetchFeaturedTutors();
     fetchAlliancesData();
     fetchInitialSubjects(); // Precargar 20 materias
@@ -98,7 +99,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 children: [
                   // Header
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0, vertical: 12),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -107,8 +109,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           builder: (context) => InkWell(
                             onTap: () {
                               setState(() {
-                                _isLeftDrawerOpen = !_isLeftDrawerOpen; // Toggle left drawer state
-                                _isCustomDrawerOpen = false; // Close right drawer if open
+                                _isLeftDrawerOpen =
+                                    !_isLeftDrawerOpen; // Toggle left drawer state
+                                _isCustomDrawerOpen =
+                                    false; // Close right drawer if open
                               });
                             },
                             child: Container(
@@ -117,7 +121,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               padding: EdgeInsets.all(6),
-                              child: Icon(Icons.menu, color: Colors.white, size: 26), // Adjusted size to match person icon
+                              child: Icon(Icons.menu,
+                                  color: Colors.white,
+                                  size:
+                                      26), // Adjusted size to match person icon
                             ),
                           ),
                         ),
@@ -130,8 +137,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           builder: (context) => InkWell(
                             onTap: () {
                               setState(() {
-                                _isCustomDrawerOpen = !_isCustomDrawerOpen; // Toggle right drawer state
-                                _isLeftDrawerOpen = false; // Close left drawer if open
+                                _isCustomDrawerOpen =
+                                    !_isCustomDrawerOpen; // Toggle right drawer state
+                                _isLeftDrawerOpen =
+                                    false; // Close left drawer if open
                               });
                             },
                             child: Container(
@@ -140,73 +149,100 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               padding: EdgeInsets.all(6),
-                              child: Icon(Icons.person_outline, color: Colors.white, size: 26), // Adjusted size to match menu icon
+                              child: Icon(Icons.person_outline,
+                                  color: Colors.white,
+                                  size: 26), // Adjusted size to match menu icon
                             ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  // Mensaje principal
+                  // Mensaje principal, menú de opciones e imagen
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20.0, vertical: 8.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        SizedBox(height: 10),
+                        const Text(
                           'Aprende con\nTutorías en Línea',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 30,
+                            fontSize: 28,
                             fontWeight: FontWeight.bold,
-                            height: 1.1,
+                            height: 1.2,
                           ),
                         ),
-                        SizedBox(height: 12),
-                        Text(
-                          'Alcanza tus metas con tutorías personalizadas de los mejores expertos. Conéctate con tutores dedicados para asegurar tu éxito.',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.85),
-                            fontSize: 15,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                        SizedBox(height: 18),
-                        // Barra de búsqueda
+                        SizedBox(height: 24),
+                        // Barra de búsqueda principal (como en Yango)
                         GestureDetector(
                           onTap: () {
                             _showSearchModal();
                           },
                           child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 14),
                             decoration: BoxDecoration(
                               color: Colors.white.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(16),
                             ),
                             child: Row(
                               children: [
-                                Expanded(
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                                    child: TextField(
-                                      enabled: false,
-                                      style: TextStyle(color: Colors.white),
-                                      decoration: InputDecoration(
-                                        hintText: '¿De que materia quieres tutoría?',
-                                        hintStyle: TextStyle(color: Colors.white70),
-                                        border: InputBorder.none,
-                                      ),
-                                    ),
-                                  ),
+                                Icon(Icons.search,
+                                    color: Colors.white, size: 28),
+                                SizedBox(width: 12),
+                                Text(
+                                  '¿Qué materia necesitas?',
+                                  style: TextStyle(
+                                      color: Colors.white.withOpacity(0.8),
+                                      fontSize: 18),
                                 ),
-                                IconButton(
-                                  icon: Icon(Icons.search, color: Colors.white),
-                                  onPressed: () {
-                                    _showSearchModal();
-                                  },
-                                ),
+                                Spacer(),
+                                Icon(Icons.arrow_forward_ios,
+                                    color: Colors.white, size: 16),
                               ],
                             ),
                           ),
+                        ),
+                        SizedBox(height: 24),
+                        // Menú de opciones estilo Yango
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _buildMenuOption(
+                              context,
+                              icon: Icons
+                                  .flash_on, // Ícono para "Tutor al Instante"
+                              label: 'Tutor\nal Instante',
+                              onTap: () {
+                                // TODO: Navegar a la pantalla de Tutoría Instantánea
+                              },
+                            ),
+                            _buildMenuOption(
+                              context,
+                              icon:
+                                  Icons.calendar_today, // Ícono para "Agendar"
+                              label: 'Agendar\nTutoría',
+                              onTap: () {
+                                // TODO: Navegar a la pantalla de Agendar
+                              },
+                            ),
+                            _buildMenuOption(
+                              context,
+                              icon: Icons.explore, // Ícono para "Explorar"
+                              label: 'Explorar\nTutores',
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => SearchTutorsScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -235,7 +271,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ),
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 18),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0, vertical: 18),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -257,9 +294,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           ),
                           SizedBox(height: 12),
                           SizedBox(
-                            height: MediaQuery.of(context).size.height * 0.26, // 35% de la altura de la pantalla
+                            height: MediaQuery.of(context).size.height *
+                                0.26, // 35% de la altura de la pantalla
                             child: isLoadingTutors
-                                ? Center(child: CircularProgressIndicator(color: Colors.white))
+                                ? Center(
+                                    child: CircularProgressIndicator(
+                                        color: Colors.white))
                                 : featuredTutors.isEmpty
                                     ? Center(
                                         child: Text(
@@ -271,34 +311,52 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                         controller: _scrollController,
                                         scrollDirection: Axis.horizontal,
                                         itemCount: featuredTutors.length,
-                                        separatorBuilder: (_, __) => SizedBox(width: 12),
+                                        separatorBuilder: (_, __) =>
+                                            SizedBox(width: 12),
                                         itemBuilder: (context, index) {
                                           try {
-                                          final tutor = featuredTutors[index];
-                                          final profile = tutor['profile'] ?? {};
-                                          final name = profile['full_name'] ?? 'Sin nombre';
-                                          final subjects = tutor['subjects'];
-                                          String specialty = 'Sin especialidad';
-                                          if (subjects is List && subjects.isNotEmpty && subjects[0] != null && subjects[0]['name'] != null) {
-                                            specialty = subjects[0]['name'];
-                                          }
-                                            final rating = double.tryParse(tutor['avg_rating']?.toString() ?? '0.0') ?? 0.0;
-                                            final imagePath = profile['image'] ?? '';
-                                            final videoPath = profile['intro_video'] ?? '';
-                                            final imageUrl = getFullUrl(imagePath, baseImageUrl);
-                                            final videoUrl = getFullUrl(videoPath, baseVideoUrl);
+                                            final tutor = featuredTutors[index];
+                                            final profile =
+                                                tutor['profile'] ?? {};
+                                            final name = profile['full_name'] ??
+                                                'Sin nombre';
+                                            final subjects = tutor['subjects'];
+                                            String specialty =
+                                                'Sin especialidad';
+                                            if (subjects is List &&
+                                                subjects.isNotEmpty &&
+                                                subjects[0] != null &&
+                                                subjects[0]['name'] != null) {
+                                              specialty = subjects[0]['name'];
+                                            }
+                                            final rating = double.tryParse(
+                                                    tutor['avg_rating']
+                                                            ?.toString() ??
+                                                        '0.0') ??
+                                                0.0;
+                                            final imagePath =
+                                                profile['image'] ?? '';
+                                            final videoPath =
+                                                profile['intro_video'] ?? '';
+                                            final imageUrl = getFullUrl(
+                                                imagePath, baseImageUrl);
+                                            final videoUrl = getFullUrl(
+                                                videoPath, baseVideoUrl);
                                             return AnimatedContainer(
-                                              duration: Duration(milliseconds: 150),
+                                              duration:
+                                                  Duration(milliseconds: 150),
                                               curve: Curves.easeOutCubic,
                                               transform: Matrix4.identity()
                                                 ..setEntry(3, 2, 0.001)
                                                 ..rotateY(_scrollOffset * 0.01),
                                               child: Container(
                                                 decoration: BoxDecoration(
-                                                  borderRadius: BorderRadius.circular(16),
+                                                  borderRadius:
+                                                      BorderRadius.circular(16),
                                                   boxShadow: [
                                                     BoxShadow(
-                                                      color: Colors.black.withOpacity(0.1),
+                                                      color: Colors.black
+                                                          .withOpacity(0.1),
                                                       blurRadius: 8,
                                                       offset: Offset(0, 4),
                                                     ),
@@ -311,31 +369,53 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                       children: [
                                                         Container(
                                                           width: 200,
-                                                          decoration: BoxDecoration(
-                                                            color: Colors.transparent,
-                                                            borderRadius: BorderRadius.circular(16),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            color: Colors
+                                                                .transparent,
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        16),
                                                           ),
                                                           child: Column(
                                                             children: [
                                                               Container(
                                                                 width: 200,
-                                                                decoration: BoxDecoration(
-                                                                  color: Colors.white,
-                                                                  border: Border.all(color: AppColors.lightBlueColor, width: 4),
-                                                                  borderRadius: BorderRadius.circular(16),
+                                                                decoration:
+                                                                    BoxDecoration(
+                                                                  color: Colors
+                                                                      .white,
+                                                                  border: Border.all(
+                                                                      color: AppColors
+                                                                          .lightBlueColor,
+                                                                      width: 4),
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              16),
                                                                 ),
                                                                 child: Column(
                                                                   children: [
                                                                     ClipRRect(
-                                                                      borderRadius: BorderRadius.only(
-                                                                        topLeft: Radius.circular(12),
-                                                                        topRight: Radius.circular(12),
+                                                                      borderRadius:
+                                                                          BorderRadius
+                                                                              .only(
+                                                                        topLeft:
+                                                                            Radius.circular(12),
+                                                                        topRight:
+                                                                            Radius.circular(12),
                                                                       ),
-                                                                      child: Container(
-                                                                        width: 200,
-                                                                        height: 100,
-                                                                        color: Colors.grey[300],
-                                                                        child: _playingIndex == index && _activeController != null
+                                                                      child:
+                                                                          Container(
+                                                                        width:
+                                                                            200,
+                                                                        height:
+                                                                            100,
+                                                                        color: Colors
+                                                                            .grey[300],
+                                                                        child: _playingIndex == index &&
+                                                                                _activeController != null
                                                                             ? _isVideoLoading
                                                                                 ? Center(child: CircularProgressIndicator(color: AppColors.lightBlueColor))
                                                                                 : Stack(
@@ -355,25 +435,44 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                                       ),
                                                                     ),
                                                                     Container(
-                                                                      width: double.infinity,
-                                                                      height: 20,
-                                                                      decoration: BoxDecoration(
-                                                                        color: AppColors.lightBlueColor,
-                                                                        borderRadius: BorderRadius.only(
-                                                                          bottomLeft: Radius.circular(12),
-                                                                          bottomRight: Radius.circular(12),
+                                                                      width: double
+                                                                          .infinity,
+                                                                      height:
+                                                                          20,
+                                                                      decoration:
+                                                                          BoxDecoration(
+                                                                        color: AppColors
+                                                                            .lightBlueColor,
+                                                                        borderRadius:
+                                                                            BorderRadius.only(
+                                                                          bottomLeft:
+                                                                              Radius.circular(12),
+                                                                          bottomRight:
+                                                                              Radius.circular(12),
                                                                         ),
                                                                       ),
-                                                                      alignment: Alignment.centerLeft,
-                                                                      padding: EdgeInsets.only(left: 44, right: 8),
-                                                                      child: Text(
+                                                                      alignment:
+                                                                          Alignment
+                                                                              .centerLeft,
+                                                                      padding: EdgeInsets.only(
+                                                                          left:
+                                                                              44,
+                                                                          right:
+                                                                              8),
+                                                                      child:
+                                                                          Text(
                                                                         name,
-                                                                        style: TextStyle(
-                                                                          color: Colors.white,
-                                                                          fontWeight: FontWeight.bold,
-                                                                          fontSize: 14,
+                                                                        style:
+                                                                            TextStyle(
+                                                                          color:
+                                                                              Colors.white,
+                                                                          fontWeight:
+                                                                              FontWeight.bold,
+                                                                          fontSize:
+                                                                              14,
                                                                         ),
-                                                                        overflow: TextOverflow.ellipsis,
+                                                                        overflow:
+                                                                            TextOverflow.ellipsis,
                                                                       ),
                                                                     ),
                                                                   ],
@@ -387,12 +486,28 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                           left: 8,
                                                           child: CircleAvatar(
                                                             radius: 20,
-                                                            backgroundColor: Colors.white,
+                                                            backgroundColor:
+                                                                Colors.white,
                                                             child: CircleAvatar(
                                                               radius: 17,
-                                                              backgroundImage: imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
-                                                              backgroundColor: Colors.grey[300],
-                                                              child: imageUrl.isEmpty ? Icon(Icons.person, size: 18, color: Colors.grey[600]) : null,
+                                                              backgroundImage: imageUrl
+                                                                      .isNotEmpty
+                                                                  ? NetworkImage(
+                                                                      imageUrl)
+                                                                  : null,
+                                                              backgroundColor:
+                                                                  Colors.grey[
+                                                                      300],
+                                                              child: imageUrl
+                                                                      .isEmpty
+                                                                  ? Icon(
+                                                                      Icons
+                                                                          .person,
+                                                                      size: 18,
+                                                                      color: Colors
+                                                                              .grey[
+                                                                          600])
+                                                                  : null,
                                                             ),
                                                           ),
                                                         ),
@@ -401,29 +516,78 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                     SizedBox(height: 18),
                                                     Container(
                                                       width: 200,
-                                                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                                      padding:
+                                                          EdgeInsets.symmetric(
+                                                              horizontal: 8,
+                                                              vertical: 6),
                                                       child: Column(
-                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
                                                         children: [
                                                           Text(
                                                             'Especialidad: $specialty',
-                                                            style: TextStyle(fontSize: 13, color: Colors.white, fontWeight: FontWeight.w600),
+                                                            style: TextStyle(
+                                                                fontSize: 13,
+                                                                color: Colors
+                                                                    .white,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600),
                                                             maxLines: 2,
-                                                            overflow: TextOverflow.ellipsis,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
                                                           ),
                                                           SizedBox(height: 4),
                                                           Row(
                                                             children: [
-                                                              Text(rating.toStringAsFixed(2), style: TextStyle(fontSize: 14, color: Colors.white, fontWeight: FontWeight.bold)),
-                                                              SizedBox(width: 6),
+                                                              Text(
+                                                                  rating
+                                                                      .toStringAsFixed(
+                                                                          2),
+                                                                  style: TextStyle(
+                                                                      fontSize:
+                                                                          14,
+                                                                      color: Colors
+                                                                          .white,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .bold)),
+                                                              SizedBox(
+                                                                  width: 6),
                                                               Row(
-                                                                children: List.generate(5, (i) {
-                                                                  if (rating >= i + 1) {
-                                                                    return Icon(Icons.star, color: Colors.amber, size: 16);
-                                                                  } else if (rating > i && rating < i + 1) {
-                                                                    return Icon(Icons.star_half, color: Colors.amber, size: 16);
+                                                                children: List
+                                                                    .generate(5,
+                                                                        (i) {
+                                                                  if (rating >=
+                                                                      i + 1) {
+                                                                    return Icon(
+                                                                        Icons
+                                                                            .star,
+                                                                        color: Colors
+                                                                            .amber,
+                                                                        size:
+                                                                            16);
+                                                                  } else if (rating >
+                                                                          i &&
+                                                                      rating <
+                                                                          i + 1) {
+                                                                    return Icon(
+                                                                        Icons
+                                                                            .star_half,
+                                                                        color: Colors
+                                                                            .amber,
+                                                                        size:
+                                                                            16);
                                                                   } else {
-                                                                    return Icon(Icons.star_border, color: Colors.amber, size: 16);
+                                                                    return Icon(
+                                                                        Icons
+                                                                            .star_border,
+                                                                        color: Colors
+                                                                            .amber,
+                                                                        size:
+                                                                            16);
                                                                   }
                                                                 }),
                                                               ),
@@ -437,14 +601,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                               ),
                                             );
                                           } catch (e, stack) {
-                                            print('Error en itemBuilder de tutor:');
+                                            print(
+                                                'Error en itemBuilder de tutor:');
                                             print(e);
                                             print(stack);
                                             return Container(
                                               width: 200,
                                               height: 120,
                                               color: Colors.red[100],
-                                              child: Center(child: Text('Error al mostrar tutor', style: TextStyle(color: Colors.red))),
+                                              child: Center(
+                                                  child: Text(
+                                                      'Error al mostrar tutor',
+                                                      style: TextStyle(
+                                                          color: Colors.red))),
                                             );
                                           }
                                         },
@@ -454,45 +623,59 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           // Guía paso a paso
                           Text(
                             'Una guía paso a paso',
-                            style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 14),
+                            style: TextStyle(
+                                color: Colors.white.withOpacity(0.85),
+                                fontSize: 14),
                           ),
                           SizedBox(height: 4),
                           Text(
                             'Desbloquea tu potencial con pasos sencillos',
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18),
                           ),
                           SizedBox(height: 12),
                           SizedBox(
-                            height: MediaQuery.of(context).size.height * 0.36, // Altura variable
+                            height: MediaQuery.of(context).size.height *
+                                0.36, // Altura variable
                             child: ListView(
                               scrollDirection: Axis.horizontal,
                               children: [
                                 _StepCard(
                                   step: 'Paso 1',
                                   title: 'Inscríbete',
-                                  description: 'Crea tu cuenta rápidamente para comenzar a utilizar nuestra plataforma.',
+                                  description:
+                                      'Crea tu cuenta rápidamente para comenzar a utilizar nuestra plataforma.',
                                   buttonText: 'Empezar',
-                                  imageUrl: 'https://classgoapp.com/storage/optionbuilder/uploads/927102-18-2025_1202amPASO_1.jpg',
+                                  imageUrl:
+                                      'https://classgoapp.com/storage/optionbuilder/uploads/927102-18-2025_1202amPASO_1.jpg',
                                 ),
                                 SizedBox(width: 18),
                                 _StepCard(
                                   step: 'Paso 2',
                                   title: 'Encuentra un Tutor',
-                                  description: 'Busca y selecciona entre tutores calificados según tus necesidades.',
+                                  description:
+                                      'Busca y selecciona entre tutores calificados según tus necesidades.',
                                   buttonText: 'Buscar Ahora',
-                                  imageUrl: 'https://classgoapp.com/storage/optionbuilder/uploads/776302-18-2025_1203amPASO_2.jpg',
+                                  imageUrl:
+                                      'https://classgoapp.com/storage/optionbuilder/uploads/776302-18-2025_1203amPASO_2.jpg',
                                 ),
                                 SizedBox(width: 18),
                                 _StepCard(
                                   step: 'Paso 3',
                                   title: 'Programar una Sesión',
-                                  description: 'Reserva fácilmente un horario conveniente para tu sesión.',
+                                  description:
+                                      'Reserva fácilmente un horario conveniente para tu sesión.',
                                   buttonText: 'Empecemos',
-                                  imageUrl: 'https://classgoapp.com/storage/optionbuilder/uploads/229502-18-2025_1204amPASO_3.jpg',
+                                  imageUrl:
+                                      'https://classgoapp.com/storage/optionbuilder/uploads/229502-18-2025_1204amPASO_3.jpg',
                                 ),
                                 SizedBox(width: 18),
                                 _StartJourneyCard(),
-                                SizedBox(width: 8), // Added SizedBox for spacing at the end
+                                SizedBox(
+                                    width:
+                                        8), // Added SizedBox for spacing at the end
                               ],
                             ),
                           ),
@@ -500,17 +683,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           // ¿Por qué elegirnos?
                           Text(
                             '¿Por qué Elegirnos?',
-                            style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 14),
+                            style: TextStyle(
+                                color: Colors.white.withOpacity(0.85),
+                                fontSize: 14),
                           ),
                           SizedBox(height: 4),
                           Text(
                             'Por el acceso rápido, 24/7, a tutorías personalizadas que potencian tu aprendizaje',
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18),
                           ),
                           SizedBox(height: 8),
                           Text(
                             'Accede a sesiones cortas y prácticas, diseñadas por tutores expertos para ser tus pequeños salvavidas en el aprendizaje',
-                            style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 14),
+                            style: TextStyle(
+                                color: Colors.white.withOpacity(0.85),
+                                fontSize: 14),
                           ),
                           SizedBox(height: 8),
                           Padding(
@@ -518,9 +708,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('• Acceso 24/7', style: TextStyle(color: Colors.white, fontSize: 14)),
-                                Text('• Tutores Expertos', style: TextStyle(color: Colors.white, fontSize: 14)),
-                                Text('• Tarifas asequibles', style: TextStyle(color: Colors.white, fontSize: 14)),
+                                Text('• Acceso 24/7',
+                                    style: TextStyle(
+                                        color: Colors.white, fontSize: 14)),
+                                Text('• Tutores Expertos',
+                                    style: TextStyle(
+                                        color: Colors.white, fontSize: 14)),
+                                Text('• Tarifas asequibles',
+                                    style: TextStyle(
+                                        color: Colors.white, fontSize: 14)),
                               ],
                             ),
                           ),
@@ -532,12 +728,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 32, vertical: 12),
                               ),
                               onPressed: () {
                                 // TODO: Implement action for 'Comienza Ahora'
                               },
-                              child: Text('Comienza Ahora', style: TextStyle(fontWeight: FontWeight.bold)),
+                              child: Text('Comienza Ahora',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold)),
                             ),
                           ),
                           SizedBox(height: 18),
@@ -553,24 +752,36 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           ),
                           SizedBox(height: 18),
                           // Alianzas
-                          Text('Alianzas', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                          Text('Alianzas',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16)),
                           SizedBox(height: 10),
                           SizedBox(
                             height: 180,
                             child: isLoadingAlliances
-                                ? Center(child: CircularProgressIndicator(color: Colors.white))
+                                ? Center(
+                                    child: CircularProgressIndicator(
+                                        color: Colors.white))
                                 : alliances.isEmpty
-                                    ? Center(child: Text('No hay alianzas disponibles', style: TextStyle(color: Colors.white)))
+                                    ? Center(
+                                        child: Text(
+                                            'No hay alianzas disponibles',
+                                            style:
+                                                TextStyle(color: Colors.white)))
                                     : ListView.separated(
                                         scrollDirection: Axis.horizontal,
                                         itemCount: alliances.length,
-                                        separatorBuilder: (_, __) => SizedBox(width: 10),
+                                        separatorBuilder: (_, __) =>
+                                            SizedBox(width: 10),
                                         itemBuilder: (context, index) {
-                                          
                                           final alianza = alliances[index];
-                                          final logoUrl = alianza['imagen'] ?? '';
+                                          final logoUrl =
+                                              alianza['imagen'] ?? '';
                                           final name = alianza['titulo'] ?? '';
-                                          final enlace = alianza['enlace'] ?? '';
+                                          final enlace =
+                                              alianza['enlace'] ?? '';
                                           final color = Color(0xFF0B9ED9);
                                           return GestureDetector(
                                             onTap: () {
@@ -605,25 +816,36 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     _isCustomDrawerOpen = false;
                   });
                 },
-                child: Container(color: Colors.black54), // Semi-transparent overlay
+                child: Container(
+                    color: Colors.black54), // Semi-transparent overlay
               ),
             ),
           // Custom Drawer Implementation (Right) - Existing
           AnimatedPositioned(
             duration: const Duration(milliseconds: 300), // Animation duration
             curve: Curves.easeInOut,
-            top: MediaQuery.of(context).padding.top + 62.0, // Position below status bar and header (estimated height)
-            right: _isCustomDrawerOpen ? 0 : -(MediaQuery.of(context).size.width * 0.7), // Slide in/out from the right
-            width: MediaQuery.of(context).size.width * 0.7, // Set width (adjust as needed)
+            top: MediaQuery.of(context).padding.top +
+                62.0, // Position below status bar and header (estimated height)
+            right: _isCustomDrawerOpen
+                ? 0
+                : -(MediaQuery.of(context).size.width *
+                    0.7), // Slide in/out from the right
+            width: MediaQuery.of(context).size.width *
+                0.7, // Set width (adjust as needed)
             child: Container(
-              height: 465.0, // Increased height to fit all options (adjust as needed)
+              height:
+                  465.0, // Increased height to fit all options (adjust as needed)
               decoration: BoxDecoration(
                 color: Color(0xFF0B3C5D), // Dark background color
                 borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(16), // Apply border radius to bottom left
+                  bottomLeft:
+                      Radius.circular(16), // Apply border radius to bottom left
                 ),
-                border: Border.all(color: AppColors.lightBlueColor, width: 2.0), // Ensure light blue border with thickness 2.0
-                boxShadow: [ // Optional: Add shadow for depth
+                border: Border.all(
+                    color: AppColors.lightBlueColor,
+                    width: 2.0), // Ensure light blue border with thickness 2.0
+                boxShadow: [
+                  // Optional: Add shadow for depth
                   BoxShadow(
                     color: Colors.black.withOpacity(0.3),
                     blurRadius: 10,
@@ -643,63 +865,85 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       );
                     },
                   ),
-                  Divider(color: Colors.white54, thickness: 0.5), // Add a divider after header
+                  Divider(
+                      color: Colors.white54,
+                      thickness: 0.5), // Add a divider after header
                   // Menu Items
                   ListTile(
                     leading: Icon(Icons.dashboard, color: Colors.white),
                     title: Text('Panel', style: TextStyle(color: Colors.white)),
                     onTap: () {
                       // TODO: Implement navigation to Panel screen
-                      setState(() { _isCustomDrawerOpen = false; });
+                      setState(() {
+                        _isCustomDrawerOpen = false;
+                      });
                     },
                   ),
                   ListTile(
                     leading: Icon(Icons.settings, color: Colors.white),
-                    title: Text('Configuración del perfil', style: TextStyle(color: Colors.white)),
+                    title: Text('Configuración del perfil',
+                        style: TextStyle(color: Colors.white)),
                     onTap: () {
                       // TODO: Implement navigation to Profile Settings screen
-                      setState(() { _isCustomDrawerOpen = false; });
+                      setState(() {
+                        _isCustomDrawerOpen = false;
+                      });
                     },
                   ),
                   ListTile(
                     leading: Icon(Icons.calendar_today, color: Colors.white),
-                    title: Text('Mis reservas', style: TextStyle(color: Colors.white)),
+                    title: Text('Mis reservas',
+                        style: TextStyle(color: Colors.white)),
                     onTap: () {
                       // TODO: Implement navigation to My Bookings screen
-                      setState(() { _isCustomDrawerOpen = false; });
+                      setState(() {
+                        _isCustomDrawerOpen = false;
+                      });
                     },
                   ),
                   ListTile(
                     leading: Icon(Icons.receipt, color: Colors.white),
-                    title: Text('Facturas', style: TextStyle(color: Colors.white)),
+                    title:
+                        Text('Facturas', style: TextStyle(color: Colors.white)),
                     onTap: () {
                       // TODO: Implement navigation to Invoices screen
-                      setState(() { _isCustomDrawerOpen = false; });
+                      setState(() {
+                        _isCustomDrawerOpen = false;
+                      });
                     },
                   ),
                   ListTile(
                     leading: Icon(Icons.inbox, color: Colors.white),
-                    title: Text('Bandeja de entrada', style: TextStyle(color: Colors.white)),
+                    title: Text('Bandeja de entrada',
+                        style: TextStyle(color: Colors.white)),
                     onTap: () {
                       // TODO: Implement navigation to Inbox screen
-                      setState(() { _isCustomDrawerOpen = false; });
+                      setState(() {
+                        _isCustomDrawerOpen = false;
+                      });
                     },
                   ),
-                  Divider(color: Colors.white54, thickness: 0.5), // Add a divider
+                  Divider(
+                      color: Colors.white54, thickness: 0.5), // Add a divider
                   ListTile(
                     leading: Icon(Icons.logout, color: Colors.red),
-                    title: Text('Salir de la cuenta', style: TextStyle(color: Colors.red)),
-                    onTap: () async { // Make the function async
+                    title: Text('Salir de la cuenta',
+                        style: TextStyle(color: Colors.red)),
+                    onTap: () async {
+                      // Make the function async
                       // TODO: Implement logout functionality
                       // Call the logout method from AuthProvider
-                      await Provider.of<AuthProvider>(context, listen: false).clearToken();
+                      await Provider.of<AuthProvider>(context, listen: false)
+                          .clearToken();
 
                       // Navigate to the LoginScreen and remove all previous routes
                       Navigator.of(context).pushAndRemoveUntil(
                         MaterialPageRoute(builder: (context) => LoginScreen()),
-                            (Route<dynamic> route) => false,
+                        (Route<dynamic> route) => false,
                       );
-                      setState(() { _isCustomDrawerOpen = false; }); // Close the drawer
+                      setState(() {
+                        _isCustomDrawerOpen = false;
+                      }); // Close the drawer
                     },
                   ),
                 ],
@@ -716,7 +960,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     _isLeftDrawerOpen = false;
                   });
                 },
-                child: Container(color: Colors.black.withOpacity(0.5)), // Overlay semi-transparente
+                child: Container(
+                    color: Colors.black
+                        .withOpacity(0.5)), // Overlay semi-transparente
               ),
             ),
 
@@ -724,18 +970,28 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           AnimatedPositioned(
             duration: const Duration(milliseconds: 300), // Animation duration
             curve: Curves.easeInOut,
-            top: MediaQuery.of(context).padding.top + 62.0, // Position below status bar and header
-            left: _isLeftDrawerOpen ? 0 : -(MediaQuery.of(context).size.width * 0.7), // Slide in/out from the left
-            width: MediaQuery.of(context).size.width * 0.7, // Set width (adjust as needed)
+            top: MediaQuery.of(context).padding.top +
+                62.0, // Position below status bar and header
+            left: _isLeftDrawerOpen
+                ? 0
+                : -(MediaQuery.of(context).size.width *
+                    0.7), // Slide in/out from the left
+            width: MediaQuery.of(context).size.width *
+                0.7, // Set width (adjust as needed)
             child: Container(
-              height: 480.0, // Set a specific height (adjust as needed based on content)
+              height:
+                  480.0, // Set a specific height (adjust as needed based on content)
               decoration: BoxDecoration(
-                color: const Color(0xFF00B4D8), // Teal background color from Figma
+                color:
+                    const Color(0xFF00B4D8), // Teal background color from Figma
                 borderRadius: BorderRadius.only(
-                  topRight: Radius.circular(16), // Apply border radius to top right
-                  bottomRight: Radius.circular(16), // Apply border radius to bottom right
+                  topRight:
+                      Radius.circular(16), // Apply border radius to top right
+                  bottomRight: Radius.circular(
+                      16), // Apply border radius to bottom right
                 ),
-                boxShadow: [ // Optional: Add shadow for depth
+                boxShadow: [
+                  // Optional: Add shadow for depth
                   BoxShadow(
                     color: Colors.black.withOpacity(0.3),
                     blurRadius: 10,
@@ -752,67 +1008,104 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       children: [
                         // Menu Items
                         ListTile(
-                          title: Text('Inicio', style: TextStyle(color: Colors.white, fontSize: 16)),
+                          title: Text('Inicio',
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 16)),
                           onTap: () {
                             // TODO: Implement navigation for Inicio
-                            setState(() { _isLeftDrawerOpen = false; });
+                            setState(() {
+                              _isLeftDrawerOpen = false;
+                            });
                           },
                         ),
-                        Divider(color: Colors.white54, thickness: 0.5), // Divider
+                        Divider(
+                            color: Colors.white54, thickness: 0.5), // Divider
                         ListTile(
-                          title: Text('Buscar Tutores', style: TextStyle(color: Colors.white, fontSize: 16)),
+                          title: Text('Buscar Tutores',
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 16)),
                           onTap: () {
                             // TODO: Implement navigation for Buscar Tutores
-                            setState(() { _isLeftDrawerOpen = false; });
+                            setState(() {
+                              _isLeftDrawerOpen = false;
+                            });
                           },
                         ),
-                        Divider(color: Colors.white54, thickness: 0.5), // Divider
+                        Divider(
+                            color: Colors.white54, thickness: 0.5), // Divider
                         ListTile(
-                          title: Text('Sobre Nosotros', style: TextStyle(color: Colors.white, fontSize: 16)),
+                          title: Text('Sobre Nosotros',
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 16)),
                           onTap: () {
                             // TODO: Implement navigation for Sobre Nosotros
-                            setState(() { _isLeftDrawerOpen = false; });
+                            setState(() {
+                              _isLeftDrawerOpen = false;
+                            });
                           },
                         ),
-                        Divider(color: Colors.white54, thickness: 0.5), // Divider
+                        Divider(
+                            color: Colors.white54, thickness: 0.5), // Divider
                         ListTile(
-                          title: Text('Como Trabajamos', style: TextStyle(color: Colors.white, fontSize: 16)),
+                          title: Text('Como Trabajamos',
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 16)),
                           onTap: () {
                             // TODO: Implement navigation for Como Trabajamos
-                            setState(() { _isLeftDrawerOpen = false; });
+                            setState(() {
+                              _isLeftDrawerOpen = false;
+                            });
                           },
                         ),
-                        Divider(color: Colors.white54, thickness: 0.5), // Divider
+                        Divider(
+                            color: Colors.white54, thickness: 0.5), // Divider
                         ListTile(
-                          title: Text('Preguntas', style: TextStyle(color: Colors.white, fontSize: 16)),
+                          title: Text('Preguntas',
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 16)),
                           onTap: () {
                             // TODO: Implement navigation for Preguntas
-                            setState(() { _isLeftDrawerOpen = false; });
+                            setState(() {
+                              _isLeftDrawerOpen = false;
+                            });
                           },
                         ),
-                        Divider(color: Colors.white54, thickness: 0.5), // Divider
+                        Divider(
+                            color: Colors.white54, thickness: 0.5), // Divider
                         ListTile(
-                          title: Text('Blogs', style: TextStyle(color: Colors.white, fontSize: 16)),
+                          title: Text('Blogs',
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 16)),
                           onTap: () {
                             // TODO: Implement navigation for Blogs
-                            setState(() { _isLeftDrawerOpen = false; });
+                            setState(() {
+                              _isLeftDrawerOpen = false;
+                            });
                           },
                         ),
-                        Divider(color: Colors.white54, thickness: 0.5), // Divider
+                        Divider(
+                            color: Colors.white54, thickness: 0.5), // Divider
                       ],
                     ),
                   ),
                   // Social Media Icons Section
                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 16.0), // Adjust padding
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 20.0, horizontal: 16.0), // Adjust padding
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         // TODO: Replace with actual social media icon widgets and onTap functionality
-                        Icon(Icons.tiktok, color: Colors.white, size: 30), // Placeholder icon
-                        Icon(Icons.facebook, color: Colors.white, size: 30), // Placeholder icon
-                        Icon(Icons.camera_alt, color: Colors.white, size: 30), // Usar icono genérico para Instagram
-                        Icon(Icons.chat, color: Colors.white, size: 30), // Usar icono genérico para Whatsapp
+                        Icon(Icons.tiktok,
+                            color: Colors.white, size: 30), // Placeholder icon
+                        Icon(Icons.facebook,
+                            color: Colors.white, size: 30), // Placeholder icon
+                        Icon(Icons.camera_alt,
+                            color: Colors.white,
+                            size: 30), // Usar icono genérico para Instagram
+                        Icon(Icons.chat,
+                            color: Colors.white,
+                            size: 30), // Usar icono genérico para Whatsapp
                       ],
                     ),
                   ),
@@ -829,7 +1122,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (_activeController != null) {
       await _activeController!.dispose();
     }
-    
+
     setState(() {
       _playingIndex = index;
       _isVideoLoading = true;
@@ -852,7 +1145,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           'Access-Control-Allow-Headers': 'Origin, Content-Type',
         },
       );
-      
+
       await controller.initialize().timeout(
         Duration(seconds: 10),
         onTimeout: () {
@@ -867,23 +1160,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
       controller.setVolume(1.0);
       controller.setLooping(true);
-      
+
       setState(() {
         _activeController = controller;
         _isVideoLoading = false;
       });
-      
+
       await controller.play();
-      
     } catch (e) {
       if (!mounted) return;
-      
+
       setState(() {
         _isVideoLoading = false;
         _playingIndex = -1;
         _activeController = null;
       });
-      
+
       String errorMessage = 'No se pudo reproducir el video. ';
       if (e is TimeoutException) {
         errorMessage += 'El servidor tardó demasiado en responder.';
@@ -892,7 +1184,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       } else {
         errorMessage += 'Por favor, intente más tarde.';
       }
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(errorMessage),
@@ -915,9 +1207,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       );
       return;
     }
-    
+
     final videoUrl = getFullUrl(videoPath, baseVideoUrl);
-    
+
     if (_playingIndex == index && _activeController != null) {
       if (_activeController!.value.isPlaying) {
         _activeController!.pause();
@@ -939,7 +1231,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       _activeController = null;
     }
     if (!mounted) return;
-    
+
     setState(() {
       _playingIndex = -1;
       _isVideoLoading = true;
@@ -956,7 +1248,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             child: VideoPlayer(_activeController!),
           ),
           if (_isVideoLoading)
-            Center(child: CircularProgressIndicator(color: AppColors.lightBlueColor)),
+            Center(
+                child:
+                    CircularProgressIndicator(color: AppColors.lightBlueColor)),
           Positioned.fill(
             child: Material(
               color: Colors.transparent,
@@ -1062,14 +1356,51 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return base + path;
   }
 
+  Widget _buildMenuOption(BuildContext context,
+      {required IconData icon,
+      required String label,
+      required VoidCallback onTap}) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 6),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: Colors.white, size: 32),
+              SizedBox(height: 8),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showSearchModal() {
-    print('DEBUG: Iniciando _showSearchModal con ${_subjects.length} materias precargadas');
-    
+    print(
+        'DEBUG: Iniciando _showSearchModal con ${_subjects.length} materias precargadas');
+
     _searchQuery = '';
     _searchController.clear();
     _isModalLoading = false;
-    
-    Map<String, dynamic>? _selectedSubject; // Variable de estado para la materia seleccionada
+
+    Map<String, dynamic>?
+        _selectedSubject; // Variable de estado para la materia seleccionada
 
     showModalBottomSheet(
       context: context,
@@ -1078,13 +1409,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
-            
             Future<void> loadMoreSubjectsFromModal() async {
               if (_isFetchingMoreSubjects || !_hasMoreSubjects) return;
-              
+
               _isFetchingMoreSubjects = true;
               setModalState(() {});
-              
+
               try {
                 final response = await getAllSubjects(
                   null,
@@ -1094,17 +1424,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 );
                 if (response != null && response.containsKey('data')) {
                   final responseData = response['data'];
-                  if (responseData is Map<String, dynamic> && responseData.containsKey('data')) {
+                  if (responseData is Map<String, dynamic> &&
+                      responseData.containsKey('data')) {
                     final subjectsList = responseData['data'];
                     final totalPages = responseData['last_page'] ?? 1;
                     final currentPage = responseData['current_page'] ?? 1;
-                    
-                    final nuevos = subjectsList.where((s) => !_subjects.any((e) => e['id'] == s['id'])).toList();
+
+                    final nuevos = subjectsList
+                        .where((s) => !_subjects.any((e) => e['id'] == s['id']))
+                        .toList();
                     _subjects.addAll(nuevos);
-                    
+
                     _hasMoreSubjects = currentPage < totalPages;
-                    if (_hasMoreSubjects) _currentPageSubjects = currentPage + 1;
-                    
+                    if (_hasMoreSubjects)
+                      _currentPageSubjects = currentPage + 1;
+
                     setModalState(() {});
                   }
                 }
@@ -1115,15 +1449,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 setModalState(() {});
               }
             }
-            
+
             final ScrollController modalScrollController = ScrollController();
             modalScrollController.addListener(() {
-              if (modalScrollController.position.pixels >= 
+              if (modalScrollController.position.pixels >=
                   modalScrollController.position.maxScrollExtent - 200) {
                 // loadMoreSubjectsFromModal(); // Descomentar si se implementa paginación
               }
             });
-            
+
             return Container(
               height: MediaQuery.of(context).size.height * 0.9,
               decoration: BoxDecoration(
@@ -1145,7 +1479,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0, vertical: 8.0),
                     child: Row(
                       children: [
                         Expanded(
@@ -1153,8 +1488,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             autofocus: true,
                             controller: _searchController,
                             onChanged: (value) {
-                              if (_debounce?.isActive ?? false) _debounce!.cancel();
-                              _debounce = Timer(const Duration(milliseconds: 300), () {
+                              if (_debounce?.isActive ?? false)
+                                _debounce!.cancel();
+                              _debounce =
+                                  Timer(const Duration(milliseconds: 300), () {
                                 setModalState(() {
                                   _searchQuery = value;
                                   _currentPageSubjects = 1;
@@ -1163,7 +1500,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   _isModalLoading = true;
                                   _selectedSubject = null;
                                 });
-                                _fetchSubjects(isInitialLoad: true, keyword: value).then((_) {
+                                _fetchSubjects(
+                                        isInitialLoad: true, keyword: value)
+                                    .then((_) {
                                   setModalState(() {});
                                 });
                               });
@@ -1174,7 +1513,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => SearchTutorsScreen(initialKeyword: value.trim()),
+                                    builder: (context) => SearchTutorsScreen(
+                                        initialKeyword: value.trim()),
                                   ),
                                 );
                               }
@@ -1182,11 +1522,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             style: TextStyle(color: Colors.white, fontSize: 16),
                             decoration: InputDecoration(
                               hintText: 'Busca tu materia...',
-                              hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
-                              prefixIcon: Icon(Icons.search, color: Colors.white.withOpacity(0.6)),
+                              hintStyle: TextStyle(
+                                  color: Colors.white.withOpacity(0.6)),
+                              prefixIcon: Icon(Icons.search,
+                                  color: Colors.white.withOpacity(0.6)),
                               filled: true,
                               fillColor: Colors.white.withOpacity(0.1),
-                              contentPadding: EdgeInsets.symmetric(vertical: 14),
+                              contentPadding:
+                                  EdgeInsets.symmetric(vertical: 14),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(30),
                                 borderSide: BorderSide.none,
@@ -1198,12 +1541,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         TextButton(
                           onPressed: () {
                             if (_searchController.text.trim().isNotEmpty) {
-                              final searchKeyword = _searchController.text.trim();
+                              final searchKeyword =
+                                  _searchController.text.trim();
                               Navigator.pop(context);
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => SearchTutorsScreen(initialKeyword: searchKeyword),
+                                  builder: (context) => SearchTutorsScreen(
+                                      initialKeyword: searchKeyword),
                                 ),
                               );
                             }
@@ -1229,21 +1574,32 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    CircularProgressIndicator(color: AppColors.lightBlueColor),
+                                    CircularProgressIndicator(
+                                        color: AppColors.lightBlueColor),
                                     SizedBox(height: 16),
-                                    Text('Buscando materias...', style: TextStyle(color: Colors.white70)),
+                                    Text('Buscando materias...',
+                                        style:
+                                            TextStyle(color: Colors.white70)),
                                   ],
                                 ),
                               )
-                            : _subjects.isEmpty && !_hasMoreSubjects && !_isModalLoading
+                            : _subjects.isEmpty &&
+                                    !_hasMoreSubjects &&
+                                    !_isModalLoading
                                 ? Center(
-                                    child: Text('No se encontraron materias', style: TextStyle(color: Colors.white, fontSize: 16)),
+                                    child: Text('No se encontraron materias',
+                                        style: TextStyle(
+                                            color: Colors.white, fontSize: 16)),
                                   )
                                 : ListView.separated(
                                     controller: modalScrollController,
-                                    padding: EdgeInsets.only(bottom: _selectedSubject != null ? 100 : 0),
-                                    itemCount: _subjects.length + (_hasMoreSubjects ? 1 : 0),
-                                    separatorBuilder: (context, index) => Divider(
+                                    padding: EdgeInsets.only(
+                                        bottom:
+                                            _selectedSubject != null ? 100 : 0),
+                                    itemCount: _subjects.length +
+                                        (_hasMoreSubjects ? 1 : 0),
+                                    separatorBuilder: (context, index) =>
+                                        Divider(
                                       color: Colors.white.withOpacity(0.1),
                                       height: 1,
                                       indent: 16,
@@ -1253,27 +1609,43 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                       if (index == _subjects.length) {
                                         return Padding(
                                           padding: const EdgeInsets.all(16.0),
-                                          child: Center(child: CircularProgressIndicator(color: AppColors.lightBlueColor)),
+                                          child: Center(
+                                              child: CircularProgressIndicator(
+                                                  color: AppColors
+                                                      .lightBlueColor)),
                                         );
                                       }
-                                      
+
                                       final subject = _subjects[index];
-                                      final subjectName = subject['name'] ?? 'Materia desconocida';
-                                      final isSelected = _selectedSubject != null && _selectedSubject!['id'] == subject['id'];
+                                      final subjectName = subject['name'] ??
+                                          'Materia desconocida';
+                                      final isSelected =
+                                          _selectedSubject != null &&
+                                              _selectedSubject!['id'] ==
+                                                  subject['id'];
 
                                       return ListTile(
-                                        contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                                        tileColor: isSelected ? AppColors.lightBlueColor.withOpacity(0.15) : Colors.transparent,
+                                        contentPadding: EdgeInsets.symmetric(
+                                            horizontal: 20, vertical: 8),
+                                        tileColor: isSelected
+                                            ? AppColors.lightBlueColor
+                                                .withOpacity(0.15)
+                                            : Colors.transparent,
                                         title: Text(
                                           subjectName,
                                           style: TextStyle(
-                                            color: isSelected ? AppColors.lightBlueColor : Colors.white,
+                                            color: isSelected
+                                                ? AppColors.lightBlueColor
+                                                : Colors.white,
                                             fontSize: 16,
-                                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                            fontWeight: isSelected
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
                                           ),
                                         ),
                                         onTap: () {
-                                          FocusScope.of(context).unfocus(); // Cierra el teclado
+                                          FocusScope.of(context)
+                                              .unfocus(); // Cierra el teclado
                                           setModalState(() {
                                             _selectedSubject = subject;
                                           });
@@ -1291,28 +1663,38 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               decoration: BoxDecoration(
                                 color: Colors.black.withOpacity(0.4),
                                 borderRadius: BorderRadius.circular(30),
-                                border: Border.all(color: Colors.white.withOpacity(0.2)),
+                                border: Border.all(
+                                    color: Colors.white.withOpacity(0.2)),
                                 backgroundBlendMode: BlendMode.overlay,
                               ),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(30),
                                 child: BackdropFilter(
-                                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                  filter:
+                                      ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                                   child: Row(
                                     children: [
                                       Expanded(
                                         child: ElevatedButton(
                                           onPressed: () {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              SnackBar(content: Text('Función de selección automática próximamente.')),
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              SnackBar(
+                                                  content: Text(
+                                                      'Función de selección automática próximamente.')),
                                             );
                                           },
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: AppColors.orangeprimary,
+                                            backgroundColor:
+                                                AppColors.orangeprimary,
                                             shape: StadiumBorder(),
-                                            padding: EdgeInsets.symmetric(vertical: 14),
+                                            padding: EdgeInsets.symmetric(
+                                                vertical: 14),
                                           ),
-                                          child: Text('Selección Automática', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                                          child: Text('Selección Automática',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white)),
                                         ),
                                       ),
                                       SizedBox(width: 12),
@@ -1323,19 +1705,27 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(
-                                                builder: (context) => SearchTutorsScreen(
-                                                  initialKeyword: _selectedSubject!['name'],
-                                                  initialSubjectId: _selectedSubject!['id'],
+                                                builder: (context) =>
+                                                    SearchTutorsScreen(
+                                                  initialKeyword:
+                                                      _selectedSubject!['name'],
+                                                  initialSubjectId:
+                                                      _selectedSubject!['id'],
                                                 ),
                                               ),
                                             );
                                           },
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: AppColors.lightBlueColor,
+                                            backgroundColor:
+                                                AppColors.lightBlueColor,
                                             shape: StadiumBorder(),
-                                            padding: EdgeInsets.symmetric(vertical: 14),
+                                            padding: EdgeInsets.symmetric(
+                                                vertical: 14),
                                           ),
-                                          child: Text('Elegir Tutor', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                                          child: Text('Elegir Tutor',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white)),
                                         ),
                                       ),
                                     ],
@@ -1356,7 +1746,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Future<void> _fetchSubjects({bool isInitialLoad = false, String keyword = ''}) async {
+  Future<void> _fetchSubjects(
+      {bool isInitialLoad = false, String keyword = ''}) async {
     if (!isInitialLoad && (!_hasMoreSubjects || _isFetchingMoreSubjects)) {
       return;
     }
@@ -1370,24 +1761,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
 
     try {
-      print('DEBUG: Buscando materias - Página $_currentPageSubjects, Keyword: ${keyword ?? _searchQuery}');
+      print(
+          'DEBUG: Buscando materias - Página $_currentPageSubjects, Keyword: ${keyword ?? _searchQuery}');
       final response = await getAllSubjects(
         null,
         page: _currentPageSubjects,
         perPage: _subjectsPerPage,
         keyword: keyword ?? _searchQuery,
       );
-      
+
       if (response != null && response.containsKey('data')) {
         final responseData = response['data'];
-        if (responseData is Map<String, dynamic> && responseData.containsKey('data')) {
+        if (responseData is Map<String, dynamic> &&
+            responseData.containsKey('data')) {
           final subjectsList = responseData['data'];
           final totalPages = responseData['last_page'] ?? 1;
           final currentPage = responseData['current_page'] ?? 1;
 
           _subjects.addAll(subjectsList);
           print('DEBUG: Materias encontradas: ${subjectsList.length}');
-          
+
           _hasMoreSubjects = currentPage < totalPages;
           if (_hasMoreSubjects) {
             _currentPageSubjects = currentPage + 1;
@@ -1415,14 +1808,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   void _onScroll() {
     if (!mounted || _isManualPlay) return;
-    
+
     // Actualizar el offset del scroll para la animación
     if (_scrollController.hasClients) {
       setState(() {
         _scrollOffset = _scrollController.offset;
       });
     }
-    
+
     // Actualizar la visibilidad de los items
     for (int i = 0; i < featuredTutors.length; i++) {
       final isVisible = _isItemVisible(i);
@@ -1443,18 +1836,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   bool _isItemVisible(int index) {
     if (!_scrollController.hasClients) return false;
-    
+
     final itemPosition = index * 212.0; // 200 (ancho) + 12 (separación)
     final screenWidth = MediaQuery.of(context).size.width;
     final scrollOffset = _scrollController.offset;
-    
-    return itemPosition >= scrollOffset && 
-           itemPosition <= scrollOffset + screenWidth;
+
+    return itemPosition >= scrollOffset &&
+        itemPosition <= scrollOffset + screenWidth;
   }
 
   Future<void> _preloadThumbnail(String videoUrl, int index) async {
     if (_thumbnailCache.containsKey(index)) return;
-    
+
     try {
       if (videoUrl.isEmpty) {
         setState(() {
@@ -1469,7 +1862,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         maxWidth: 200,
         quality: 50,
       );
-      
+
       if (mounted) {
         setState(() {
           _thumbnailCache[index] = thumbnail;
@@ -1489,14 +1882,37 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       isLoadingTutors = true;
     });
     try {
-      final response = await findTutors(null, perPage: 1000);
-      
-      if (response.containsKey('data') && response['data']['list'] is List) {
-        final tutors = response['data']['list'];
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final token = authProvider.token;
+
+      print(
+          'DEBUG: Obteniendo tutores destacados con token: ${token != null ? "presente" : "ausente"}');
+
+      final response = await findTutors(token, perPage: 1000);
+
+      print('DEBUG: Respuesta de findTutors: ${response.keys.toList()}');
+
+      if (response.containsKey('data')) {
+        final data = response['data'];
+        print('DEBUG: Estructura de data: ${data.keys.toList()}');
+
+        List<dynamic> tutors = [];
+
+        // Verificar diferentes estructuras posibles de la respuesta
+        if (data.containsKey('list') && data['list'] is List) {
+          tutors = data['list'];
+        } else if (data.containsKey('data') && data['data'] is List) {
+          tutors = data['data'];
+        } else if (data is List) {
+          tutors = data;
+        }
+
+        print('DEBUG: Tutores encontrados: ${tutors.length}');
+
         setState(() {
           featuredTutors = tutors;
         });
-        
+
         // Precargar thumbnails para los primeros tutores visibles
         for (var i = 0; i < tutors.length; i++) {
           final tutor = tutors[i];
@@ -1508,20 +1924,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           }
         }
       } else {
+        print('DEBUG: No se encontró la clave "data" en la respuesta');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('No se pudieron cargar los tutores. Por favor, intente más tarde.'),
+              content: Text(
+                  'No se pudieron cargar los tutores. Por favor, intente más tarde.'),
               duration: Duration(seconds: 3),
             ),
           );
         }
       }
     } catch (e) {
+      print('DEBUG: Error en fetchFeaturedTutors: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al cargar los tutores. Por favor, intente más tarde.'),
+            content: Text(
+                'Error al cargar los tutores. Por favor, intente más tarde.'),
             duration: Duration(seconds: 3),
           ),
         );
@@ -1538,14 +1958,38 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       isLoadingAlliances = true;
     });
     try {
+      print('DEBUG: Obteniendo alianzas');
       final response = await fetchAlliances();
+      print('DEBUG: Respuesta de fetchAlliances: ${response.keys.toList()}');
+
       if (response.containsKey('data')) {
+        final alliancesData = response['data'];
+        print(
+            'DEBUG: Alianzas encontradas: ${alliancesData is List ? alliancesData.length : "no es lista"}');
+
+        if (alliancesData is List) {
+          setState(() {
+            alliances = alliancesData;
+          });
+        } else {
+          print('DEBUG: alliancesData no es una lista: $alliancesData');
+          setState(() {
+            alliances = [];
+          });
+        }
+      } else {
+        print(
+            'DEBUG: No se encontró la clave "data" en la respuesta de alianzas');
         setState(() {
-          alliances = response['data'];
+          alliances = [];
         });
       }
     } catch (e) {
+      print('DEBUG: Error en fetchAlliancesData: $e');
       // Error silencioso para alianzas
+      setState(() {
+        alliances = [];
+      });
     } finally {
       setState(() {
         isLoadingAlliances = false;
@@ -1564,7 +2008,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       );
       if (response != null && response.containsKey('data')) {
         final responseData = response['data'];
-        if (responseData is Map<String, dynamic> && responseData.containsKey('data')) {
+        if (responseData is Map<String, dynamic> &&
+            responseData.containsKey('data')) {
           final subjectsList = responseData['data'];
           setState(() {
             _subjects = subjectsList;
@@ -1632,18 +2077,26 @@ class _StepCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           margin: EdgeInsets.only(top: 2, bottom: 6),
                           decoration: BoxDecoration(
                             color: Color(0xFFFF9900),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Text(step, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                          child: Text(step,
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12)),
                         ),
                         SizedBox(height: 8),
                         Text(
                           title,
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0B3C5D)),
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: Color(0xFF0B3C5D)),
                           textAlign: TextAlign.center,
                         ),
                         SizedBox(height: 4),
@@ -1664,10 +2117,12 @@ class _StepCard extends StatelessWidget {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          padding: EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 18, vertical: 8),
                         ),
                         onPressed: () {},
-                        child: Text(buttonText, style: TextStyle(fontWeight: FontWeight.bold)),
+                        child: Text(buttonText,
+                            style: TextStyle(fontWeight: FontWeight.bold)),
                       ),
                     ),
                   ),
@@ -1790,7 +2245,8 @@ class _StartJourneyCard extends StatelessWidget {
               ),
               onPressed: () {},
               icon: Icon(Icons.arrow_forward, color: Colors.white),
-              label: Text('Empieza Ahora', style: TextStyle(fontWeight: FontWeight.bold)),
+              label: Text('Empieza Ahora',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -1810,12 +2266,17 @@ class _CustomDrawerHeader extends StatelessWidget {
 
     // Corregir la URL de la imagen si es necesario
     String? imageUrl = userData?['user']?['profile']?['image'];
-    if (imageUrl != null && imageUrl.contains('https://classgoapp.com/storage/thumbnails/https://classgoapp.com/storage/thumbnails/')) {
-      imageUrl = imageUrl.replaceFirst('https://classgoapp.com/storage/thumbnails/https://classgoapp.com/storage/thumbnails/', 'https://classgoapp.com/storage/thumbnails/');
+    if (imageUrl != null &&
+        imageUrl.contains(
+            'https://classgoapp.com/storage/thumbnails/https://classgoapp.com/storage/thumbnails/')) {
+      imageUrl = imageUrl.replaceFirst(
+          'https://classgoapp.com/storage/thumbnails/https://classgoapp.com/storage/thumbnails/',
+          'https://classgoapp.com/storage/thumbnails/');
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20), // Ajustar padding
+      padding: const EdgeInsets.symmetric(
+          horizontal: 16, vertical: 20), // Ajustar padding
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1827,8 +2288,12 @@ class _CustomDrawerHeader extends StatelessWidget {
                 backgroundColor: Colors.white,
                 child: CircleAvatar(
                   radius: 26,
-                  backgroundImage: imageUrl != null ? NetworkImage(imageUrl) : null,
-                  child: imageUrl == null ? const Icon(Icons.person, size: 28, color: Color(0xFF023E8A)) : null,
+                  backgroundImage:
+                      imageUrl != null ? NetworkImage(imageUrl) : null,
+                  child: imageUrl == null
+                      ? const Icon(Icons.person,
+                          size: 28, color: Color(0xFF023E8A))
+                      : null,
                 ),
               ),
               const SizedBox(width: 16),
@@ -1837,7 +2302,8 @@ class _CustomDrawerHeader extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Mostrar nombre o botón de iniciar sesión
-                    if (userData != null) // Si el usuario está logueado, muestra el nombre
+                    if (userData !=
+                        null) // Si el usuario está logueado, muestra el nombre
                       Text(
                         userData['user']?['profile']?['full_name'] ?? 'Usuario',
                         style: const TextStyle(
@@ -1846,13 +2312,15 @@ class _CustomDrawerHeader extends StatelessWidget {
                           color: Colors.white,
                         ),
                         overflow: TextOverflow.ellipsis,
-                      ) else // Si no está logueado, muestra el botón Iniciar sesión
+                      )
+                    else // Si no está logueado, muestra el botón Iniciar sesión
                       InkWell(
                         onTap: () {
                           // Navegar a la pantalla de login y remover las rutas anteriores
                           Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(builder: (context) => LoginScreen()),
-                                (Route<dynamic> route) => false,
+                            MaterialPageRoute(
+                                builder: (context) => LoginScreen()),
+                            (Route<dynamic> route) => false,
                           );
                           // Nota: El cajón se cerrará automáticamente ya que HomeScreen se removerá del stack.
                         },
@@ -1886,4 +2354,4 @@ class _CustomDrawerHeader extends StatelessWidget {
       ),
     );
   }
-} 
+}
