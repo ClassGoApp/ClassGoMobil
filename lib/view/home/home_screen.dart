@@ -60,15 +60,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       viewportFraction: 1.0); // Aumentado para más a la izquierda
 
   // En el estado:
-  final double _tutorCardWidth = 200.0;
-  final double _tutorCardMargin = 16.0; // 8 a cada lado
+  final double tutorCardWidth = 300.0;
+  final double tutorCardImageHeight = 300.0;
+  final double tutorCardPadding = 10.0;
   late final ScrollController _featuredTutorsScrollController =
       ScrollController();
+
+  final PageController _pageController = PageController(viewportFraction: 0.98);
+
+  // Nuevo ScrollController para el carrusel de tutores
+  late final ScrollController _tutorsScrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _tutorsScrollController.addListener(_onTutorsScroll);
 
     // Inicializar animaciones
     _scrollAnimationController = AnimationController(
@@ -83,7 +90,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       curve: Curves.easeOutCubic,
     ));
 
-    fetchFeaturedTutors();
+    fetchFeaturedTutorsAndVerified();
     fetchAlliancesData();
     fetchInitialSubjects(); // Precargar 20 materias
   }
@@ -304,323 +311,313 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           ),
                           SizedBox(height: 12),
                           SizedBox(
-                            height: MediaQuery.of(context).size.height * 0.26,
-                            child: isLoadingTutors
-                                ? Center(
-                                    child: CircularProgressIndicator(
-                                        color: Colors.white))
-                                : featuredTutors.isEmpty
-                                    ? Center(
-                                        child: Text(
-                                          'No hay tutores disponibles',
-                                          style: TextStyle(color: Colors.white),
+                            height: MediaQuery.of(context).size.height *
+                                0.44, // más alto para tarjetas grandes
+                            child: PageView.builder(
+                              controller: PageController(
+                                viewportFraction:
+                                    (tutorCardWidth + tutorCardPadding * 2) /
+                                        MediaQuery.of(context).size.width,
+                              ),
+                              itemCount: featuredTutors.length,
+                              itemBuilder: (context, index) {
+                                final tutor = featuredTutors[index];
+                                final profile = tutor['profile'] ?? {};
+                                final name =
+                                    profile['full_name'] ?? 'Sin nombre';
+                                final subjects = tutor['subjects'];
+                                final rating = double.tryParse(
+                                        tutor['avg_rating']?.toString() ??
+                                            '0.0') ??
+                                    0.0;
+                                final imagePath = profile['image'] ?? '';
+                                final videoPath = profile['intro_video'] ?? '';
+                                final imageUrl =
+                                    getFullUrl(imagePath, baseImageUrl);
+                                final videoUrl =
+                                    getFullUrl(videoPath, baseVideoUrl);
+                                final completed =
+                                    tutor['completed_courses'] ?? 0;
+                                final total = tutor['total_courses'] ?? 0;
+                                return Padding(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: tutorCardPadding),
+                                  child: Container(
+                                    width: tutorCardWidth,
+                                    margin: EdgeInsets.zero,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(24),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          blurRadius: 12,
+                                          offset: Offset(0, 4),
                                         ),
-                                      )
-                                    : PageView.builder(
-                                        controller:
-                                            _featuredTutorsPageController,
-                                        scrollDirection: Axis.horizontal,
-                                        pageSnapping: true,
-                                        itemCount: featuredTutors.length,
-                                        itemBuilder: (context, index) {
-                                          try {
-                                            final tutor = featuredTutors[index];
-                                            final profile =
-                                                tutor['profile'] ?? {};
-                                            final name = profile['full_name'] ??
-                                                'Sin nombre';
-                                            final subjects = tutor['subjects'];
-                                            String specialty =
-                                                'Sin especialidad';
-                                            if (subjects is List &&
-                                                subjects.isNotEmpty &&
-                                                subjects[0] != null &&
-                                                subjects[0]['name'] != null) {
-                                              specialty = subjects[0]['name'];
-                                            }
-                                            final rating = double.tryParse(
-                                                    tutor['avg_rating']
-                                                            ?.toString() ??
-                                                        '0.0') ??
-                                                0.0;
-                                            final imagePath =
-                                                profile['image'] ?? '';
-                                            final videoPath =
-                                                profile['intro_video'] ?? '';
-                                            final imageUrl = getFullUrl(
-                                                imagePath, baseImageUrl);
-                                            final videoUrl = getFullUrl(
-                                                videoPath, baseVideoUrl);
-
-                                            return Container(
-                                              margin:
-                                                  EdgeInsets.only(right: 16),
+                                      ],
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Stack(
+                                          clipBehavior: Clip.none,
+                                          children: [
+                                            Container(
+                                              width: tutorCardWidth,
                                               decoration: BoxDecoration(
+                                                color: Colors.transparent,
                                                 borderRadius:
-                                                    BorderRadius.circular(16),
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                    color: Colors.black
-                                                        .withOpacity(0.1),
-                                                    blurRadius: 8,
-                                                    offset: Offset(0, 4),
-                                                  ),
-                                                ],
+                                                    BorderRadius.circular(24),
                                               ),
                                               child: Column(
                                                 children: [
-                                                  Stack(
-                                                    clipBehavior: Clip.none,
-                                                    children: [
-                                                      Container(
-                                                        width: 200,
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          color: Colors
-                                                              .transparent,
+                                                  Container(
+                                                    width: tutorCardWidth,
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.white,
+                                                      border: Border.all(
+                                                          color: AppColors
+                                                              .lightBlueColor,
+                                                          width: 4),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              24),
+                                                    ),
+                                                    child: Column(
+                                                      children: [
+                                                        ClipRRect(
                                                           borderRadius:
-                                                              BorderRadius
-                                                                  .circular(16),
-                                                        ),
-                                                        child: Column(
-                                                          children: [
-                                                            Container(
-                                                              width: 200,
-                                                              decoration:
-                                                                  BoxDecoration(
-                                                                color: Colors
-                                                                    .white,
-                                                                border: Border.all(
-                                                                    color: AppColors
-                                                                        .lightBlueColor,
-                                                                    width: 4),
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                            16),
-                                                              ),
-                                                              child: Column(
-                                                                children: [
-                                                                  ClipRRect(
-                                                                    borderRadius:
-                                                                        BorderRadius
-                                                                            .only(
-                                                                      topLeft: Radius
-                                                                          .circular(
-                                                                              12),
-                                                                      topRight:
-                                                                          Radius.circular(
-                                                                              12),
-                                                                    ),
-                                                                    child:
-                                                                        Container(
-                                                                      width:
-                                                                          200,
-                                                                      height:
-                                                                          100,
-                                                                      color: Colors
-                                                                              .grey[
-                                                                          300],
-                                                                      child: _playingIndex == index &&
-                                                                              _activeController != null
-                                                                          ? _isVideoLoading
-                                                                              ? Center(child: CircularProgressIndicator(color: AppColors.lightBlueColor))
-                                                                              : Stack(
-                                                                                  children: [
-                                                                                    VideoPlayer(_activeController!),
-                                                                                    Positioned.fill(
-                                                                                      child: Material(
-                                                                                        color: Colors.transparent,
-                                                                                        child: InkWell(
-                                                                                          onTap: () => _handleVideoTap(index),
-                                                                                        ),
-                                                                                      ),
-                                                                                    ),
-                                                                                  ],
-                                                                                )
-                                                                          : _buildVideoThumbnail(videoUrl, index),
-                                                                    ),
-                                                                  ),
-                                                                  Container(
-                                                                    width: double
-                                                                        .infinity,
-                                                                    height: 20,
-                                                                    decoration:
-                                                                        BoxDecoration(
-                                                                      color: AppColors
-                                                                          .lightBlueColor,
-                                                                      borderRadius:
-                                                                          BorderRadius
-                                                                              .only(
-                                                                        bottomLeft:
-                                                                            Radius.circular(12),
-                                                                        bottomRight:
-                                                                            Radius.circular(12),
-                                                                      ),
-                                                                    ),
-                                                                    alignment:
-                                                                        Alignment
-                                                                            .centerLeft,
-                                                                    padding: EdgeInsets.only(
-                                                                        left:
-                                                                            44,
-                                                                        right:
-                                                                            8),
-                                                                    child: Text(
-                                                                      name,
-                                                                      style:
-                                                                          TextStyle(
-                                                                        color: Colors
-                                                                            .white,
-                                                                        fontWeight:
-                                                                            FontWeight.bold,
-                                                                        fontSize:
-                                                                            14,
-                                                                      ),
-                                                                      overflow:
-                                                                          TextOverflow
-                                                                              .ellipsis,
-                                                                    ),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                      Positioned(
-                                                        bottom: -18,
-                                                        left: 8,
-                                                        child: CircleAvatar(
-                                                          radius: 20,
-                                                          backgroundColor:
-                                                              Colors.white,
-                                                          child: CircleAvatar(
-                                                            radius: 17,
-                                                            backgroundImage: imageUrl
-                                                                    .isNotEmpty
-                                                                ? NetworkImage(
-                                                                    imageUrl)
-                                                                : null,
-                                                            backgroundColor:
-                                                                Colors
-                                                                    .grey[300],
-                                                            child: imageUrl
-                                                                    .isEmpty
-                                                                ? Icon(
-                                                                    Icons
-                                                                        .person,
-                                                                    size: 18,
-                                                                    color: Colors
-                                                                            .grey[
-                                                                        600])
-                                                                : null,
+                                                              BorderRadius.only(
+                                                            topLeft:
+                                                                Radius.circular(
+                                                                    20),
+                                                            topRight:
+                                                                Radius.circular(
+                                                                    20),
+                                                          ),
+                                                          child: Container(
+                                                            width:
+                                                                tutorCardWidth,
+                                                            height:
+                                                                tutorCardImageHeight,
+                                                            color: Colors
+                                                                .grey[300],
+                                                            child: _playingIndex ==
+                                                                        index &&
+                                                                    _activeController !=
+                                                                        null
+                                                                ? (_isVideoLoading
+                                                                    ? Center(
+                                                                        child: CircularProgressIndicator(
+                                                                            color: AppColors
+                                                                                .lightBlueColor))
+                                                                    : Stack(
+                                                                        children: [
+                                                                          SizedBox(
+                                                                            width:
+                                                                                tutorCardWidth,
+                                                                            height:
+                                                                                tutorCardImageHeight,
+                                                                            child:
+                                                                                VideoPlayer(_activeController!),
+                                                                          ),
+                                                                          Positioned
+                                                                              .fill(
+                                                                            child:
+                                                                                Material(
+                                                                              color: Colors.transparent,
+                                                                              child: InkWell(
+                                                                                onTap: () => _handleVideoTap(index),
+                                                                              ),
+                                                                            ),
+                                                                          ),
+                                                                        ],
+                                                                      ))
+                                                                : _buildVideoThumbnail(
+                                                                    videoUrl,
+                                                                    index),
                                                           ),
                                                         ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  SizedBox(height: 18),
-                                                  Container(
-                                                    width: 200,
-                                                    padding:
-                                                        EdgeInsets.symmetric(
-                                                            horizontal: 8,
-                                                            vertical: 6),
-                                                    child: Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        Text(
-                                                          'Especialidad: $specialty',
-                                                          style: TextStyle(
-                                                              fontSize: 13,
+                                                        Container(
+                                                          width:
+                                                              double.infinity,
+                                                          height: 32,
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            color: AppColors
+                                                                .lightBlueColor,
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .only(
+                                                              bottomLeft: Radius
+                                                                  .circular(20),
+                                                              bottomRight:
+                                                                  Radius
+                                                                      .circular(
+                                                                          20),
+                                                            ),
+                                                          ),
+                                                          alignment: Alignment
+                                                              .centerLeft,
+                                                          padding:
+                                                              EdgeInsets.only(
+                                                                  left: 64,
+                                                                  right: 8),
+                                                          child: Text(
+                                                            name,
+                                                            style: TextStyle(
                                                               color:
                                                                   Colors.white,
                                                               fontWeight:
                                                                   FontWeight
-                                                                      .w600),
-                                                          maxLines: 2,
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                        ),
-                                                        SizedBox(height: 4),
-                                                        Row(
-                                                          children: [
-                                                            Text(
-                                                              rating
-                                                                  .toStringAsFixed(
-                                                                      2),
-                                                              style: TextStyle(
-                                                                  fontSize: 14,
-                                                                  color: Colors
-                                                                      .white,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold),
+                                                                      .bold,
+                                                              fontSize: 18,
                                                             ),
-                                                            SizedBox(width: 6),
-                                                            Row(
-                                                              children:
-                                                                  List.generate(
-                                                                      5, (i) {
-                                                                if (rating >=
-                                                                    i + 1) {
-                                                                  return Icon(
-                                                                      Icons
-                                                                          .star,
-                                                                      color: Colors
-                                                                          .amber,
-                                                                      size: 16);
-                                                                } else if (rating >
-                                                                        i &&
-                                                                    rating <
-                                                                        i + 1) {
-                                                                  return Icon(
-                                                                      Icons
-                                                                          .star_half,
-                                                                      color: Colors
-                                                                          .amber,
-                                                                      size: 16);
-                                                                } else {
-                                                                  return Icon(
-                                                                      Icons
-                                                                          .star_border,
-                                                                      color: Colors
-                                                                          .amber,
-                                                                      size: 16);
-                                                                }
-                                                              }),
-                                                            ),
-                                                          ],
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                          ),
                                                         ),
                                                       ],
                                                     ),
                                                   ),
                                                 ],
                                               ),
-                                            );
-                                          } catch (e, stack) {
-                                            print(
-                                                'Error en itemBuilder de tutor:');
-                                            print(e);
-                                            print(stack);
-                                            return Container(
-                                              width: 200,
-                                              height: 120,
-                                              color: Colors.red[100],
-                                              child: Center(
-                                                child: Text(
-                                                  'Error al mostrar tutor',
-                                                  style: TextStyle(
-                                                      color: Colors.red),
+                                            ),
+                                            Positioned(
+                                              bottom: -28,
+                                              left: 16,
+                                              child: CircleAvatar(
+                                                radius: 30,
+                                                backgroundColor: Colors.white,
+                                                child: CircleAvatar(
+                                                  radius: 27,
+                                                  backgroundImage: imageUrl
+                                                          .isNotEmpty
+                                                      ? NetworkImage(imageUrl)
+                                                      : null,
+                                                  backgroundColor:
+                                                      Colors.grey[300],
+                                                  child: imageUrl.isEmpty
+                                                      ? Icon(Icons.person,
+                                                          size: 28,
+                                                          color:
+                                                              Colors.grey[600])
+                                                      : null,
                                                 ),
                                               ),
-                                            );
-                                          }
-                                        },
-                                      ),
+                                            ),
+                                          ],
+                                        ),
+                                        SizedBox(height: 28),
+                                        Container(
+                                          width: tutorCardWidth,
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: 16, vertical: 8),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              SingleChildScrollView(
+                                                scrollDirection:
+                                                    Axis.horizontal,
+                                                child: Row(
+                                                  children: [
+                                                    for (var subject
+                                                        in (tutor['subjects'] ??
+                                                            []))
+                                                      Container(
+                                                        margin: EdgeInsets.only(
+                                                            right: 8),
+                                                        child: Chip(
+                                                          label: Text(
+                                                            subject['name'] ??
+                                                                '',
+                                                            style: TextStyle(
+                                                                color: Colors
+                                                                    .white,
+                                                                fontSize: 14,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w500),
+                                                          ),
+                                                          backgroundColor:
+                                                              AppColors
+                                                                  .darkBlue,
+                                                          padding: EdgeInsets
+                                                              .symmetric(
+                                                                  horizontal:
+                                                                      10,
+                                                                  vertical: 0),
+                                                          shape:
+                                                              RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        12),
+                                                          ),
+                                                          visualDensity:
+                                                              VisualDensity(
+                                                                  horizontal:
+                                                                      -4,
+                                                                  vertical: -4),
+                                                        ),
+                                                      ),
+                                                  ],
+                                                ),
+                                              ),
+                                              SizedBox(height: 8),
+                                              Text(
+                                                '$completed/$total cursos completados',
+                                                style: TextStyle(
+                                                    color: AppColors
+                                                        .lightBlueColor,
+                                                    fontSize: 15,
+                                                    fontWeight:
+                                                        FontWeight.w600),
+                                              ),
+                                              SizedBox(height: 8),
+                                              Row(
+                                                children: [
+                                                  Text(
+                                                    rating.toStringAsFixed(2),
+                                                    style: TextStyle(
+                                                        fontSize: 18,
+                                                        color: Colors.white,
+                                                        fontWeight:
+                                                            FontWeight.bold),
+                                                  ),
+                                                  SizedBox(width: 10),
+                                                  Row(
+                                                    children:
+                                                        List.generate(5, (i) {
+                                                      if (rating >= i + 1) {
+                                                        return Icon(Icons.star,
+                                                            color: Colors.amber,
+                                                            size: 22);
+                                                      } else if (rating > i &&
+                                                          rating < i + 1) {
+                                                        return Icon(
+                                                            Icons.star_half,
+                                                            color: Colors.amber,
+                                                            size: 22);
+                                                      } else {
+                                                        return Icon(
+                                                            Icons.star_border,
+                                                            color: Colors.amber,
+                                                            size: 22);
+                                                      }
+                                                    }),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                           SizedBox(height: 18),
                           // Guía paso a paso
@@ -1350,6 +1347,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _debounce?.cancel();
     _featuredTutorsScrollController.dispose();
     _featuredTutorsPageController.dispose();
+    _pageController.dispose();
+    _tutorsScrollController.dispose();
     super.dispose();
   }
 
@@ -1927,7 +1926,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   bool _isItemVisible(int index) {
     if (!_scrollController.hasClients) return false;
 
-    final itemPosition = index * 212.0; // 200 (ancho) + 12 (separación)
+    final itemPosition = index * 208.0; // 200 (ancho) + 8 (margen)
     final screenWidth = MediaQuery.of(context).size.width;
     final scrollOffset = _scrollController.offset;
 
@@ -1967,28 +1966,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  Future<void> fetchFeaturedTutors() async {
+  void _onTutorsScroll() {
+    // Ya no necesitamos este listener con PageView
+    // El PageView maneja automáticamente el snap y la precarga
+  }
+
+  Future<void> fetchFeaturedTutorsAndVerified() async {
     setState(() {
       isLoadingTutors = true;
     });
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final token = authProvider.token;
-
-      print(
-          'DEBUG: Obteniendo tutores destacados con token: ${token != null ? "presente" : "ausente"}');
-
+      // Obtiene destacados
       final response = await findTutors(token, perPage: 1000);
-
-      print('DEBUG: Respuesta de findTutors: ${response.keys.toList()}');
-
+      List<dynamic> tutors = [];
       if (response.containsKey('data')) {
         final data = response['data'];
-        print('DEBUG: Estructura de data: ${data.keys.toList()}');
-
-        List<dynamic> tutors = [];
-
-        // Verificar diferentes estructuras posibles de la respuesta
         if (data.containsKey('list') && data['list'] is List) {
           tutors = data['list'];
         } else if (data.containsKey('data') && data['data'] is List) {
@@ -1996,37 +1990,46 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         } else if (data is List) {
           tutors = data;
         }
-
-        print('DEBUG: Tutores encontrados: ${tutors.length}');
-
-        setState(() {
-          featuredTutors = tutors;
-        });
-
-        // Precargar thumbnails para los primeros tutores visibles
-        for (var i = 0; i < tutors.length; i++) {
-          final tutor = tutors[i];
-          final profile = tutor['profile'] ?? {};
-          final videoPath = profile['intro_video'] ?? '';
-          if (videoPath.isNotEmpty) {
-            final videoUrl = getFullUrl(videoPath, baseVideoUrl);
-            _preloadThumbnail(videoUrl, i);
-          }
+      }
+      // Obtiene verificados
+      final verifiedResponse = await getVerifiedTutors(token, perPage: 1000);
+      List<dynamic> verifiedTutors = [];
+      if (verifiedResponse.containsKey('data')) {
+        final data = verifiedResponse['data'];
+        if (data.containsKey('list') && data['list'] is List) {
+          verifiedTutors = data['list'];
+        } else if (data.containsKey('data') && data['data'] is List) {
+          verifiedTutors = data['data'];
+        } else if (data is List) {
+          verifiedTutors = data;
         }
-      } else {
-        print('DEBUG: No se encontró la clave "data" en la respuesta');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                  'No se pudieron cargar los tutores. Por favor, intente más tarde.'),
-              duration: Duration(seconds: 3),
-            ),
-          );
+      }
+      // Unir ambos sin duplicados por id
+      final allTutors = <int, dynamic>{};
+      for (var t in tutors) {
+        if (t['id'] != null) allTutors[t['id']] = t;
+      }
+      for (var t in verifiedTutors) {
+        if (t['id'] != null) allTutors[t['id']] = t;
+      }
+      setState(() {
+        featuredTutors = allTutors.values
+            .where((t) =>
+                t['subjects'] != null && (t['subjects'] as List).isNotEmpty)
+            .toList();
+      });
+      // Precargar thumbnails para los primeros tutores visibles
+      for (var i = 0; i < featuredTutors.length; i++) {
+        final tutor = featuredTutors[i];
+        final profile = tutor['profile'] ?? {};
+        final videoPath = profile['intro_video'] ?? '';
+        if (videoPath.isNotEmpty) {
+          final videoUrl = getFullUrl(videoPath, baseVideoUrl);
+          _preloadThumbnail(videoUrl, i);
         }
       }
     } catch (e) {
-      print('DEBUG: Error en fetchFeaturedTutors: $e');
+      print('DEBUG: Error en fetchFeaturedTutorsAndVerified: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
