@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_projects/view/home/home_screen.dart';
 
 class MainHeader extends StatelessWidget {
   final VoidCallback? onMenuPressed;
@@ -36,9 +37,17 @@ class MainHeader extends StatelessWidget {
               ),
             )
           : null,
-      title: Image.asset(
-        'assets/images/logo_classgo.png',
-        height: 38, // Ajusta la altura según sea necesario
+      title: GestureDetector(
+        onTap: () {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => HomeScreen()),
+            (route) => false,
+          );
+        },
+        child: Image.asset(
+          'assets/images/logo_classgo.png',
+          height: 38, // Ajusta la altura según sea necesario
+        ),
       ),
       actions: [
         if (showProfileButton)
