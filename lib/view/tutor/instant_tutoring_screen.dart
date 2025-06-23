@@ -22,10 +22,12 @@ class InstantTutoringScreen extends StatefulWidget {
   _InstantTutoringScreenState createState() => _InstantTutoringScreenState();
 }
 
-class _InstantTutoringScreenState extends State<InstantTutoringScreen> with TickerProviderStateMixin {
+class _InstantTutoringScreenState extends State<InstantTutoringScreen>
+    with TickerProviderStateMixin {
   String? _selectedSubject;
   File? _selectedImage;
-  final DraggableScrollableController _scrollController = DraggableScrollableController();
+  final DraggableScrollableController _scrollController =
+      DraggableScrollableController();
   final ImagePicker _picker = ImagePicker();
   final PageController _pageController = PageController();
   int _currentPage = 0;
@@ -53,13 +55,13 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> with Tick
       parent: _animationController,
       curve: Curves.easeInOut,
     ));
-    
+
     // Iniciar la animación inmediatamente para la primera página
     _animationController.forward();
-    
+
     _scrollController.addListener(() {
       if (_scrollController.size <= 0.8) {
-        if(Navigator.canPop(context)) Navigator.of(context).pop();
+        if (Navigator.canPop(context)) Navigator.of(context).pop();
       }
     });
 
@@ -98,7 +100,8 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> with Tick
       _closeDropdown();
     }
 
-    final RenderBox renderBox = _subjectSelectorKey.currentContext!.findRenderObject() as RenderBox;
+    final RenderBox renderBox =
+        _subjectSelectorKey.currentContext!.findRenderObject() as RenderBox;
     final size = renderBox.size;
     final offset = renderBox.localToGlobal(Offset.zero);
 
@@ -151,7 +154,8 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> with Tick
 
   Widget _buildDropdownList() {
     return Container(
-      constraints: BoxConstraints(maxHeight: 250), // Evita que la lista sea demasiado larga
+      constraints: BoxConstraints(
+          maxHeight: 250), // Evita que la lista sea demasiado larga
       decoration: BoxDecoration(
         color: AppColors.darkBlue.withOpacity(0.98),
         borderRadius: BorderRadius.circular(12),
@@ -190,12 +194,16 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> with Tick
                 },
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  color: isSelected ? AppColors.lightBlueColor.withOpacity(0.2) : Colors.transparent,
+                  color: isSelected
+                      ? AppColors.lightBlueColor.withOpacity(0.2)
+                      : Colors.transparent,
                   child: Row(
                     children: [
                       Icon(
                         Icons.book_outlined,
-                        color: isSelected ? AppColors.lightBlueColor : Colors.white70,
+                        color: isSelected
+                            ? AppColors.lightBlueColor
+                            : Colors.white70,
                         size: 20,
                       ),
                       SizedBox(width: 12),
@@ -204,7 +212,9 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> with Tick
                           subject,
                           style: TextStyle(
                             color: Colors.white,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
                           ),
                         ),
                       ),
@@ -233,7 +243,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> with Tick
         maxHeight: 1024,
         imageQuality: 85,
       );
-      
+
       if (image != null) {
         setState(() {
           _selectedImage = File(image.path);
@@ -262,13 +272,17 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> with Tick
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
                   '¿Cómo quieres añadir la imagen?',
-                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold),
                 ),
               ),
               Divider(color: Colors.white.withOpacity(0.2)),
               ListTile(
                 leading: Icon(Icons.camera_alt, color: Colors.white),
-                title: Text('Tomar foto', style: TextStyle(color: Colors.white)),
+                title:
+                    Text('Tomar foto', style: TextStyle(color: Colors.white)),
                 onTap: () {
                   Navigator.pop(context);
                   _pickImage(ImageSource.camera);
@@ -276,7 +290,8 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> with Tick
               ),
               ListTile(
                 leading: Icon(Icons.photo_library, color: Colors.white),
-                title: Text('Seleccionar de galería', style: TextStyle(color: Colors.white)),
+                title: Text('Seleccionar de galería',
+                    style: TextStyle(color: Colors.white)),
                 onTap: () {
                   Navigator.pop(context);
                   _pickImage(ImageSource.gallery);
@@ -344,11 +359,14 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> with Tick
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(widget.tutorName, style: AppTextStyles.heading2.copyWith(color: Colors.white)),
+                                Text(widget.tutorName,
+                                    style: AppTextStyles.heading2
+                                        .copyWith(color: Colors.white)),
                                 SizedBox(height: 4),
                                 Text(
                                   _selectedSubject ?? 'Tutor de ClassGo',
-                                  style: AppTextStyles.body.copyWith(color: Colors.white70),
+                                  style: AppTextStyles.body
+                                      .copyWith(color: Colors.white70),
                                 ),
                               ],
                             ),
@@ -358,33 +376,40 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> with Tick
                         // 2. Selector de Materia
                         Text(
                           'Elige la materia',
-                          style: AppTextStyles.heading2.copyWith(color: Colors.white, fontSize: 18),
+                          style: AppTextStyles.heading2
+                              .copyWith(color: Colors.white, fontSize: 18),
                         ),
                         SizedBox(height: 12),
                         GestureDetector(
                           key: _subjectSelectorKey,
                           onTap: _toggleDropdown,
                           child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 14),
                             decoration: BoxDecoration(
                               color: Colors.white.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: _isDropdownOpen 
-                                ? AppColors.lightBlueColor
-                                : Colors.white.withOpacity(0.2)
-                              ),
+                              border: Border.all(
+                                  color: _isDropdownOpen
+                                      ? AppColors.lightBlueColor
+                                      : Colors.white.withOpacity(0.2)),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
                                   _selectedSubject ?? 'Seleccionar materia',
-                                  style: TextStyle(color: _selectedSubject != null ? Colors.white : Colors.white70, fontSize: 16),
+                                  style: TextStyle(
+                                      color: _selectedSubject != null
+                                          ? Colors.white
+                                          : Colors.white70,
+                                      fontSize: 16),
                                 ),
                                 AnimatedRotation(
                                   turns: _isDropdownOpen ? 0.5 : 0,
                                   duration: const Duration(milliseconds: 300),
-                                  child: Icon(Icons.keyboard_arrow_down, color: Colors.white70),
+                                  child: Icon(Icons.keyboard_arrow_down,
+                                      color: Colors.white70),
                                 ),
                               ],
                             ),
@@ -415,10 +440,15 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> with Tick
                                       animation: _fadeAnimation,
                                       builder: (context, child) {
                                         return Opacity(
-                                          opacity: _currentPage == 0 ? _fadeAnimation.value : 1.0,
+                                          opacity: _currentPage == 0
+                                              ? _fadeAnimation.value
+                                              : 1.0,
                                           child: Transform.translate(
                                             offset: Offset(
-                                              _currentPage == 0 ? (1 - _fadeAnimation.value) * 20 : 0,
+                                              _currentPage == 0
+                                                  ? (1 - _fadeAnimation.value) *
+                                                      20
+                                                  : 0,
                                               0,
                                             ),
                                             child: child,
@@ -426,55 +456,80 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> with Tick
                                         );
                                       },
                                       child: Container(
-                                        padding: EdgeInsets.all(16), // Reducido de 20 a 16
+                                        padding: EdgeInsets.all(
+                                            16), // Reducido de 20 a 16
                                         decoration: BoxDecoration(
                                           color: Colors.white.withOpacity(0.05),
-                                          borderRadius: BorderRadius.circular(16),
-                                          border: Border.all(color: Colors.white.withOpacity(0.1)),
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                          border: Border.all(
+                                              color: Colors.white
+                                                  .withOpacity(0.1)),
                                         ),
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Row(
                                               children: [
-                                                Icon(Icons.lightbulb_outline, color: AppColors.lightBlueColor, size: 20), // Reducido de 24 a 20
-                                                SizedBox(width: 8), // Reducido de 12 a 8
+                                                Icon(Icons.lightbulb_outline,
+                                                    color: AppColors
+                                                        .lightBlueColor,
+                                                    size:
+                                                        20), // Reducido de 24 a 20
+                                                SizedBox(
+                                                    width:
+                                                        8), // Reducido de 12 a 8
                                                 Expanded(
                                                   child: Text(
                                                     '📸 ¡Acelera tu aprendizaje!',
-                                                    style: AppTextStyles.heading2.copyWith(
-                                                      color: Colors.white, 
-                                                      fontSize: 15, // Reducido de 16 a 15
-                                                      fontWeight: FontWeight.bold
-                                                    ),
+                                                    style: AppTextStyles
+                                                        .heading2
+                                                        .copyWith(
+                                                            color: Colors.white,
+                                                            fontSize:
+                                                                15, // Reducido de 16 a 15
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .bold),
                                                   ),
                                                 ),
                                               ],
                                             ),
-                                            SizedBox(height: 8), // Reducido de 12 a 8
+                                            SizedBox(
+                                                height:
+                                                    8), // Reducido de 12 a 8
                                             Text(
                                               'Sube una foto de tu ejercicio. Ayuda al tutor a:\n'
                                               '• Preparar la sesión con anticipación\n'
                                               '• Entender exactamente qué necesitas',
                                               style: TextStyle(
-                                                color: Colors.white70, 
-                                                fontSize: 13, // Reducido de 14 a 13
-                                                height: 1.3, // Reducido de 1.4 a 1.3
+                                                color: Colors.white70,
+                                                fontSize:
+                                                    13, // Reducido de 14 a 13
+                                                height:
+                                                    1.3, // Reducido de 1.4 a 1.3
                                               ),
                                             ),
-                                            SizedBox(height: 16), // Reducido de 20 a 16
-                                            
+                                            SizedBox(
+                                                height:
+                                                    16), // Reducido de 20 a 16
+
                                             // Vista previa de imagen o botón para subir
                                             if (_selectedImage != null) ...[
                                               Stack(
                                                 children: [
                                                   Container(
                                                     width: double.infinity,
-                                                    height: 160, // Reducido de 200 a 160
+                                                    height:
+                                                        160, // Reducido de 200 a 160
                                                     decoration: BoxDecoration(
-                                                      borderRadius: BorderRadius.circular(12),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              12),
                                                       image: DecorationImage(
-                                                        image: FileImage(_selectedImage!),
+                                                        image: FileImage(
+                                                            _selectedImage!),
                                                         fit: BoxFit.cover,
                                                       ),
                                                     ),
@@ -489,23 +544,34 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> with Tick
                                                         });
                                                       },
                                                       child: Container(
-                                                        padding: EdgeInsets.all(6), // Reducido de 8 a 6
-                                                        decoration: BoxDecoration(
-                                                          color: Colors.black.withOpacity(0.7),
-                                                          shape: BoxShape.circle,
+                                                        padding: EdgeInsets.all(
+                                                            6), // Reducido de 8 a 6
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color: Colors.black
+                                                              .withOpacity(0.7),
+                                                          shape:
+                                                              BoxShape.circle,
                                                         ),
-                                                        child: Icon(Icons.close, color: Colors.white, size: 16), // Reducido de 20 a 16
+                                                        child: Icon(Icons.close,
+                                                            color: Colors.white,
+                                                            size:
+                                                                16), // Reducido de 20 a 16
                                                       ),
                                                     ),
                                                   ),
                                                 ],
                                               ),
-                                              SizedBox(height: 8), // Reducido de 12 a 8
+                                              SizedBox(
+                                                  height:
+                                                      8), // Reducido de 12 a 8
                                               Text(
                                                 '✅ Imagen añadida correctamente',
                                                 style: TextStyle(
-                                                  color: AppColors.lightBlueColor,
-                                                  fontSize: 13, // Reducido de 14 a 13
+                                                  color:
+                                                      AppColors.lightBlueColor,
+                                                  fontSize:
+                                                      13, // Reducido de 14 a 13
                                                   fontWeight: FontWeight.w500,
                                                 ),
                                               ),
@@ -514,37 +580,52 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> with Tick
                                                 onTap: _showImageSourceDialog,
                                                 child: Container(
                                                   width: double.infinity,
-                                                  height: 100, // Reducido de 120 a 100
+                                                  height:
+                                                      100, // Reducido de 120 a 100
                                                   decoration: BoxDecoration(
-                                                    color: Colors.white.withOpacity(0.1),
-                                                    borderRadius: BorderRadius.circular(12),
+                                                    color: Colors.white
+                                                        .withOpacity(0.1),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            12),
                                                     border: Border.all(
-                                                      color: Colors.white.withOpacity(0.2),
+                                                      color: Colors.white
+                                                          .withOpacity(0.2),
                                                       style: BorderStyle.solid,
                                                     ),
                                                   ),
                                                   child: Column(
-                                                    mainAxisAlignment: MainAxisAlignment.center,
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .center,
                                                     children: [
                                                       Icon(
                                                         Icons.add_a_photo,
-                                                        color: AppColors.lightBlueColor,
-                                                        size: 28, // Reducido de 32 a 28
+                                                        color: AppColors
+                                                            .lightBlueColor,
+                                                        size:
+                                                            28, // Reducido de 32 a 28
                                                       ),
-                                                      SizedBox(height: 6), // Reducido de 8 a 6
+                                                      SizedBox(
+                                                          height:
+                                                              6), // Reducido de 8 a 6
                                                       Text(
                                                         'Toca para añadir foto',
                                                         style: TextStyle(
                                                           color: Colors.white70,
-                                                          fontSize: 13, // Reducido de 14 a 13
+                                                          fontSize:
+                                                              13, // Reducido de 14 a 13
                                                         ),
                                                       ),
-                                                      SizedBox(height: 2), // Reducido de 4 a 2
+                                                      SizedBox(
+                                                          height:
+                                                              2), // Reducido de 4 a 2
                                                       Text(
                                                         'Cámara o Galería',
                                                         style: TextStyle(
                                                           color: Colors.white54,
-                                                          fontSize: 11, // Reducido de 12 a 11
+                                                          fontSize:
+                                                              11, // Reducido de 12 a 11
                                                         ),
                                                       ),
                                                     ],
@@ -556,16 +637,21 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> with Tick
                                         ),
                                       ),
                                     ),
-                                    
+
                                     // Página 2: Notas para el tutor
                                     AnimatedBuilder(
                                       animation: _fadeAnimation,
                                       builder: (context, child) {
                                         return Opacity(
-                                          opacity: _currentPage == 1 ? _fadeAnimation.value : 1.0,
+                                          opacity: _currentPage == 1
+                                              ? _fadeAnimation.value
+                                              : 1.0,
                                           child: Transform.translate(
                                             offset: Offset(
-                                              _currentPage == 1 ? (1 - _fadeAnimation.value) * -20 : 0,
+                                              _currentPage == 1
+                                                  ? (1 - _fadeAnimation.value) *
+                                                      -20
+                                                  : 0,
                                               0,
                                             ),
                                             child: child,
@@ -573,62 +659,96 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> with Tick
                                         );
                                       },
                                       child: Container(
-                                        padding: EdgeInsets.all(16), // Reducido de 20 a 16
+                                        padding: EdgeInsets.all(
+                                            16), // Reducido de 20 a 16
                                         decoration: BoxDecoration(
                                           color: Colors.white.withOpacity(0.05),
-                                          borderRadius: BorderRadius.circular(16),
-                                          border: Border.all(color: Colors.white.withOpacity(0.1)),
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                          border: Border.all(
+                                              color: Colors.white
+                                                  .withOpacity(0.1)),
                                         ),
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Row(
                                               children: [
-                                                Icon(Icons.edit_note, color: AppColors.lightBlueColor, size: 20), // Reducido de 24 a 20
-                                                SizedBox(width: 8), // Reducido de 12 a 8
+                                                Icon(Icons.edit_note,
+                                                    color: AppColors
+                                                        .lightBlueColor,
+                                                    size:
+                                                        20), // Reducido de 24 a 20
+                                                SizedBox(
+                                                    width:
+                                                        8), // Reducido de 12 a 8
                                                 Expanded(
                                                   child: Text(
                                                     '✍️ Cuéntale al tutor',
-                                                    style: AppTextStyles.heading2.copyWith(
-                                                      color: Colors.white, 
-                                                      fontSize: 15, // Reducido de 16 a 15
-                                                      fontWeight: FontWeight.bold
-                                                    ),
+                                                    style: AppTextStyles
+                                                        .heading2
+                                                        .copyWith(
+                                                            color: Colors.white,
+                                                            fontSize:
+                                                                15, // Reducido de 16 a 15
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .bold),
                                                   ),
                                                 ),
                                               ],
                                             ),
-                                            SizedBox(height: 8), // Reducido de 12 a 8
+                                            SizedBox(
+                                                height:
+                                                    8), // Reducido de 12 a 8
                                             Text(
                                               'Describe qué necesitas ayuda:\n'
                                               '• ¿Qué tema quieres repasar?\n'
                                               '• ¿Qué esperas de esta sesión?',
                                               style: TextStyle(
-                                                color: Colors.white70, 
-                                                fontSize: 13, // Reducido de 14 a 13
-                                                height: 1.3, // Reducido de 1.4 a 1.3
+                                                color: Colors.white70,
+                                                fontSize:
+                                                    13, // Reducido de 14 a 13
+                                                height:
+                                                    1.3, // Reducido de 1.4 a 1.3
                                               ),
                                             ),
-                                            SizedBox(height: 16), // Reducido de 20 a 16
-                                            
+                                            SizedBox(
+                                                height:
+                                                    16), // Reducido de 20 a 16
+
                                             // Campo de texto para notas
                                             TextField(
                                               maxLines: 6, // Reducido de 8 a 6
-                                              style: TextStyle(color: Colors.white, fontSize: 13), // Reducido de 14 a 13
+                                              style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize:
+                                                      13), // Reducido de 14 a 13
                                               decoration: InputDecoration(
-                                                hintText: 'Ej: "Necesito repasar las leyes de Newton, especialmente la tercera ley..."',
+                                                hintText:
+                                                    'Ej: "Necesito repasar las leyes de Newton, especialmente la tercera ley..."',
                                                 hintStyle: TextStyle(
-                                                  color: Colors.white.withOpacity(0.5),
-                                                  fontSize: 13, // Reducido de 14 a 13
-                                                  height: 1.3, // Reducido de 1.4 a 1.3
+                                                  color: Colors.white
+                                                      .withOpacity(0.5),
+                                                  fontSize:
+                                                      13, // Reducido de 14 a 13
+                                                  height:
+                                                      1.3, // Reducido de 1.4 a 1.3
                                                 ),
                                                 filled: true,
-                                                fillColor: Colors.white.withOpacity(0.1),
+                                                fillColor: Colors.white
+                                                    .withOpacity(0.1),
                                                 border: OutlineInputBorder(
-                                                  borderRadius: BorderRadius.circular(12),
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
                                                   borderSide: BorderSide.none,
                                                 ),
-                                                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12), // Reducido de 16 a 12
+                                                contentPadding:
+                                                    EdgeInsets.symmetric(
+                                                        horizontal: 16,
+                                                        vertical:
+                                                            12), // Reducido de 16 a 12
                                               ),
                                             ),
                                           ],
@@ -638,7 +758,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> with Tick
                                   ],
                                 ),
                               ),
-                              
+
                               // Barra de indicadores del scroll horizontal (ahora debajo)
                               SizedBox(height: 16),
                               Row(
@@ -652,7 +772,9 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> with Tick
                                         curve: Curves.easeInOut,
                                       );
                                     },
-                                    child: _HorizontalStepBar(isActive: _currentPage == 0, label: 'Foto'),
+                                    child: _HorizontalStepBar(
+                                        isActive: _currentPage == 0,
+                                        label: 'Foto'),
                                   ),
                                   SizedBox(width: 20),
                                   GestureDetector(
@@ -663,7 +785,9 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> with Tick
                                         curve: Curves.easeInOut,
                                       );
                                     },
-                                    child: _HorizontalStepBar(isActive: _currentPage == 1, label: 'Notas'),
+                                    child: _HorizontalStepBar(
+                                        isActive: _currentPage == 1,
+                                        label: 'Notas'),
                                   ),
                                 ],
                               ),
@@ -697,7 +821,8 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> with Tick
                                   PageRouteBuilder(
                                     opaque: false,
                                     barrierColor: Colors.black.withOpacity(0.5),
-                                    pageBuilder: (context, animation, secondaryAnimation) {
+                                    pageBuilder: (context, animation,
+                                        secondaryAnimation) {
                                       return PaymentQRScreen(
                                         tutorName: widget.tutorName,
                                         tutorImage: widget.tutorImage,
@@ -706,19 +831,25 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> with Tick
                                         sessionDuration: "20 min",
                                       );
                                     },
-                                    transitionDuration: Duration(milliseconds: 400),
-                                    reverseTransitionDuration: Duration(milliseconds: 400),
-                                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                    transitionDuration:
+                                        Duration(milliseconds: 400),
+                                    reverseTransitionDuration:
+                                        Duration(milliseconds: 400),
+                                    transitionsBuilder: (context, animation,
+                                        secondaryAnimation, child) {
                                       const begin = Offset(1.0, 0.0);
                                       const end = Offset.zero;
                                       const curve = Curves.easeOutCubic;
-                                      
-                                      var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-                                      var offsetAnimation = animation.drive(tween);
-                                      
+
+                                      var tween = Tween(begin: begin, end: end)
+                                          .chain(CurveTween(curve: curve));
+                                      var offsetAnimation =
+                                          animation.drive(tween);
+
                                       // Usa un FadeTransition para que la pantalla anterior no desaparezca bruscamente
                                       return FadeTransition(
-                                        opacity: secondaryAnimation.drive(Tween(begin: 1.0, end: 0.0)),
+                                        opacity: secondaryAnimation
+                                            .drive(Tween(begin: 1.0, end: 0.0)),
                                         child: SlideTransition(
                                           position: offsetAnimation,
                                           child: child,
@@ -731,8 +862,10 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> with Tick
                             : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
-                          disabledBackgroundColor: Colors.white.withOpacity(0.3),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                          disabledBackgroundColor:
+                              Colors.white.withOpacity(0.3),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30)),
                           padding: EdgeInsets.symmetric(vertical: 16),
                           minimumSize: Size(double.infinity, 50),
                         ),
@@ -750,13 +883,15 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> with Tick
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.info_outline, color: Colors.white54, size: 16),
+                          Icon(Icons.info_outline,
+                              color: Colors.white54, size: 16),
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               'Tendrá la opción de hacer su reclamo respectivo sobre algún problema con la tutoría hasta 3 min terminada la tutoría.',
                               textAlign: TextAlign.center,
-                              style: TextStyle(color: Colors.white54, fontSize: 12),
+                              style: TextStyle(
+                                  color: Colors.white54, fontSize: 12),
                             ),
                           ),
                         ],
@@ -784,11 +919,12 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> with Tick
     );
   }
 
-  Widget makeDismissible({required Widget child, required BuildContext context}) {
+  Widget makeDismissible(
+      {required Widget child, required BuildContext context}) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
-        if(Navigator.canPop(context)) Navigator.of(context).pop();
+        if (Navigator.canPop(context)) Navigator.of(context).pop();
       },
       child: GestureDetector(onTap: () {}, child: child),
     );
@@ -806,7 +942,9 @@ class _StepBar extends StatelessWidget {
       width: 60,
       height: 8,
       decoration: BoxDecoration(
-        color: isActive ? AppColors.lightBlueColor : Colors.white.withOpacity(0.18),
+        color: isActive
+            ? AppColors.lightBlueColor
+            : Colors.white.withOpacity(0.18),
         borderRadius: BorderRadius.circular(8),
       ),
     );
@@ -816,7 +954,7 @@ class _StepBar extends StatelessWidget {
 class _HorizontalStepBar extends StatelessWidget {
   final bool isActive;
   final String label;
-  
+
   const _HorizontalStepBar({
     required this.isActive,
     required this.label,
@@ -827,20 +965,28 @@ class _HorizontalStepBar extends StatelessWidget {
     return Column(
       children: [
         AnimatedContainer(
-          duration: Duration(milliseconds: 400), // Aumentado de 300 a 400 para animación más suave
+          duration: Duration(
+              milliseconds:
+                  400), // Aumentado de 300 a 400 para animación más suave
           curve: Curves.easeInOut, // Añadida curva de animación
-          width: isActive ? 80 : 60, // Ancho dinámico: más ancho cuando está activo
+          width: isActive
+              ? 80
+              : 60, // Ancho dinámico: más ancho cuando está activo
           height: 6,
           decoration: BoxDecoration(
-            color: isActive ? AppColors.lightBlueColor : Colors.white.withOpacity(0.18),
+            color: isActive
+                ? AppColors.lightBlueColor
+                : Colors.white.withOpacity(0.18),
             borderRadius: BorderRadius.circular(6),
-            boxShadow: isActive ? [
-              BoxShadow(
-                color: AppColors.lightBlueColor.withOpacity(0.3),
-                blurRadius: 8,
-                spreadRadius: 1,
-              ),
-            ] : null, // Sombra solo cuando está activo
+            boxShadow: isActive
+                ? [
+                    BoxShadow(
+                      color: AppColors.lightBlueColor.withOpacity(0.3),
+                      blurRadius: 8,
+                      spreadRadius: 1,
+                    ),
+                  ]
+                : null, // Sombra solo cuando está activo
           ),
         ),
         SizedBox(height: 8),
@@ -856,4 +1002,4 @@ class _HorizontalStepBar extends StatelessWidget {
       ],
     );
   }
-} 
+}

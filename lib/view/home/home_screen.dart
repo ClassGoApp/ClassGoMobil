@@ -1649,91 +1649,176 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                           setModalState(() {
                                             _selectedSubject = subject;
                                           });
+                                          // Mostrar el BottomSheet contextual al seleccionar una materia
+                                          Future.delayed(
+                                              Duration(milliseconds: 150), () {
+                                            showModalBottomSheet(
+                                              context: context,
+                                              backgroundColor:
+                                                  Colors.transparent,
+                                              builder: (context) {
+                                                return Container(
+                                                  decoration: BoxDecoration(
+                                                    color: AppColors.darkBlue,
+                                                    borderRadius:
+                                                        BorderRadius.vertical(
+                                                            top:
+                                                                Radius.circular(
+                                                                    24)),
+                                                  ),
+                                                  padding: EdgeInsets.fromLTRB(
+                                                      24,
+                                                      24,
+                                                      24,
+                                                      24 +
+                                                          MediaQuery.of(context)
+                                                              .padding
+                                                              .bottom),
+                                                  child: Column(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      Text(
+                                                        '¿Qué deseas hacer con "${subject['name']}"?',
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          fontSize: 18,
+                                                        ),
+                                                        textAlign:
+                                                            TextAlign.center,
+                                                      ),
+                                                      SizedBox(height: 24),
+                                                      Row(
+                                                        children: [
+                                                          Expanded(
+                                                            child:
+                                                                ElevatedButton
+                                                                    .icon(
+                                                              onPressed: () {
+                                                                Navigator.pop(
+                                                                    context);
+                                                                // Acción para Empezar tutoría
+                                                                ScaffoldMessenger.of(
+                                                                        context)
+                                                                    .showSnackBar(
+                                                                  SnackBar(
+                                                                      content: Text(
+                                                                          'Empezar tutoría para "${subject['name']}"')),
+                                                                );
+                                                              },
+                                                              icon: Icon(
+                                                                  Icons
+                                                                      .play_circle_fill,
+                                                                  color: Colors
+                                                                      .white,
+                                                                  size: 22),
+                                                              label: Text(
+                                                                  'Empezar tutoría',
+                                                                  style: TextStyle(
+                                                                      color: Colors
+                                                                          .white,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .bold)),
+                                                              style:
+                                                                  ElevatedButton
+                                                                      .styleFrom(
+                                                                backgroundColor:
+                                                                    AppColors
+                                                                        .orangeprimary,
+                                                                shape: RoundedRectangleBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                            14)),
+                                                                padding: EdgeInsets
+                                                                    .symmetric(
+                                                                        vertical:
+                                                                            16),
+                                                                elevation: 2,
+                                                                shadowColor: AppColors
+                                                                    .orangeprimary
+                                                                    .withOpacity(
+                                                                        0.25),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          SizedBox(width: 16),
+                                                          Expanded(
+                                                            child:
+                                                                ElevatedButton
+                                                                    .icon(
+                                                              onPressed: () {
+                                                                Navigator.pop(
+                                                                    context);
+                                                                // Acción para Elegir Tutor
+                                                                Navigator.pop(
+                                                                    context); // Cierra el modal de materias
+                                                                Navigator.push(
+                                                                  context,
+                                                                  MaterialPageRoute(
+                                                                    builder:
+                                                                        (context) =>
+                                                                            SearchTutorsScreen(
+                                                                      initialKeyword:
+                                                                          subject[
+                                                                              'name'],
+                                                                      initialSubjectId:
+                                                                          subject[
+                                                                              'id'],
+                                                                    ),
+                                                                  ),
+                                                                );
+                                                              },
+                                                              icon: Icon(
+                                                                  Icons
+                                                                      .person_search,
+                                                                  color: Colors
+                                                                      .white,
+                                                                  size: 22),
+                                                              label: Text(
+                                                                  'Elegir Tutor',
+                                                                  style: TextStyle(
+                                                                      color: Colors
+                                                                          .white,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .bold)),
+                                                              style:
+                                                                  ElevatedButton
+                                                                      .styleFrom(
+                                                                backgroundColor:
+                                                                    AppColors
+                                                                        .lightBlueColor,
+                                                                shape: RoundedRectangleBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                            14)),
+                                                                padding: EdgeInsets
+                                                                    .symmetric(
+                                                                        vertical:
+                                                                            16),
+                                                                elevation: 2,
+                                                                shadowColor: AppColors
+                                                                    .lightBlueColor
+                                                                    .withOpacity(
+                                                                        0.25),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                              },
+                                            );
+                                          });
                                         },
                                       );
                                     },
                                   ),
-                        if (_selectedSubject != null)
-                          Positioned(
-                            bottom: 20,
-                            left: 16,
-                            right: 16,
-                            child: Container(
-                              padding: EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.4),
-                                borderRadius: BorderRadius.circular(30),
-                                border: Border.all(
-                                    color: Colors.white.withOpacity(0.2)),
-                                backgroundBlendMode: BlendMode.overlay,
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(30),
-                                child: BackdropFilter(
-                                  filter:
-                                      ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: ElevatedButton(
-                                          onPressed: () {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              SnackBar(
-                                                  content: Text(
-                                                      'Función de selección automática próximamente.')),
-                                            );
-                                          },
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor:
-                                                AppColors.orangeprimary,
-                                            shape: StadiumBorder(),
-                                            padding: EdgeInsets.symmetric(
-                                                vertical: 14),
-                                          ),
-                                          child: Text('Selección Automática',
-                                              style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.white)),
-                                        ),
-                                      ),
-                                      SizedBox(width: 12),
-                                      Expanded(
-                                        child: ElevatedButton(
-                                          onPressed: () {
-                                            Navigator.pop(context);
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) =>
-                                                    SearchTutorsScreen(
-                                                  initialKeyword:
-                                                      _selectedSubject!['name'],
-                                                  initialSubjectId:
-                                                      _selectedSubject!['id'],
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor:
-                                                AppColors.lightBlueColor,
-                                            shape: StadiumBorder(),
-                                            padding: EdgeInsets.symmetric(
-                                                vertical: 14),
-                                          ),
-                                          child: Text('Elegir Tutor',
-                                              style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.white)),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
                       ],
                     ),
                   ),
