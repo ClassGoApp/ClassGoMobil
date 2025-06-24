@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/view/auth/login_screen.dart';
 import 'package:flutter_projects/view/tutor/search_tutors_screen.dart';
+import 'package:shimmer/shimmer.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -342,8 +343,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 final videoUrl =
                                     getFullUrl(videoPath, baseVideoUrl);
                                 final completed =
-                                    tutor['completed_courses'] ?? 0;
-                                final total = tutor['total_courses'] ?? 0;
+                                    tutor['completed_courses_count'] ?? 0;
+                                final total = 18;
                                 return Padding(
                                   padding: EdgeInsets.symmetric(
                                       horizontal: tutorCardPadding),
@@ -395,10 +396,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                               _activeController !=
                                                                   null
                                                           ? (_isVideoLoading
-                                                              ? Center(
-                                                                  child: CircularProgressIndicator(
+                                                              ? Positioned.fill(
+                                                                  child: Center(
+                                                                    child:
+                                                                        CircularProgressIndicator(
                                                                       color: AppColors
-                                                                          .lightBlueColor))
+                                                                          .lightBlueColor,
+                                                                      strokeWidth:
+                                                                          4,
+                                                                    ),
+                                                                  ),
+                                                                )
                                                               : Stack(
                                                                   children: [
                                                                     SizedBox
@@ -476,25 +484,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                               top: tutorCardImageHeight -
                                                   24, // justo debajo del video
                                               left: 16,
-                                              child: CircleAvatar(
-                                                radius: 24,
-                                                backgroundColor: Colors.white,
-                                                child: CircleAvatar(
-                                                  radius: 21,
-                                                  backgroundImage: imageUrl
-                                                          .isNotEmpty
-                                                      ? NetworkImage(imageUrl)
-                                                      : null,
-                                                  backgroundColor:
-                                                      Colors.grey[300],
-                                                  child: imageUrl.isEmpty
-                                                      ? Icon(Icons.person,
-                                                          size: 20,
-                                                          color:
-                                                              Colors.grey[600])
-                                                      : null,
-                                                ),
-                                              ),
+                                              child: _buildAvatarWithShimmer(
+                                                  imageUrl),
                                             ),
                                           ],
                                         ),
@@ -564,41 +555,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                     fontSize: 15,
                                                     fontWeight:
                                                         FontWeight.w600),
-                                              ),
-                                              SizedBox(height: 8),
-                                              Row(
-                                                children: [
-                                                  Text(
-                                                    rating.toStringAsFixed(2),
-                                                    style: TextStyle(
-                                                        fontSize: 18,
-                                                        color: Colors.white,
-                                                        fontWeight:
-                                                            FontWeight.bold),
-                                                  ),
-                                                  SizedBox(width: 10),
-                                                  Row(
-                                                    children:
-                                                        List.generate(5, (i) {
-                                                      if (rating >= i + 1) {
-                                                        return Icon(Icons.star,
-                                                            color: Colors.amber,
-                                                            size: 22);
-                                                      } else if (rating > i &&
-                                                          rating < i + 1) {
-                                                        return Icon(
-                                                            Icons.star_half,
-                                                            color: Colors.amber,
-                                                            size: 22);
-                                                      } else {
-                                                        return Icon(
-                                                            Icons.star_border,
-                                                            color: Colors.amber,
-                                                            size: 22);
-                                                      }
-                                                    }),
-                                                  ),
-                                                ],
                                               ),
                                             ],
                                           ),
@@ -1239,9 +1195,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             child: VideoPlayer(_activeController!),
           ),
           if (_isVideoLoading)
-            Center(
-                child:
-                    CircularProgressIndicator(color: AppColors.lightBlueColor)),
+            Positioned.fill(
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: AppColors.lightBlueColor,
+                  strokeWidth: 4,
+                ),
+              ),
+            ),
           Positioned.fill(
             child: Material(
               color: Colors.transparent,
@@ -1295,31 +1256,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     // Imagen por defecto mientras se carga el thumbnail
     return Stack(
       children: [
-        SizedBox.expand(
-          child: FittedBox(
-            fit: BoxFit.cover,
-            child: Container(
-              color: Colors.grey[300],
-              width: 200,
-              height: 100,
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.video_library,
-                        size: 40, color: Colors.grey[600]),
-                    SizedBox(height: 4),
-                    Text(
-                      'Cargando...',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+        Shimmer.fromColors(
+          baseColor: Colors.grey[300]!,
+          highlightColor: Colors.grey[100]!,
+          child: Container(
+            width: tutorCardWidth,
+            height: tutorCardImageHeight,
+            color: Colors.grey[300],
           ),
         ),
         Positioned.fill(
@@ -2136,6 +2079,59 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     } catch (e) {
       print('Error fetching high-res tutor images: $e');
     }
+  }
+
+  Widget _buildAvatarWithShimmer(String imageUrl) {
+    return SizedBox(
+      width: 48,
+      height: 48,
+      child: imageUrl.isEmpty
+          ? Shimmer.fromColors(
+              baseColor: Colors.grey[300]!,
+              highlightColor: Colors.grey[100]!,
+              child: CircleAvatar(
+                radius: 24,
+                backgroundColor: Colors.white,
+                child: CircleAvatar(
+                  radius: 21,
+                  backgroundColor: Colors.grey[300],
+                ),
+              ),
+            )
+          : ClipOval(
+              child: Image.network(
+                imageUrl,
+                width: 48,
+                height: 48,
+                fit: BoxFit.cover,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Shimmer.fromColors(
+                    baseColor: Colors.grey[300]!,
+                    highlightColor: Colors.grey[100]!,
+                    child: CircleAvatar(
+                      radius: 24,
+                      backgroundColor: Colors.white,
+                      child: CircleAvatar(
+                        radius: 21,
+                        backgroundColor: Colors.grey[300],
+                      ),
+                    ),
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) => CircleAvatar(
+                  radius: 24,
+                  backgroundColor: Colors.white,
+                  child: CircleAvatar(
+                    radius: 21,
+                    backgroundColor: Colors.grey[300],
+                    child:
+                        Icon(Icons.person, size: 20, color: Colors.grey[600]),
+                  ),
+                ),
+              ),
+            ),
+    );
   }
 }
 

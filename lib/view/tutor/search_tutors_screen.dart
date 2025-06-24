@@ -982,6 +982,12 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                             : 0.0))
                                     : 0.0,
                                 subjects: validSubjects,
+                                completedCourses: (tutor[
+                                        'completed_courses_count'] is int)
+                                    ? tutor['completed_courses_count'] ?? 0
+                                    : int.tryParse(
+                                            '${tutor['completed_courses_count'] ?? 0}') ??
+                                        0,
                               ),
                             ),
                           );
@@ -1029,6 +1035,12 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                               : 0.0))
                                       : 0.0,
                                   subjects: validSubjects,
+                                  completedCourses: (tutor[
+                                          'completed_courses_count'] is int)
+                                      ? tutor['completed_courses_count'] ?? 0
+                                      : int.tryParse(
+                                              '${tutor['completed_courses_count'] ?? 0}') ??
+                                          0,
                                 ),
                               ),
                             );

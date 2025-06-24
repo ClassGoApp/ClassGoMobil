@@ -22,6 +22,7 @@ import '../components/experience_card.dart';
 import '../components/student_card.dart';
 import '../student/student_reviews.dart';
 import 'package:chewie/chewie.dart';
+import '../tutor/tutor_profile_screen.dart';
 
 class TutorDetailScreen extends StatefulWidget {
   final Map<String, dynamic> profile;
@@ -166,6 +167,7 @@ class _TutorDetailScreenState extends State<TutorDetailScreen> {
       });
     } catch (e) {}
   }
+
   Future<void> _fetchTutorAvailableSlots(int tutorId) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final token = authProvider.token;
@@ -207,7 +209,7 @@ class _TutorDetailScreenState extends State<TutorDetailScreen> {
               "description": slot["description"] ?? "Sin descripción",
               "students": slot["students"],
               "formatted_time_range":
-              "${DateFormat('hh:mm a').format(DateTime.parse(slot["start_time"].trim()))} - ${DateFormat('hh:mm a').format(DateTime.parse(slot["end_time"].trim()))}",
+                  "${DateFormat('hh:mm a').format(DateTime.parse(slot["start_time"].trim()))} - ${DateFormat('hh:mm a').format(DateTime.parse(slot["end_time"].trim()))}",
               "subject": subjectData["info"]["subject"],
               "group": groupName,
             });
@@ -246,6 +248,7 @@ class _TutorDetailScreenState extends State<TutorDetailScreen> {
       });
     }
   }
+
   Future<void> _fetchSessionsForSelectedDate(DateTime date) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final token = authProvider.token;
@@ -255,8 +258,8 @@ class _TutorDetailScreenState extends State<TutorDetailScreen> {
         isLoading = true;
       });
 
-      final response = await getTutorAvailableSlots(
-          token!, widget.tutor['id'].toString());
+      final response =
+          await getTutorAvailableSlots(token!, widget.tutor['id'].toString());
 
       setState(() {
         sessionData = response['data'];
@@ -274,8 +277,8 @@ class _TutorDetailScreenState extends State<TutorDetailScreen> {
     List<String> days = [];
 
     for (var date = startDate;
-    date.isBefore(endDate) || date.isAtSameMomentAs(endDate);
-    date = date.add(Duration(days: 1))) {
+        date.isBefore(endDate) || date.isAtSameMomentAs(endDate);
+        date = date.add(Duration(days: 1))) {
       dates.add(date);
       days.add(DateFormat('EEE').format(date));
     }
@@ -322,16 +325,16 @@ class _TutorDetailScreenState extends State<TutorDetailScreen> {
   Widget build(BuildContext context) {
     screenHeight = MediaQuery.of(context).size.height;
     screenWidth = MediaQuery.of(context).size.width;
-    List<dynamic> reviews = studentReviews?["data"]["list"]??[];
+    List<dynamic> reviews = studentReviews?["data"]["list"] ?? [];
     Map<int, int> ratingCounts = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0};
     for (var review in reviews) {
       int rating = review["rating"];
       ratingCounts[rating] = ratingCounts[rating]! + 1;
     }
     int totalRatings = reviews.length;
-    double averageRating =
-    totalRatings > 0 ? reviews.map((r) => r["rating"]).reduce((a, b) => a + b) / totalRatings : 0;
-
+    double averageRating = totalRatings > 0
+        ? reviews.map((r) => r["rating"]).reduce((a, b) => a + b) / totalRatings
+        : 0;
 
     return Consumer<ConnectivityProvider>(
       builder: (context, connectivityProvider, _) {
@@ -388,12 +391,15 @@ class _TutorDetailScreenState extends State<TutorDetailScreen> {
                           Expanded(
                             child: SingleChildScrollView(
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 10,vertical: 10),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 10),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     _buildVideoSection(),
-                                    SizedBox(height: 10,),
+                                    SizedBox(
+                                      height: 10,
+                                    ),
                                     _buildProfileSection(tutorDetails!),
                                     SizedBox(height: 10.0),
                                     _buildAboutMeSection(tutorDetails!),
@@ -412,7 +418,8 @@ class _TutorDetailScreenState extends State<TutorDetailScreen> {
                                     if (tutorCertification != null)
                                       _buildCertificationSection(
                                           List<Map<String, dynamic>>.from(
-                                              tutorCertification!['data'] ?? '')),
+                                              tutorCertification!['data'] ??
+                                                  '')),
                                     Text(
                                       'Reservar Sesión',
                                       style: TextStyle(
@@ -425,22 +432,31 @@ class _TutorDetailScreenState extends State<TutorDetailScreen> {
                                     ),
                                     _buildDateSelector(),
                                     _buildBottomButton(),
-                                    SizedBox(height: 10,),
+                                    SizedBox(
+                                      height: 10,
+                                    ),
                                     Text(
                                       "Reseñas de estudiantes",
-                                      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold),
                                     ),
-                                    SizedBox(height: 10,),
+                                    SizedBox(
+                                      height: 10,
+                                    ),
                                     GestureDetector(
                                       onTap: () {
                                         final authProvider =
-                                        Provider.of<AuthProvider>(context, listen: false);
+                                            Provider.of<AuthProvider>(context,
+                                                listen: false);
                                         final token = authProvider.token;
 
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (context) => StudentReviewsScreen(
+                                            builder: (context) =>
+                                                StudentReviewsScreen(
                                               initialPage: 1,
                                               fetchReviews: (page) async {
                                                 return await getStudentReviews(
@@ -455,57 +471,94 @@ class _TutorDetailScreenState extends State<TutorDetailScreen> {
                                       },
                                       child: Center(
                                         child: Container(
-                                          padding: EdgeInsets.symmetric(horizontal: 10,vertical: 10),
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: 10, vertical: 10),
                                           decoration: BoxDecoration(
                                             color: AppColors.blurprimary,
-                                            border: Border.all(color: Colors.white,width:0.5),
-                                            borderRadius: BorderRadius.circular(20),
+                                            border: Border.all(
+                                                color: Colors.white,
+                                                width: 0.5),
+                                            borderRadius:
+                                                BorderRadius.circular(20),
                                           ),
-
                                           child: Column(
                                             mainAxisSize: MainAxisSize.min,
-                                            crossAxisAlignment: CrossAxisAlignment.end,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.end,
                                             children: [
                                               SizedBox(height: 8),
                                               Row(
-                                                mainAxisAlignment: MainAxisAlignment.start,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.start,
                                                 children: [
                                                   Text(
-                                                    averageRating.toStringAsFixed(1),
-                                                    style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
+                                                    averageRating
+                                                        .toStringAsFixed(1),
+                                                    style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 32,
+                                                        fontWeight:
+                                                            FontWeight.bold),
                                                   ),
                                                   SizedBox(width: 8),
                                                   RatingBarIndicator(
                                                     rating: averageRating,
                                                     itemCount: 5,
                                                     itemSize: 24.0,
-                                                    itemBuilder: (context, _) => Icon(Icons.star, color: Colors.amber),
+                                                    itemBuilder: (context, _) =>
+                                                        Icon(Icons.star,
+                                                            color:
+                                                                Colors.amber),
                                                   ),
                                                 ],
                                               ),
                                               Text(
                                                 "Residencia en $totalRatings calificaciones",
-                                                style: TextStyle(color: Colors.white70, fontSize: 14),
+                                                style: TextStyle(
+                                                    color: Colors.white70,
+                                                    fontSize: 14),
                                               ),
                                               SizedBox(height: 16),
                                               Column(
-                                                children: [5, 4, 3, 2, 1].map((star) {
-                                                  double percentage = totalRatings > 0 ? (ratingCounts[star]! / totalRatings) * 100 : 0;
+                                                children:
+                                                    [5, 4, 3, 2, 1].map((star) {
+                                                  double percentage =
+                                                      totalRatings > 0
+                                                          ? (ratingCounts[
+                                                                      star]! /
+                                                                  totalRatings) *
+                                                              100
+                                                          : 0;
                                                   return Row(
-                                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceBetween,
                                                     children: [
-                                                      Text("$star.0", style: TextStyle(color: Colors.white)),
-                                                      SizedBox(width: 20,),
+                                                      Text("$star.0",
+                                                          style: TextStyle(
+                                                              color: Colors
+                                                                  .white)),
+                                                      SizedBox(
+                                                        width: 20,
+                                                      ),
                                                       Expanded(
-                                                        child: LinearProgressIndicator(
-                                                          value: percentage / 100,
-                                                          backgroundColor: Colors.white24,
+                                                        child:
+                                                            LinearProgressIndicator(
+                                                          value:
+                                                              percentage / 100,
+                                                          backgroundColor:
+                                                              Colors.white24,
                                                           color: Colors.amber,
                                                         ),
                                                       ),
-                                                      SizedBox(width: 20,),
-                                                      Text(" ${ratingCounts[star]}",
-                                                          style: TextStyle(color: Colors.white)),
+                                                      SizedBox(
+                                                        width: 20,
+                                                      ),
+                                                      Text(
+                                                          " ${ratingCounts[star]}",
+                                                          style: TextStyle(
+                                                              color: Colors
+                                                                  .white)),
                                                     ],
                                                   );
                                                 }).toList(),
@@ -522,7 +575,6 @@ class _TutorDetailScreenState extends State<TutorDetailScreen> {
                                     //     studentReviews!['data']['list']
                                     //         .isNotEmpty)
                                     //   _buildStudentReviewsSection(),
-
                                   ],
                                 ),
                               ),
@@ -565,9 +617,8 @@ class _TutorDetailScreenState extends State<TutorDetailScreen> {
       },
     );
   }
+
   Widget _buildDateSelector() {
-
-
     if (dateList.isEmpty || dayList.isEmpty) {
       return Container(
         height: 80,
@@ -593,7 +644,6 @@ class _TutorDetailScreenState extends State<TutorDetailScreen> {
       height: 80,
       decoration: BoxDecoration(
         color: AppColors.primaryGreen,
-
       ),
       child: ListView.builder(
         key: PageStorageKey('dateListKey'),
@@ -612,10 +662,12 @@ class _TutorDetailScreenState extends State<TutorDetailScreen> {
             },
             child: Padding(
               padding:
-              const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
+                  const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
               child: Container(
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.navbar.withOpacity(0.8) : AppColors.primaryGreen,
+                  color: isSelected
+                      ? AppColors.navbar.withOpacity(0.8)
+                      : AppColors.primaryGreen,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 padding: EdgeInsets.symmetric(horizontal: 15, vertical: 4),
@@ -651,6 +703,7 @@ class _TutorDetailScreenState extends State<TutorDetailScreen> {
       ),
     );
   }
+
   Widget _buildProfileSection(Map<String, dynamic> tutorDetails) {
     if (tutorDetails == null) {
       return ProfileSectionSkeleton();
@@ -752,8 +805,7 @@ class _TutorDetailScreenState extends State<TutorDetailScreen> {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.whiteColor,
-        borderRadius: BorderRadius.all(Radius.circular(20.0),
-        ),
+        borderRadius: BorderRadius.all(Radius.circular(20.0)),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -803,8 +855,8 @@ class _TutorDetailScreenState extends State<TutorDetailScreen> {
                           ),
                         ),
                         active != null
-                            ? Icon(Icons.verified,size: 16,color: AppColors.navbar)
-
+                            ? Icon(Icons.verified,
+                                size: 16, color: AppColors.navbar)
                             : SizedBox(width: 10),
                       ],
                     ),
@@ -999,18 +1051,21 @@ class _TutorDetailScreenState extends State<TutorDetailScreen> {
                             fontFamily: "SF-Pro-Text",
                           ),
                         ),
-                      if (subjects != null && subjects!.isNotEmpty)
-                    for (int i = 0; i < subjects!.length && i < visibleSubjectsCount; i++)
-        TextSpan(
-      text: '${subjects![i]['name']}${i < visibleSubjectsCount - 1 ? ', ' : ''} ',
-        style: TextStyle(
-          color: AppColors.greyColor.withOpacity(0.7),
-          fontSize: FontSize.scale(context, 14),
-          fontWeight: FontWeight.w400,
-          fontStyle: FontStyle.normal,
-          fontFamily: "SF-Pro-Text",
-        ),
-      ),
+                        if (subjects != null && subjects!.isNotEmpty)
+                          for (int i = 0;
+                              i < subjects!.length && i < visibleSubjectsCount;
+                              i++)
+                            TextSpan(
+                              text:
+                                  '${subjects![i]['name']}${i < visibleSubjectsCount - 1 ? ', ' : ''} ',
+                              style: TextStyle(
+                                color: AppColors.greyColor.withOpacity(0.7),
+                                fontSize: FontSize.scale(context, 14),
+                                fontWeight: FontWeight.w400,
+                                fontStyle: FontStyle.normal,
+                                fontFamily: "SF-Pro-Text",
+                              ),
+                            ),
                         if (subjects.length > 2)
                           TextSpan(
                             text: '  ',
@@ -1439,8 +1494,29 @@ class _TutorDetailScreenState extends State<TutorDetailScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => BookSessionScreen(
-                tutorProfile: widget.profile, tutor: widget.tutor,
+              builder: (context) => TutorProfileScreen(
+                tutorId:
+                    tutorDetails?['data']?['profile']?['id']?.toString() ?? '',
+                tutorName:
+                    tutorDetails?['data']?['profile']?['full_name'] ?? '',
+                tutorImage: tutorDetails?['data']?['profile']?['image'] ?? '',
+                tutorVideo:
+                    tutorDetails?['data']?['profile']?['intro_video'] ?? '',
+                description:
+                    tutorDetails?['data']?['profile']?['description'] ?? '',
+                rating: tutorDetails?['data']?['avg_rating'] is num
+                    ? (tutorDetails?['data']?['avg_rating'] as num).toDouble()
+                    : double.tryParse(
+                            '${tutorDetails?['data']?['avg_rating'] ?? 0.0}') ??
+                        0.0,
+                subjects: (tutorDetails?['data']?['profile']?['subjects']
+                            as List<dynamic>?)
+                        ?.map((e) => e['name']?.toString() ?? '')
+                        .toList() ??
+                    [],
+                completedCourses: int.tryParse(
+                        '${tutorDetails?['data']?['profile']?['completed_courses_count'] ?? 0}') ??
+                    0,
               ),
             ),
           );
@@ -1474,7 +1550,6 @@ class _TutorDetailScreenState extends State<TutorDetailScreen> {
               fontWeight: FontWeight.w500,
             ),
           ),
-
         ],
       ),
     );

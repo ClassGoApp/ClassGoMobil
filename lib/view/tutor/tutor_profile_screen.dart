@@ -15,6 +15,7 @@ class TutorProfileScreen extends StatefulWidget {
   final String description;
   final double rating;
   final List<String> subjects;
+  final int completedCourses;
 
   // Idiomas por defecto
   final List<String> languages;
@@ -28,6 +29,7 @@ class TutorProfileScreen extends StatefulWidget {
     required this.description,
     required this.rating,
     required this.subjects,
+    required this.completedCourses,
     this.languages = const ['Español', 'Inglés'],
   }) : super(key: key);
 
@@ -311,24 +313,20 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                                 color: Colors.white,
                               ),
                             ),
-                            SizedBox(width: 3),
-                            Text(
-                              'Valoración',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: Colors.white.withOpacity(0.7),
-                              ),
-                            ),
                             SizedBox(width: 8),
                             Icon(Icons.school,
                                 color: AppColors.blueColor, size: 13),
                             SizedBox(width: 2),
-                            Text(
-                              '$cursosCompletados/$totalCursosTutor cursos de tutor',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: AppColors.blueColor,
-                                fontWeight: FontWeight.w600,
+                            Expanded(
+                              child: Text(
+                                '${widget.completedCourses}/18 cursos completados',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.blueColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],

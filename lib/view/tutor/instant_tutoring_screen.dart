@@ -350,25 +350,32 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                       children: [
                         // 1. Información del Tutor
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             CircleAvatar(
                               radius: 32,
                               backgroundImage: NetworkImage(widget.tutorImage),
                             ),
                             SizedBox(width: 16),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(widget.tutorName,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    widget.tutorName,
                                     style: AppTextStyles.heading2
-                                        .copyWith(color: Colors.white)),
-                                SizedBox(height: 4),
-                                Text(
-                                  _selectedSubject ?? 'Tutor de ClassGo',
-                                  style: AppTextStyles.body
-                                      .copyWith(color: Colors.white70),
-                                ),
-                              ],
+                                        .copyWith(color: Colors.white),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    _selectedSubject ?? 'Tutor de ClassGo',
+                                    style: AppTextStyles.body
+                                        .copyWith(color: Colors.white70),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
