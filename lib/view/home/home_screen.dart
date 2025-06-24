@@ -1257,12 +1257,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return Stack(
       children: [
         Shimmer.fromColors(
-          baseColor: Colors.grey[300]!,
-          highlightColor: Colors.grey[100]!,
+          baseColor: Colors.grey[400]!,
+          highlightColor: Colors.white,
           child: Container(
             width: tutorCardWidth,
             height: tutorCardImageHeight,
-            color: Colors.grey[300],
+            color: Colors.grey[400],
           ),
         ),
         Positioned.fill(
@@ -2087,14 +2087,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       height: 48,
       child: imageUrl.isEmpty
           ? Shimmer.fromColors(
-              baseColor: Colors.grey[300]!,
-              highlightColor: Colors.grey[100]!,
+              baseColor: Colors.grey[400]!,
+              highlightColor: Colors.white,
               child: CircleAvatar(
                 radius: 24,
                 backgroundColor: Colors.white,
                 child: CircleAvatar(
                   radius: 21,
-                  backgroundColor: Colors.grey[300],
+                  backgroundColor: Colors.grey[400],
                 ),
               ),
             )
@@ -2107,14 +2107,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress == null) return child;
                   return Shimmer.fromColors(
-                    baseColor: Colors.grey[300]!,
-                    highlightColor: Colors.grey[100]!,
+                    baseColor: Colors.grey[400]!,
+                    highlightColor: Colors.white,
                     child: CircleAvatar(
                       radius: 24,
                       backgroundColor: Colors.white,
                       child: CircleAvatar(
                         radius: 21,
-                        backgroundColor: Colors.grey[300],
+                        backgroundColor: Colors.grey[400],
                       ),
                     ),
                   );
@@ -2124,7 +2124,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   backgroundColor: Colors.white,
                   child: CircleAvatar(
                     radius: 21,
-                    backgroundColor: Colors.grey[300],
+                    backgroundColor: Colors.grey[400],
                     child:
                         Icon(Icons.person, size: 20, color: Colors.grey[600]),
                   ),
