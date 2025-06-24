@@ -61,7 +61,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   // En el estado:
   final double tutorCardWidth = 280.0;
-  final double tutorCardImageHeight = 180.0;
+  final double tutorCardImageHeight = 150.0;
   final double tutorCardPadding = 6.0;
   late final ScrollController _featuredTutorsScrollController =
       ScrollController();
@@ -70,6 +70,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   // Nuevo ScrollController para el carrusel de tutores
   late final ScrollController _tutorsScrollController = ScrollController();
+
+  // 1. Declara el mapa para imágenes HD:
+  Map<int, String> highResTutorImages = {};
 
   @override
   void initState() {
@@ -93,6 +96,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     fetchFeaturedTutorsAndVerified();
     fetchAlliancesData();
     fetchInitialSubjects(); // Precargar 20 materias
+    fetchHighResTutorImages(); // <--
   }
 
   @override
@@ -333,7 +337,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 final imagePath = profile['image'] ?? '';
                                 final videoPath = profile['intro_video'] ?? '';
                                 final imageUrl =
-                                    getFullUrl(imagePath, baseImageUrl);
+                                    highResTutorImages[tutor['id']] ??
+                                        getFullUrl(imagePath, baseImageUrl);
                                 final videoUrl =
                                     getFullUrl(videoPath, baseVideoUrl);
                                 final completed =
@@ -1943,8 +1948,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       final thumbnail = await VideoThumbnail.thumbnailData(
         video: videoUrl,
         imageFormat: ImageFormat.JPEG,
-        maxWidth: 200,
-        quality: 50,
+        maxWidth: 400,
+        quality: 90,
       );
 
       if (mounted) {
@@ -2109,6 +2114,27 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       }
     } catch (e) {
       print('DEBUG: Error al precargar materias iniciales: $e');
+    }
+  }
+
+  // 3. Implementa la función para obtener las imágenes HD:
+  Future<void> fetchHighResTutorImages() async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final token = authProvider.token;
+      final response = await getVerifiedTutorsPhotos(token);
+      if (response.containsKey('data') && response['data'] is List) {
+        final List<dynamic> data = response['data'];
+        setState(() {
+          highResTutorImages = {
+            for (var item in data)
+              if (item['id'] != null && item['profile_image'] != null)
+                item['id'] as int: item['profile_image'] as String
+          };
+        });
+      }
+    } catch (e) {
+      print('Error fetching high-res tutor images: $e');
     }
   }
 }
