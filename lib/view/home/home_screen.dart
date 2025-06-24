@@ -60,9 +60,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       viewportFraction: 1.0); // Aumentado para más a la izquierda
 
   // En el estado:
-  final double tutorCardWidth = 300.0;
-  final double tutorCardImageHeight = 300.0;
-  final double tutorCardPadding = 10.0;
+  final double tutorCardWidth = 280.0;
+  final double tutorCardImageHeight = 180.0;
+  final double tutorCardPadding = 6.0;
   late final ScrollController _featuredTutorsScrollController =
       ScrollController();
 
@@ -312,7 +312,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           SizedBox(height: 12),
                           SizedBox(
                             height: MediaQuery.of(context).size.height *
-                                0.44, // más alto para tarjetas grandes
+                                0.38, // Antes 0.44, ajusto para tarjetas más compactas
                             child: PageView.builder(
                               controller: PageController(
                                 viewportFraction:
@@ -363,133 +363,119 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                             Container(
                                               width: tutorCardWidth,
                                               decoration: BoxDecoration(
-                                                color: Colors.transparent,
+                                                color: Colors.white,
+                                                border: Border.all(
+                                                    color: AppColors
+                                                        .lightBlueColor,
+                                                    width: 4),
                                                 borderRadius:
                                                     BorderRadius.circular(24),
                                               ),
                                               child: Column(
                                                 children: [
-                                                  Container(
-                                                    width: tutorCardWidth,
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.white,
-                                                      border: Border.all(
-                                                          color: AppColors
-                                                              .lightBlueColor,
-                                                          width: 4),
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              24),
+                                                  ClipRRect(
+                                                    borderRadius:
+                                                        BorderRadius.only(
+                                                      topLeft:
+                                                          Radius.circular(20),
+                                                      topRight:
+                                                          Radius.circular(20),
                                                     ),
-                                                    child: Column(
-                                                      children: [
-                                                        ClipRRect(
-                                                          borderRadius:
-                                                              BorderRadius.only(
-                                                            topLeft:
-                                                                Radius.circular(
-                                                                    20),
-                                                            topRight:
-                                                                Radius.circular(
-                                                                    20),
-                                                          ),
-                                                          child: Container(
-                                                            width:
-                                                                tutorCardWidth,
-                                                            height:
-                                                                tutorCardImageHeight,
-                                                            color: Colors
-                                                                .grey[300],
-                                                            child: _playingIndex ==
-                                                                        index &&
-                                                                    _activeController !=
-                                                                        null
-                                                                ? (_isVideoLoading
-                                                                    ? Center(
-                                                                        child: CircularProgressIndicator(
-                                                                            color: AppColors
-                                                                                .lightBlueColor))
-                                                                    : Stack(
-                                                                        children: [
-                                                                          SizedBox(
-                                                                            width:
-                                                                                tutorCardWidth,
-                                                                            height:
-                                                                                tutorCardImageHeight,
-                                                                            child:
-                                                                                VideoPlayer(_activeController!),
-                                                                          ),
-                                                                          Positioned
-                                                                              .fill(
-                                                                            child:
-                                                                                Material(
-                                                                              color: Colors.transparent,
-                                                                              child: InkWell(
-                                                                                onTap: () => _handleVideoTap(index),
-                                                                              ),
-                                                                            ),
-                                                                          ),
-                                                                        ],
-                                                                      ))
-                                                                : _buildVideoThumbnail(
-                                                                    videoUrl,
-                                                                    index),
-                                                          ),
-                                                        ),
-                                                        Container(
-                                                          width:
-                                                              double.infinity,
-                                                          height: 32,
-                                                          decoration:
-                                                              BoxDecoration(
-                                                            color: AppColors
-                                                                .lightBlueColor,
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .only(
-                                                              bottomLeft: Radius
-                                                                  .circular(20),
-                                                              bottomRight:
-                                                                  Radius
-                                                                      .circular(
-                                                                          20),
+                                                    child: SizedBox(
+                                                      width: double.infinity,
+                                                      height:
+                                                          tutorCardImageHeight,
+                                                      child: _playingIndex ==
+                                                                  index &&
+                                                              _activeController !=
+                                                                  null
+                                                          ? (_isVideoLoading
+                                                              ? Center(
+                                                                  child: CircularProgressIndicator(
+                                                                      color: AppColors
+                                                                          .lightBlueColor))
+                                                              : Stack(
+                                                                  children: [
+                                                                    SizedBox
+                                                                        .expand(
+                                                                      child: VideoPlayer(
+                                                                          _activeController!),
+                                                                    ),
+                                                                    Positioned
+                                                                        .fill(
+                                                                      child:
+                                                                          Material(
+                                                                        color: Colors
+                                                                            .transparent,
+                                                                        child:
+                                                                            InkWell(
+                                                                          onTap: () =>
+                                                                              _handleVideoTap(index),
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ))
+                                                          : FittedBox(
+                                                              fit: BoxFit.cover,
+                                                              clipBehavior:
+                                                                  Clip.hardEdge,
+                                                              child: SizedBox(
+                                                                width:
+                                                                    tutorCardWidth,
+                                                                height:
+                                                                    tutorCardImageHeight,
+                                                                child:
+                                                                    _buildVideoThumbnail(
+                                                                        videoUrl,
+                                                                        index),
+                                                              ),
                                                             ),
-                                                          ),
-                                                          alignment: Alignment
-                                                              .centerLeft,
-                                                          padding:
-                                                              EdgeInsets.only(
-                                                                  left: 64,
-                                                                  right: 8),
-                                                          child: Text(
-                                                            name,
-                                                            style: TextStyle(
-                                                              color:
-                                                                  Colors.white,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                              fontSize: 18,
-                                                            ),
-                                                            overflow:
-                                                                TextOverflow
-                                                                    .ellipsis,
-                                                          ),
-                                                        ),
-                                                      ],
+                                                    ),
+                                                  ),
+                                                  Container(
+                                                    width: double.infinity,
+                                                    height: 28, // más compacto
+                                                    decoration: BoxDecoration(
+                                                      color: AppColors
+                                                          .lightBlueColor,
+                                                      borderRadius:
+                                                          BorderRadius.only(
+                                                        bottomLeft:
+                                                            Radius.circular(20),
+                                                        bottomRight:
+                                                            Radius.circular(20),
+                                                      ),
+                                                    ),
+                                                    alignment:
+                                                        Alignment.centerLeft,
+                                                    padding: EdgeInsets.only(
+                                                        left: 65, right: 8),
+                                                    child: Text(
+                                                      name,
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 13,
+                                                      ),
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
                                                     ),
                                                   ),
                                                 ],
                                               ),
                                             ),
+                                            // Avatar sobrepuesto al borde inferior del video
                                             Positioned(
-                                              bottom: -28,
+                                              top: tutorCardImageHeight -
+                                                  24, // justo debajo del video
                                               left: 16,
                                               child: CircleAvatar(
-                                                radius: 30,
+                                                radius: 24,
                                                 backgroundColor: Colors.white,
                                                 child: CircleAvatar(
-                                                  radius: 27,
+                                                  radius: 21,
                                                   backgroundImage: imageUrl
                                                           .isNotEmpty
                                                       ? NetworkImage(imageUrl)
@@ -498,7 +484,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                       Colors.grey[300],
                                                   child: imageUrl.isEmpty
                                                       ? Icon(Icons.person,
-                                                          size: 28,
+                                                          size: 20,
                                                           color:
                                                               Colors.grey[600])
                                                       : null,
@@ -507,7 +493,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                             ),
                                           ],
                                         ),
-                                        SizedBox(height: 28),
+                                        SizedBox(height: 12),
                                         Container(
                                           width: tutorCardWidth,
                                           padding: EdgeInsets.symmetric(
@@ -1266,11 +1252,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (_thumbnailCache.containsKey(index) && _thumbnailCache[index] != null) {
       return Stack(
         children: [
-          Image.memory(
-            _thumbnailCache[index]!,
-            width: 200,
-            height: 100,
-            fit: BoxFit.cover,
+          SizedBox.expand(
+            child: FittedBox(
+              fit: BoxFit.cover,
+              child: Image.memory(
+                _thumbnailCache[index]!,
+                fit: BoxFit.cover,
+              ),
+            ),
           ),
           Center(
             child: Container(
@@ -1301,24 +1290,30 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     // Imagen por defecto mientras se carga el thumbnail
     return Stack(
       children: [
-        Container(
-          color: Colors.grey[300],
-          width: 200,
-          height: 100,
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.video_library, size: 40, color: Colors.grey[600]),
-                SizedBox(height: 4),
-                Text(
-                  'Cargando...',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                  ),
+        SizedBox.expand(
+          child: FittedBox(
+            fit: BoxFit.cover,
+            child: Container(
+              color: Colors.grey[300],
+              width: 200,
+              height: 100,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.video_library,
+                        size: 40, color: Colors.grey[600]),
+                    SizedBox(height: 4),
+                    Text(
+                      'Cargando...',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
