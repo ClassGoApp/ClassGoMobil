@@ -13,6 +13,7 @@ import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/view/auth/login_screen.dart';
 import 'package:flutter_projects/view/tutor/search_tutors_screen.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -47,11 +48,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   bool _isCustomDrawerOpen = false;
   bool _isLeftDrawerOpen = false;
 
-  // Animaciones para el scroll
-  late AnimationController _scrollAnimationController;
-  late Animation<double> _scrollAnimation;
-  double _scrollOffset = 0.0;
-
   // Define las rutas base
   final String baseImageUrl = 'https://classgoapp.com/storage/profile_images/';
   final String baseVideoUrl = 'https://classgoapp.com/storage/profile_videos/';
@@ -80,19 +76,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.initState();
     _scrollController.addListener(_onScroll);
     _tutorsScrollController.addListener(_onTutorsScroll);
-
-    // Inicializar animaciones
-    _scrollAnimationController = AnimationController(
-      duration: Duration(milliseconds: 200),
-      vsync: this,
-    );
-    _scrollAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _scrollAnimationController,
-      curve: Curves.easeOutCubic,
-    ));
 
     fetchFeaturedTutorsAndVerified();
     fetchAlliancesData();
@@ -769,30 +752,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
           // Custom Drawer Implementation (Right) - Existing
           AnimatedPositioned(
-            duration: const Duration(milliseconds: 300), // Animation duration
+            duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
-            top: MediaQuery.of(context).padding.top +
-                62.0, // Position below status bar and header (estimated height)
+            top: MediaQuery.of(context).padding.top,
             right: _isCustomDrawerOpen
                 ? 0
-                : -(MediaQuery.of(context).size.width *
-                    0.7), // Slide in/out from the right
-            width: MediaQuery.of(context).size.width *
-                0.7, // Set width (adjust as needed)
+                : -(MediaQuery.of(context).size.width * 0.7),
+            width: MediaQuery.of(context).size.width * 0.7,
             child: Container(
-              height:
-                  465.0, // Increased height to fit all options (adjust as needed)
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.8,
+                minHeight: MediaQuery.of(context).size.height * 0.4,
+              ),
               decoration: BoxDecoration(
-                color: Color(0xFF0B3C5D), // Dark background color
-                borderRadius: BorderRadius.only(
-                  bottomLeft:
-                      Radius.circular(16), // Apply border radius to bottom left
-                ),
-                border: Border.all(
-                    color: AppColors.lightBlueColor,
-                    width: 2.0), // Ensure light blue border with thickness 2.0
+                color: Color(0xFF0B3C5D),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: AppColors.lightBlueColor, width: 2.0),
                 boxShadow: [
-                  // Optional: Add shadow for depth
                   BoxShadow(
                     color: Colors.black.withOpacity(0.3),
                     blurRadius: 10,
@@ -801,97 +777,108 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                 ],
               ),
-              child: ListView(
-                padding: EdgeInsets.zero,
-                children: <Widget>[
-                  // Drawer Header (User Info)
-                  Consumer<AuthProvider>(
-                    builder: (context, authProvider, child) {
-                      return _CustomDrawerHeader(
-                        authProvider: authProvider,
-                      );
-                    },
-                  ),
-                  Divider(
-                      color: Colors.white54,
-                      thickness: 0.5), // Add a divider after header
-                  // Menu Items
-                  ListTile(
-                    leading: Icon(Icons.dashboard, color: Colors.white),
-                    title: Text('Panel', style: TextStyle(color: Colors.white)),
-                    onTap: () {
-                      // TODO: Implement navigation to Panel screen
-                      setState(() {
-                        _isCustomDrawerOpen = false;
-                      });
-                    },
-                  ),
-                  ListTile(
-                    leading: Icon(Icons.settings, color: Colors.white),
-                    title: Text('Configuración del perfil',
-                        style: TextStyle(color: Colors.white)),
-                    onTap: () {
-                      // TODO: Implement navigation to Profile Settings screen
-                      setState(() {
-                        _isCustomDrawerOpen = false;
-                      });
-                    },
-                  ),
-                  ListTile(
-                    leading: Icon(Icons.calendar_today, color: Colors.white),
-                    title: Text('Mis reservas',
-                        style: TextStyle(color: Colors.white)),
-                    onTap: () {
-                      // TODO: Implement navigation to My Bookings screen
-                      setState(() {
-                        _isCustomDrawerOpen = false;
-                      });
-                    },
-                  ),
-                  ListTile(
-                    leading: Icon(Icons.receipt, color: Colors.white),
-                    title:
-                        Text('Facturas', style: TextStyle(color: Colors.white)),
-                    onTap: () {
-                      // TODO: Implement navigation to Invoices screen
-                      setState(() {
-                        _isCustomDrawerOpen = false;
-                      });
-                    },
-                  ),
-                  ListTile(
-                    leading: Icon(Icons.inbox, color: Colors.white),
-                    title: Text('Bandeja de entrada',
-                        style: TextStyle(color: Colors.white)),
-                    onTap: () {
-                      // TODO: Implement navigation to Inbox screen
-                      setState(() {
-                        _isCustomDrawerOpen = false;
-                      });
-                    },
-                  ),
-                  Divider(
-                      color: Colors.white54, thickness: 0.5), // Add a divider
-                  ListTile(
-                    leading: Icon(Icons.logout, color: Colors.red),
-                    title: Text('Salir de la cuenta',
-                        style: TextStyle(color: Colors.red)),
-                    onTap: () async {
-                      // Make the function async
-                      // TODO: Implement logout functionality
-                      // Call the logout method from AuthProvider
-                      await Provider.of<AuthProvider>(context, listen: false)
-                          .clearToken();
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Expanded(
+                    child: ListView(
+                      shrinkWrap: true,
+                      padding: EdgeInsets.zero,
+                      children: <Widget>[
+                        // Drawer Header (User Info)
+                        _CustomDrawerHeader(
+                          authProvider:
+                              Provider.of<AuthProvider>(context, listen: false),
+                          highResTutorImages: highResTutorImages,
+                        ),
+                        Divider(
+                            color: Colors.white54,
+                            thickness: 0.5), // Add a divider after header
+                        // Menu Items
+                        ListTile(
+                          leading: Icon(Icons.dashboard, color: Colors.white),
+                          title: Text('Panel',
+                              style: TextStyle(color: Colors.white)),
+                          onTap: () {
+                            // TODO: Implement navigation to Panel screen
+                            setState(() {
+                              _isCustomDrawerOpen = false;
+                            });
+                          },
+                        ),
+                        ListTile(
+                          leading: Icon(Icons.settings, color: Colors.white),
+                          title: Text('Configuración del perfil',
+                              style: TextStyle(color: Colors.white)),
+                          onTap: () {
+                            // TODO: Implement navigation to Profile Settings screen
+                            setState(() {
+                              _isCustomDrawerOpen = false;
+                            });
+                          },
+                        ),
+                        ListTile(
+                          leading:
+                              Icon(Icons.calendar_today, color: Colors.white),
+                          title: Text('Mis reservas',
+                              style: TextStyle(color: Colors.white)),
+                          onTap: () {
+                            // TODO: Implement navigation to My Bookings screen
+                            setState(() {
+                              _isCustomDrawerOpen = false;
+                            });
+                          },
+                        ),
+                        ListTile(
+                          leading: Icon(Icons.receipt, color: Colors.white),
+                          title: Text('Facturas',
+                              style: TextStyle(color: Colors.white)),
+                          onTap: () {
+                            // TODO: Implement navigation to Invoices screen
+                            setState(() {
+                              _isCustomDrawerOpen = false;
+                            });
+                          },
+                        ),
+                        ListTile(
+                          leading: Icon(Icons.inbox, color: Colors.white),
+                          title: Text('Bandeja de entrada',
+                              style: TextStyle(color: Colors.white)),
+                          onTap: () {
+                            // TODO: Implement navigation to Inbox screen
+                            setState(() {
+                              _isCustomDrawerOpen = false;
+                            });
+                          },
+                        ),
+                        Divider(
+                            color: Colors.white54,
+                            thickness: 0.5), // Add a divider
+                        ListTile(
+                          leading: Icon(Icons.logout, color: Colors.red),
+                          title: Text('Salir de la cuenta',
+                              style: TextStyle(color: Colors.red)),
+                          onTap: () async {
+                            // Make the function async
+                            // TODO: Implement logout functionality
+                            // Call the logout method from AuthProvider
+                            await Provider.of<AuthProvider>(context,
+                                    listen: false)
+                                .clearToken();
 
-                      // Navigate to the LoginScreen and remove all previous routes
-                      Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (context) => LoginScreen()),
-                        (Route<dynamic> route) => false,
-                      );
-                      setState(() {
-                        _isCustomDrawerOpen = false;
-                      }); // Close the drawer
-                    },
+                            // Navigate to the LoginScreen and remove all previous routes
+                            Navigator.of(context).pushAndRemoveUntil(
+                              MaterialPageRoute(
+                                  builder: (context) => LoginScreen()),
+                              (Route<dynamic> route) => false,
+                            );
+                            setState(() {
+                              _isCustomDrawerOpen = false;
+                            }); // Close the drawer
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -926,8 +913,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             width: MediaQuery.of(context).size.width *
                 0.7, // Set width (adjust as needed)
             child: Container(
-              height:
-                  480.0, // Set a specific height (adjust as needed based on content)
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height *
+                    0.8, // Máximo 80% de la altura de la pantalla
+              ),
               decoration: BoxDecoration(
                 color:
                     const Color(0xFF00B4D8), // Teal background color from Figma
@@ -948,9 +937,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ],
               ),
               child: Column(
+                mainAxisSize:
+                    MainAxisSize.min, // Importante: usar MainAxisSize.min
                 children: [
                   Expanded(
                     child: ListView(
+                      shrinkWrap: true, // Importante: agregar shrinkWrap
                       padding: EdgeInsets.zero,
                       children: [
                         // Menu Items
@@ -1281,7 +1273,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
-    _scrollAnimationController.dispose();
     if (_activeController != null) {
       _activeController!.dispose();
     }
@@ -1405,371 +1396,379 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               }
             });
 
-            return Container(
-              height: MediaQuery.of(context).size.height * 0.9,
-              decoration: BoxDecoration(
-                color: AppColors.darkBlue, // Color oscuro de la paleta
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(24),
-                  topRight: Radius.circular(24),
+            return SafeArea(
+              child: Container(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.85,
+                  minHeight: MediaQuery.of(context).size.height * 0.5,
                 ),
-              ),
-              child: Column(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 5,
-                    margin: const EdgeInsets.symmetric(vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+                decoration: BoxDecoration(
+                  color: AppColors.darkBlue, // Color oscuro de la paleta
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    topRight: Radius.circular(24),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16.0, vertical: 8.0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            autofocus: true,
-                            controller: _searchController,
-                            onChanged: (value) {
-                              if (_debounce?.isActive ?? false)
-                                _debounce!.cancel();
-                              _debounce =
-                                  Timer(const Duration(milliseconds: 300), () {
-                                setModalState(() {
-                                  _searchQuery = value;
-                                  _currentPageSubjects = 1;
-                                  _subjects.clear();
-                                  _hasMoreSubjects = true;
-                                  _isModalLoading = true;
-                                  _selectedSubject = null;
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 5,
+                      margin: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0, vertical: 8.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              autofocus: true,
+                              controller: _searchController,
+                              onChanged: (value) {
+                                if (_debounce?.isActive ?? false)
+                                  _debounce!.cancel();
+                                _debounce = Timer(
+                                    const Duration(milliseconds: 300), () {
+                                  setModalState(() {
+                                    _searchQuery = value;
+                                    _currentPageSubjects = 1;
+                                    _subjects.clear();
+                                    _hasMoreSubjects = true;
+                                    _isModalLoading = true;
+                                    _selectedSubject = null;
+                                  });
+                                  _fetchSubjects(
+                                          isInitialLoad: true, keyword: value)
+                                      .then((_) {
+                                    setModalState(() {});
+                                  });
                                 });
-                                _fetchSubjects(
-                                        isInitialLoad: true, keyword: value)
-                                    .then((_) {
-                                  setModalState(() {});
-                                });
-                              });
-                            },
-                            onSubmitted: (value) {
-                              if (value.trim().isNotEmpty) {
+                              },
+                              onSubmitted: (value) {
+                                if (value.trim().isNotEmpty) {
+                                  Navigator.pop(context);
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => SearchTutorsScreen(
+                                          initialKeyword: value.trim()),
+                                    ),
+                                  );
+                                }
+                              },
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 16),
+                              decoration: InputDecoration(
+                                hintText: 'Busca tu materia...',
+                                hintStyle: TextStyle(
+                                    color: Colors.white.withOpacity(0.6)),
+                                prefixIcon: Icon(Icons.search,
+                                    color: Colors.white.withOpacity(0.6)),
+                                filled: true,
+                                fillColor: Colors.white.withOpacity(0.1),
+                                contentPadding:
+                                    EdgeInsets.symmetric(vertical: 14),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          TextButton(
+                            onPressed: () {
+                              if (_searchController.text.trim().isNotEmpty) {
+                                final searchKeyword =
+                                    _searchController.text.trim();
                                 Navigator.pop(context);
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => SearchTutorsScreen(
-                                        initialKeyword: value.trim()),
+                                        initialKeyword: searchKeyword),
                                   ),
                                 );
                               }
                             },
-                            style: TextStyle(color: Colors.white, fontSize: 16),
-                            decoration: InputDecoration(
-                              hintText: 'Busca tu materia...',
-                              hintStyle: TextStyle(
-                                  color: Colors.white.withOpacity(0.6)),
-                              prefixIcon: Icon(Icons.search,
-                                  color: Colors.white.withOpacity(0.6)),
-                              filled: true,
-                              fillColor: Colors.white.withOpacity(0.1),
-                              contentPadding:
-                                  EdgeInsets.symmetric(vertical: 14),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30),
-                                borderSide: BorderSide.none,
+                            child: Text(
+                              'Buscar',
+                              style: TextStyle(
+                                color: AppColors.lightBlueColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
                               ),
                             ),
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        TextButton(
-                          onPressed: () {
-                            if (_searchController.text.trim().isNotEmpty) {
-                              final searchKeyword =
-                                  _searchController.text.trim();
-                              Navigator.pop(context);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => SearchTutorsScreen(
-                                      initialKeyword: searchKeyword),
-                                ),
-                              );
-                            }
-                          },
-                          child: Text(
-                            'Buscar',
-                            style: TextStyle(
-                              color: AppColors.lightBlueColor,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                        )
-                      ],
+                          )
+                        ],
+                      ),
                     ),
-                  ),
-                  Divider(color: Colors.white.withOpacity(0.1), height: 1),
-                  Expanded(
-                    child: Stack(
-                      children: [
-                        _isModalLoading && _subjects.isEmpty
-                            ? Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    CircularProgressIndicator(
-                                        color: AppColors.lightBlueColor),
-                                    SizedBox(height: 16),
-                                    Text('Buscando materias...',
-                                        style:
-                                            TextStyle(color: Colors.white70)),
-                                  ],
-                                ),
-                              )
-                            : _subjects.isEmpty &&
-                                    !_hasMoreSubjects &&
-                                    !_isModalLoading
-                                ? Center(
-                                    child: Text('No se encontraron materias',
-                                        style: TextStyle(
-                                            color: Colors.white, fontSize: 16)),
-                                  )
-                                : ListView.separated(
-                                    controller: modalScrollController,
-                                    padding: EdgeInsets.only(
-                                        bottom:
-                                            _selectedSubject != null ? 100 : 0),
-                                    itemCount: _subjects.length +
-                                        (_hasMoreSubjects ? 1 : 0),
-                                    separatorBuilder: (context, index) =>
-                                        Divider(
-                                      color: Colors.white.withOpacity(0.1),
-                                      height: 1,
-                                      indent: 16,
-                                      endIndent: 16,
-                                    ),
-                                    itemBuilder: (context, index) {
-                                      if (index == _subjects.length) {
-                                        return Padding(
-                                          padding: const EdgeInsets.all(16.0),
-                                          child: Center(
-                                              child: CircularProgressIndicator(
-                                                  color: AppColors
-                                                      .lightBlueColor)),
-                                        );
-                                      }
-
-                                      final subject = _subjects[index];
-                                      final subjectName = subject['name'] ??
-                                          'Materia desconocida';
-                                      final isSelected =
-                                          _selectedSubject != null &&
-                                              _selectedSubject!['id'] ==
-                                                  subject['id'];
-
-                                      return ListTile(
-                                        contentPadding: EdgeInsets.symmetric(
-                                            horizontal: 20, vertical: 8),
-                                        tileColor: isSelected
-                                            ? AppColors.lightBlueColor
-                                                .withOpacity(0.15)
-                                            : Colors.transparent,
-                                        title: Text(
-                                          subjectName,
-                                          style: TextStyle(
-                                            color: isSelected
-                                                ? AppColors.lightBlueColor
-                                                : Colors.white,
-                                            fontSize: 16,
-                                            fontWeight: isSelected
-                                                ? FontWeight.bold
-                                                : FontWeight.normal,
-                                          ),
-                                        ),
-                                        onTap: () {
-                                          FocusScope.of(context)
-                                              .unfocus(); // Cierra el teclado
-                                          setModalState(() {
-                                            _selectedSubject = subject;
-                                          });
-                                          // Mostrar el BottomSheet contextual al seleccionar una materia
-                                          Future.delayed(
-                                              Duration(milliseconds: 150), () {
-                                            showModalBottomSheet(
-                                              context: context,
-                                              backgroundColor:
-                                                  Colors.transparent,
-                                              builder: (context) {
-                                                return Container(
-                                                  decoration: BoxDecoration(
-                                                    color: AppColors.darkBlue,
-                                                    borderRadius:
-                                                        BorderRadius.vertical(
-                                                            top:
-                                                                Radius.circular(
-                                                                    24)),
-                                                  ),
-                                                  padding: EdgeInsets.fromLTRB(
-                                                      24,
-                                                      24,
-                                                      24,
-                                                      24 +
-                                                          MediaQuery.of(context)
-                                                              .padding
-                                                              .bottom),
-                                                  child: Column(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: [
-                                                      Text(
-                                                        '¿Qué deseas hacer con "${subject['name']}"?',
-                                                        style: TextStyle(
-                                                          color: Colors.white,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          fontSize: 18,
-                                                        ),
-                                                        textAlign:
-                                                            TextAlign.center,
-                                                      ),
-                                                      SizedBox(height: 24),
-                                                      Row(
-                                                        children: [
-                                                          Expanded(
-                                                            child:
-                                                                ElevatedButton
-                                                                    .icon(
-                                                              onPressed: () {
-                                                                Navigator.pop(
-                                                                    context);
-                                                                // Acción para Empezar tutoría
-                                                                ScaffoldMessenger.of(
-                                                                        context)
-                                                                    .showSnackBar(
-                                                                  SnackBar(
-                                                                      content: Text(
-                                                                          'Empezar tutoría para "${subject['name']}"')),
-                                                                );
-                                                              },
-                                                              icon: Icon(
-                                                                  Icons
-                                                                      .play_circle_fill,
-                                                                  color: Colors
-                                                                      .white,
-                                                                  size: 22),
-                                                              label: Text(
-                                                                  'Empezar tutoría',
-                                                                  style: TextStyle(
-                                                                      color: Colors
-                                                                          .white,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .bold)),
-                                                              style:
-                                                                  ElevatedButton
-                                                                      .styleFrom(
-                                                                backgroundColor:
-                                                                    AppColors
-                                                                        .orangeprimary,
-                                                                shape: RoundedRectangleBorder(
-                                                                    borderRadius:
-                                                                        BorderRadius.circular(
-                                                                            14)),
-                                                                padding: EdgeInsets
-                                                                    .symmetric(
-                                                                        vertical:
-                                                                            16),
-                                                                elevation: 2,
-                                                                shadowColor: AppColors
-                                                                    .orangeprimary
-                                                                    .withOpacity(
-                                                                        0.25),
-                                                              ),
-                                                            ),
-                                                          ),
-                                                          SizedBox(width: 16),
-                                                          Expanded(
-                                                            child:
-                                                                ElevatedButton
-                                                                    .icon(
-                                                              onPressed: () {
-                                                                Navigator.pop(
-                                                                    context);
-                                                                // Acción para Elegir Tutor
-                                                                Navigator.pop(
-                                                                    context); // Cierra el modal de materias
-                                                                Navigator.push(
-                                                                  context,
-                                                                  MaterialPageRoute(
-                                                                    builder:
-                                                                        (context) =>
-                                                                            SearchTutorsScreen(
-                                                                      initialKeyword:
-                                                                          subject[
-                                                                              'name'],
-                                                                      initialSubjectId:
-                                                                          subject[
-                                                                              'id'],
-                                                                    ),
-                                                                  ),
-                                                                );
-                                                              },
-                                                              icon: Icon(
-                                                                  Icons
-                                                                      .person_search,
-                                                                  color: Colors
-                                                                      .white,
-                                                                  size: 22),
-                                                              label: Text(
-                                                                  'Elegir Tutor',
-                                                                  style: TextStyle(
-                                                                      color: Colors
-                                                                          .white,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .bold)),
-                                                              style:
-                                                                  ElevatedButton
-                                                                      .styleFrom(
-                                                                backgroundColor:
-                                                                    AppColors
-                                                                        .lightBlueColor,
-                                                                shape: RoundedRectangleBorder(
-                                                                    borderRadius:
-                                                                        BorderRadius.circular(
-                                                                            14)),
-                                                                padding: EdgeInsets
-                                                                    .symmetric(
-                                                                        vertical:
-                                                                            16),
-                                                                elevation: 2,
-                                                                shadowColor: AppColors
-                                                                    .lightBlueColor
-                                                                    .withOpacity(
-                                                                        0.25),
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ],
-                                                  ),
-                                                );
-                                              },
-                                            );
-                                          });
-                                        },
-                                      );
-                                    },
+                    Divider(color: Colors.white.withOpacity(0.1), height: 1),
+                    Expanded(
+                      child: Stack(
+                        children: [
+                          _isModalLoading && _subjects.isEmpty
+                              ? Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      CircularProgressIndicator(
+                                          color: AppColors.lightBlueColor),
+                                      SizedBox(height: 16),
+                                      Text('Buscando materias...',
+                                          style:
+                                              TextStyle(color: Colors.white70)),
+                                    ],
                                   ),
-                      ],
+                                )
+                              : _subjects.isEmpty &&
+                                      !_hasMoreSubjects &&
+                                      !_isModalLoading
+                                  ? Center(
+                                      child: Text('No se encontraron materias',
+                                          style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 16)),
+                                    )
+                                  : ListView.separated(
+                                      controller: modalScrollController,
+                                      padding: EdgeInsets.only(
+                                          bottom: _selectedSubject != null
+                                              ? 100
+                                              : 0),
+                                      itemCount: _subjects.length +
+                                          (_hasMoreSubjects ? 1 : 0),
+                                      separatorBuilder: (context, index) =>
+                                          Divider(
+                                        color: Colors.white.withOpacity(0.1),
+                                        height: 1,
+                                        indent: 16,
+                                        endIndent: 16,
+                                      ),
+                                      itemBuilder: (context, index) {
+                                        if (index == _subjects.length) {
+                                          return Padding(
+                                            padding: const EdgeInsets.all(16.0),
+                                            child: Center(
+                                                child:
+                                                    CircularProgressIndicator(
+                                                        color: AppColors
+                                                            .lightBlueColor)),
+                                          );
+                                        }
+
+                                        final subject = _subjects[index];
+                                        final subjectName = subject['name'] ??
+                                            'Materia desconocida';
+                                        final isSelected =
+                                            _selectedSubject != null &&
+                                                _selectedSubject!['id'] ==
+                                                    subject['id'];
+
+                                        return ListTile(
+                                          contentPadding: EdgeInsets.symmetric(
+                                              horizontal: 20, vertical: 8),
+                                          tileColor: isSelected
+                                              ? AppColors.lightBlueColor
+                                                  .withOpacity(0.15)
+                                              : Colors.transparent,
+                                          title: Text(
+                                            subjectName,
+                                            style: TextStyle(
+                                              color: isSelected
+                                                  ? AppColors.lightBlueColor
+                                                  : Colors.white,
+                                              fontSize: 16,
+                                              fontWeight: isSelected
+                                                  ? FontWeight.bold
+                                                  : FontWeight.normal,
+                                            ),
+                                          ),
+                                          onTap: () {
+                                            FocusScope.of(context)
+                                                .unfocus(); // Cierra el teclado
+                                            setModalState(() {
+                                              _selectedSubject = subject;
+                                            });
+                                            // Mostrar el BottomSheet contextual al seleccionar una materia
+                                            Future.delayed(
+                                                Duration(milliseconds: 150),
+                                                () {
+                                              showModalBottomSheet(
+                                                context: context,
+                                                backgroundColor:
+                                                    Colors.transparent,
+                                                builder: (context) {
+                                                  return Container(
+                                                    decoration: BoxDecoration(
+                                                      color: AppColors.darkBlue,
+                                                      borderRadius:
+                                                          BorderRadius.vertical(
+                                                              top: Radius
+                                                                  .circular(
+                                                                      24)),
+                                                    ),
+                                                    padding:
+                                                        EdgeInsets.fromLTRB(
+                                                            24,
+                                                            24,
+                                                            24,
+                                                            24 +
+                                                                MediaQuery.of(
+                                                                        context)
+                                                                    .padding
+                                                                    .bottom),
+                                                    child: Column(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        Text(
+                                                          '¿Qué deseas hacer con "${subject['name']}"?',
+                                                          style: TextStyle(
+                                                            color: Colors.white,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            fontSize: 18,
+                                                          ),
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                        ),
+                                                        SizedBox(height: 24),
+                                                        Row(
+                                                          children: [
+                                                            Expanded(
+                                                              child:
+                                                                  ElevatedButton
+                                                                      .icon(
+                                                                onPressed: () {
+                                                                  Navigator.pop(
+                                                                      context);
+                                                                  // Acción para Empezar tutoría
+                                                                  ScaffoldMessenger.of(
+                                                                          context)
+                                                                      .showSnackBar(
+                                                                    SnackBar(
+                                                                        content:
+                                                                            Text('Empezar tutoría para "${subject['name']}"')),
+                                                                  );
+                                                                },
+                                                                icon: Icon(
+                                                                    Icons
+                                                                        .play_circle_fill,
+                                                                    color: Colors
+                                                                        .white,
+                                                                    size: 22),
+                                                                label: Text(
+                                                                    'Empezar tutoría',
+                                                                    style: TextStyle(
+                                                                        color: Colors
+                                                                            .white,
+                                                                        fontWeight:
+                                                                            FontWeight.bold)),
+                                                                style: ElevatedButton
+                                                                    .styleFrom(
+                                                                  backgroundColor:
+                                                                      AppColors
+                                                                          .orangeprimary,
+                                                                  shape: RoundedRectangleBorder(
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(
+                                                                              14)),
+                                                                  padding: EdgeInsets
+                                                                      .symmetric(
+                                                                          vertical:
+                                                                              16),
+                                                                  elevation: 2,
+                                                                  shadowColor: AppColors
+                                                                      .orangeprimary
+                                                                      .withOpacity(
+                                                                          0.25),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                            SizedBox(width: 16),
+                                                            Expanded(
+                                                              child:
+                                                                  ElevatedButton
+                                                                      .icon(
+                                                                onPressed: () {
+                                                                  Navigator.pop(
+                                                                      context);
+                                                                  // Acción para Elegir Tutor
+                                                                  Navigator.pop(
+                                                                      context); // Cierra el modal de materias
+                                                                  Navigator
+                                                                      .push(
+                                                                    context,
+                                                                    MaterialPageRoute(
+                                                                      builder:
+                                                                          (context) =>
+                                                                              SearchTutorsScreen(
+                                                                        initialKeyword:
+                                                                            subject['name'],
+                                                                        initialSubjectId:
+                                                                            subject['id'],
+                                                                      ),
+                                                                    ),
+                                                                  );
+                                                                },
+                                                                icon: Icon(
+                                                                    Icons
+                                                                        .person_search,
+                                                                    color: Colors
+                                                                        .white,
+                                                                    size: 22),
+                                                                label: Text(
+                                                                    'Elegir Tutor',
+                                                                    style: TextStyle(
+                                                                        color: Colors
+                                                                            .white,
+                                                                        fontWeight:
+                                                                            FontWeight.bold)),
+                                                                style: ElevatedButton
+                                                                    .styleFrom(
+                                                                  backgroundColor:
+                                                                      AppColors
+                                                                          .lightBlueColor,
+                                                                  shape: RoundedRectangleBorder(
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(
+                                                                              14)),
+                                                                  padding: EdgeInsets
+                                                                      .symmetric(
+                                                                          vertical:
+                                                                              16),
+                                                                  elevation: 2,
+                                                                  shadowColor: AppColors
+                                                                      .lightBlueColor
+                                                                      .withOpacity(
+                                                                          0.25),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+                                                },
+                                              );
+                                            });
+                                          },
+                                        );
+                                      },
+                                    ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             );
           },
@@ -1841,18 +1840,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void _onScroll() {
     if (!mounted || _isManualPlay) return;
 
-    // Actualizar el offset del scroll para la animación
-    if (_scrollController.hasClients) {
-      setState(() {
-        _scrollOffset = _scrollController.offset;
-      });
-    }
-
-    // Actualizar la visibilidad de los items
+    // Actualizar la visibilidad de los items (sin setState frecuente)
+    bool hasChanges = false;
     for (int i = 0; i < featuredTutors.length; i++) {
       final isVisible = _isItemVisible(i);
       if (_visibleItems[i] != isVisible) {
         _visibleItems[i] = isVisible;
+        hasChanges = true;
         if (isVisible && !_thumbnailCache.containsKey(i)) {
           final tutor = featuredTutors[i];
           final profile = tutor['profile'] ?? {};
@@ -1863,6 +1857,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           }
         }
       }
+    }
+
+    // Solo llamar setState si hay cambios significativos
+    if (hasChanges && mounted) {
+      setState(() {});
     }
   }
 
@@ -1882,9 +1881,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
     try {
       if (videoUrl.isEmpty) {
-        setState(() {
-          _thumbnailCache[index] = null;
-        });
+        if (mounted) {
+          setState(() {
+            _thumbnailCache[index] = null;
+          });
+        }
         return;
       }
 
@@ -2099,27 +2100,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             )
           : ClipOval(
-              child: Image.network(
-                imageUrl,
+              child: CachedNetworkImage(
+                imageUrl: imageUrl,
                 width: 48,
                 height: 48,
                 fit: BoxFit.cover,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Shimmer.fromColors(
-                    baseColor: Colors.grey[400]!,
-                    highlightColor: Colors.white,
+                placeholder: (context, url) => Shimmer.fromColors(
+                  baseColor: Colors.grey[400]!,
+                  highlightColor: Colors.white,
+                  child: CircleAvatar(
+                    radius: 24,
+                    backgroundColor: Colors.white,
                     child: CircleAvatar(
-                      radius: 24,
-                      backgroundColor: Colors.white,
-                      child: CircleAvatar(
-                        radius: 21,
-                        backgroundColor: Colors.grey[400],
-                      ),
+                      radius: 21,
+                      backgroundColor: Colors.grey[400],
                     ),
-                  );
-                },
-                errorBuilder: (context, error, stackTrace) => CircleAvatar(
+                  ),
+                ),
+                errorWidget: (context, url, error) => CircleAvatar(
                   radius: 24,
                   backgroundColor: Colors.white,
                   child: CircleAvatar(
@@ -2367,8 +2365,10 @@ class _StartJourneyCard extends StatelessWidget {
 
 class _CustomDrawerHeader extends StatelessWidget {
   final AuthProvider authProvider;
+  final Map<int, String> highResTutorImages;
 
-  const _CustomDrawerHeader({required this.authProvider});
+  const _CustomDrawerHeader(
+      {required this.authProvider, required this.highResTutorImages});
 
   @override
   Widget build(BuildContext context) {
@@ -2376,7 +2376,14 @@ class _CustomDrawerHeader extends StatelessWidget {
 
     // Corregir la URL de la imagen si es necesario
     String? imageUrl = userData?['user']?['profile']?['image'];
-    if (imageUrl != null &&
+    int? userId = userData?['user']?['id'];
+    String? hdImageUrl =
+        (userId != null && highResTutorImages.containsKey(userId))
+            ? highResTutorImages[userId]
+            : null;
+    if (hdImageUrl != null && hdImageUrl.isNotEmpty) {
+      imageUrl = hdImageUrl;
+    } else if (imageUrl != null &&
         imageUrl.contains(
             'https://classgoapp.com/storage/thumbnails/https://classgoapp.com/storage/thumbnails/')) {
       imageUrl = imageUrl.replaceFirst(
@@ -2385,67 +2392,100 @@ class _CustomDrawerHeader extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: 16, vertical: 20), // Ajustar padding
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF0B9ED9), Color(0xFF073B4C)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.only(
+          topRight: Radius.circular(0),
+          topLeft: Radius.circular(0),
+          bottomLeft: Radius.circular(16),
+          bottomRight: Radius.circular(16),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 22),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              // Avatar o icono de persona
-              CircleAvatar(
-                radius: 28,
-                backgroundColor: Colors.white,
-                child: CircleAvatar(
-                  radius: 26,
-                  backgroundImage:
-                      imageUrl != null ? NetworkImage(imageUrl) : null,
-                  child: imageUrl == null
-                      ? const Icon(Icons.person,
-                          size: 28, color: Color(0xFF023E8A))
-                      : null,
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.18),
+                      blurRadius: 10,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                  border: Border.all(color: Colors.white, width: 4),
+                ),
+                child: ClipOval(
+                  child: CachedNetworkImage(
+                    imageUrl: imageUrl ?? '',
+                    width: 72,
+                    height: 72,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => CircleAvatar(
+                      radius: 36,
+                      backgroundColor: Colors.white,
+                      child: Icon(Icons.person,
+                          size: 36, color: Color(0xFF023E8A)),
+                    ),
+                    errorWidget: (context, url, error) => CircleAvatar(
+                      radius: 36,
+                      backgroundColor: Colors.white,
+                      child: Icon(Icons.person,
+                          size: 36, color: Color(0xFF023E8A)),
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 18),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Mostrar nombre o botón de iniciar sesión
-                    if (userData !=
-                        null) // Si el usuario está logueado, muestra el nombre
+                    if (userData != null)
                       Text(
                         userData['user']?['profile']?['full_name'] ?? 'Usuario',
                         style: const TextStyle(
-                          fontSize: 16,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
                         overflow: TextOverflow.ellipsis,
                       )
-                    else // Si no está logueado, muestra el botón Iniciar sesión
+                    else
                       InkWell(
                         onTap: () {
-                          // Navegar a la pantalla de login y remover las rutas anteriores
                           Navigator.of(context).pushAndRemoveUntil(
                             MaterialPageRoute(
                                 builder: (context) => LoginScreen()),
                             (Route<dynamic> route) => false,
                           );
-                          // Nota: El cajón se cerrará automáticamente ya que HomeScreen se removerá del stack.
                         },
                         child: Text(
                           'Iniciar sesión',
                           style: const TextStyle(
-                            fontSize: 16,
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                             decoration: TextDecoration.underline,
                           ),
                         ),
                       ),
-                    const SizedBox(height: 4),
-                    // Mostrar email si el usuario está logueado
+                    const SizedBox(height: 6),
                     if (userData != null)
                       Text(
                         userData['user']?['email'] ?? '',
@@ -2460,6 +2500,8 @@ class _CustomDrawerHeader extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 18),
+          Divider(color: Colors.white24, thickness: 1),
         ],
       ),
     );

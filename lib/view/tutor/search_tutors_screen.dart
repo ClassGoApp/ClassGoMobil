@@ -96,6 +96,10 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   // Mapa para asociar id de tutor con su imagen de alta resolución
   Map<int, String> highResTutorImages = {};
 
+  bool _showBottomBar =
+      true; // Controla la visibilidad de la barra de navegación
+  double _bottomBarOffset = 0.0; // Para animación slide
+
   void _onSearchChanged(String value) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
@@ -587,62 +591,52 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
 
   void _scrollListener() {
     final offset = _scrollController.offset;
+    final direction = _scrollController.position.userScrollDirection;
+
+    // Lógica simplificada para mostrar/ocultar la barra de navegación
+    if (direction == ScrollDirection.reverse && _showBottomBar) {
+      setState(() {
+        _showBottomBar = false;
+      });
+    } else if (direction == ScrollDirection.forward && !_showBottomBar) {
+      setState(() {
+        _showBottomBar = true;
+      });
+    }
+
+    // Mantener la lógica para la animación de los filtros superiores
     final maxScrollExtent = _scrollController.position.maxScrollExtent;
-
-    // Detectar dirección del scroll
-    final isScrollingUp = offset < _lastScrollOffset;
-    final isScrollingDown = offset > _lastScrollOffset;
-
-    // Calcular la velocidad del scroll para ajustar la animación
     final scrollDelta = (_lastScrollOffset - offset).abs();
-    final animationSpeed =
-        (scrollDelta * 0.1).clamp(0.05, 0.2); // Velocidad ajustada
+    final animationSpeed = (scrollDelta * 0.1).clamp(0.05, 0.2);
 
-    // Calcular las opacidades basadas en el scroll
     double newSearchOpacity = _searchOpacity;
     double newCounterOpacity = _counterOpacity;
     double newFiltersOpacity = _filtersOpacity;
 
-    // PRIORIDAD: Si estamos en la parte superior, mostrar completamente
     if (offset <= 0) {
       newSearchOpacity = 1.0;
       newCounterOpacity = 1.0;
       newFiltersOpacity = 1.0;
-    } else if (isScrollingUp) {
-      // Al hacer scroll hacia arriba, mostrar secuencialmente con deslizamiento
-      // Primero el buscador
+    } else if (direction == ScrollDirection.forward) {
       newSearchOpacity = (_searchOpacity + animationSpeed).clamp(0.0, 1.0);
-
-      // Luego el contador (cuando el buscador esté casi visible)
       if (_searchOpacity > 0.3) {
         newCounterOpacity = (_counterOpacity + animationSpeed).clamp(0.0, 1.0);
       }
-
-      // Finalmente los filtros (cuando el contador esté casi visible)
       if (_counterOpacity > 0.3) {
         newFiltersOpacity = (_filtersOpacity + animationSpeed).clamp(0.0, 1.0);
       }
-    } else if (isScrollingDown && offset > 0) {
-      // Al hacer scroll hacia abajo, ocultar gradualmente
-      // Los elementos se ocultan en orden inverso: filtros -> contador -> buscador
-
-      // Los filtros se ocultan primero
+    } else if (direction == ScrollDirection.reverse && offset > 0) {
       if (_filtersOpacity > 0.0) {
         newFiltersOpacity = (_filtersOpacity - animationSpeed).clamp(0.0, 1.0);
       }
-
-      // Luego el contador (cuando los filtros estén casi ocultos)
       if (_filtersOpacity < 0.3) {
         newCounterOpacity = (_counterOpacity - animationSpeed).clamp(0.0, 1.0);
       }
-
-      // Finalmente el buscador (cuando el contador esté casi oculto)
       if (_counterOpacity < 0.3) {
         newSearchOpacity = (_searchOpacity - animationSpeed).clamp(0.0, 1.0);
       }
     }
 
-    // Solo actualizar si alguna opacidad cambió significativamente
     bool needsUpdate = false;
     if ((_searchOpacity - newSearchOpacity).abs() > 0.01) {
       _searchOpacity = newSearchOpacity;
@@ -661,10 +655,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
       setState(() {});
     }
 
-    // Actualizar la posición del scroll anterior
     _lastScrollOffset = offset;
 
-    // Lógica para cargar más tutores (paginación infinita)
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent * 0.8) {
       _loadMoreTutors();
@@ -1196,9 +1188,22 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
               left: 0,
               right: 0,
               bottom: 0,
-              child: _CustomBubbleNavBar(
-                currentIndex: selectedIndex,
-                onTap: _onItemTapped,
+              child: AnimatedSlide(
+                duration: const Duration(milliseconds: 400),
+                curve: Curves.easeInOut,
+                offset: _showBottomBar ? Offset(0, 0) : Offset(0, 1),
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 400),
+                  curve: Curves.easeInOut,
+                  opacity: _showBottomBar ? 1.0 : 0.0,
+                  child: SizedBox(
+                    height: 80,
+                    child: _ModernNavBar(
+                      currentIndex: selectedIndex,
+                      onTap: _onItemTapped,
+                    ),
+                  ),
+                ),
               ),
             ),
           ],
@@ -1208,11 +1213,11 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   }
 }
 
-class _CustomBubbleNavBar extends StatelessWidget {
+class _ModernNavBar extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
 
-  const _CustomBubbleNavBar({
+  const _ModernNavBar({
     required this.currentIndex,
     required this.onTap,
   });
@@ -1220,94 +1225,76 @@ class _CustomBubbleNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final navItems = [
-      Icons.search_outlined,
-      Icons.calendar_today_outlined,
-      Icons.person_outline,
+      {'icon': Icons.search_outlined, 'label': 'Buscar'},
+      {'icon': Icons.calendar_today_outlined, 'label': 'Reservas'},
+      {'icon': Icons.person_outline, 'label': 'Perfil'},
     ];
 
     return Container(
-      height: 60,
-      margin: EdgeInsets.symmetric(
-          horizontal: 60, vertical: 24), // Barra mucho más estrecha
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.primaryGreen,
-            AppColors.navbar,
-          ],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(
-          color: AppColors.navbar.withOpacity(0.5),
-          width: 1.5,
-        ),
+        color: AppColors.blurprimary.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
-            color: AppColors.navbar
-                .withOpacity(0.5), // Sombra a juego con el nuevo color
+            color: Colors.black.withOpacity(0.2),
             blurRadius: 20,
-            offset: Offset(0, 10),
+            offset: const Offset(0, 5),
           ),
         ],
       ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final double barWidth = constraints.maxWidth;
-          final double itemWidth = barWidth / navItems.length;
-          const double circleDiameter = 48.0;
-          final double indicatorLeft = (currentIndex * itemWidth) +
-              (itemWidth / 2) -
-              (circleDiameter / 2);
-
-          return Stack(
-            alignment: Alignment.center,
-            children: [
-              AnimatedPositioned(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: List.generate(navItems.length, (index) {
+          bool isActive = index == currentIndex;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => onTap(index),
+              child: AnimatedContainer(
                 duration: const Duration(milliseconds: 350),
-                curve: Curves.elasticOut,
-                left: indicatorLeft,
-                top: (60 - circleDiameter) / 2,
-                child: Container(
-                  width: circleDiameter,
-                  height: circleDiameter,
-                  decoration: BoxDecoration(
-                    color: AppColors.orangeprimary,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.orangeprimary.withOpacity(0.6),
-                        blurRadius: 10,
-                        spreadRadius: 1,
-                      )
-                    ],
-                  ),
+                curve: Curves.easeOutCubic,
+                padding:
+                    const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                decoration: BoxDecoration(
+                  color: isActive
+                      ? AppColors.orangeprimary.withOpacity(0.95)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      navItems[index]['icon'] as IconData,
+                      color: isActive
+                          ? Colors.white
+                          : Colors.white.withOpacity(0.7),
+                      size: 24,
+                    ),
+                    if (isActive)
+                      const SizedBox(
+                        width: 8,
+                      ),
+                    if (isActive)
+                      Flexible(
+                        child: Text(
+                          navItems[index]['label'] as String,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
+                  ],
                 ),
               ),
-              Row(
-                children: List.generate(navItems.length, (index) {
-                  final bool isSelected = currentIndex == index;
-                  return GestureDetector(
-                    onTap: () => onTap(index),
-                    behavior: HitTestBehavior.opaque,
-                    child: Container(
-                      width: itemWidth,
-                      height: 60,
-                      child: Icon(
-                        navItems[index],
-                        color: isSelected
-                            ? Colors.white
-                            : AppColors.whiteColor.withOpacity(0.7),
-                        size: 24,
-                      ),
-                    ),
-                  );
-                }),
-              ),
-            ],
+            ),
           );
-        },
+        }),
       ),
     );
   }
