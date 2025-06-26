@@ -216,58 +216,37 @@ class _TutorCardState extends State<TutorCard> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: widget.onAcceptPressed,
+                    onPressed:
+                        widget.onAcceptPressed, // Puedes cambiar el callback
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.orangeprimary,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10.0),
+                        borderRadius: BorderRadius.circular(16.0),
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 4.0),
                       minimumSize: const Size(double.infinity, 28),
+                      elevation: 0,
                     ),
-                    child: Text(
-                      'Reservar',
-                      style: AppTextStyles.button
-                          .copyWith(color: AppColors.whiteColor),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.play_circle_fill,
+                            color: Colors.white, size: 22),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Empezar tutoría',
+                          style: AppTextStyles.button.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ],
             ),
-            if (widget.showStartButton) ...[
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed:
-                      widget.onAcceptPressed, // Puedes cambiar el callback
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.orangeprimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16.0),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 12.0),
-                    elevation: 0,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.play_circle_fill,
-                          color: Colors.white, size: 22),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Empezar tutoría',
-                        style: AppTextStyles.button.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ]
           ],
         ),
       ),
@@ -306,25 +285,11 @@ class _TutorCardState extends State<TutorCard> {
                     margin: EdgeInsets.only(right: 6),
                     padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.blueColor.withOpacity(0.8),
-                          AppColors.blueColor.withOpacity(0.6),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                      color: AppColors.primaryGreen,
                       border: Border.all(
-                          color: AppColors.blueColor.withOpacity(0.3),
-                          width: 1),
+                          color: AppColors.blueColor.withOpacity(0.8),
+                          width: 1.2),
                       borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.blueColor.withOpacity(0.2),
-                          blurRadius: 4,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
                     ),
                     child: Text(
                       subject,

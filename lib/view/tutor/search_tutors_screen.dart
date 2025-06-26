@@ -19,6 +19,7 @@ import 'package:flutter_projects/view/components/main_header.dart';
 import 'dart:async';
 import 'package:flutter_projects/view/tutor/tutor_profile_screen.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'package:flutter_projects/view/tutor/instant_tutoring_screen.dart';
 
 class SearchTutorsScreen extends StatefulWidget {
   final String? initialKeyword;
@@ -1038,10 +1039,27 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                             );
                           },
                           onAcceptPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                  content: Text(
-                                      'Reservar con ${profile['full_name'] ?? 'Tutor'}')),
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (context) => Container(
+                                margin:
+                                    EdgeInsets.only(top: 60), // Espacio arriba
+                                decoration: BoxDecoration(
+                                  color: AppColors.darkBlue,
+                                  borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(24)),
+                                ),
+                                child: InstantTutoringScreen(
+                                  tutorName: profile['full_name'] ??
+                                      'No name available',
+                                  tutorImage: highResTutorImages[tutor['id']] ??
+                                      profile['image'] ??
+                                      AppImages.placeHolderImage,
+                                  subjects: validSubjects,
+                                ),
+                              ),
                             );
                           },
                           tutorProfession: validSubjects.isNotEmpty

@@ -226,6 +226,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     .flash_on, // Ícono para "Tutor al Instante"
                                 label: 'Tutor\nal Instante',
                                 onTap: () async {
+                                  // Espera a que se precarguen las materias si aún no están listas
+                                  if (_subjects.isEmpty && _isLoadingSubjects) {
+                                    await Future.doWhile(() async {
+                                      await Future.delayed(
+                                          Duration(milliseconds: 100));
+                                      return _isLoadingSubjects;
+                                    });
+                                  }
                                   await showModalBottomSheet(
                                     context: mainContext,
                                     isScrollControlled: true,
@@ -236,9 +244,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                           TextEditingController();
                                       String search = '';
                                       List<dynamic> filteredSubjects =
-                                          _subjects;
+                                          List<dynamic>.from(_subjects);
                                       return StatefulBuilder(
                                         builder: (context, setModalState) {
+                                          // Inicializar filteredSubjects con las materias precargadas solo la primera vez
+                                          filteredSubjects ??=
+                                              List<dynamic>.from(_subjects);
                                           List<dynamic> displaySubjects =
                                               filteredSubjects
                                                   .where((s) => (s['name'] ??
@@ -401,44 +412,107 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                       style: TextStyle(
                                                           color: Colors.white),
                                                       onChanged: (value) {
-                                                        setModalState(() {
-                                                          search = value;
+                                                        if (_debounce
+                                                                ?.isActive ??
+                                                            false)
+                                                          _debounce!.cancel();
+                                                        _debounce = Timer(
+                                                            const Duration(
+                                                                milliseconds:
+                                                                    300),
+                                                            () async {
+                                                          setModalState(() {
+                                                            search = value;
+                                                            _isModalLoading =
+                                                                true;
+                                                          });
+                                                          try {
+                                                            final response =
+                                                                await getAllSubjects(
+                                                              null,
+                                                              page: 1,
+                                                              perPage: 100,
+                                                              keyword: value,
+                                                            );
+                                                            List<dynamic>
+                                                                newSubjects =
+                                                                [];
+                                                            if (response !=
+                                                                    null &&
+                                                                response
+                                                                    .containsKey(
+                                                                        'data')) {
+                                                              final responseData =
+                                                                  response[
+                                                                      'data'];
+                                                              if (responseData
+                                                                      is Map<
+                                                                          String,
+                                                                          dynamic> &&
+                                                                  responseData
+                                                                      .containsKey(
+                                                                          'data')) {
+                                                                newSubjects =
+                                                                    responseData[
+                                                                        'data'];
+                                                              }
+                                                            }
+                                                            setModalState(() {
+                                                              filteredSubjects =
+                                                                  newSubjects;
+                                                              _isModalLoading =
+                                                                  false;
+                                                            });
+                                                          } catch (e) {
+                                                            setModalState(() {
+                                                              filteredSubjects =
+                                                                  [];
+                                                              _isModalLoading =
+                                                                  false;
+                                                            });
+                                                          }
                                                         });
                                                       },
                                                     ),
                                                   ),
                                                   Expanded(
-                                                    child:
-                                                        displaySubjects.isEmpty
+                                                    child: _isModalLoading
+                                                        ? Center(
+                                                            child:
+                                                                CircularProgressIndicator(
+                                                                    color: Colors
+                                                                        .white))
+                                                        : filteredSubjects
+                                                                .isEmpty
                                                             ? Center(
                                                                 child: Text(
                                                                     'No se encontraron materias',
                                                                     style: TextStyle(
                                                                         color: Colors
-                                                                            .white70)),
-                                                              )
+                                                                            .white70)))
                                                             : ListView
                                                                 .separated(
                                                                 itemCount:
-                                                                    displaySubjects
+                                                                    filteredSubjects
                                                                         .length,
-                                                                separatorBuilder:
-                                                                    (context,
-                                                                            index) =>
-                                                                        Divider(
-                                                                  color: Colors
-                                                                      .white
-                                                                      .withOpacity(
-                                                                          0.1),
-                                                                  height: 1,
-                                                                  indent: 16,
-                                                                  endIndent: 16,
-                                                                ),
+                                                                separatorBuilder: (context,
+                                                                        index) =>
+                                                                    Divider(
+                                                                        color: Colors
+                                                                            .white
+                                                                            .withOpacity(
+                                                                                0.1),
+                                                                        height:
+                                                                            1,
+                                                                        indent:
+                                                                            16,
+                                                                        endIndent:
+                                                                            16),
                                                                 itemBuilder:
                                                                     (context,
                                                                         index) {
                                                                   final subject =
-                                                                      displaySubjects[
+                                                                      filteredSubjects[
                                                                           index];
                                                                   return ListTile(
                                                                     title: Text(
@@ -468,18 +542,28 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                                           authProvider
                                                                               .token;
                                                                       // Mostrar loader
-                                                                         showDialog(
-                                                                        context: mainContext,
-                                                                        barrierDismissible: false,
-                                                                        builder: (context) => Center(
-                                                                          child: Material(
-                                                                            color: Colors.transparent,
-                                                                            child: Container(
+                                                                      showDialog(
+                                                                        context:
+                                                                            mainContext,
+                                                                        barrierDismissible:
+                                                                            false,
+                                                                        builder:
+                                                                            (context) =>
+                                                                                Center(
+                                                                          child:
+                                                                              Material(
+                                                                            color:
+                                                                                Colors.transparent,
+                                                                            child:
+                                                                                Container(
                                                                               width: MediaQuery.of(context).size.width * 0.82,
                                                                               padding: EdgeInsets.symmetric(horizontal: 28, vertical: 36),
                                                                               decoration: BoxDecoration(
                                                                                 gradient: LinearGradient(
-                                                                                  colors: [AppColors.darkBlue, AppColors.blurprimary],
+                                                                                  colors: [
+                                                                                    AppColors.darkBlue,
+                                                                                    AppColors.blurprimary
+                                                                                  ],
                                                                                   begin: Alignment.topLeft,
                                                                                   end: Alignment.bottomRight,
                                                                                 ),
@@ -540,7 +624,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                                             ),
                                                                           ),
                                                                         ),
-                                                                        useRootNavigator: true,
+                                                                        useRootNavigator:
+                                                                            true,
                                                                       );
                                                                       try {
                                                                         print(
@@ -695,7 +780,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                                         ScaffoldMessenger.of(mainContext)
                                                                             .showSnackBar(
                                                                           SnackBar(
-                                                                              content: Text('Error al buscar tutores: $e')),
+                                                                            content:
+                                                                                Text('Error al buscar tutores: $e'),
+                                                                          ),
                                                                         );
                                                                       }
                                                                     },
@@ -3044,52 +3131,55 @@ class _StartJourneyCard extends StatelessWidget {
     );
   }
 }
-   class _AnimatedDots extends StatefulWidget {
-     @override
-     State<_AnimatedDots> createState() => _AnimatedDotsState();
-   }
 
-   class _AnimatedDotsState extends State<_AnimatedDots> with SingleTickerProviderStateMixin {
-     late AnimationController _controller;
-     late Animation<int> _dotsAnimation;
+class _AnimatedDots extends StatefulWidget {
+  @override
+  State<_AnimatedDots> createState() => _AnimatedDotsState();
+}
 
-     @override
-     void initState() {
-       super.initState();
-       _controller = AnimationController(
-         duration: Duration(milliseconds: 1200),
-         vsync: this,
-       )..repeat();
-       _dotsAnimation = StepTween(begin: 1, end: 3).animate(
-         CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-       );
-     }
+class _AnimatedDotsState extends State<_AnimatedDots>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<int> _dotsAnimation;
 
-     @override
-     void dispose() {
-       _controller.dispose();
-       super.dispose();
-     }
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: Duration(milliseconds: 1200),
+      vsync: this,
+    )..repeat();
+    _dotsAnimation = StepTween(begin: 1, end: 3).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
 
-     @override
-     Widget build(BuildContext context) {
-       return AnimatedBuilder(
-         animation: _dotsAnimation,
-         builder: (context, child) {
-           String dots = '.' * _dotsAnimation.value;
-           return Text(
-             'Buscando$dots',
-             style: TextStyle(
-               color: AppColors.orangeprimary,
-               fontSize: 18,
-               fontWeight: FontWeight.bold,
-               letterSpacing: 2,
-             ),
-           );
-         },
-       );
-     }
-   }
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _dotsAnimation,
+      builder: (context, child) {
+        String dots = '.' * _dotsAnimation.value;
+        return Text(
+          'Buscando$dots',
+          style: TextStyle(
+            color: AppColors.orangeprimary,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 2,
+          ),
+        );
+      },
+    );
+  }
+}
+
 class _CustomDrawerHeader extends StatelessWidget {
   final AuthProvider authProvider;
   final Map<int, String> highResTutorImages;
