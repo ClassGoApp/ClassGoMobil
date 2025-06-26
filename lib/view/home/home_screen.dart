@@ -468,36 +468,79 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                                           authProvider
                                                                               .token;
                                                                       // Mostrar loader
-                                                                      showDialog(
-                                                                        context:
-                                                                            mainContext,
-                                                                        barrierDismissible:
-                                                                            false,
-                                                                        builder:
-                                                                            (context) =>
-                                                                                Center(
-                                                                          child:
-                                                                              Container(
-                                                                            padding:
-                                                                                EdgeInsets.all(24),
-                                                                            decoration:
-                                                                                BoxDecoration(
-                                                                              color: Colors.black.withOpacity(0.8),
-                                                                              borderRadius: BorderRadius.circular(16),
-                                                                            ),
-                                                                            child:
-                                                                                Column(
-                                                                              mainAxisSize: MainAxisSize.min,
-                                                                              children: [
-                                                                                CircularProgressIndicator(color: AppColors.lightBlueColor),
-                                                                                SizedBox(height: 18),
-                                                                                Text('Buscando tutor disponible…', style: TextStyle(color: Colors.white, fontSize: 16)),
-                                                                              ],
+                                                                         showDialog(
+                                                                        context: mainContext,
+                                                                        barrierDismissible: false,
+                                                                        builder: (context) => Center(
+                                                                          child: Material(
+                                                                            color: Colors.transparent,
+                                                                            child: Container(
+                                                                              width: MediaQuery.of(context).size.width * 0.82,
+                                                                              padding: EdgeInsets.symmetric(horizontal: 28, vertical: 36),
+                                                                              decoration: BoxDecoration(
+                                                                                gradient: LinearGradient(
+                                                                                  colors: [AppColors.darkBlue, AppColors.blurprimary],
+                                                                                  begin: Alignment.topLeft,
+                                                                                  end: Alignment.bottomRight,
+                                                                                ),
+                                                                                borderRadius: BorderRadius.circular(24),
+                                                                                boxShadow: [
+                                                                                  BoxShadow(
+                                                                                    color: Colors.black.withOpacity(0.18),
+                                                                                    blurRadius: 32,
+                                                                                    offset: Offset(0, 12),
+                                                                                  ),
+                                                                                ],
+                                                                                border: Border.all(color: Colors.white.withOpacity(0.10)),
+                                                                              ),
+                                                                              child: Column(
+                                                                                mainAxisSize: MainAxisSize.min,
+                                                                                children: [
+                                                                                  // Icono animado con glow
+                                                                                  Container(
+                                                                                    decoration: BoxDecoration(
+                                                                                      shape: BoxShape.circle,
+                                                                                      boxShadow: [
+                                                                                        BoxShadow(
+                                                                                          color: AppColors.orangeprimary.withOpacity(0.5),
+                                                                                          blurRadius: 24,
+                                                                                          spreadRadius: 2,
+                                                                                        ),
+                                                                                      ],
+                                                                                    ),
+                                                                                    child: CircleAvatar(
+                                                                                      radius: 32,
+                                                                                      backgroundColor: AppColors.orangeprimary.withOpacity(0.12),
+                                                                                      child: Icon(Icons.flash_on, color: AppColors.orangeprimary, size: 38),
+                                                                                    ),
+                                                                                  ),
+                                                                                  SizedBox(height: 24),
+                                                                                  Text(
+                                                                                    'Buscando el mejor tutor para ti',
+                                                                                    style: TextStyle(
+                                                                                      color: Colors.white,
+                                                                                      fontWeight: FontWeight.bold,
+                                                                                      fontSize: 19,
+                                                                                    ),
+                                                                                    textAlign: TextAlign.center,
+                                                                                  ),
+                                                                                  SizedBox(height: 14),
+                                                                                  Text(
+                                                                                    'Estamos conectando con tutores verificados de la materia seleccionada. Esto puede tomar unos segundos.',
+                                                                                    style: TextStyle(
+                                                                                      color: Colors.white.withOpacity(0.85),
+                                                                                      fontSize: 15,
+                                                                                    ),
+                                                                                    textAlign: TextAlign.center,
+                                                                                  ),
+                                                                                  SizedBox(height: 24),
+                                                                                  _AnimatedDots(),
+                                                                                ],
+                                                                              ),
                                                                             ),
                                                                           ),
                                                                         ),
-                                                                        useRootNavigator:
-                                                                            true,
+                                                                        useRootNavigator: true,
                                                                       );
                                                                       try {
                                                                         print(
@@ -575,9 +618,72 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                                         } else {
                                                                           print(
                                                                               'DEBUG: No hay tutores disponibles para esta materia.');
-                                                                          ScaffoldMessenger.of(mainContext)
-                                                                              .showSnackBar(
-                                                                            SnackBar(content: Text('No hay tutores disponibles para esta materia.')),
+                                                                          await showDialog(
+                                                                            context:
+                                                                                mainContext,
+                                                                            barrierDismissible:
+                                                                                true,
+                                                                            builder: (context) =>
+                                                                                Center(
+                                                                              child: Material(
+                                                                                color: Colors.transparent,
+                                                                                child: Container(
+                                                                                  width: MediaQuery.of(context).size.width * 0.85,
+                                                                                  padding: EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+                                                                                  decoration: BoxDecoration(
+                                                                                    color: AppColors.darkBlue,
+                                                                                    borderRadius: BorderRadius.circular(24),
+                                                                                    boxShadow: [
+                                                                                      BoxShadow(
+                                                                                        color: Colors.black.withOpacity(0.18),
+                                                                                        blurRadius: 32,
+                                                                                        offset: Offset(0, 12),
+                                                                                      ),
+                                                                                    ],
+                                                                                    border: Border.all(color: Colors.white.withOpacity(0.08)),
+                                                                                  ),
+                                                                                  child: Column(
+                                                                                    mainAxisSize: MainAxisSize.min,
+                                                                                    children: [
+                                                                                      Icon(Icons.sentiment_dissatisfied_rounded, color: AppColors.orangeprimary, size: 54),
+                                                                                      SizedBox(height: 18),
+                                                                                      Text(
+                                                                                        '¡Ups! No hay tutores disponibles',
+                                                                                        style: TextStyle(
+                                                                                          color: Colors.white,
+                                                                                          fontWeight: FontWeight.bold,
+                                                                                          fontSize: 20,
+                                                                                        ),
+                                                                                        textAlign: TextAlign.center,
+                                                                                      ),
+                                                                                      SizedBox(height: 12),
+                                                                                      Text(
+                                                                                        'Por el momento no hay tutores disponibles para la materia seleccionada. Puedes intentarlo más tarde o elegir otra materia.',
+                                                                                        style: TextStyle(
+                                                                                          color: Colors.white.withOpacity(0.85),
+                                                                                          fontSize: 15,
+                                                                                        ),
+                                                                                        textAlign: TextAlign.center,
+                                                                                      ),
+                                                                                      SizedBox(height: 28),
+                                                                                      SizedBox(
+                                                                                        width: double.infinity,
+                                                                                        child: ElevatedButton.icon(
+                                                                                          onPressed: () => Navigator.of(context).pop(),
+                                                                                          icon: Icon(Icons.close, color: Colors.white),
+                                                                                          label: Text('Cerrar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                                                                          style: ElevatedButton.styleFrom(
+                                                                                            backgroundColor: AppColors.orangeprimary,
+                                                                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                                                                            padding: EdgeInsets.symmetric(vertical: 14),
+                                                                                          ),
+                                                                                        ),
+                                                                                      ),
+                                                                                    ],
+                                                                                  ),
+                                                                                ),
+                                                                              ),
+                                                                            ),
                                                                           );
                                                                         }
                                                                       } catch (e) {
@@ -2938,7 +3044,52 @@ class _StartJourneyCard extends StatelessWidget {
     );
   }
 }
+   class _AnimatedDots extends StatefulWidget {
+     @override
+     State<_AnimatedDots> createState() => _AnimatedDotsState();
+   }
 
+   class _AnimatedDotsState extends State<_AnimatedDots> with SingleTickerProviderStateMixin {
+     late AnimationController _controller;
+     late Animation<int> _dotsAnimation;
+
+     @override
+     void initState() {
+       super.initState();
+       _controller = AnimationController(
+         duration: Duration(milliseconds: 1200),
+         vsync: this,
+       )..repeat();
+       _dotsAnimation = StepTween(begin: 1, end: 3).animate(
+         CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+       );
+     }
+
+     @override
+     void dispose() {
+       _controller.dispose();
+       super.dispose();
+     }
+
+     @override
+     Widget build(BuildContext context) {
+       return AnimatedBuilder(
+         animation: _dotsAnimation,
+         builder: (context, child) {
+           String dots = '.' * _dotsAnimation.value;
+           return Text(
+             'Buscando$dots',
+             style: TextStyle(
+               color: AppColors.orangeprimary,
+               fontSize: 18,
+               fontWeight: FontWeight.bold,
+               letterSpacing: 2,
+             ),
+           );
+         },
+       );
+     }
+   }
 class _CustomDrawerHeader extends StatelessWidget {
   final AuthProvider authProvider;
   final Map<int, String> highResTutorImages;
