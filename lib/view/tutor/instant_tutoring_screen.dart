@@ -10,12 +10,14 @@ class InstantTutoringScreen extends StatefulWidget {
   final String tutorName;
   final String tutorImage;
   final List<String> subjects;
+  final String? selectedSubject;
 
   const InstantTutoringScreen({
     Key? key,
     required this.tutorName,
     required this.tutorImage,
     required this.subjects,
+    this.selectedSubject,
   }) : super(key: key);
 
   @override
@@ -55,6 +57,12 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
       parent: _animationController,
       curve: Curves.easeInOut,
     ));
+
+    // Selecciona la materia si viene preseleccionada
+    if (widget.selectedSubject != null &&
+        widget.subjects.contains(widget.selectedSubject)) {
+      _selectedSubject = widget.selectedSubject;
+    }
 
     // Iniciar la animación inmediatamente para la primera página
     _animationController.forward();

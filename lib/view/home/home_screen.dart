@@ -474,6 +474,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                                               tutorName: tutorName,
                                                                               tutorImage: tutorImage,
                                                                               subjects: validSubjects,
+                                                                              selectedSubject: subjectName, // <-- Pasar la materia seleccionada
                                                                             ),
                                                                           );
                                                                         } else {
