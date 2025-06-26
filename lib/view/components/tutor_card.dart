@@ -21,6 +21,7 @@ class TutorCard extends StatefulWidget {
   final bool isVerified;
   final String? tutorId;
   final String? tutorVideo;
+  final bool showStartButton; // Nuevo parámetro
 
   const TutorCard({
     Key? key,
@@ -40,6 +41,7 @@ class TutorCard extends StatefulWidget {
     required this.isVerified,
     this.tutorId,
     this.tutorVideo,
+    this.showStartButton = false, // Valor por defecto
   }) : super(key: key);
 
   @override
@@ -232,6 +234,40 @@ class _TutorCardState extends State<TutorCard> {
                 ),
               ],
             ),
+            if (widget.showStartButton) ...[
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed:
+                      widget.onAcceptPressed, // Puedes cambiar el callback
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.orangeprimary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16.0),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 12.0),
+                    elevation: 0,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.play_circle_fill,
+                          color: Colors.white, size: 22),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Empezar tutoría',
+                        style: AppTextStyles.button.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ]
           ],
         ),
       ),

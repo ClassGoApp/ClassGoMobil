@@ -539,6 +539,52 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                     fontWeight:
                                                         FontWeight.w600),
                                               ),
+                                              const SizedBox(height: 10),
+                                              SizedBox(
+                                                width: double.infinity,
+                                                child: ElevatedButton(
+                                                  onPressed: () {
+                                                    // Acción para empezar tutoría
+                                                  },
+                                                  style:
+                                                      ElevatedButton.styleFrom(
+                                                    backgroundColor:
+                                                        AppColors.orangeprimary,
+                                                    shape:
+                                                        RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              16.0),
+                                                    ),
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        vertical: 6.0),
+                                                    elevation: 0,
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .center,
+                                                    children: [
+                                                      const Icon(
+                                                          Icons
+                                                              .play_circle_fill,
+                                                          color: Colors.white,
+                                                          size: 18),
+                                                      const SizedBox(width: 8),
+                                                      const Text(
+                                                        'Empezar tutoría',
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          fontSize: 15,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
                                             ],
                                           ),
                                         ),
