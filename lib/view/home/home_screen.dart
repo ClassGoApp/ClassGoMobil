@@ -231,6 +231,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     isScrollControlled: true,
                                     backgroundColor: Colors.transparent,
                                     builder: (context) {
+                                      final TextEditingController
+                                          searchController =
+                                          TextEditingController();
                                       String search = '';
                                       List<dynamic> filteredSubjects =
                                           _subjects;
@@ -268,11 +271,102 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                               child: Column(
                                                 mainAxisSize: MainAxisSize.min,
                                                 children: [
+                                                  if (search.trim().isEmpty)
+                                                    Padding(
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                              top: 24,
+                                                              left: 24,
+                                                              right: 24,
+                                                              bottom: 8),
+                                                      child: Container(
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color: Colors.white
+                                                              .withOpacity(
+                                                                  0.08),
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(16),
+                                                          border: Border.all(
+                                                              color: Colors
+                                                                  .white
+                                                                  .withOpacity(
+                                                                      0.12)),
+                                                          boxShadow: [
+                                                            BoxShadow(
+                                                              color: Colors
+                                                                  .black
+                                                                  .withOpacity(
+                                                                      0.08),
+                                                              blurRadius: 12,
+                                                              offset:
+                                                                  Offset(0, 4),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        padding: EdgeInsets
+                                                            .symmetric(
+                                                                horizontal: 18,
+                                                                vertical: 16),
+                                                        child: Row(
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .start,
+                                                          children: [
+                                                            Icon(Icons.flash_on,
+                                                                color: AppColors
+                                                                    .orangeprimary,
+                                                                size: 32),
+                                                            SizedBox(width: 16),
+                                                            Expanded(
+                                                              child: Column(
+                                                                crossAxisAlignment:
+                                                                    CrossAxisAlignment
+                                                                        .start,
+                                                                children: [
+                                                                  Text(
+                                                                    '¿Cómo funciona el modo "Tutor al Instante"?',
+                                                                    style:
+                                                                        TextStyle(
+                                                                      color: Colors
+                                                                          .white,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .bold,
+                                                                      fontSize:
+                                                                          16,
+                                                                    ),
+                                                                  ),
+                                                                  SizedBox(
+                                                                      height:
+                                                                          6),
+                                                                  Text(
+                                                                    'Selecciona la materia en la que necesitas ayuda. Se te asignará automáticamente un tutor disponible especializado en esa materia para que puedas empezar tu tutoría en minutos.',
+                                                                    style:
+                                                                        TextStyle(
+                                                                      color: Colors
+                                                                          .white
+                                                                          .withOpacity(
+                                                                              0.85),
+                                                                      fontSize:
+                                                                          14,
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
                                                   Padding(
                                                     padding:
                                                         const EdgeInsets.all(
                                                             16.0),
                                                     child: TextField(
+                                                      controller:
+                                                          searchController,
                                                       autofocus: true,
                                                       decoration:
                                                           InputDecoration(
@@ -456,8 +550,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                                               randomTutor['profile'] ?? {};
                                                                           final tutorName =
                                                                               profile['full_name'] ?? 'Sin nombre';
-                                                                          final tutorImage =
-                                                                              profile['image'] ?? '';
+                                                                          final tutorImage = highResTutorImages != null && highResTutorImages[randomTutor['id']] != null
+                                                                              ? highResTutorImages[randomTutor['id']]
+                                                                              : profile['image'] ?? '';
                                                                           final validSubjects = (randomTutor['subjects'] as List)
                                                                               .where((s) => s['status'] == 'active' && s['deleted_at'] == null)
                                                                               .map((s) => s['name'].toString())
