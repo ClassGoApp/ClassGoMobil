@@ -230,11 +230,16 @@ class _TutorCardState extends State<TutorCard> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.play_circle_fill,
-                            color: Colors.white, size: 22),
+                        widget.showStartButton
+                            ? const Icon(Icons.play_circle_fill,
+                                color: Colors.white, size: 22)
+                            : const Icon(Icons.calendar_today,
+                                color: Colors.white, size: 20),
                         const SizedBox(width: 8),
                         Text(
-                          'Empezar tutoría',
+                          widget.showStartButton
+                              ? 'Empezar tutoría'
+                              : 'Agendar',
                           style: AppTextStyles.button.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,

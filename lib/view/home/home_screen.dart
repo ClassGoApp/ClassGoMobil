@@ -807,7 +807,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   Icons.calendar_today, // Ícono para "Agendar"
                               label: 'Agendar\nTutoría',
                               onTap: () {
-                                // TODO: Navegar a la pantalla de Agendar
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => SearchTutorsScreen(
+                                        initialMode: 'agendar'),
+                                  ),
+                                );
                               },
                             ),
                             _buildMenuOption(

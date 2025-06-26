@@ -24,11 +24,13 @@ import 'package:flutter_projects/view/tutor/instant_tutoring_screen.dart';
 class SearchTutorsScreen extends StatefulWidget {
   final String? initialKeyword;
   final int? initialSubjectId;
+  final String initialMode;
 
   const SearchTutorsScreen({
     Key? key,
     this.initialKeyword,
     this.initialSubjectId,
+    this.initialMode = 'agendar',
   }) : super(key: key);
 
   @override
@@ -101,6 +103,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
       true; // Controla la visibilidad de la barra de navegación
   double _bottomBarOffset = 0.0; // Para animación slide
 
+  late String selectedMode;
+
   void _onSearchChanged(String value) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
@@ -160,6 +164,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
         'DEBUG en initState: widget.initialKeyword = ${widget.initialKeyword}');
     keyword = widget.initialKeyword;
     selectedSubjectId = widget.initialSubjectId;
+    selectedMode = widget.initialMode;
     _searchController.text = keyword ?? '';
     fetchHighResTutorImages();
     fetchInitialTutors(
@@ -759,7 +764,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                 ),
               ),
             ),
-            // Filtros
+            // Filtros + Chips con scroll y botón fijo
             AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               height: filtersHeight * _filtersOpacity,
@@ -769,88 +774,79 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                 duration: const Duration(milliseconds: 200),
                 opacity: _filtersOpacity,
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 5, 20, 0),
+                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
                   child: Row(
                     children: [
+                      // Scroll horizontal para chips y dropdown
                       Expanded(
-                        child: Container(
-                          height: 40,
-                          padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: _selectedSortOption,
-                              hint: Text('Ordenar por',
-                                  style: AppTextStyles.body.copyWith(
-                                      color:
-                                          AppColors.whiteColor.withOpacity(0.7),
-                                      fontSize: 14)),
-                              icon: Icon(Icons.arrow_drop_down,
-                                  color: AppColors.whiteColor.withOpacity(0.7),
-                                  size: 20),
-                              dropdownColor: AppColors.blurprimary,
-                              borderRadius: BorderRadius.circular(15.0),
-                              style: AppTextStyles.body.copyWith(
-                                  color: AppColors.whiteColor, fontSize: 14),
-                              isExpanded: true,
-                              items: _sortOptions.map((String value) {
-                                bool isLastOfGroup = value == 'Nombre (Z-A)';
-                                return DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 8.0),
-                                    decoration: BoxDecoration(
-                                      border: isLastOfGroup
-                                          ? Border(
-                                              bottom: BorderSide(
-                                                  color: AppColors.navbar
-                                                      .withOpacity(0.2),
-                                                  width: 1))
-                                          : null,
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          value.contains('(A-Z)')
-                                              ? Icons.arrow_downward
-                                              : Icons.arrow_upward,
-                                          size: 18,
-                                          color: AppColors.whiteColor
-                                              .withOpacity(0.7),
-                                        ),
-                                        const SizedBox(width: 10),
-                                        Text(value),
-                                      ],
-                                    ),
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              _buildModeChip('agendar', 'Agendar'),
+                              SizedBox(width: 4),
+                              _buildModeChip(
+                                  'instantanea', 'Tutoría instantánea'),
+                              SizedBox(width: 4),
+                              Container(
+                                width: 90,
+                                height: 32,
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 4.0),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<String>(
+                                    value: _selectedSortOption,
+                                    hint: Text('Ordenar',
+                                        style: AppTextStyles.body.copyWith(
+                                            color: AppColors.whiteColor
+                                                .withOpacity(0.7),
+                                            fontSize: 11)),
+                                    icon: Icon(Icons.arrow_drop_down,
+                                        color: AppColors.whiteColor
+                                            .withOpacity(0.7),
+                                        size: 15),
+                                    dropdownColor: AppColors.blurprimary,
+                                    borderRadius: BorderRadius.circular(12.0),
+                                    style: AppTextStyles.body.copyWith(
+                                        color: AppColors.whiteColor,
+                                        fontSize: 11),
+                                    isExpanded: true,
+                                    items: _sortOptions.map((String value) {
+                                      return DropdownMenuItem<String>(
+                                        value: value,
+                                        child: Text(value),
+                                      );
+                                    }).toList(),
+                                    onChanged: (newValue) {
+                                      setState(() {
+                                        _selectedSortOption = newValue;
+                                        _sortTutors(newValue);
+                                      });
+                                    },
                                   ),
-                                );
-                              }).toList(),
-                              onChanged: (newValue) {
-                                setState(() {
-                                  _selectedSortOption = newValue;
-                                  _sortTutors(newValue);
-                                });
-                              },
-                            ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      SizedBox(width: 6),
+                      // Botón de filtro fijo a la derecha
                       Container(
-                        width: 40,
-                        height: 40,
+                        width: 28,
+                        height: 28,
                         decoration: BoxDecoration(
                           color: AppColors.orangeprimary,
-                          borderRadius: BorderRadius.circular(15),
+                          borderRadius: BorderRadius.circular(10),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.orangeprimary.withOpacity(0.5),
-                              blurRadius: 10,
-                              spreadRadius: 1,
+                              color: AppColors.orangeprimary.withOpacity(0.3),
+                              blurRadius: 5,
+                              spreadRadius: 0.5,
                             ),
                           ],
                         ),
@@ -859,8 +855,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                           icon: SvgPicture.asset(
                             AppImages.filterIcon,
                             color: AppColors.whiteColor,
-                            width: 18,
-                            height: 18,
+                            width: 13,
+                            height: 13,
                           ),
                           onPressed: openFilterBottomSheet,
                         ),
@@ -871,6 +867,56 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModeChip(String mode, String label) {
+    final bool isSelected = selectedMode == mode;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedMode = mode;
+        });
+      },
+      child: AnimatedContainer(
+        duration: Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        padding: EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.lightBlueColor : AppColors.darkBlue,
+          borderRadius: BorderRadius.circular(16),
+          border: isSelected
+              ? Border.all(
+                  color: AppColors.lightBlueColor,
+                  width: 1.5,
+                )
+              : null,
+        ),
+        child: Opacity(
+          opacity: isSelected ? 1.0 : 0.55,
+          child: Row(
+            children: [
+              if (mode == 'agendar')
+                Icon(Icons.calendar_today,
+                    color: isSelected ? Colors.white : AppColors.lightBlueColor,
+                    size: 16),
+              if (mode == 'instantanea')
+                Icon(Icons.flash_on,
+                    color: isSelected ? Colors.white : AppColors.lightBlueColor,
+                    size: 16),
+              SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : AppColors.lightBlueColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1038,30 +1084,57 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                               ),
                             );
                           },
-                          onAcceptPressed: () {
-                            showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.transparent,
-                              builder: (context) => Container(
-                                margin:
-                                    EdgeInsets.only(top: 60), // Espacio arriba
-                                decoration: BoxDecoration(
-                                  color: AppColors.darkBlue,
-                                  borderRadius: BorderRadius.vertical(
-                                      top: Radius.circular(24)),
-                                ),
-                                child: InstantTutoringScreen(
-                                  tutorName: profile['full_name'] ??
-                                      'No name available',
-                                  tutorImage: highResTutorImages[tutor['id']] ??
-                                      profile['image'] ??
-                                      AppImages.placeHolderImage,
-                                  subjects: validSubjects,
-                                ),
-                              ),
-                            );
-                          },
+                          onAcceptPressed: selectedMode == 'agendar'
+                              ? () {
+                                  // Acción para agendar
+                                  showModalBottomSheet(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    backgroundColor: Colors.transparent,
+                                    builder: (context) => Container(
+                                      margin: EdgeInsets.only(top: 60),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.darkBlue,
+                                        borderRadius: BorderRadius.vertical(
+                                            top: Radius.circular(24)),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          'Aquí iría el flujo de agendamiento para ${profile['full_name']}',
+                                          style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }
+                              : () {
+                                  // Acción para tutoría instantánea (como antes)
+                                  showModalBottomSheet(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    backgroundColor: Colors.transparent,
+                                    builder: (context) => Container(
+                                      margin: EdgeInsets.only(top: 60),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.darkBlue,
+                                        borderRadius: BorderRadius.vertical(
+                                            top: Radius.circular(24)),
+                                      ),
+                                      child: InstantTutoringScreen(
+                                        tutorName: profile['full_name'] ??
+                                            'No name available',
+                                        tutorImage:
+                                            highResTutorImages[tutor['id']] ??
+                                                profile['image'] ??
+                                                AppImages.placeHolderImage,
+                                        subjects: validSubjects,
+                                      ),
+                                    ),
+                                  );
+                                },
                           tutorProfession: validSubjects.isNotEmpty
                               ? validSubjects.first
                               : 'Profesión no disponible',
@@ -1075,6 +1148,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                           description: profile['description'] ??
                               'No hay descripción disponible.',
                           isVerified: true,
+                          showStartButton: selectedMode == 'instantanea',
                         ),
                       ),
                     ),
