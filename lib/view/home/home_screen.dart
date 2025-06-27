@@ -243,13 +243,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                           searchController =
                                           TextEditingController();
                                       String search = '';
+                                      // Inicializar con las materias precargadas
                                       List<dynamic> filteredSubjects =
                                           List<dynamic>.from(_subjects);
+                                      bool isSearchingAPI = false;
                                       return StatefulBuilder(
                                         builder: (context, setModalState) {
-                                          // Inicializar filteredSubjects con las materias precargadas solo la primera vez
-                                          filteredSubjects ??=
-                                              List<dynamic>.from(_subjects);
+                                          // Filtrar materias localmente primero
                                           List<dynamic> displaySubjects =
                                               filteredSubjects
                                                   .where((s) => (s['name'] ??
@@ -258,6 +258,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                       .contains(
                                                           search.toLowerCase()))
                                                   .toList();
+
                                           return SafeArea(
                                             child: Container(
                                               constraints: BoxConstraints(
@@ -286,30 +287,30 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                     Padding(
                                                       padding:
                                                           const EdgeInsets.only(
-                                                              top: 24,
-                                                              left: 24,
-                                                              right: 24,
+                                                              top: 18,
+                                                              left: 12,
+                                                              right: 12,
                                                               bottom: 8),
                                                       child: Container(
                                                         decoration:
                                                             BoxDecoration(
-                                                          color: Colors.white
+                                                          color: AppColors
+                                                              .lightBlueColor
                                                               .withOpacity(
-                                                                  0.08),
+                                                                  0.18),
                                                           borderRadius:
                                                               BorderRadius
-                                                                  .circular(16),
+                                                                  .circular(18),
                                                           border: Border.all(
-                                                              color: Colors
-                                                                  .white
-                                                                  .withOpacity(
-                                                                      0.12)),
+                                                              color: AppColors
+                                                                  .lightBlueColor,
+                                                              width: 1.2),
                                                           boxShadow: [
                                                             BoxShadow(
-                                                              color: Colors
-                                                                  .black
+                                                              color: AppColors
+                                                                  .lightBlueColor
                                                                   .withOpacity(
-                                                                      0.08),
+                                                                      0.10),
                                                               blurRadius: 12,
                                                               offset:
                                                                   Offset(0, 4),
@@ -318,18 +319,29 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                         ),
                                                         padding: EdgeInsets
                                                             .symmetric(
-                                                                horizontal: 18,
-                                                                vertical: 16),
+                                                                horizontal: 16,
+                                                                vertical: 14),
                                                         child: Row(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
                                                           children: [
-                                                            Icon(Icons.flash_on,
+                                                            Container(
+                                                              decoration:
+                                                                  BoxDecoration(
                                                                 color: AppColors
-                                                                    .orangeprimary,
-                                                                size: 32),
-                                                            SizedBox(width: 16),
+                                                                    .lightBlueColor,
+                                                                shape: BoxShape
+                                                                    .circle,
+                                                              ),
+                                                              padding:
+                                                                  EdgeInsets
+                                                                      .all(10),
+                                                              child: Icon(
+                                                                  Icons
+                                                                      .flash_on,
+                                                                  color: Colors
+                                                                      .white,
+                                                                  size: 28),
+                                                            ),
+                                                            SizedBox(width: 14),
                                                             Expanded(
                                                               child: Column(
                                                                 crossAxisAlignment:
@@ -337,7 +349,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                                         .start,
                                                                 children: [
                                                                   Text(
-                                                                    '¿Cómo funciona el modo "Tutor al Instante"?',
+                                                                    '¡Tutor al Instante!',
                                                                     style:
                                                                         TextStyle(
                                                                       color: Colors
@@ -351,9 +363,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                                   ),
                                                                   SizedBox(
                                                                       height:
-                                                                          6),
+                                                                          4),
                                                                   Text(
-                                                                    'Selecciona la materia en la que necesitas ayuda. Se te asignará automáticamente un tutor disponible especializado en esa materia para que puedas empezar tu tutoría en minutos.',
+                                                                    'Elige una materia y conecta al momento con un tutor disponible.',
                                                                     style:
                                                                         TextStyle(
                                                                       color: Colors
@@ -361,7 +373,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                                           .withOpacity(
                                                                               0.85),
                                                                       fontSize:
-                                                                          14,
+                                                                          13,
                                                                     ),
                                                                   ),
                                                                 ],
@@ -423,66 +435,105 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                             () async {
                                                           setModalState(() {
                                                             search = value;
-                                                            _isModalLoading =
-                                                                true;
                                                           });
-                                                          try {
-                                                            final response =
-                                                                await getAllSubjects(
-                                                              null,
-                                                              page: 1,
-                                                              perPage: 100,
-                                                              keyword: value,
-                                                            );
-                                                            List<dynamic>
-                                                                newSubjects =
-                                                                [];
-                                                            if (response !=
-                                                                    null &&
-                                                                response
-                                                                    .containsKey(
-                                                                        'data')) {
-                                                              final responseData =
-                                                                  response[
-                                                                      'data'];
-                                                              if (responseData
-                                                                      is Map<
-                                                                          String,
-                                                                          dynamic> &&
-                                                                  responseData
-                                                                      .containsKey(
-                                                                          'data')) {
-                                                                newSubjects =
-                                                                    responseData[
-                                                                        'data'];
-                                                              }
-                                                            }
+
+                                                          // Si la búsqueda está vacía, mostrar materias precargadas
+                                                          if (value
+                                                              .trim()
+                                                              .isEmpty) {
                                                             setModalState(() {
                                                               filteredSubjects =
-                                                                  newSubjects;
-                                                              _isModalLoading =
+                                                                  List<dynamic>.from(
+                                                                      _subjects);
+                                                              isSearchingAPI =
                                                                   false;
                                                             });
-                                                          } catch (e) {
+                                                            return;
+                                                          }
+
+                                                          // Primero filtrar localmente
+                                                          List<dynamic> localResults = _subjects
+                                                              .where((s) => (s[
+                                                                          'name'] ??
+                                                                      '')
+                                                                  .toLowerCase()
+                                                                  .contains(value
+                                                                      .toLowerCase()))
+                                                              .toList();
+
+                                                          // Si hay suficientes resultados locales, usarlos
+                                                          if (localResults
+                                                                  .length >=
+                                                              3) {
                                                             setModalState(() {
                                                               filteredSubjects =
+                                                                  localResults;
+                                                              isSearchingAPI =
+                                                                  false;
+                                                            });
+                                                          } else {
+                                                            // Si no hay suficientes resultados, buscar en API
+                                                            setModalState(() {
+                                                              isSearchingAPI =
+                                                                  true;
+                                                            });
+                                                            try {
+                                                              final response =
+                                                                  await getAllSubjects(
+                                                                null,
+                                                                page: 1,
+                                                                perPage: 100,
+                                                                keyword: value,
+                                                              );
+                                                              List<dynamic>
+                                                                  newSubjects =
                                                                   [];
-                                                              _isModalLoading =
-                                                                  false;
-                                                            });
+                                                              if (response !=
+                                                                      null &&
+                                                                  response.containsKey(
+                                                                      'data')) {
+                                                                final responseData =
+                                                                    response[
+                                                                        'data'];
+                                                                if (responseData
+                                                                        is Map<
+                                                                            String,
+                                                                            dynamic> &&
+                                                                    responseData
+                                                                        .containsKey(
+                                                                            'data')) {
+                                                                  newSubjects =
+                                                                      responseData[
+                                                                          'data'];
+                                                                }
+                                                              }
+                                                              setModalState(() {
+                                                                filteredSubjects =
+                                                                    newSubjects;
+                                                                isSearchingAPI =
+                                                                    false;
+                                                              });
+                                                            } catch (e) {
+                                                              setModalState(() {
+                                                                filteredSubjects =
+                                                                    localResults; // Usar resultados locales como fallback
+                                                                isSearchingAPI =
+                                                                    false;
+                                                              });
+                                                            }
                                                           }
                                                         });
                                                       },
                                                     ),
                                                   ),
                                                   Expanded(
-                                                    child: _isModalLoading
+                                                    child: isSearchingAPI
                                                         ? Center(
                                                             child:
                                                                 CircularProgressIndicator(
                                                                     color: Colors
                                                                         .white))
-                                                        : filteredSubjects
+                                                        : displaySubjects
                                                                 .isEmpty
                                                             ? Center(
                                                                 child: Text(
@@ -493,7 +544,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                             : ListView
                                                                 .separated(
                                                                 itemCount:
-                                                                    filteredSubjects
+                                                                    displaySubjects
                                                                         .length,
                                                                 separatorBuilder: (context,
                                                                         index) =>
@@ -512,7 +563,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                                     (context,
                                                                         index) {
                                                                   final subject =
-                                                                      filteredSubjects[
+                                                                      displaySubjects[
                                                                           index];
                                                                   return ListTile(
                                                                     title: Text(
@@ -595,7 +646,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                                                     child: CircleAvatar(
                                                                                       radius: 32,
                                                                                       backgroundColor: AppColors.orangeprimary.withOpacity(0.12),
-                                                                                      child: Icon(Icons.flash_on, color: AppColors.orangeprimary, size: 38),
+                                                                                      child: Icon(Icons.flash_on, color: AppColors.orangeprimary, size: 28),
                                                                                     ),
                                                                                   ),
                                                                                   SizedBox(height: 24),
