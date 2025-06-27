@@ -1086,27 +1086,18 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                           },
                           onAcceptPressed: selectedMode == 'agendar'
                               ? () {
-                                  // Acción para agendar
                                   showModalBottomSheet(
                                     context: context,
                                     isScrollControlled: true,
                                     backgroundColor: Colors.transparent,
-                                    builder: (context) => Container(
-                                      margin: EdgeInsets.only(top: 60),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.darkBlue,
-                                        borderRadius: BorderRadius.vertical(
-                                            top: Radius.circular(24)),
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          'Aquí iría el flujo de agendamiento para ${profile['full_name']}',
-                                          style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
+                                    builder: (context) => _BookingModal(
+                                      tutorName: profile['full_name'] ??
+                                          'No name available',
+                                      tutorImage:
+                                          highResTutorImages[tutor['id']] ??
+                                              profile['image'] ??
+                                              AppImages.placeHolderImage,
+                                      subjects: validSubjects,
                                     ),
                                   );
                                 }
@@ -1389,5 +1380,491 @@ class _ModernNavBar extends StatelessWidget {
         }),
       ),
     );
+  }
+}
+
+class _BookingModal extends StatefulWidget {
+  final String tutorName;
+  final String tutorImage;
+  final List<String> subjects;
+
+  const _BookingModal({
+    required this.tutorName,
+    required this.tutorImage,
+    required this.subjects,
+  });
+
+  @override
+  State<_BookingModal> createState() => _BookingModalState();
+}
+
+class _BookingModalState extends State<_BookingModal> {
+  String? selectedSubject;
+  DateTime? selectedDay;
+  String? selectedHour;
+
+  // Simulación de disponibilidad: días y rangos de horas disponibles
+  final Map<int, List<String>> availableDays = {
+    // Día del mes: ['10:00-14:00'] o ['09:00', '11:00', ...]
+    3: ['09:00', '11:00', '15:00'],
+    5: ['10:00-14:00'], // Rango
+    8: ['08:00', '12:00', '16:00'],
+    12: ['09:00', '13:00'],
+    15: ['10:00-14:00'], // Rango
+    18: ['09:00', '11:00', '18:00'],
+    22: ['08:00', '12:00'],
+    25: ['09:00', '15:00'],
+  };
+
+  DateTime currentMonth = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.subjects.isNotEmpty) {
+      selectedSubject = widget.subjects.first;
+    }
+  }
+
+  List<String> _generateTimeSlots(String range) {
+    // range: '10:00-14:00'
+    final parts = range.split('-');
+    if (parts.length != 2) return [];
+    final start = _parseTime(parts[0]);
+    final end = _parseTime(parts[1]);
+    if (start == null || end == null) return [];
+    List<String> slots = [];
+    DateTime slot = start;
+    while (slot.isBefore(end.subtract(Duration(minutes: 20))) ||
+        slot.isAtSameMomentAs(end.subtract(Duration(minutes: 20)))) {
+      slots.add(_formatTime(slot));
+      slot = slot.add(Duration(minutes: 20));
+    }
+    return slots;
+  }
+
+  DateTime? _parseTime(String hhmm) {
+    final parts = hhmm.split(':');
+    if (parts.length != 2) return null;
+    final hour = int.tryParse(parts[0]);
+    final min = int.tryParse(parts[1]);
+    if (hour == null || min == null) return null;
+    return DateTime(0, 1, 1, hour, min);
+  }
+
+  String _formatTime(DateTime t) {
+    return t.hour.toString().padLeft(2, '0') +
+        ':' +
+        t.minute.toString().padLeft(2, '0');
+  }
+
+  bool _isTimeInRange(String range, String time) {
+    final parts = range.split('-');
+    if (parts.length != 2) return false;
+    final start = _parseTime(parts[0]);
+    final end = _parseTime(parts[1]);
+    final t = _parseTime(time);
+    if (start == null || end == null || t == null) return false;
+    return (t.isAtSameMomentAs(start) || t.isAfter(start)) &&
+        t.isBefore(
+            end.subtract(Duration(minutes: 20)).add(Duration(minutes: 1)));
+  }
+
+  Future<void> _pickTime(String range) async {
+    final now = TimeOfDay.now();
+    final parts = range.split('-');
+    final start = _parseTime(parts[0]);
+    final end = _parseTime(parts[1]);
+    final initial =
+        start != null ? TimeOfDay(hour: start.hour, minute: start.minute) : now;
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: initial,
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: ColorScheme.dark(
+            primary: AppColors.lightBlueColor,
+            onPrimary: Colors.white,
+            surface: AppColors.darkBlue,
+            onSurface: Colors.white,
+          ),
+          dialogBackgroundColor: AppColors.darkBlue,
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null) {
+      final pickedStr = picked.hour.toString().padLeft(2, '0') +
+          ':' +
+          picked.minute.toString().padLeft(2, '0');
+      if (_isTimeInRange(range, pickedStr)) {
+        setState(() => selectedHour = pickedStr);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Hora fuera del rango permitido.')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final daysInMonth =
+        DateUtils.getDaysInMonth(currentMonth.year, currentMonth.month);
+    final firstWeekday =
+        DateTime(currentMonth.year, currentMonth.month, 1).weekday;
+    final weekDays = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+    return SafeArea(
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.darkBlue,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: EdgeInsets.only(
+          left: 18,
+          right: 18,
+          top: 18,
+          bottom: 18 + MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Row(
+                children: [
+                  CircleAvatar(
+                    backgroundImage: NetworkImage(widget.tutorImage),
+                    radius: 26,
+                  ),
+                  SizedBox(width: 14),
+                  Expanded(
+                    child: Text(
+                      widget.tutorName,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 17,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close, color: Colors.white70),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              SizedBox(height: 10),
+              // Materia
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text('Materia',
+                    style: TextStyle(
+                        color: Colors.white70, fontWeight: FontWeight.bold)),
+              ),
+              SizedBox(height: 6),
+              DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: selectedSubject,
+                  dropdownColor: AppColors.darkBlue,
+                  borderRadius: BorderRadius.circular(12),
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold),
+                  items: widget.subjects
+                      .map((s) => DropdownMenuItem(
+                            value: s,
+                            child:
+                                Text(s, style: TextStyle(color: Colors.white)),
+                          ))
+                      .toList(),
+                  onChanged: (v) => setState(() => selectedSubject = v),
+                ),
+              ),
+              SizedBox(height: 18),
+              // Calendario
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text('Selecciona un día',
+                    style: TextStyle(
+                        color: Colors.white70, fontWeight: FontWeight.bold)),
+              ),
+              SizedBox(height: 6),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.lightBlueColor.withOpacity(0.10),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.chevron_left, color: Colors.white70),
+                          onPressed: () {
+                            setState(() {
+                              currentMonth = DateTime(
+                                  currentMonth.year, currentMonth.month - 1);
+                              selectedDay = null;
+                              selectedHour = null;
+                            });
+                          },
+                        ),
+                        Text(
+                          '${_monthName(currentMonth.month)} ${currentMonth.year}',
+                          style: TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                        IconButton(
+                          icon:
+                              Icon(Icons.chevron_right, color: Colors.white70),
+                          onPressed: () {
+                            setState(() {
+                              currentMonth = DateTime(
+                                  currentMonth.year, currentMonth.month + 1);
+                              selectedDay = null;
+                              selectedHour = null;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: weekDays
+                          .map((d) => Expanded(
+                                child: Center(
+                                    child: Text(d,
+                                        style: TextStyle(
+                                            color: Colors.white54,
+                                            fontWeight: FontWeight.bold))),
+                              ))
+                          .toList(),
+                    ),
+                    SizedBox(height: 2),
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 7,
+                        mainAxisSpacing: 2,
+                        crossAxisSpacing: 2,
+                        childAspectRatio: 1.1,
+                      ),
+                      itemCount: daysInMonth + firstWeekday - 1,
+                      itemBuilder: (context, i) {
+                        if (i < firstWeekday - 1) return SizedBox();
+                        final day = i - firstWeekday + 2;
+                        final isAvailable = availableDays.containsKey(day);
+                        final isSelected = selectedDay != null &&
+                            selectedDay!.day == day &&
+                            selectedDay!.month == currentMonth.month &&
+                            selectedDay!.year == currentMonth.year;
+                        return GestureDetector(
+                          onTap: isAvailable
+                              ? () {
+                                  setState(() {
+                                    selectedDay = DateTime(currentMonth.year,
+                                        currentMonth.month, day);
+                                    selectedHour = null;
+                                  });
+                                }
+                              : null,
+                          child: Container(
+                            margin: EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppColors.lightBlueColor
+                                  : isAvailable
+                                      ? AppColors.lightBlueColor
+                                          .withOpacity(0.18)
+                                      : Colors.transparent,
+                              borderRadius: BorderRadius.circular(8),
+                              border: isSelected
+                                  ? Border.all(color: Colors.white, width: 2)
+                                  : null,
+                            ),
+                            child: Center(
+                              child: Text(
+                                '$day',
+                                style: TextStyle(
+                                  color: isAvailable
+                                      ? Colors.white
+                                      : Colors.white24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 18),
+              // Horas disponibles
+              if (selectedDay != null &&
+                  availableDays.containsKey(selectedDay!.day)) ...[
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text('Selecciona una hora',
+                      style: TextStyle(
+                          color: Colors.white70, fontWeight: FontWeight.bold)),
+                ),
+                SizedBox(height: 6),
+                Builder(
+                  builder: (context) {
+                    final slotsOrRanges = availableDays[selectedDay!.day]!;
+                    final List<Widget> chips = [];
+                    bool hasRange = false;
+                    for (final slot in slotsOrRanges) {
+                      if (slot.contains('-')) {
+                        hasRange = true;
+                        final intervals = _generateTimeSlots(slot);
+                        chips.addAll(intervals.map((h) => ChoiceChip(
+                              label: Text(h,
+                                  style: TextStyle(
+                                      color: selectedHour == h
+                                          ? Colors.white
+                                          : AppColors.lightBlueColor)),
+                              selected: selectedHour == h,
+                              selectedColor: AppColors.lightBlueColor,
+                              backgroundColor:
+                                  AppColors.lightBlueColor.withOpacity(0.13),
+                              onSelected: (_) =>
+                                  setState(() => selectedHour = h),
+                            )));
+                      } else {
+                        chips.add(ChoiceChip(
+                          label: Text(slot,
+                              style: TextStyle(
+                                  color: selectedHour == slot
+                                      ? Colors.white
+                                      : AppColors.lightBlueColor)),
+                          selected: selectedHour == slot,
+                          selectedColor: AppColors.lightBlueColor,
+                          backgroundColor:
+                              AppColors.lightBlueColor.withOpacity(0.13),
+                          onSelected: (_) =>
+                              setState(() => selectedHour = slot),
+                        ));
+                      }
+                    }
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Wrap(spacing: 10, children: chips),
+                        if (hasRange)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 10.0),
+                            child: ElevatedButton.icon(
+                              onPressed: () async {
+                                // Solo permite elegir dentro del primer rango encontrado
+                                final firstRange = slotsOrRanges
+                                    .firstWhere((s) => s.contains('-'));
+                                await _pickTime(firstRange);
+                              },
+                              icon:
+                                  Icon(Icons.access_time, color: Colors.white),
+                              label: Text('Elegir hora exacta',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.lightBlueColor,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14)),
+                                padding: EdgeInsets.symmetric(
+                                    vertical: 10, horizontal: 18),
+                                elevation: 0,
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+                SizedBox(height: 18),
+              ],
+              // Línea informativa de fecha y hora seleccionada
+              if (selectedDay != null && selectedHour != null) ...[
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.event,
+                          color: AppColors.lightBlueColor, size: 20),
+                      SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          'Reserva: ${selectedDay!.day.toString().padLeft(2, '0')}/${selectedDay!.month.toString().padLeft(2, '0')}/${selectedDay!.year} a las $selectedHour',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              // Botón reservar
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: (selectedSubject != null &&
+                          selectedDay != null &&
+                          selectedHour != null)
+                      ? () {
+                          // Aquí iría la lógica real de reserva
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content: Text(
+                                    '¡Tutoría reservada para $selectedSubject el ${selectedDay!.day}/${selectedDay!.month}/${selectedDay!.year} a las $selectedHour!')),
+                          );
+                        }
+                      : null,
+                  icon: Icon(Icons.check_circle, color: Colors.white),
+                  label: Text('Reservar',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.lightBlueColor,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                    padding: EdgeInsets.symmetric(vertical: 14),
+                    elevation: 0,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _monthName(int m) {
+    const months = [
+      'Enero',
+      'Febrero',
+      'Marzo',
+      'Abril',
+      'Mayo',
+      'Junio',
+      'Julio',
+      'Agosto',
+      'Septiembre',
+      'Octubre',
+      'Noviembre',
+      'Diciembre'
+    ];
+    return months[m - 1];
   }
 }
