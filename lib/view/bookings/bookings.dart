@@ -221,7 +221,6 @@ class _BookingScreenState extends State<BookingScreen> {
             decoration: ShapeDecoration(
               color: AppColors.lightBlueColor,
               shape: RoundedRectangleBorder(
-
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
@@ -549,8 +548,9 @@ class _BookingScreenState extends State<BookingScreen> {
         clipBehavior: Clip.hardEdge,
         decoration: BoxDecoration(
           color: AppColors.whiteColor,
-            borderRadius:BorderRadius.all(Radius.circular(10.0),
-            ),
+          borderRadius: BorderRadius.all(
+            Radius.circular(10.0),
+          ),
           border: Border(
             top: BorderSide(color: AppColors.dividerColor, width: 1),
             bottom: BorderSide(color: AppColors.dividerColor, width: 1),
@@ -578,17 +578,15 @@ class _BookingScreenState extends State<BookingScreen> {
                     margin: EdgeInsets.symmetric(horizontal: 12),
                     width: 1,
                     height: 50,
-
                   ),
                   Expanded(
                     child: Text(
                       formattedDate,
                       style: TextStyle(
-                        color: AppColors.primaryGreen ,
+                        color: AppColors.primaryGreen,
                         fontSize: 14,
                         fontFamily: 'SF-Pro-Text',
                         fontWeight: FontWeight.w500,
-
                         fontStyle: FontStyle.normal,
                       ),
                       textAlign: TextAlign.right,
@@ -642,7 +640,6 @@ class _BookingScreenState extends State<BookingScreen> {
                               ),
                             ),
                           ),
-
                           Expanded(
                             child: Container(
                               height: lineHeight,
@@ -669,12 +666,12 @@ class _BookingScreenState extends State<BookingScreen> {
                                                     bottom: 12.0, right: 15.0),
                                                 child: BookingItem(
                                                   time: time,
-                                                  subject: booking['slot']
-                                                          ['subjectGroupSubjects']
+                                                  subject: booking['slot'][
+                                                          'subjectGroupSubjects']
                                                       ['subject']['name'],
                                                   status: booking['status'],
-                                                  image: booking['slot']
-                                                          ['subjectGroupSubjects']
+                                                  image: booking['slot'][
+                                                          'subjectGroupSubjects']
                                                       ['image'],
                                                   startTime:
                                                       booking['start_time'],
@@ -1272,5 +1269,338 @@ class BookingItem extends StatelessWidget {
     final formattedEndTime = DateFormat('hh:mm a').format(endDateTime);
 
     return '$formattedStartTime - $formattedEndTime';
+  }
+}
+
+class StudentCalendarScreen extends StatefulWidget {
+  const StudentCalendarScreen({Key? key}) : super(key: key);
+
+  @override
+  State<StudentCalendarScreen> createState() => _StudentCalendarScreenState();
+}
+
+class _StudentCalendarScreenState extends State<StudentCalendarScreen> {
+  DateTime _focusedDay = DateTime.now();
+  String _viewMode = 'month'; // 'month', 'week', 'day'
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF181F2A),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF181F2A),
+        elevation: 0,
+        title: const Text('Mi Calendario',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        actions: [
+          ToggleButtons(
+            borderRadius: BorderRadius.circular(12),
+            selectedColor: Colors.white,
+            fillColor: Colors.blueAccent.withOpacity(0.2),
+            color: Colors.white70,
+            isSelected: [
+              _viewMode == 'month',
+              _viewMode == 'week',
+              _viewMode == 'day',
+            ],
+            onPressed: (index) {
+              setState(() {
+                _viewMode = ['month', 'week', 'day'][index];
+              });
+            },
+            children: const [
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12),
+                child: Icon(Icons.calendar_view_month),
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12),
+                child: Icon(Icons.view_week),
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12),
+                child: Icon(Icons.calendar_view_day),
+              ),
+            ],
+          ),
+          const SizedBox(width: 12),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: _buildCalendar(),
+      ),
+    );
+  }
+
+  Widget _buildCalendar() {
+    if (_viewMode == 'month') {
+      return _buildMonthView();
+    } else if (_viewMode == 'week') {
+      return _buildWeekView();
+    } else {
+      return _buildDayView();
+    }
+  }
+
+  Widget _buildMonthView() {
+    final firstDayOfMonth = DateTime(_focusedDay.year, _focusedDay.month, 1);
+    final daysInMonth =
+        DateUtils.getDaysInMonth(_focusedDay.year, _focusedDay.month);
+    final firstWeekday = firstDayOfMonth.weekday;
+    final weekDays = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+    final days = <DateTime>[];
+    for (int i = 0; i < firstWeekday - 1; i++) {
+      days.add(firstDayOfMonth.subtract(Duration(days: firstWeekday - 1 - i)));
+    }
+    for (int i = 0; i < daysInMonth; i++) {
+      days.add(DateTime(_focusedDay.year, _focusedDay.month, i + 1));
+    }
+    while (days.length % 7 != 0) {
+      days.add(days.last.add(const Duration(days: 1)));
+    }
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.chevron_left, color: Colors.white70),
+              onPressed: () {
+                setState(() {
+                  _focusedDay =
+                      DateTime(_focusedDay.year, _focusedDay.month - 1, 1);
+                });
+              },
+            ),
+            Text(
+              '${_monthName(_focusedDay.month)} ${_focusedDay.year}',
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18),
+            ),
+            IconButton(
+              icon: const Icon(Icons.chevron_right, color: Colors.white70),
+              onPressed: () {
+                setState(() {
+                  _focusedDay =
+                      DateTime(_focusedDay.year, _focusedDay.month + 1, 1);
+                });
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: weekDays
+              .map((d) => Expanded(
+                    child: Center(
+                        child: Text(d,
+                            style: const TextStyle(
+                                color: Colors.white54,
+                                fontWeight: FontWeight.bold))),
+                  ))
+              .toList(),
+        ),
+        const SizedBox(height: 2),
+        Expanded(
+          child: GridView.builder(
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 7,
+              mainAxisSpacing: 2,
+              crossAxisSpacing: 2,
+              childAspectRatio: 1.1,
+            ),
+            itemCount: days.length,
+            itemBuilder: (context, i) {
+              final day = days[i];
+              final isToday = DateUtils.isSameDay(day, DateTime.now());
+              final isCurrentMonth = day.month == _focusedDay.month;
+              return GestureDetector(
+                onTap: isCurrentMonth
+                    ? () {
+                        // Aquí se podría mostrar el detalle del día
+                      }
+                    : null,
+                child: Container(
+                  margin: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: isToday
+                        ? Colors.blueAccent.withOpacity(0.7)
+                        : isCurrentMonth
+                            ? Colors.white.withOpacity(0.04)
+                            : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    border: isToday
+                        ? Border.all(color: Colors.white, width: 2)
+                        : null,
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${day.day}',
+                      style: TextStyle(
+                        color: isCurrentMonth ? Colors.white : Colors.white24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWeekView() {
+    final weekDays = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+    final today = _focusedDay;
+    final startOfWeek = today.subtract(Duration(days: today.weekday - 1));
+    final days = List.generate(7, (i) => startOfWeek.add(Duration(days: i)));
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.chevron_left, color: Colors.white70),
+              onPressed: () {
+                setState(() {
+                  _focusedDay = _focusedDay.subtract(const Duration(days: 7));
+                });
+              },
+            ),
+            Text(
+              'Semana de ${days.first.day} ${_monthName(days.first.month)}',
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18),
+            ),
+            IconButton(
+              icon: const Icon(Icons.chevron_right, color: Colors.white70),
+              onPressed: () {
+                setState(() {
+                  _focusedDay = _focusedDay.add(const Duration(days: 7));
+                });
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: weekDays
+              .map((d) => Expanded(
+                    child: Center(
+                        child: Text(d,
+                            style: const TextStyle(
+                                color: Colors.white54,
+                                fontWeight: FontWeight.bold))),
+                  ))
+              .toList(),
+        ),
+        const SizedBox(height: 2),
+        Expanded(
+          child: Row(
+            children: days
+                .map((day) => Expanded(
+                      child: GestureDetector(
+                        onTap: () {},
+                        child: Container(
+                          margin: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: DateUtils.isSameDay(day, DateTime.now())
+                                ? Colors.blueAccent.withOpacity(0.7)
+                                : Colors.white.withOpacity(0.04),
+                            borderRadius: BorderRadius.circular(8),
+                            border: DateUtils.isSameDay(day, DateTime.now())
+                                ? Border.all(color: Colors.white, width: 2)
+                                : null,
+                          ),
+                          height: double.infinity,
+                          child: Center(
+                            child: Text(
+                              '${day.day}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ))
+                .toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDayView() {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.chevron_left, color: Colors.white70),
+              onPressed: () {
+                setState(() {
+                  _focusedDay = _focusedDay.subtract(const Duration(days: 1));
+                });
+              },
+            ),
+            Text(
+              '${_focusedDay.day} ${_monthName(_focusedDay.month)} ${_focusedDay.year}',
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18),
+            ),
+            IconButton(
+              icon: const Icon(Icons.chevron_right, color: Colors.white70),
+              onPressed: () {
+                setState(() {
+                  _focusedDay = _focusedDay.add(const Duration(days: 1));
+                });
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Expanded(
+          child: Center(
+            child: Text(
+              'No hay tutorías para este día',
+              style: const TextStyle(color: Colors.white54, fontSize: 16),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _monthName(int m) {
+    const months = [
+      'Enero',
+      'Febrero',
+      'Marzo',
+      'Abril',
+      'Mayo',
+      'Junio',
+      'Julio',
+      'Agosto',
+      'Septiembre',
+      'Octubre',
+      'Noviembre',
+      'Diciembre'
+    ];
+    return months[m - 1];
   }
 }

@@ -5,7 +5,6 @@ import 'package:flutter_projects/base_components/custom_dropdown.dart';
 import 'package:flutter_projects/helpers/slide_up_route.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/auth/login_screen.dart';
-import 'package:flutter_projects/view/bookings/bookings.dart';
 import 'package:flutter_projects/view/components/login_required_alert.dart';
 import 'package:flutter_projects/view/components/skeleton/tutor_card_skeleton.dart';
 import 'package:flutter_projects/view/components/tutor_card.dart';
@@ -20,6 +19,8 @@ import 'dart:async';
 import 'package:flutter_projects/view/tutor/tutor_profile_screen.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:flutter_projects/view/tutor/instant_tutoring_screen.dart';
+import 'package:flutter_projects/view/tutor/student_calendar_screen.dart';
+import 'package:flutter_projects/view/tutor/student_history_screen.dart';
 
 class SearchTutorsScreen extends StatefulWidget {
   final String? initialKeyword;
@@ -1255,11 +1256,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                           ),
                         ],
                       ),
-                      BookingScreen(
-                        onBackPressed: () {
-                          _pageController.jumpToPage(0);
-                        },
-                      ),
+                      StudentCalendarScreen(),
+                      StudentHistoryScreen(),
                       ProfileScreen(),
                     ],
                   ),
@@ -1310,6 +1308,7 @@ class _ModernNavBar extends StatelessWidget {
     final navItems = [
       {'icon': Icons.search_outlined, 'label': 'Buscar'},
       {'icon': Icons.calendar_today_outlined, 'label': 'Reservas'},
+      {'icon': Icons.history_edu_outlined, 'label': 'Historial'},
       {'icon': Icons.person_outline, 'label': 'Perfil'},
     ];
 
