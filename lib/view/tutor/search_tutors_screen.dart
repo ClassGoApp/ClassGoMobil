@@ -1403,20 +1403,100 @@ class _BookingModalState extends State<_BookingModal> {
   DateTime? selectedDay;
   String? selectedHour;
 
-  // Simulación de disponibilidad: días y rangos de horas disponibles
   final Map<int, List<String>> availableDays = {
-    // Día del mes: ['10:00-14:00'] o ['09:00', '11:00', ...]
     3: ['09:00', '11:00', '15:00'],
-    5: ['10:00-14:00'], // Rango
+    5: ['10:00-14:00'],
     8: ['08:00', '12:00', '16:00'],
     12: ['09:00', '13:00'],
-    15: ['10:00-14:00'], // Rango
+    15: ['10:00-14:00'],
     18: ['09:00', '11:00', '18:00'],
     22: ['08:00', '12:00'],
     25: ['09:00', '15:00'],
   };
 
   DateTime currentMonth = DateTime.now();
+  ScrollController? _sheetScrollController;
+
+  // --- NUEVO: Keys y animaciones para resaltar secciones ---
+  final GlobalKey _materiaKey = GlobalKey();
+  final GlobalKey _calendarKey = GlobalKey();
+  final GlobalKey _hourKey = GlobalKey();
+  bool _highlightMateria = false;
+  bool _highlightCalendar = false;
+  bool _highlightHour = false;
+
+  OverlayEntry? _floatingMessage;
+
+  void _showFloatingMessage(String text, GlobalKey key) {
+    final ctx = key.currentContext;
+    if (ctx == null) return;
+    final box = ctx.findRenderObject() as RenderBox;
+    final offset = box.localToGlobal(Offset.zero);
+    _floatingMessage?.remove();
+    _floatingMessage = OverlayEntry(
+      builder: (context) => Positioned(
+        left: offset.dx + 10,
+        top: offset.dy - 36,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.85),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Text(
+              text,
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500),
+            ),
+          ),
+        ),
+      ),
+    );
+    Overlay.of(context)?.insert(_floatingMessage!);
+    Future.delayed(Duration(milliseconds: 1200), () {
+      _floatingMessage?.remove();
+      _floatingMessage = null;
+    });
+  }
+
+  void _scrollAndHighlight(
+      GlobalKey key, String section, String message) async {
+    final ctx = key.currentContext;
+    if (ctx != null && _sheetScrollController != null) {
+      final box = ctx.findRenderObject() as RenderBox;
+      final offset =
+          box.localToGlobal(Offset.zero, ancestor: context.findRenderObject());
+      final scrollOffset = _sheetScrollController!.offset + offset.dy - 120;
+      _sheetScrollController!.animateTo(
+        scrollOffset,
+        duration: Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+      setState(() {
+        if (section == 'materia') _highlightMateria = true;
+        if (section == 'calendar') _highlightCalendar = true;
+        if (section == 'hour') _highlightHour = true;
+      });
+      _showFloatingMessage(message, key);
+      await Future.delayed(Duration(milliseconds: 900));
+      setState(() {
+        _highlightMateria = false;
+        _highlightCalendar = false;
+        _highlightHour = false;
+      });
+    }
+  }
 
   @override
   void initState() {
@@ -1427,7 +1507,6 @@ class _BookingModalState extends State<_BookingModal> {
   }
 
   List<String> _generateTimeSlots(String range) {
-    // range: '10:00-14:00'
     final parts = range.split('-');
     if (parts.length != 2) return [];
     final start = _parseTime(parts[0]);
@@ -1514,339 +1593,647 @@ class _BookingModalState extends State<_BookingModal> {
     final firstWeekday =
         DateTime(currentMonth.year, currentMonth.month, 1).weekday;
     final weekDays = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
-    return SafeArea(
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.darkBlue,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: EdgeInsets.only(
-          left: 18,
-          right: 18,
-          top: 18,
-          bottom: 18 + MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (context, scrollController) {
+        _sheetScrollController = scrollController;
+        return Container(
+          decoration: BoxDecoration(
+            color: AppColors.darkBlue,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Stack(
             children: [
-              // Header
-              Row(
-                children: [
-                  CircleAvatar(
-                    backgroundImage: NetworkImage(widget.tutorImage),
-                    radius: 26,
-                  ),
-                  SizedBox(width: 14),
-                  Expanded(
-                    child: Text(
-                      widget.tutorName,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 17,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.close, color: Colors.white70),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              SizedBox(height: 10),
-              // Materia
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text('Materia',
-                    style: TextStyle(
-                        color: Colors.white70, fontWeight: FontWeight.bold)),
-              ),
-              SizedBox(height: 6),
-              DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: selectedSubject,
-                  dropdownColor: AppColors.darkBlue,
-                  borderRadius: BorderRadius.circular(12),
-                  style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold),
-                  items: widget.subjects
-                      .map((s) => DropdownMenuItem(
-                            value: s,
-                            child:
-                                Text(s, style: TextStyle(color: Colors.white)),
-                          ))
-                      .toList(),
-                  onChanged: (v) => setState(() => selectedSubject = v),
-                ),
-              ),
-              SizedBox(height: 18),
-              // Calendario
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text('Selecciona un día',
-                    style: TextStyle(
-                        color: Colors.white70, fontWeight: FontWeight.bold)),
-              ),
-              SizedBox(height: 6),
-              Container(
-                decoration: BoxDecoration(
-                  color: AppColors.lightBlueColor.withOpacity(0.10),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 6),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                          icon: Icon(Icons.chevron_left, color: Colors.white70),
-                          onPressed: () {
-                            setState(() {
-                              currentMonth = DateTime(
-                                  currentMonth.year, currentMonth.month - 1);
-                              selectedDay = null;
-                              selectedHour = null;
-                            });
-                          },
+              // Contenido principal scrollable
+              CustomScrollView(
+                controller: scrollController,
+                slivers: [
+                  SliverPersistentHeader(
+                    pinned: true,
+                    delegate: _BookingHeaderDelegate(
+                      child: Container(
+                        padding: EdgeInsets.only(
+                            left: 18, right: 8, top: 18, bottom: 12),
+                        decoration: BoxDecoration(
+                          color: AppColors.darkBlue,
+                          borderRadius:
+                              BorderRadius.vertical(top: Radius.circular(24)),
                         ),
-                        Text(
-                          '${_monthName(currentMonth.month)} ${currentMonth.year}',
-                          style: TextStyle(
-                              color: Colors.white, fontWeight: FontWeight.bold),
-                        ),
-                        IconButton(
-                          icon:
-                              Icon(Icons.chevron_right, color: Colors.white70),
-                          onPressed: () {
-                            setState(() {
-                              currentMonth = DateTime(
-                                  currentMonth.year, currentMonth.month + 1);
-                              selectedDay = null;
-                              selectedHour = null;
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 4),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: weekDays
-                          .map((d) => Expanded(
-                                child: Center(
-                                    child: Text(d,
-                                        style: TextStyle(
-                                            color: Colors.white54,
-                                            fontWeight: FontWeight.bold))),
-                              ))
-                          .toList(),
-                    ),
-                    SizedBox(height: 2),
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 7,
-                        mainAxisSpacing: 2,
-                        crossAxisSpacing: 2,
-                        childAspectRatio: 1.1,
-                      ),
-                      itemCount: daysInMonth + firstWeekday - 1,
-                      itemBuilder: (context, i) {
-                        if (i < firstWeekday - 1) return SizedBox();
-                        final day = i - firstWeekday + 2;
-                        final isAvailable = availableDays.containsKey(day);
-                        final isSelected = selectedDay != null &&
-                            selectedDay!.day == day &&
-                            selectedDay!.month == currentMonth.month &&
-                            selectedDay!.year == currentMonth.year;
-                        return GestureDetector(
-                          onTap: isAvailable
-                              ? () {
-                                  setState(() {
-                                    selectedDay = DateTime(currentMonth.year,
-                                        currentMonth.month, day);
-                                    selectedHour = null;
-                                  });
-                                }
-                              : null,
-                          child: Container(
-                            margin: EdgeInsets.all(2),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? AppColors.lightBlueColor
-                                  : isAvailable
-                                      ? AppColors.lightBlueColor
-                                          .withOpacity(0.18)
-                                      : Colors.transparent,
-                              borderRadius: BorderRadius.circular(8),
-                              border: isSelected
-                                  ? Border.all(color: Colors.white, width: 2)
-                                  : null,
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              backgroundImage: NetworkImage(widget.tutorImage),
+                              radius: 26,
                             ),
-                            child: Center(
+                            SizedBox(width: 14),
+                            Expanded(
                               child: Text(
-                                '$day',
+                                widget.tutorName,
                                 style: TextStyle(
-                                  color: isAvailable
-                                      ? Colors.white
-                                      : Colors.white24,
+                                  color: Colors.white,
                                   fontWeight: FontWeight.bold,
+                                  fontSize: 17,
                                 ),
                               ),
                             ),
-                          ),
-                        );
-                      },
+                            IconButton(
+                              icon: Icon(Icons.close, color: Colors.white70),
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 18),
-              // Horas disponibles
-              if (selectedDay != null &&
-                  availableDays.containsKey(selectedDay!.day)) ...[
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text('Selecciona una hora',
-                      style: TextStyle(
-                          color: Colors.white70, fontWeight: FontWeight.bold)),
-                ),
-                SizedBox(height: 6),
-                Builder(
-                  builder: (context) {
-                    final slotsOrRanges = availableDays[selectedDay!.day]!;
-                    final List<Widget> chips = [];
-                    bool hasRange = false;
-                    for (final slot in slotsOrRanges) {
-                      if (slot.contains('-')) {
-                        hasRange = true;
-                        final intervals = _generateTimeSlots(slot);
-                        chips.addAll(intervals.map((h) => ChoiceChip(
-                              label: Text(h,
-                                  style: TextStyle(
-                                      color: selectedHour == h
-                                          ? Colors.white
-                                          : AppColors.lightBlueColor)),
-                              selected: selectedHour == h,
-                              selectedColor: AppColors.lightBlueColor,
-                              backgroundColor:
-                                  AppColors.lightBlueColor.withOpacity(0.13),
-                              onSelected: (_) =>
-                                  setState(() => selectedHour = h),
-                            )));
-                      } else {
-                        chips.add(ChoiceChip(
-                          label: Text(slot,
+                    floating: false,
+                  ),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 18.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(height: 6),
+                          Text('Materia',
                               style: TextStyle(
-                                  color: selectedHour == slot
-                                      ? Colors.white
-                                      : AppColors.lightBlueColor)),
-                          selected: selectedHour == slot,
-                          selectedColor: AppColors.lightBlueColor,
-                          backgroundColor:
-                              AppColors.lightBlueColor.withOpacity(0.13),
-                          onSelected: (_) =>
-                              setState(() => selectedHour = slot),
-                        ));
-                      }
-                    }
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Wrap(spacing: 10, children: chips),
-                        if (hasRange)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 10.0),
-                            child: ElevatedButton.icon(
-                              onPressed: () async {
-                                // Solo permite elegir dentro del primer rango encontrado
-                                final firstRange = slotsOrRanges
-                                    .firstWhere((s) => s.contains('-'));
-                                await _pickTime(firstRange);
-                              },
-                              icon:
-                                  Icon(Icons.access_time, color: Colors.white),
-                              label: Text('Elegir hora exacta',
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.bold)),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.lightBlueColor,
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14)),
-                                padding: EdgeInsets.symmetric(
-                                    vertical: 10, horizontal: 18),
-                                elevation: 0,
+                                  color: Colors.white70,
+                                  fontWeight: FontWeight.bold)),
+                          SizedBox(height: 6),
+                          AnimatedContainer(
+                            key: _materiaKey,
+                            duration: Duration(milliseconds: 400),
+                            curve: Curves.easeInOut,
+                            decoration: BoxDecoration(
+                              border: _highlightMateria
+                                  ? Border.all(
+                                      color: AppColors.lightBlueColor, width: 3)
+                                  : null,
+                              borderRadius: BorderRadius.circular(14),
+                              boxShadow: _highlightMateria
+                                  ? [
+                                      BoxShadow(
+                                        color: AppColors.lightBlueColor
+                                            .withOpacity(0.5),
+                                        blurRadius: 18,
+                                        spreadRadius: 2,
+                                      ),
+                                    ]
+                                  : [],
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: selectedSubject,
+                                dropdownColor: AppColors.darkBlue,
+                                borderRadius: BorderRadius.circular(12),
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold),
+                                items: widget.subjects
+                                    .map((s) => DropdownMenuItem(
+                                          value: s,
+                                          child: Text(s,
+                                              style: TextStyle(
+                                                  color: Colors.white)),
+                                        ))
+                                    .toList(),
+                                onChanged: (v) {
+                                  setState(() => selectedSubject = v);
+                                  Future.delayed(Duration(milliseconds: 100),
+                                      () {
+                                    if (_sheetScrollController != null) {
+                                      _sheetScrollController!.animateTo(
+                                        _sheetScrollController!
+                                            .position.maxScrollExtent,
+                                        duration: Duration(milliseconds: 400),
+                                        curve: Curves.easeOut,
+                                      );
+                                    }
+                                  });
+                                },
                               ),
                             ),
                           ),
-                      ],
-                    );
-                  },
-                ),
-                SizedBox(height: 18),
-              ],
-              // Línea informativa de fecha y hora seleccionada
-              if (selectedDay != null && selectedHour != null) ...[
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 10.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.event,
-                          color: AppColors.lightBlueColor, size: 20),
-                      SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          'Reserva: ${selectedDay!.day.toString().padLeft(2, '0')}/${selectedDay!.month.toString().padLeft(2, '0')}/${selectedDay!.year} a las $selectedHour',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
+                          SizedBox(height: 18),
+                          Text('Selecciona un día',
+                              style: TextStyle(
+                                  color: Colors.white70,
+                                  fontWeight: FontWeight.bold)),
+                          SizedBox(height: 6),
+                          AnimatedContainer(
+                            key: _calendarKey,
+                            duration: Duration(milliseconds: 400),
+                            curve: Curves.easeInOut,
+                            decoration: BoxDecoration(
+                              border: _highlightCalendar
+                                  ? Border.all(
+                                      color: AppColors.lightBlueColor, width: 3)
+                                  : null,
+                              borderRadius: BorderRadius.circular(14),
+                              boxShadow: _highlightCalendar
+                                  ? [
+                                      BoxShadow(
+                                        color: AppColors.lightBlueColor
+                                            .withOpacity(0.5),
+                                        blurRadius: 18,
+                                        spreadRadius: 2,
+                                      ),
+                                    ]
+                                  : [],
+                            ),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color:
+                                    AppColors.lightBlueColor.withOpacity(0.10),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding: EdgeInsets.symmetric(
+                                  vertical: 10, horizontal: 6),
+                              child: Column(
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      IconButton(
+                                        icon: Icon(Icons.chevron_left,
+                                            color: Colors.white70),
+                                        onPressed: () {
+                                          setState(() {
+                                            currentMonth = DateTime(
+                                                currentMonth.year,
+                                                currentMonth.month - 1);
+                                            selectedDay = null;
+                                            selectedHour = null;
+                                          });
+                                        },
+                                      ),
+                                      Text(
+                                        '${_monthName(currentMonth.month)} ${currentMonth.year}',
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                      IconButton(
+                                        icon: Icon(Icons.chevron_right,
+                                            color: Colors.white70),
+                                        onPressed: () {
+                                          setState(() {
+                                            currentMonth = DateTime(
+                                                currentMonth.year,
+                                                currentMonth.month + 1);
+                                            selectedDay = null;
+                                            selectedHour = null;
+                                          });
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: 4),
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceAround,
+                                    children: weekDays
+                                        .map((d) => Expanded(
+                                              child: Center(
+                                                  child: Text(d,
+                                                      style: TextStyle(
+                                                          color: Colors.white54,
+                                                          fontWeight: FontWeight
+                                                              .bold))),
+                                            ))
+                                        .toList(),
+                                  ),
+                                  SizedBox(height: 2),
+                                  GridView.builder(
+                                    shrinkWrap: true,
+                                    physics: NeverScrollableScrollPhysics(),
+                                    gridDelegate:
+                                        SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 7,
+                                      mainAxisSpacing: 2,
+                                      crossAxisSpacing: 2,
+                                      childAspectRatio: 1.1,
+                                    ),
+                                    itemCount: daysInMonth + firstWeekday - 1,
+                                    itemBuilder: (context, i) {
+                                      if (i < firstWeekday - 1)
+                                        return SizedBox();
+                                      final day = i - firstWeekday + 2;
+                                      final isAvailable =
+                                          availableDays.containsKey(day);
+                                      final isSelected = selectedDay != null &&
+                                          selectedDay!.day == day &&
+                                          selectedDay!.month ==
+                                              currentMonth.month &&
+                                          selectedDay!.year ==
+                                              currentMonth.year;
+                                      return GestureDetector(
+                                        onTap: isAvailable
+                                            ? () {
+                                                setState(() {
+                                                  selectedDay = DateTime(
+                                                      currentMonth.year,
+                                                      currentMonth.month,
+                                                      day);
+                                                  selectedHour = null;
+                                                });
+                                                Future.delayed(
+                                                    Duration(milliseconds: 100),
+                                                    () {
+                                                  if (_sheetScrollController !=
+                                                      null) {
+                                                    _sheetScrollController!
+                                                        .animateTo(
+                                                      _sheetScrollController!
+                                                          .position
+                                                          .maxScrollExtent,
+                                                      duration: Duration(
+                                                          milliseconds: 400),
+                                                      curve: Curves.easeOut,
+                                                    );
+                                                  }
+                                                });
+                                              }
+                                            : null,
+                                        child: Container(
+                                          margin: EdgeInsets.all(2),
+                                          decoration: BoxDecoration(
+                                            color: isSelected
+                                                ? AppColors.lightBlueColor
+                                                : isAvailable
+                                                    ? AppColors.lightBlueColor
+                                                        .withOpacity(0.18)
+                                                    : Colors.transparent,
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            border: isSelected
+                                                ? Border.all(
+                                                    color: Colors.white,
+                                                    width: 2)
+                                                : null,
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              '$day',
+                                              style: TextStyle(
+                                                color: isAvailable
+                                                    ? Colors.white
+                                                    : Colors.white24,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          SizedBox(height: 18),
+                          if (selectedDay != null &&
+                              availableDays.containsKey(selectedDay!.day)) ...[
+                            Text('Selecciona una hora',
+                                style: TextStyle(
+                                    color: Colors.white70,
+                                    fontWeight: FontWeight.bold)),
+                            SizedBox(height: 6),
+                            AnimatedContainer(
+                              key: _hourKey,
+                              duration: Duration(milliseconds: 400),
+                              curve: Curves.easeInOut,
+                              decoration: BoxDecoration(
+                                border: _highlightHour
+                                    ? Border.all(
+                                        color: AppColors.lightBlueColor,
+                                        width: 3)
+                                    : null,
+                                borderRadius: BorderRadius.circular(14),
+                                boxShadow: _highlightHour
+                                    ? [
+                                        BoxShadow(
+                                          color: AppColors.lightBlueColor
+                                              .withOpacity(0.5),
+                                          blurRadius: 18,
+                                          spreadRadius: 2,
+                                        ),
+                                      ]
+                                    : [],
+                              ),
+                              child: Builder(
+                                builder: (context) {
+                                  final slotsOrRanges =
+                                      availableDays[selectedDay!.day]!;
+                                  final List<Widget> chips = [];
+                                  bool hasRange = false;
+                                  for (final slot in slotsOrRanges) {
+                                    if (slot.contains('-')) {
+                                      hasRange = true;
+                                      final intervals =
+                                          _generateTimeSlots(slot);
+                                      chips.addAll(intervals.map((h) =>
+                                          ChoiceChip(
+                                            label: Text(h,
+                                                style: TextStyle(
+                                                    color: selectedHour == h
+                                                        ? Colors.white
+                                                        : AppColors
+                                                            .lightBlueColor)),
+                                            selected: selectedHour == h,
+                                            selectedColor:
+                                                AppColors.lightBlueColor,
+                                            backgroundColor: AppColors
+                                                .lightBlueColor
+                                                .withOpacity(0.13),
+                                            onSelected: (_) {
+                                              setState(() => selectedHour = h);
+                                              Future.delayed(
+                                                  Duration(milliseconds: 100),
+                                                  () {
+                                                if (_sheetScrollController !=
+                                                    null) {
+                                                  _sheetScrollController!
+                                                      .animateTo(
+                                                    _sheetScrollController!
+                                                        .position
+                                                        .maxScrollExtent,
+                                                    duration: Duration(
+                                                        milliseconds: 400),
+                                                    curve: Curves.easeOut,
+                                                  );
+                                                }
+                                              });
+                                            },
+                                          )));
+                                    } else {
+                                      chips.add(ChoiceChip(
+                                        label: Text(slot,
+                                            style: TextStyle(
+                                                color: selectedHour == slot
+                                                    ? Colors.white
+                                                    : AppColors
+                                                        .lightBlueColor)),
+                                        selected: selectedHour == slot,
+                                        selectedColor: AppColors.lightBlueColor,
+                                        backgroundColor: AppColors
+                                            .lightBlueColor
+                                            .withOpacity(0.13),
+                                        onSelected: (_) {
+                                          setState(() => selectedHour = slot);
+                                          Future.delayed(
+                                              Duration(milliseconds: 100), () {
+                                            if (_sheetScrollController !=
+                                                null) {
+                                              _sheetScrollController!.animateTo(
+                                                _sheetScrollController!
+                                                    .position.maxScrollExtent,
+                                                duration:
+                                                    Duration(milliseconds: 400),
+                                                curve: Curves.easeOut,
+                                              );
+                                            }
+                                          });
+                                        },
+                                      ));
+                                    }
+                                  }
+                                  return Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      LayoutBuilder(
+                                        builder: (context, constraints) {
+                                          // Calcula cuántos botones caben por fila según el ancho
+                                          int buttonsPerRow =
+                                              (constraints.maxWidth / 90)
+                                                  .floor();
+                                          if (buttonsPerRow < 2)
+                                            buttonsPerRow = 2;
+                                          final rows = <Widget>[];
+                                          for (int i = 0;
+                                              i < chips.length;
+                                              i += buttonsPerRow) {
+                                            rows.add(
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: chips
+                                                    .skip(i)
+                                                    .take(buttonsPerRow)
+                                                    .map((chip) => Expanded(
+                                                        child: Container(
+                                                            margin: EdgeInsets
+                                                                .symmetric(
+                                                                    horizontal:
+                                                                        4,
+                                                                    vertical:
+                                                                        6),
+                                                            child: chip)))
+                                                    .toList(),
+                                              ),
+                                            );
+                                          }
+                                          return Column(children: rows);
+                                        },
+                                      ),
+                                      if (hasRange)
+                                        Padding(
+                                          padding:
+                                              const EdgeInsets.only(top: 10.0),
+                                          child: Center(
+                                            child: ElevatedButton.icon(
+                                              onPressed: () async {
+                                                final firstRange =
+                                                    slotsOrRanges.firstWhere(
+                                                        (s) => s.contains('-'));
+                                                await _pickTime(firstRange);
+                                                Future.delayed(
+                                                    Duration(milliseconds: 100),
+                                                    () {
+                                                  if (_sheetScrollController !=
+                                                      null) {
+                                                    _sheetScrollController!
+                                                        .animateTo(
+                                                      _sheetScrollController!
+                                                          .position
+                                                          .maxScrollExtent,
+                                                      duration: Duration(
+                                                          milliseconds: 400),
+                                                      curve: Curves.easeOut,
+                                                    );
+                                                  }
+                                                });
+                                              },
+                                              icon: Icon(Icons.access_time,
+                                                  color: Colors.white),
+                                              label: Text('Elegir hora exacta',
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold)),
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor:
+                                                    AppColors.lightBlueColor,
+                                                shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            14)),
+                                                padding: EdgeInsets.symmetric(
+                                                    vertical: 10,
+                                                    horizontal: 18),
+                                                elevation: 0,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      if (selectedHour == null) ...[
+                                        SizedBox(height: 24),
+                                        Center(
+                                          child: Column(
+                                            children: [
+                                              Icon(Icons.access_time,
+                                                  color:
+                                                      AppColors.lightBlueColor,
+                                                  size: 38),
+                                              SizedBox(height: 0),
+                                              Text(
+                                                'Selecciona una hora para continuar',
+                                                style: TextStyle(
+                                                  color: Colors.white70,
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 16,
+                                                ),
+                                                textAlign: TextAlign.center,
+                                              ),
+                                              SizedBox(height: 0),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                      SizedBox(height: 90),
+                                    ],
+                                  );
+                                },
+                              ),
+                            ),
+                            SizedBox(height: 18),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              // Botón y texto de confirmación fijos abajo
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  color: AppColors.darkBlue,
+                  padding: EdgeInsets.fromLTRB(18, 10, 18, 18),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (selectedDay != null && selectedHour != null) ...[
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.event,
+                                  color: AppColors.lightBlueColor, size: 20),
+                              SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  'Reserva: ${selectedDay!.day.toString().padLeft(2, '0')}/${selectedDay!.month.toString().padLeft(2, '0')}/${selectedDay!.year} a las $selectedHour',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: (selectedSubject != null &&
+                                  selectedDay != null &&
+                                  selectedHour != null)
+                              ? () {
+                                  Navigator.pop(context);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                        content: Text(
+                                            '¡Tutoría reservada para $selectedSubject el ${selectedDay!.day}/${selectedDay!.month}/${selectedDay!.year} a las $selectedHour!')),
+                                  );
+                                }
+                              : () {
+                                  // --- NUEVO: Guía visual ---
+                                  if (selectedSubject == null) {
+                                    _scrollAndHighlight(_materiaKey, 'materia',
+                                        'Debes seleccionar la materia');
+                                  } else if (selectedDay == null) {
+                                    _scrollAndHighlight(_calendarKey,
+                                        'calendar', 'Debes seleccionar el día');
+                                  } else if (selectedHour == null) {
+                                    _scrollAndHighlight(_hourKey, 'hour',
+                                        'Debes seleccionar la hora');
+                                  }
+                                },
+                          icon: Icon(Icons.check_circle,
+                              color: (selectedSubject != null &&
+                                      selectedDay != null &&
+                                      selectedHour != null)
+                                  ? Colors.white
+                                  : Colors.white54),
+                          label: Text('Reservar',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: (selectedSubject != null &&
+                                        selectedDay != null &&
+                                        selectedHour != null)
+                                    ? Colors.white
+                                    : Colors.white54,
+                              )),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: (selectedSubject != null &&
+                                    selectedDay != null &&
+                                    selectedHour != null)
+                                ? AppColors.lightBlueColor
+                                : AppColors.lightBlueColor.withOpacity(0.25),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              side: BorderSide(
+                                color: (selectedSubject != null &&
+                                        selectedDay != null &&
+                                        selectedHour != null)
+                                    ? Colors.transparent
+                                    : Colors.white24,
+                                width: 1.2,
+                              ),
+                            ),
+                            padding: EdgeInsets.symmetric(vertical: 14),
+                            elevation: 0,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-              ],
-              // Botón reservar
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: (selectedSubject != null &&
-                          selectedDay != null &&
-                          selectedHour != null)
-                      ? () {
-                          // Aquí iría la lógica real de reserva
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                                content: Text(
-                                    '¡Tutoría reservada para $selectedSubject el ${selectedDay!.day}/${selectedDay!.month}/${selectedDay!.year} a las $selectedHour!')),
-                          );
-                        }
-                      : null,
-                  icon: Icon(Icons.check_circle, color: Colors.white),
-                  label: Text('Reservar',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.lightBlueColor,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                    padding: EdgeInsets.symmetric(vertical: 14),
-                    elevation: 0,
-                  ),
-                ),
               ),
             ],
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -1867,4 +2254,24 @@ class _BookingModalState extends State<_BookingModal> {
     ];
     return months[m - 1];
   }
+}
+
+class _BookingHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final Widget child;
+  _BookingHeaderDelegate({required this.child});
+
+  @override
+  double get minExtent => 80;
+  @override
+  double get maxExtent => 80;
+
+  @override
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return child;
+  }
+
+  @override
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) =>
+      false;
 }

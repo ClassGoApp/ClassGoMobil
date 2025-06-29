@@ -245,6 +245,8 @@ class _TutorCardState extends State<TutorCard> {
                             fontWeight: FontWeight.w600,
                             fontSize: 16,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
