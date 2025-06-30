@@ -749,6 +749,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                                               tutorImage: tutorImage,
                                                                               subjects: validSubjects,
                                                                               selectedSubject: subjectName, // <-- Pasar la materia seleccionada
+                                                                              tutorId: randomTutor['id'],
+                                                                              subjectId: subjectId,
                                                                             ),
                                                                           );
                                                                         } else {
@@ -1323,6 +1325,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                                     '',
                                                                 baseImageUrl),
                                                         subjects: validSubjects,
+                                                        tutorId: tutor['id'],
+                                                        subjectId: validSubjects
+                                                                .isNotEmpty
+                                                            ? 1
+                                                            : 1, // Default subject ID
                                                       ),
                                                     );
                                                   },

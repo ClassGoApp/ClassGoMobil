@@ -11,6 +11,8 @@ class InstantTutoringScreen extends StatefulWidget {
   final String tutorImage;
   final List<String> subjects;
   final String? selectedSubject;
+  final int tutorId;
+  final int subjectId;
 
   const InstantTutoringScreen({
     Key? key,
@@ -18,6 +20,8 @@ class InstantTutoringScreen extends StatefulWidget {
     required this.tutorImage,
     required this.subjects,
     this.selectedSubject,
+    required this.tutorId,
+    required this.subjectId,
   }) : super(key: key);
 
   @override
@@ -844,6 +848,8 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                         selectedSubject: _selectedSubject!,
                                         amount: "15 Bs",
                                         sessionDuration: "20 min",
+                                        tutorId: widget.tutorId,
+                                        subjectId: widget.subjectId,
                                       );
                                     },
                                     transitionDuration:

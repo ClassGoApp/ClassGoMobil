@@ -1524,3 +1524,101 @@ Future<Map<String, dynamic>> getVerifiedTutorsPhotos(String? token) async {
     throw 'Error al obtener fotos de tutores verificados: $e';
   }
 }
+
+Future<Map<String, dynamic>> createSlotBooking(
+    String token, Map<String, dynamic> data) async {
+  final Uri uri = Uri.parse('$baseUrl/slot-bookings');
+  final headers = {
+    'Authorization': 'Bearer $token',
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  };
+
+  try {
+    final response = await http.post(
+      uri,
+      headers: headers,
+      body: jsonEncode(data),
+    );
+
+    final decodedResponse = jsonDecode(response.body);
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return decodedResponse;
+    } else {
+      return {
+        'status': response.statusCode,
+        'message':
+            decodedResponse['message'] ?? 'Failed to create slot booking',
+        'errors': decodedResponse['errors'],
+      };
+    }
+  } catch (e) {
+    return {'status': 500, 'message': 'Failed to create slot booking: $e'};
+  }
+}
+
+Future<Map<String, dynamic>> createPaymentSlotBooking(
+    String token, Map<String, dynamic> data) async {
+  final Uri uri = Uri.parse('$baseUrl/payment-slot-bookings');
+  final headers = {
+    'Authorization': 'Bearer $token',
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  };
+
+  try {
+    final response = await http.post(
+      uri,
+      headers: headers,
+      body: jsonEncode(data),
+    );
+
+    final decodedResponse = jsonDecode(response.body);
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return decodedResponse;
+    } else {
+      return {
+        'status': response.statusCode,
+        'message': decodedResponse['message'] ??
+            'Failed to create payment slot booking',
+        'errors': decodedResponse['errors'],
+      };
+    }
+  } catch (e) {
+    return {
+      'status': 500,
+      'message': 'Failed to create payment slot booking: $e'
+    };
+  }
+}
+
+Future<Map<String, dynamic>> uploadPaymentReceipt(
+    String token, File imageFile, int slotBookingId) async {
+  final Uri uri = Uri.parse('$baseUrl/test-payment-upload');
+  final headers = {
+    'Authorization': 'Bearer $token',
+    'Accept': 'application/json',
+  };
+
+  final request = http.MultipartRequest('POST', uri);
+  request.headers.addAll(headers);
+  request.fields['slot_booking_id'] = slotBookingId.toString();
+  request.files.add(await http.MultipartFile.fromPath('image', imageFile.path));
+
+  final streamedResponse = await request.send();
+  final response = await http.Response.fromStream(streamedResponse);
+
+  final decodedResponse = jsonDecode(response.body);
+
+  if (response.statusCode == 200 || response.statusCode == 201) {
+    return decodedResponse;
+  } else {
+    return {
+      'status': response.statusCode,
+      'message': decodedResponse['message'] ?? 'Error al subir comprobante',
+      'errors': decodedResponse['errors'],
+    };
+  }
+}

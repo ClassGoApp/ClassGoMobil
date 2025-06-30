@@ -1123,6 +1123,10 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                                 profile['image'] ??
                                                 AppImages.placeHolderImage,
                                         subjects: validSubjects,
+                                        tutorId: tutor['id'],
+                                        subjectId: validSubjects.isNotEmpty
+                                            ? 1
+                                            : 1, // Default subject ID
                                       ),
                                     ),
                                   );

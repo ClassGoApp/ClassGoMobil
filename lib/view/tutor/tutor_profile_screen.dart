@@ -657,6 +657,10 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                                 tutorName: widget.tutorName,
                                 tutorImage: widget.tutorImage,
                                 subjects: widget.subjects,
+                                tutorId: int.tryParse(widget.tutorId) ?? 1,
+                                subjectId: widget.subjects.isNotEmpty
+                                    ? 1
+                                    : 1, // Default subject ID
                               ),
                             );
                           },
