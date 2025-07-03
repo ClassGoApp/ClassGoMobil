@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
@@ -17,13 +18,23 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_projects/view/tutor/tutor_profile_screen.dart';
 import 'package:flutter_projects/helpers/slide_up_route.dart';
 import 'package:flutter_projects/view/tutor/instant_tutoring_screen.dart';
+import 'package:lottie/lottie.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
+import 'package:pusher_channels_flutter/pusher_channels_flutter.dart';
+import 'package:flutter_projects/helpers/pusher_service.dart';
+import 'package:http/http.dart' as http;
+
+// 1. Agrega RouteObserver para detectar cuando se vuelve a la pantalla principal
+final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
 class HomeScreen extends StatefulWidget {
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen>
+    with TickerProviderStateMixin, RouteAware {
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
   String _searchQuery = '';
@@ -74,6 +85,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   // 1. Declara el mapa para imágenes HD:
   Map<int, String> highResTutorImages = {};
 
+  List<Map<String, dynamic>> _todaysBookings = [];
+  bool _isLoadingBookings = true;
+
+  AuthProvider? _authProvider;
+  int? _lastFetchedUserId;
+
+  Timer? _bookingsTimer;
+  PusherChannelsFlutter? _pusher;
+
   @override
   void initState() {
     super.initState();
@@ -82,8 +102,123 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
     fetchFeaturedTutorsAndVerified();
     fetchAlliancesData();
-    fetchInitialSubjects(); // Precargar 20 materias
-    fetchHighResTutorImages(); // <--
+    fetchInitialSubjects();
+    fetchHighResTutorImages();
+    // _initPusherService(); // Elimino inicialización local
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final authProvider = Provider.of<AuthProvider>(context);
+    if (_authProvider != authProvider) {
+      _authProvider = authProvider;
+      _checkAndFetchBookings();
+      _authProvider!.addListener(_checkAndFetchBookings);
+    }
+    // Suscríbete al RouteObserver
+    routeObserver.subscribe(this, ModalRoute.of(context)! as PageRoute);
+
+    // Inicializa PusherService global solo una vez
+    final pusherService = Provider.of<PusherService>(context, listen: false);
+    pusherService.init(onSlotBookingStatusChanged: (data) {
+      try {
+        print('DEBUG: Tipo de data: \\${data.runtimeType}');
+        print('DEBUG: Contenido de data: \\${data}');
+        if (data == null) {
+          print('Error: Evento de Pusher recibido pero data es null');
+          return;
+        }
+        Map<String, dynamic> parsedData;
+        if (data is String) {
+          parsedData = json.decode(data);
+        } else if (data is Map<String, dynamic>) {
+          parsedData = data;
+        } else {
+          print('Error: Formato de data no reconocido: \\${data.runtimeType}');
+          return;
+        }
+        final slotBookingId = parsedData['slotBookingId'].toString();
+        final newStatus = parsedData['newStatus'];
+        bool updated = false;
+        setState(() {
+          for (var booking in _todaysBookings) {
+            if (booking['id'].toString() == slotBookingId) {
+              booking['status'] = newStatus;
+              updated = true;
+            }
+          }
+        });
+        if (updated) {
+          print('Actualizada la tutoría $slotBookingId a estado $newStatus');
+          setState(() {});
+        } else {
+          print(
+              'Tutoría con id $slotBookingId no encontrada en la lista actual. Actualizando lista completa...');
+          _fetchTodaysBookings();
+        }
+        print(
+            'Lista de tutorías tras actualizar: ' + _todaysBookings.toString());
+      } catch (e, stack) {
+        print('Error en el callback de Pusher: $e');
+        print(stack);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _authProvider?.removeListener(_checkAndFetchBookings);
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    if (_activeController != null) {
+      _activeController!.dispose();
+    }
+    _thumbnailCache.clear();
+    _searchController.dispose();
+    _debounce?.cancel();
+    _featuredTutorsScrollController.dispose();
+    _featuredTutorsPageController.dispose();
+    _pageController.dispose();
+    _tutorsScrollController.dispose();
+    // PusherService().dispose(); // Elimino dispose local
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  // Refresca los bookings al volver a la pantalla principal
+  @override
+  void didPopNext() {
+    _fetchTodaysBookings();
+  }
+
+  Future<void> _fetchTodaysBookings() async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final token = authProvider.token;
+      final userId = authProvider.userId;
+      print('ID del usuario logueado para bookings: $userId');
+      if (token != null && userId != null) {
+        final bookings = await getUserBookingsById(token, userId);
+        print('Tutorías obtenidas para el usuario: ${bookings.length}');
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+        _todaysBookings = bookings.where((b) {
+          if (b['status'] == 'Completado') return false;
+          final start = DateTime.tryParse(b['start_time'] ?? '') ?? now;
+          return start.year == today.year &&
+              start.month == today.month &&
+              start.day == today.day;
+        }).toList();
+        print('Tutorías filtradas para hoy: ${_todaysBookings.length}');
+      }
+    } catch (e) {
+      print('Error al obtener tutorías del usuario: $e');
+      _todaysBookings = [];
+    }
+    setState(() {
+      _isLoadingBookings = false;
+    });
   }
 
   @override
@@ -184,6 +319,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           ),
                         ),
                         SizedBox(height: 24),
+                        // --- BANNER DE TUTORÍAS PRÓXIMAS/EN VIVO ---
+                        if (!_isLoadingBookings && _todaysBookings.isNotEmpty)
+                          UpcomingSessionBanner(
+                            key: ValueKey(_todaysBookings.isNotEmpty
+                                ? _todaysBookings.first['id'].toString() +
+                                    (_todaysBookings.first['status'] ?? '')
+                                        .toString() +
+                                    DateTime.now()
+                                        .millisecondsSinceEpoch
+                                        .toString()
+                                : DateTime.now()
+                                    .millisecondsSinceEpoch
+                                    .toString()),
+                            bookings: List<Map<String, dynamic>>.from(
+                                _todaysBookings),
+                          ),
+                        // --- FIN BANNER ---
                         // Barra de búsqueda principal (como en Yango)
                         GestureDetector(
                           onTap: () {
@@ -1872,9 +2024,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             color: Colors.white, size: 30), // Placeholder icon
                         Icon(Icons.facebook,
                             color: Colors.white, size: 30), // Placeholder icon
-                        Icon(Icons.camera_alt,
-                            color: Colors.white,
-                            size: 30), // Usar icono genérico para Instagram
                         Icon(Icons.chat,
                             color: Colors.white,
                             size: 30), // Usar icono genérico para Whatsapp
@@ -2102,23 +2251,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  @override
-  void dispose() {
-    _scrollController.removeListener(_onScroll);
-    _scrollController.dispose();
-    if (_activeController != null) {
-      _activeController!.dispose();
-    }
-    _thumbnailCache.clear();
-    _searchController.dispose();
-    _debounce?.cancel();
-    _featuredTutorsScrollController.dispose();
-    _featuredTutorsPageController.dispose();
-    _pageController.dispose();
-    _tutorsScrollController.dispose();
-    super.dispose();
-  }
-
   // Función para obtener la URL completa de imagen o video
   String getFullUrl(String path, String base) {
     if (path.startsWith('http')) {
@@ -2180,6 +2312,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
+            // Declarar variables locales para el modal de búsqueda
+            List<dynamic> filteredSubjects = List<dynamic>.from(_subjects);
+            bool isSearchingAPI = false;
+
             Future<void> loadMoreSubjectsFromModal() async {
               if (_isFetchingMoreSubjects || !_hasMoreSubjects) return;
 
@@ -2266,21 +2402,70 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               onChanged: (value) {
                                 if (_debounce?.isActive ?? false)
                                   _debounce!.cancel();
-                                _debounce = Timer(
-                                    const Duration(milliseconds: 300), () {
+                                _debounce =
+                                    Timer(const Duration(milliseconds: 300),
+                                        () async {
                                   setModalState(() {
                                     _searchQuery = value;
-                                    _currentPageSubjects = 1;
-                                    _subjects.clear();
-                                    _hasMoreSubjects = true;
-                                    _isModalLoading = true;
-                                    _selectedSubject = null;
                                   });
-                                  _fetchSubjects(
-                                          isInitialLoad: true, keyword: value)
-                                      .then((_) {
-                                    setModalState(() {});
-                                  });
+
+                                  // Si la búsqueda está vacía, mostrar materias precargadas
+                                  if (value.trim().isEmpty) {
+                                    setModalState(() {
+                                      filteredSubjects =
+                                          List<dynamic>.from(_subjects);
+                                      isSearchingAPI = false;
+                                    });
+                                    return;
+                                  }
+
+                                  // Primero filtrar localmente
+                                  List<dynamic> localResults = _subjects
+                                      .where((s) => (s['name'] ?? '')
+                                          .toLowerCase()
+                                          .contains(value.toLowerCase()))
+                                      .toList();
+
+                                  // Si hay suficientes resultados locales, usarlos
+                                  if (localResults.length >= 3) {
+                                    setModalState(() {
+                                      filteredSubjects = localResults;
+                                      isSearchingAPI = false;
+                                    });
+                                  } else {
+                                    // Si no hay suficientes resultados, buscar en API
+                                    setModalState(() {
+                                      isSearchingAPI = true;
+                                    });
+                                    try {
+                                      final response = await getAllSubjects(
+                                        null,
+                                        page: 1,
+                                        perPage: 100,
+                                        keyword: value,
+                                      );
+                                      List<dynamic> newSubjects = [];
+                                      if (response != null &&
+                                          response.containsKey('data')) {
+                                        final responseData = response['data'];
+                                        if (responseData
+                                                is Map<String, dynamic> &&
+                                            responseData.containsKey('data')) {
+                                          newSubjects = responseData['data'];
+                                        }
+                                      }
+                                      setModalState(() {
+                                        filteredSubjects = newSubjects;
+                                        isSearchingAPI = false;
+                                      });
+                                    } catch (e) {
+                                      setModalState(() {
+                                        filteredSubjects =
+                                            localResults; // Usar resultados locales como fallback
+                                        isSearchingAPI = false;
+                                      });
+                                    }
+                                  }
                                 });
                               },
                               onSubmitted: (value) {
@@ -2964,6 +3149,37 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
     );
   }
+
+  void _checkAndFetchBookings() {
+    final userId = _authProvider!.userId;
+    if (userId != null && userId != _lastFetchedUserId) {
+      _lastFetchedUserId = userId;
+      _fetchTodaysBookings();
+    }
+  }
+
+  Future<String?> fetchTutorHDImage(int tutorId) async {
+    try {
+      final url = Uri.parse(
+          'https://classgoapp.com/api/verified-tutors-photos?tutor_id=$tutorId');
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['data'] is List && data['data'].isNotEmpty) {
+          final item = data['data'].firstWhere(
+            (e) => e['id'] == tutorId && e['profile_image'] != null,
+            orElse: () => null,
+          );
+          if (item != null && item['profile_image'] != null) {
+            return item['profile_image'] as String;
+          }
+        }
+      }
+    } catch (e) {
+      // Ignorar error, usar fallback
+    }
+    return '';
+  }
 }
 
 class _StepCard extends StatelessWidget {
@@ -3219,12 +3435,6 @@ class _AnimatedDotsState extends State<_AnimatedDots>
   }
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _dotsAnimation,
@@ -3385,6 +3595,531 @@ class _CustomDrawerHeader extends StatelessWidget {
           Divider(color: Colors.white24, thickness: 1),
         ],
       ),
+    );
+  }
+}
+
+class UpcomingSessionBanner extends StatefulWidget {
+  final List<Map<String, dynamic>> bookings;
+  const UpcomingSessionBanner({Key? key, required this.bookings})
+      : super(key: key);
+
+  @override
+  State<UpcomingSessionBanner> createState() => _UpcomingSessionBannerState();
+}
+
+class _UpcomingSessionBannerState extends State<UpcomingSessionBanner> {
+  @override
+  Widget build(BuildContext context) {
+    print('DEBUG: UpcomingSessionBanner se está reconstruyendo');
+    if (widget.bookings.isEmpty) return SizedBox.shrink();
+    final now = DateTime.now();
+    // Filtrar solo tutorías cuya hora de finalización es igual o posterior a la hora actual
+    final validBookings = widget.bookings.where((b) {
+      final end = DateTime.tryParse(b['end_time'] ?? '') ?? now;
+      return end.isAfter(now) || end.isAtSameMomentAs(now);
+    }).toList();
+    if (validBookings.isEmpty) return SizedBox.shrink();
+    // Ordenar por hora de inicio
+    validBookings.sort(
+        (a, b) => (a['start_time'] ?? '').compareTo(b['start_time'] ?? ''));
+    // Elegir la que mostrar: en curso o la más próxima
+    Map<String, dynamic>? booking;
+    bool isLive = false;
+    for (var b in validBookings) {
+      final start = DateTime.tryParse(b['start_time'] ?? '') ?? now;
+      final end = DateTime.tryParse(b['end_time'] ?? '') ?? now;
+      if (now.isAfter(start) && now.isBefore(end)) {
+        booking = b;
+        isLive = true;
+        break;
+      }
+    }
+    booking ??= validBookings.first;
+    final start = DateTime.tryParse(booking['start_time'] ?? '') ?? now;
+    final end = DateTime.tryParse(booking['end_time'] ?? '') ?? now;
+    final status = (booking['status'] ?? '').toString().trim().toLowerCase();
+    // Permitir tanto 'aceptado' como 'aceptada' como estado válido
+    final isAceptado = status == 'aceptada' || status == 'aceptado';
+    // Permitir tanto 'rechazado' como 'rechazada' como estado válido
+    final isRechazado = status == 'rechazada' || status == 'rechazado';
+    print('DEBUG: Estado actual de la tutoría: $status');
+    final isSoon = !isLive && start.isAfter(now);
+    final subject = booking['subject_name'] ?? 'Tutoría';
+    final hourStr =
+        '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')} - ${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}';
+
+    // Lógica de colores y animaciones según estado y momento
+    String mainText = '';
+    String lottieAsset = '';
+    Color color = Colors.blueAccent.withOpacity(0.85);
+    Color textColor = Colors.white;
+
+    print('DEBUG: isLive = $isLive, isSoon = $isSoon, status = "$status"');
+
+    // Lógica de colores por estado específico primero
+    if (isRechazado) {
+      print('DEBUG: ESTADO RECHAZADO - Color gris');
+      mainText = 'Tutoría rechazada';
+      lottieAsset =
+          'https://assets2.lottiefiles.com/packages/lf20_4kx2q32n.json';
+      color = Colors.grey.withOpacity(0.85);
+      textColor = Colors.white;
+    } else if (status == 'pendiente') {
+      print('DEBUG: ESTADO PENDIENTE - Color naranja');
+      mainText = 'Pendiente de aceptación';
+      lottieAsset =
+          'https://assets2.lottiefiles.com/packages/lf20_4kx2q32n.json';
+      color = Colors.orangeAccent.withOpacity(0.95);
+      textColor = Colors.black;
+    } else if (status == 'solicitada') {
+      print('DEBUG: ESTADO SOLICITADA - Color naranja');
+      mainText = 'Pendiente de aceptación';
+      lottieAsset =
+          'https://assets2.lottiefiles.com/packages/lf20_4kx2q32n.json';
+      color = Colors.orangeAccent.withOpacity(0.95);
+      textColor = Colors.black;
+    } else if (isAceptado && isLive) {
+      // Estado aceptado EN VIVO: rojo
+      print('DEBUG: ESTADO ACEPTADO EN VIVO - Color rojo');
+      mainText = 'EN VIVO';
+      lottieAsset =
+          'https://assets2.lottiefiles.com/packages/lf20_30305_back_to_school.json';
+      color = Colors.redAccent.withOpacity(0.85);
+      textColor = Colors.white;
+    } else if (isAceptado && isSoon) {
+      // Estado aceptado PRÓXIMA: azul
+      print('DEBUG: ESTADO ACEPTADO PRÓXIMA - Color azul');
+      mainText = 'Próxima tutoría';
+      lottieAsset =
+          'https://assets2.lottiefiles.com/packages/lf20_30305_back_to_school.json';
+      color = Colors.blueAccent.withOpacity(0.85);
+      textColor = Colors.white;
+    } else if (isLive) {
+      print('DEBUG: EN HORARIO PERO NO ACEPTADA - Color ámbar');
+      mainText = 'En horario, pero no aceptada';
+      lottieAsset =
+          'https://assets2.lottiefiles.com/packages/lf20_4kx2q32n.json';
+      color = Colors.amber.withOpacity(0.95);
+      textColor = Colors.black;
+    } else {
+      print('DEBUG: ESTADO DEFAULT - Color azul gris');
+      mainText = 'Tutoría programada para hoy';
+      lottieAsset =
+          'https://assets2.lottiefiles.com/packages/lf20_30305_back_to_school.json';
+      color = Colors.blueGrey.withOpacity(0.85);
+      textColor = Colors.white;
+    }
+
+    print('DEBUG: Color final seleccionado: $color');
+    print('DEBUG: Texto final: $mainText');
+
+    String statusText = 'Estado: \\${booking['status'] ?? ''}';
+
+    return GestureDetector(
+      onTap: () {
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (context) => _BookingDetailModal(
+            booking: booking!,
+            highResTutorImages: (context
+                    .findAncestorStateOfType<_HomeScreenState>()
+                    ?.highResTutorImages) ??
+                {},
+          ),
+        );
+      },
+      child: Container(
+        margin: EdgeInsets.only(bottom: 8),
+        padding: EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          gradient: LinearGradient(
+            colors: [color, Colors.white.withOpacity(0.10)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.18),
+              blurRadius: 16,
+              offset: Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 36,
+              height: 36,
+              child: Lottie.network(
+                lottieAsset,
+                width: 36,
+                height: 36,
+                repeat: true,
+                animate: true,
+                options: LottieOptions(enableMergePaths: true),
+                errorBuilder: (context, error, stackTrace) {
+                  final visibleColor = Colors.white;
+                  if (isLive && isAceptado) {
+                    return Icon(Icons.play_circle_fill,
+                        color: visibleColor, size: 32);
+                  } else if (isLive && !isAceptado) {
+                    return Icon(Icons.warning_amber_rounded,
+                        color: Colors.amber, size: 32);
+                  } else if (isSoon &&
+                      (status == 'pendiente' || status == 'solicitada')) {
+                    return Icon(Icons.warning_amber_rounded,
+                        color: Colors.orangeAccent, size: 32);
+                  } else if (isSoon && isAceptado) {
+                    return Icon(Icons.schedule, color: visibleColor, size: 32);
+                  } else if (isRechazado) {
+                    return Icon(Icons.cancel, color: Colors.grey, size: 32);
+                  } else {
+                    return Icon(Icons.school, color: visibleColor, size: 32);
+                  }
+                },
+              ),
+            ),
+            SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    mainText,
+                    style: TextStyle(
+                      color: color.computeLuminance() > 0.5
+                          ? Colors.black
+                          : Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      letterSpacing: 0.5,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    subject,
+                    style: TextStyle(
+                      color: textColor,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    hourStr,
+                    style: TextStyle(
+                      color: textColor.withOpacity(0.8),
+                      fontWeight: FontWeight.w400,
+                      fontSize: 14,
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    statusText,
+                    style: TextStyle(
+                      color: textColor.withOpacity(0.9),
+                      fontWeight: FontWeight.w500,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BookingDetailModal extends StatelessWidget {
+  final Map<String, dynamic> booking;
+  final Map<int, String> highResTutorImages;
+  const _BookingDetailModal(
+      {Key? key, required this.booking, required this.highResTutorImages})
+      : super(key: key);
+
+  Future<Map<String, dynamic>?> fetchSlotDetail(int slotId) async {
+    final url = Uri.parse('https://classgoapp.com/api/slot-detail/$slotId');
+    final response = await http.get(url);
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['status'] == 200 && data['data'] != null) {
+        return data['data'];
+      }
+    }
+    return null;
+  }
+
+  Future<String?> fetchTutorHDImage(int tutorId) async {
+    try {
+      final url = Uri.parse(
+          'https://classgoapp.com/api/verified-tutors-photos?tutor_id=$tutorId');
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['data'] is List && data['data'].isNotEmpty) {
+          final item = data['data'].firstWhere(
+            (e) => e['id'] == tutorId && e['profile_image'] != null,
+            orElse: () => null,
+          );
+          if (item != null && item['profile_image'] != null) {
+            return item['profile_image'] as String;
+          }
+        }
+      }
+    } catch (e) {
+      // Ignorar error, usar fallback
+    }
+    return '';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final slotId = booking['id'] is int
+        ? booking['id']
+        : int.tryParse(booking['id'].toString() ?? '');
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: fetchSlotDetail(slotId ?? 0),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return SafeArea(
+            child: Container(
+              padding: EdgeInsets.only(
+                left: 24,
+                right: 24,
+                top: 32,
+                bottom: 24 + MediaQuery.of(context).padding.bottom,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.12),
+                    blurRadius: 24,
+                    offset: Offset(0, -8),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: CircularProgressIndicator(color: Color(0xFF00B4D8)),
+              ),
+            ),
+          );
+        }
+        if (!snapshot.hasData || snapshot.data == null) {
+          return SafeArea(
+            child: Container(
+              padding: EdgeInsets.only(
+                left: 24,
+                right: 24,
+                top: 32,
+                bottom: 24 + MediaQuery.of(context).padding.bottom,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.12),
+                    blurRadius: 24,
+                    offset: Offset(0, -8),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Text('No se pudo cargar el detalle de la tutoría',
+                    style: TextStyle(color: Colors.red)),
+              ),
+            ),
+          );
+        }
+        final data = snapshot.data!;
+        final tutor = data['tutor'] ?? {};
+        final subject = data['subject']?['name'] ?? 'Materia desconocida';
+        final tutorName = tutor['full_name'] ?? 'Tutor desconocido';
+        final tutorUserId = tutor['user_id'] is int
+            ? tutor['user_id']
+            : int.tryParse(tutor['user_id']?.toString() ?? '');
+        final status = (data['status'] ?? '').toString();
+        final startHour = data['start_time'] ?? '';
+        return FutureBuilder<String?>(
+          future: tutorUserId != null
+              ? fetchTutorHDImage(tutorUserId)
+              : Future.value(null),
+          builder: (context, hdSnapshot) {
+            final hdImage = hdSnapshot.data;
+            print('DEBUG: Mostrando imagen HD de tutor en modal: $hdImage');
+            return SafeArea(
+              child: Container(
+                padding: EdgeInsets.only(
+                  left: 24,
+                  right: 24,
+                  top: 32,
+                  bottom: 24 + MediaQuery.of(context).padding.bottom,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.darkBlue,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.lightBlueColor.withOpacity(0.18),
+                      blurRadius: 24,
+                      offset: Offset(0, -8),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 48,
+                        height: 5,
+                        margin: EdgeInsets.only(bottom: 18),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.18),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    Center(
+                      child: Column(
+                        children: [
+                          CircleAvatar(
+                            radius: 38,
+                            backgroundColor:
+                                AppColors.lightBlueColor.withOpacity(0.18),
+                            backgroundImage:
+                                (hdImage != null && hdImage.isNotEmpty)
+                                    ? NetworkImage(hdImage)
+                                    : null,
+                            child: (hdImage == null || hdImage.isEmpty)
+                                ? Icon(Icons.person,
+                                    size: 38, color: AppColors.lightBlueColor)
+                                : null,
+                          ),
+                          SizedBox(height: 10),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.lightBlueColor.withOpacity(0.18),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.verified_user,
+                                    color: AppColors.lightBlueColor, size: 18),
+                                SizedBox(width: 6),
+                                Text(
+                                  'Tutor',
+                                  style: TextStyle(
+                                    color: AppColors.lightBlueColor,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            tutorName,
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 18),
+                    Row(
+                      children: [
+                        Icon(Icons.book, color: AppColors.lightBlueColor),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            subject,
+                            style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Icon(Icons.access_time,
+                            color: AppColors.lightBlueColor),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            startHour.isNotEmpty
+                                ? 'Hora de inicio: $startHour'
+                                : 'Horario no disponible',
+                            style: TextStyle(fontSize: 16, color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Icon(Icons.info_outline,
+                            color: AppColors.lightBlueColor),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Estado: $status',
+                            style: TextStyle(fontSize: 16, color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 28),
+                    Center(
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.lightBlueColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 32, vertical: 14),
+                        ),
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: Icon(Icons.close, color: Colors.white),
+                        label: Text('Cerrar',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

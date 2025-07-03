@@ -276,8 +276,7 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
         'session_fee': 15.0,
         'booked_at': now.toIso8601String(),
         'calendar_event_id': 'instant_${DateTime.now().millisecondsSinceEpoch}',
-        'meeting_link':
-            'https://meet.classgo.com/instant_${DateTime.now().millisecondsSinceEpoch}',
+        'meeting_link': '',
         'status': 2,
         'meta_data': {'comentario': 'Tutoría instantánea'},
         'subject_id': widget.subjectId,

@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
-import 'package:flutter_projects/view/tutor/search_tutors_screen.dart';
 
 class ThankYouPage extends StatefulWidget {
   @override
@@ -31,7 +30,6 @@ class _ThankYouPageState extends State<ThankYouPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
-
       appBar: AppBar(
         automaticallyImplyLeading: false,
         centerTitle: false,
@@ -39,7 +37,8 @@ class _ThankYouPageState extends State<ThankYouPage> {
           'Thank You',
           textAlign: TextAlign.start,
           style: TextStyle(
-            color: AppColors.blackColor,            fontSize: FontSize.scale(context, 20),
+            color: AppColors.blackColor,
+            fontSize: FontSize.scale(context, 20),
             fontFamily: 'SF-Pro-Text',
             fontWeight: FontWeight.w600,
             fontStyle: FontStyle.normal,
@@ -92,12 +91,7 @@ class _ThankYouPageState extends State<ThankYouPage> {
               padding: const EdgeInsets.only(right: 15, left: 15),
               child: ElevatedButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => SearchTutorsScreen(),
-                    ),
-                  );
+                  Navigator.of(context).popUntil((route) => route.isFirst);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGreen,

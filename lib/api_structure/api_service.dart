@@ -1622,3 +1622,21 @@ Future<Map<String, dynamic>> uploadPaymentReceipt(
     };
   }
 }
+
+Future<List<Map<String, dynamic>>> getUserBookingsById(
+    String token, int userId) async {
+  final Uri uri = Uri.parse('$baseUrl/user/$userId/bookings');
+  final headers = {
+    'Authorization': 'Bearer $token',
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  };
+
+  final response = await http.get(uri, headers: headers);
+  if (response.statusCode == 200) {
+    final List<dynamic> data = jsonDecode(response.body);
+    return data.cast<Map<String, dynamic>>();
+  } else {
+    throw Exception('Error al obtener las tutorías del usuario');
+  }
+}

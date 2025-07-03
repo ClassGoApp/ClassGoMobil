@@ -11,12 +11,13 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/view/home/home_screen.dart';
 import 'package:overlay_support/overlay_support.dart';
+import 'package:flutter_projects/helpers/pusher_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-    
+
   try {
     await AppConfig().getSettings();
   } catch (e) {}
@@ -34,6 +35,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => AuthProvider()),
         ChangeNotifierProvider(create: (context) => SettingsProvider()),
         ChangeNotifierProvider(create: (context) => ConnectivityProvider()),
+        ChangeNotifierProvider(create: (context) => PusherService()),
       ],
       child: OverlaySupport.global(
         child: MaterialApp(
