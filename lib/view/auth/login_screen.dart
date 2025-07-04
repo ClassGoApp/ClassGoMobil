@@ -82,10 +82,20 @@ class _LoginScreenState extends State<LoginScreen>
         final String token = response['data']['token'];
         final Map<String, dynamic> userData = response['data'];
         print('Extracted User Data after login: $userData');
+        print('Token extraído del login: $token');
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
+        print('Llamando a setToken...');
         await authProvider.setToken(token);
+        print('setToken completado');
+
+        print('Llamando a setUserData...');
         await authProvider.setUserData(userData);
+        print('setUserData completado');
+
+        print('Llamando a setAuthToken...');
+        await authProvider.setAuthToken(token);
+        print('setAuthToken completado');
 
         setState(() {
           _isLoading = false;
@@ -303,8 +313,11 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   void _saveTokenToProvider(String token) {
+    print('_saveTokenToProvider llamado con token: $token');
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    print('AuthProvider obtenido, llamando a setAuthToken...');
     authProvider.setAuthToken(token);
+    print('_saveTokenToProvider completado');
   }
 
   @override
@@ -316,10 +329,18 @@ class _LoginScreenState extends State<LoginScreen>
     );
 
     if (widget.registrationResponse != null) {
+      print(
+          'LoginScreen: registrationResponse encontrado: ${widget.registrationResponse}');
       final String? token = widget.registrationResponse?['data']['token'];
+      print('LoginScreen: token extraído del registrationResponse: $token');
       if (token != null) {
+        print('LoginScreen: llamando a _saveTokenToProvider...');
         _saveTokenToProvider(token);
-      } else {}
+      } else {
+        print('LoginScreen: token es null en registrationResponse');
+      }
+    } else {
+      print('LoginScreen: no hay registrationResponse');
     }
 
     _fadeAnimation = Tween<double>(
@@ -412,7 +433,6 @@ class _LoginScreenState extends State<LoginScreen>
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               mainAxisAlignment: MainAxisAlignment.start,
                               children: [
-
                                 SvgPicture.asset(
                                   AppImages.logo,
                                   width: 150,
@@ -571,7 +591,6 @@ class _LoginScreenState extends State<LoginScreen>
                                     ),
                                   ),
                                 ),
-
                                 Container(
                                   width: double.infinity,
                                   decoration: ShapeDecoration(

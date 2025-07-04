@@ -1,32 +1,13 @@
 {
   "project_info": {
-    "project_number": "105534597029",
-    "project_id": "classgo-b8376",
-    "storage_bucket": "classgo-b8376.firebasestorage.app"
+    "project_number": "934911540456",
+    "project_id": "classgo-fec0d",
+    "storage_bucket": "classgo-fec0d.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:105534597029:android:13cf73c8f87b95db4e2a4c",
-        "android_client_info": {
-          "package_name": "com.example.flutter_projects"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyDSVIKX9ZbAjnFx9JEXOs52t7MaWfdyimw"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:105534597029:android:ace2b6665b7330bb4e2a4c",
+        "mobilesdk_app_id": "1:934911540456:android:306f0e768c07edede45d5d",
         "android_client_info": {
           "package_name": "com.neurasoft.classgo"
         }
@@ -34,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDSVIKX9ZbAjnFx9JEXOs52t7MaWfdyimw"
+          "current_key": "AIzaSyDs5zKv82dGel5tUUIWE7MsLLyEBCKNW1g"
         }
       ],
       "services": {

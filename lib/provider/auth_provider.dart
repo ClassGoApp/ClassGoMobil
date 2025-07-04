@@ -7,6 +7,8 @@ import 'package:flutter_projects/view/tutor/certificate/certificate_detail.dart'
 import 'package:flutter_projects/view/tutor/experience/experience_detail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_projects/view/tutor/education/education_details.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:http/http.dart' as http;
 
 class AuthProvider with ChangeNotifier {
   String? _token;
@@ -198,24 +200,108 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> setToken(String token) async {
+    print('setToken llamado con token: $token');
     _token = token;
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('token', token);
+    print('Token guardado en SharedPreferences');
     notifyListeners();
+    print('setToken completado y notificados los listeners');
   }
 
   Future<void> setAuthToken(String token) async {
+    print('setAuthToken llamado con token: $token');
     _token = token;
+    print('Token guardado en memoria: $_token');
     notifyListeners();
+    print('Listeners notificados en setAuthToken');
+
+    // Enviar el token FCM al backend
+    print('Obteniendo token FCM...');
+    String? fcmToken = await FirebaseMessaging.instance.getToken();
+    print('Token FCM obtenido: [32m${fcmToken ?? 'null'}[0m');
+    int? userIdValue = userId;
+    print('User ID obtenido: [32m$userIdValue[0m');
+
+    if (fcmToken != null && userIdValue != null) {
+      try {
+        print('Enviando token FCM al backend...');
+        print('URL: https://classgoapp.com/api/update-fcm-token');
+        print(
+            'Headers: Content-Type: application/json, Accept: application/json');
+        print('Body: {"user_id": $userIdValue, "fcm_token": "$fcmToken"}');
+
+        final response = await http.post(
+          Uri.parse('https://classgoapp.com/api/update-fcm-token'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'User-Agent': 'ClassGoApp/1.0',
+          },
+          body: jsonEncode({'user_id': userIdValue, 'fcm_token': fcmToken}),
+        );
+        print(
+            'Respuesta backend FCM: [34m${response.statusCode}[0m - ${response.body}');
+
+        if (response.statusCode == 200) {
+          print('Token FCM enviado exitosamente al backend');
+        } else {
+          print('Error en respuesta del backend: ${response.statusCode}');
+        }
+      } catch (e) {
+        print('Error enviando FCM token al backend: $e');
+        print('Stack trace: ${StackTrace.current}');
+      }
+    } else {
+      print('No se pudo obtener el token FCM o el user_id');
+    }
+    // Escuchar cambios de token FCM y actualizar en el backend
+    print('Configurando listener para cambios de token FCM...');
+    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
+      int? userIdValue = userId;
+      print('Token FCM actualizado: $newToken');
+      print('User ID obtenido: [32m$userIdValue[0m');
+      if (userIdValue != null) {
+        try {
+          print('Enviando token FCM actualizado al backend...');
+          final response = await http.post(
+            Uri.parse('https://classgoapp.com/api/update-fcm-token'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'User-Agent': 'ClassGoApp/1.0',
+            },
+            body: jsonEncode({'user_id': userIdValue, 'fcm_token': newToken}),
+          );
+          print(
+              'FCM token actualizado en backend: [34m${response.statusCode}[0m - ${response.body}');
+
+          if (response.statusCode == 200) {
+            print('Token FCM actualizado exitosamente en el backend');
+          } else {
+            print(
+                'Error actualizando token FCM en backend: ${response.statusCode}');
+          }
+        } catch (e) {
+          print('Error actualizando FCM token en backend: $e');
+          print('Stack trace: ${StackTrace.current}');
+        }
+      } else {
+        print('No se pudo obtener el user_id para actualizar el token FCM');
+      }
+    });
+    print('Listener de token FCM configurado');
   }
 
   Future<void> setUserData(Map<String, dynamic> userData) async {
+    print('setUserData llamado con datos: $userData');
     _userData = userData;
-    print('AuthProvider setUserData received: \$_userData');
+    print('Datos de usuario guardados en memoria: $_userData');
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('userData', jsonEncode(userData));
+    print('Datos de usuario guardados en SharedPreferences');
     notifyListeners();
-    print('AuthProvider setUserData completed and notified listeners.');
+    print('setUserData completado y notificados los listeners');
   }
 
   Future<void> clearToken() async {
@@ -455,6 +541,4 @@ class AuthProvider with ChangeNotifier {
 
     notifyListeners();
   }
-
-
 }

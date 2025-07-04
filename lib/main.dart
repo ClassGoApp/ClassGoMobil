@@ -12,11 +12,24 @@ import 'package:provider/provider.dart';
 import 'package:flutter_projects/view/home/home_screen.dart';
 import 'package:overlay_support/overlay_support.dart';
 import 'package:flutter_projects/helpers/pusher_service.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'helpers/firebase_messaging_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: const FirebaseOptions(
+      apiKey: 'AIzaSyDs5zKv82dGel5tUUIWE7MsLLyEBCKNW1g',
+      appId: '1:934911540456:android:306f0e768c07edede45d5d',
+      messagingSenderId: '934911540456',
+      projectId: 'classgo-fec0d',
+      storageBucket: 'classgo-fec0d.firebasestorage.app',
+    ),
+  );
+  await FirebaseMessagingService.initialize();
+  print('¡Firebase inicializado correctamente!');
 
   try {
     await AppConfig().getSettings();
