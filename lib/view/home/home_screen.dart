@@ -23,6 +23,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:pusher_channels_flutter/pusher_channels_flutter.dart';
 import 'package:flutter_projects/helpers/pusher_service.dart';
+import 'package:flutter_projects/helpers/auth_helper.dart';
 import 'package:http/http.dart' as http;
 
 // 1. Agrega RouteObserver para detectar cuando se vuelve a la pantalla principal
@@ -374,10 +375,14 @@ class _HomeScreenState extends State<HomeScreen>
                             Builder(
                               builder: (mainContext) => _buildMenuOption(
                                 context,
-                                icon: Icons
-                                    .flash_on, // Ícono para "Tutor al Instante"
+                                icon: Icons.flash_on,
                                 label: 'Tutor\nal Instante',
                                 onTap: () async {
+                                  if (!AuthHelper.requireAuth(mainContext,
+                                      customTitle: 'Acceso a Tutor al Instante',
+                                      customMessage:
+                                          'Para acceder a tutorías instantáneas, necesitas iniciar sesión en tu cuenta.'))
+                                    return;
                                   // Espera a que se precarguen las materias si aún no están listas
                                   if (_subjects.isEmpty && _isLoadingSubjects) {
                                     await Future.doWhile(() async {
@@ -1008,10 +1013,14 @@ class _HomeScreenState extends State<HomeScreen>
                             ),
                             _buildMenuOption(
                               context,
-                              icon:
-                                  Icons.calendar_today, // Ícono para "Agendar"
+                              icon: Icons.calendar_today,
                               label: 'Agendar\nTutoría',
                               onTap: () {
+                                if (!AuthHelper.requireAuth(context,
+                                    customTitle: 'Acceso a Agendar Tutoría',
+                                    customMessage:
+                                        'Para agendar una tutoría, necesitas iniciar sesión en tu cuenta.'))
+                                  return;
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -1023,9 +1032,14 @@ class _HomeScreenState extends State<HomeScreen>
                             ),
                             _buildMenuOption(
                               context,
-                              icon: Icons.explore, // Ícono para "Explorar"
+                              icon: Icons.explore,
                               label: 'Explorar\nTutores',
                               onTap: () {
+                                if (!AuthHelper.requireAuth(context,
+                                    customTitle: 'Acceso a Explorar Tutores',
+                                    customMessage:
+                                        'Para explorar tutores, necesitas iniciar sesión en tu cuenta.'))
+                                  return;
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
