@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/api_structure/api_service.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_projects/provider/auth_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'package:flutter_projects/provider/tutorias_provider.dart';
 
 class StudentCalendarScreen extends StatefulWidget {
   const StudentCalendarScreen({Key? key}) : super(key: key);
@@ -12,53 +18,31 @@ class _StudentCalendarScreenState extends State<StudentCalendarScreen> {
   DateTime _focusedDay = DateTime.now();
   String _viewMode = 'month'; // 'month', 'week', 'day'
   String _selectedFilter = 'todas';
+  bool _isLoading = true;
+  bool _isRefreshing = false;
+  List<Map<String, dynamic>> _tutorias = [];
 
-  // Simulación de tutorías
-  final List<Map<String, dynamic>> _tutorias = [
-    {
-      'title': 'Matemáticas',
-      'date': DateTime.now(),
-      'hour': '10:00',
-      'status': 'completada',
-    },
-    {
-      'title': 'Inglés',
-      'date': DateTime.now(),
-      'hour': '12:00',
-      'status': 'pendiente',
-    },
-    {
-      'title': 'Física',
-      'date': DateTime.now(),
-      'hour': '15:00',
-      'status': 'aceptada',
-    },
-    {
-      'title': 'Química',
-      'date': DateTime.now().subtract(Duration(days: 2)),
-      'hour': '09:00',
-      'status': 'rechazada',
-    },
-    {
-      'title': 'Historia',
-      'date': DateTime.now().add(Duration(days: 3)),
-      'hour': '17:00',
-      'status': 'observada',
-    },
-    // Puedes agregar más para probar
-  ];
+  // Cache para optimizar búsquedas
+  Map<String, List<Map<String, dynamic>>> _tutoriasByDate = {};
+  DateTime? _lastCacheUpdate;
+  static const Duration _cacheValidity = Duration(minutes: 5);
 
   // Colores por estado
   Color _statusColor(String status) {
-    switch (status) {
+    switch (status.toLowerCase()) {
+      case 'completed':
       case 'completada':
         return AppColors.primaryGreen;
+      case 'pending':
       case 'pendiente':
         return AppColors.orangeprimary.withOpacity(0.85);
+      case 'accepted':
       case 'aceptada':
         return AppColors.lightBlueColor;
+      case 'observed':
       case 'observada':
         return AppColors.darkBlue.withOpacity(0.85);
+      case 'rejected':
       case 'rechazada':
         return Colors.redAccent.withOpacity(0.85);
       default:
@@ -66,69 +50,150 @@ class _StudentCalendarScreenState extends State<StudentCalendarScreen> {
     }
   }
 
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      final tutoriasProvider =
+          Provider.of<TutoriasProvider>(context, listen: false);
+      tutoriasProvider.loadTutorias();
+    });
+  }
+
+  // Calcular estadísticas del mes actual usando el provider
+  Map<String, dynamic> _calculateMonthlyStats(
+      List<Map<String, dynamic>> tutorias) {
+    final now = DateTime.now();
+    final currentYear = now.year;
+    final currentMonth = now.month;
+    final validTutorias = tutorias.where((t) {
+      final tutoriaDate = t['date'] as DateTime;
+      final status = (t['status'] ?? '').toString().toLowerCase();
+      return tutoriaDate.year == currentYear &&
+          tutoriaDate.month == currentMonth &&
+          status != 'rechazado';
+    }).toList();
+    final completed = validTutorias.length;
+    int goal = 5;
+    if (completed >= 5) goal = 10;
+    if (completed >= 10) goal = 20;
+    if (completed >= 20) goal = 50;
+    if (completed >= 50) goal = 100;
+    final percent = goal > 0 ? (completed / goal).clamp(0.0, 1.0) : 0.0;
+    return {
+      'completed': completed,
+      'goal': goal,
+      'percent': percent,
+    };
+  }
+
+  // Generar mensaje motivacional basado en el progreso
+  String _getMotivationalMessage(int completed, int goal) {
+    if (completed == 0) {
+      return '¡Comienza tu viaje de aprendizaje!\nTu meta: $goal tutorías este mes';
+    } else if (completed < goal) {
+      final remaining = goal - completed;
+      return '¡Excelente progreso!\nTe faltan $remaining tutorías para alcanzar tu meta';
+    } else {
+      return '¡Meta superada!\nHas completado $completed tutorías este mes';
+    }
+  }
+
   void _showDayTutorias(DateTime day) {
     final tutoriasDelDia =
         _tutorias.where((t) => DateUtils.isSameDay(t['date'], day)).toList();
     if (tutoriasDelDia.isEmpty) return;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.darkBlue,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
+      isScrollControlled: true,
       builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 5,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-              Text(
-                'Tutorías del ${day.day}/${day.month}/${day.year}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-              const SizedBox(height: 12),
-              ...tutoriasDelDia.map((t) => Card(
-                    color: _statusColor(t['status']).withOpacity(0.18),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                    elevation: 0,
-                    margin: const EdgeInsets.only(bottom: 10),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: _statusColor(t['status']),
-                        child: Icon(Icons.book, color: Colors.white),
-                      ),
-                      title: Text(
-                        t['title'],
-                        style: const TextStyle(
-                            color: Colors.white, fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Text(
-                        '${t['hour']} - Estado: ${t['status'][0].toUpperCase()}${t['status'].substring(1)}',
-                        style: TextStyle(
-                            color: _statusColor(t['status']),
-                            fontWeight: FontWeight.w600),
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.5,
+          minChildSize: 0.3,
+          maxChildSize: 0.85,
+          builder: (context, scrollController) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 5,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                  )),
-            ],
-          ),
+                  ),
+                  Text(
+                    'Tutorías del ${day.day}/${day.month}/${day.year}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Flexible(
+                    child: ListView.builder(
+                      controller: scrollController,
+                      itemCount: tutoriasDelDia.length,
+                      itemBuilder: (context, index) {
+                        final t = tutoriasDelDia[index];
+                        return Card(
+                          color: _statusColor(t['status']).withOpacity(0.18),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
+                          elevation: 0,
+                          margin: const EdgeInsets.only(bottom: 10),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: _statusColor(t['status']),
+                              child: Icon(Icons.book, color: Colors.white),
+                            ),
+                            title: Text(
+                              t['title'],
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${t['hour']} - ${t['tutor_name']}',
+                                  style: TextStyle(
+                                      color: _statusColor(t['status']),
+                                      fontWeight: FontWeight.w600),
+                                ),
+                                Text(
+                                  'Estado: ${t['status'][0].toUpperCase()}${t['status'].substring(1)}',
+                                  style: TextStyle(
+                                      color: _statusColor(t['status']),
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
         );
       },
     );
@@ -143,15 +208,36 @@ class _StudentCalendarScreenState extends State<StudentCalendarScreen> {
 
   final List<Map<String, dynamic>> _filterCapsules = [
     {'label': 'Todas', 'value': 'todas'},
-    {'label': 'Completada', 'value': 'completada'},
-    {'label': 'Pendiente', 'value': 'pendiente'},
-    {'label': 'Aceptada', 'value': 'aceptada'},
-    {'label': 'Observada', 'value': 'observada'},
-    {'label': 'Rechazada', 'value': 'rechazada'},
+    {'label': 'Completada', 'value': 'completed'},
+    {'label': 'Pendiente', 'value': 'pending'},
+    {'label': 'Aceptada', 'value': 'accepted'},
+    {'label': 'Observada', 'value': 'observed'},
+    {'label': 'Rechazada', 'value': 'rejected'},
   ];
 
   @override
   Widget build(BuildContext context) {
+    final tutoriasProvider = Provider.of<TutoriasProvider>(context);
+    final _isLoading = tutoriasProvider.isLoading;
+    final _tutorias = tutoriasProvider.tutorias;
+
+    if (_isLoading) {
+      return Container(
+        color: AppColors.primaryGreen,
+        width: double.infinity,
+        height: double.infinity,
+        child: Center(
+          child: FractionallySizedBox(
+            widthFactor: 0.6,
+            child: Image.asset(
+              'assets/images/cargando.gif',
+              fit: BoxFit.contain,
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFF181F2A),
       appBar: AppBar(
@@ -160,6 +246,11 @@ class _StudentCalendarScreenState extends State<StudentCalendarScreen> {
         title: const Text('Mi Calendario',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         actions: [
+          IconButton(
+            icon: Icon(_isLoading ? Icons.hourglass_empty : Icons.refresh,
+                color: Colors.white),
+            onPressed: _isLoading ? null : tutoriasProvider.refreshTutorias,
+          ),
           ToggleButtons(
             borderRadius: BorderRadius.circular(12),
             selectedColor: Colors.white,
@@ -193,24 +284,137 @@ class _StudentCalendarScreenState extends State<StudentCalendarScreen> {
           const SizedBox(width: 12),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: _buildCalendar(),
+      body: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(
+                  left: 16.0, right: 16.0, top: 8.0, bottom: 0),
+              child: _buildCalendar(context, tutoriasProvider),
+            ),
+            if (_viewMode != 'day') ...[
+              if (_viewMode == 'week') SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.only(top: 0, bottom: 8),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Builder(
+                      builder: (context) {
+                        final stats = _calculateMonthlyStats(_tutorias);
+                        return Center(
+                          child: ProgressRing(
+                            percent: stats['percent'],
+                            completed: stats['completed'],
+                            goal: stats['goal'],
+                          ),
+                        );
+                      },
+                    ),
+                    SizedBox(height: 16),
+                    Builder(
+                      builder: (context) {
+                        final stats = _calculateMonthlyStats(_tutorias);
+                        final message = _getMotivationalMessage(
+                          stats['completed'],
+                          stats['goal'],
+                        );
+                        return Stack(
+                          alignment: Alignment.bottomRight,
+                          children: [
+                            Align(
+                              alignment: Alignment.center,
+                              child: Container(
+                                margin: const EdgeInsets.symmetric(
+                                    horizontal: 40, vertical: 8),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 14),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.08),
+                                  borderRadius: BorderRadius.circular(18),
+                                  border: Border.all(
+                                      color: Colors.white12, width: 1),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.08),
+                                      blurRadius: 8,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      stats['completed'] >= stats['goal']
+                                          ? '¡Meta alcanzada!'
+                                          : '¡Buen trabajo!',
+                                      style: TextStyle(
+                                        color: AppColors.lightBlueColor,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      message,
+                                      style: TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 13,
+                                      ),
+                                      softWrap: true,
+                                      overflow: TextOverflow.visible,
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 8,
+                              child: SizedBox(
+                                width: 48,
+                                height: 48,
+                                child: ClipOval(
+                                  child: Image.asset(
+                                    'assets/images/ave_animada.gif',
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildCalendar() {
+  Widget _buildCalendar(
+      BuildContext context, TutoriasProvider tutoriasProvider) {
     if (_viewMode == 'month') {
-      return _buildMonthView();
+      return _buildMonthView(tutoriasProvider);
     } else if (_viewMode == 'week') {
-      return _buildWeekView();
+      return _buildWeekView(tutoriasProvider);
     } else {
-      return _buildDayView();
+      return _buildDayView(tutoriasProvider);
     }
   }
 
-  Widget _buildMonthView() {
+  Widget _buildMonthView(TutoriasProvider tutoriasProvider) {
     final firstDayOfMonth = DateTime(_focusedDay.year, _focusedDay.month, 1);
     final daysInMonth =
         DateUtils.getDaysInMonth(_focusedDay.year, _focusedDay.month);
@@ -272,7 +476,8 @@ class _StudentCalendarScreenState extends State<StudentCalendarScreen> {
               .toList(),
         ),
         const SizedBox(height: 2),
-        Expanded(
+        SizedBox(
+          height: 300,
           child: GridView.builder(
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -286,13 +491,11 @@ class _StudentCalendarScreenState extends State<StudentCalendarScreen> {
               final day = days[i];
               final isToday = DateUtils.isSameDay(day, DateTime.now());
               final isCurrentMonth = day.month == _focusedDay.month;
-              final tutoriasDelDia = _tutorias
-                  .where((t) => DateUtils.isSameDay(t['date'], day))
-                  .toList();
+              final tutoriasDelDia = tutoriasProvider.getTutoriasForDay(day);
               final hasTutorias = tutoriasDelDia.isNotEmpty;
               return GestureDetector(
                 onTap: isCurrentMonth && hasTutorias
-                    ? () => _showDayTutorias(day)
+                    ? () => _showDayTutoriasProvider(day, tutoriasProvider)
                     : null,
                 child: Container(
                   margin: const EdgeInsets.all(2),
@@ -337,33 +540,10 @@ class _StudentCalendarScreenState extends State<StudentCalendarScreen> {
                         Positioned(
                           top: 6,
                           right: 6,
-                          child: Icon(Icons.book,
+                          child: Icon(Icons.book_online,
                               size: 14,
                               color:
                                   AppColors.lightBlueColor.withOpacity(0.85)),
-                        ),
-                      if (hasTutorias)
-                        Positioned(
-                          bottom: 6,
-                          left: 0,
-                          right: 0,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: tutoriasDelDia
-                                .map((t) => Container(
-                                      width: 10,
-                                      height: 10,
-                                      margin: const EdgeInsets.symmetric(
-                                          horizontal: 2),
-                                      decoration: BoxDecoration(
-                                        color: _statusColor(t['status']),
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                            color: Colors.white, width: 1),
-                                      ),
-                                    ))
-                                .toList(),
-                          ),
                         ),
                     ],
                   ),
@@ -372,84 +552,11 @@ class _StudentCalendarScreenState extends State<StudentCalendarScreen> {
             },
           ),
         ),
-        // --- Gráfico de progreso SIEMPRE visible ---
-        Padding(
-          padding: const EdgeInsets.only(top: 0, bottom: 130),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              ProgressRing(percent: 0.6, completed: 3, goal: 5),
-              const SizedBox(width: 18),
-              Stack(
-                clipBehavior: Clip.none,
-                alignment: Alignment.centerRight,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: Colors.white12, width: 1),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 8,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          '¡Buen trabajo!',
-                          style: TextStyle(
-                            color: AppColors.lightBlueColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Llevas 3 tutorías completadas\neste mes. ¡Sigue así!',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Positioned(
-                    right: -32,
-                    bottom: -10,
-                    child: Container(
-                      width: 64,
-                      height: 64,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                      ),
-                      child: ClipOval(
-                        child: Image.asset(
-                          'assets/images/ave_animada.gif',
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
       ],
     );
   }
 
-  Widget _buildWeekView() {
+  Widget _buildWeekView(TutoriasProvider tutoriasProvider) {
     final weekDays = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
     final today = _focusedDay;
     final startOfWeek = today.subtract(Duration(days: today.weekday - 1));
@@ -498,16 +605,17 @@ class _StudentCalendarScreenState extends State<StudentCalendarScreen> {
               .toList(),
         ),
         const SizedBox(height: 2),
-        Expanded(
+        SizedBox(
+          height: 200,
           child: Row(
             children: days.map((day) {
-              final tutoriasDelDia = _tutorias
-                  .where((t) => DateUtils.isSameDay(t['date'], day))
-                  .toList();
+              final tutoriasDelDia = tutoriasProvider.getTutoriasForDay(day);
               final hasTutorias = tutoriasDelDia.isNotEmpty;
               return Expanded(
                 child: GestureDetector(
-                  onTap: hasTutorias ? () => _showDayTutorias(day) : null,
+                  onTap: hasTutorias
+                      ? () => _showDayTutoriasProvider(day, tutoriasProvider)
+                      : null,
                   child: Container(
                     margin: const EdgeInsets.all(2),
                     decoration: BoxDecoration(
@@ -534,7 +642,6 @@ class _StudentCalendarScreenState extends State<StudentCalendarScreen> {
                             ]
                           : [],
                     ),
-                    height: double.infinity,
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
@@ -548,28 +655,6 @@ class _StudentCalendarScreenState extends State<StudentCalendarScreen> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            if (hasTutorias)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 6.0),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: tutoriasDelDia
-                                      .map((t) => Container(
-                                            width: 10,
-                                            height: 10,
-                                            margin: const EdgeInsets.symmetric(
-                                                horizontal: 2),
-                                            decoration: BoxDecoration(
-                                              color: _statusColor(t['status']),
-                                              shape: BoxShape.circle,
-                                              border: Border.all(
-                                                  color: Colors.white,
-                                                  width: 1),
-                                            ),
-                                          ))
-                                      .toList(),
-                                ),
-                              ),
                           ],
                         ),
                         if (hasTutorias)
@@ -593,10 +678,8 @@ class _StudentCalendarScreenState extends State<StudentCalendarScreen> {
     );
   }
 
-  Widget _buildDayView() {
-    final tutoriasDelDia = _tutorias
-        .where((t) => DateUtils.isSameDay(t['date'], _focusedDay))
-        .toList();
+  Widget _buildDayView(TutoriasProvider tutoriasProvider) {
+    final tutoriasDelDia = tutoriasProvider.getTutoriasForDay(_focusedDay);
     return Column(
       children: [
         Row(
@@ -628,7 +711,8 @@ class _StudentCalendarScreenState extends State<StudentCalendarScreen> {
           ],
         ),
         const SizedBox(height: 16),
-        Expanded(
+        SizedBox(
+          height: 400,
           child: tutoriasDelDia.isEmpty
               ? Center(
                   child: Text(
@@ -667,6 +751,106 @@ class _StudentCalendarScreenState extends State<StudentCalendarScreen> {
                 ),
         ),
       ],
+    );
+  }
+
+  void _showDayTutoriasProvider(
+      DateTime day, TutoriasProvider tutoriasProvider) {
+    final tutoriasDelDia = tutoriasProvider.getTutoriasForDay(day);
+    if (tutoriasDelDia.isEmpty) return;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.darkBlue,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      isScrollControlled: true,
+      builder: (context) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.5,
+          minChildSize: 0.3,
+          maxChildSize: 0.85,
+          builder: (context, scrollController) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 5,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  Text(
+                    'Tutorías del ${day.day}/${day.month}/${day.year}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Flexible(
+                    child: ListView.builder(
+                      controller: scrollController,
+                      itemCount: tutoriasDelDia.length,
+                      itemBuilder: (context, index) {
+                        final t = tutoriasDelDia[index];
+                        return Card(
+                          color: _statusColor(t['status']).withOpacity(0.18),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
+                          elevation: 0,
+                          margin: const EdgeInsets.only(bottom: 10),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: _statusColor(t['status']),
+                              child: Icon(Icons.book, color: Colors.white),
+                            ),
+                            title: Text(
+                              t['title'],
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${t['hour']} - ${t['tutor_name']}',
+                                  style: TextStyle(
+                                      color: _statusColor(t['status']),
+                                      fontWeight: FontWeight.w600),
+                                ),
+                                Text(
+                                  'Estado: ${t['status'][0].toUpperCase()}${t['status'].substring(1)}',
+                                  style: TextStyle(
+                                      color: _statusColor(t['status']),
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

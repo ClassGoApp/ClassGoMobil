@@ -10,6 +10,9 @@ import 'package:flutter_projects/base_components/textfield.dart';
 import 'package:flutter_projects/view/auth/register_screen.dart';
 import 'package:flutter_projects/view/auth/reset_password_screen.dart';
 import 'package:flutter_projects/view/home/home_screen.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class LoginScreen extends StatefulWidget {
   final Map<String, dynamic>? registrationResponse;
@@ -320,6 +323,52 @@ class _LoginScreenState extends State<LoginScreen>
     print('_saveTokenToProvider completado');
   }
 
+  Future<void> signInWithGoogle(BuildContext context) async {
+    final GoogleSignIn googleSignIn = GoogleSignIn();
+    final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+    if (googleUser == null) {
+      // El usuario canceló el inicio de sesión
+      return;
+    }
+    final GoogleSignInAuthentication googleAuth =
+        await googleUser.authentication;
+    final String? idToken = googleAuth.idToken;
+    if (idToken == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo obtener el token de Google.')),
+      );
+      return;
+    }
+    // Envía el idToken a tu backend para autenticar/registrar al usuario
+    final response = await http.post(
+      Uri.parse('https://classgoapp.com/api/auth/google'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'id_token': idToken}),
+    );
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final token = data['token'];
+      final user = data['user'];
+      if (token != null && user != null) {
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        await authProvider.setToken(token);
+        await authProvider.setUserData(user);
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => HomeScreen()),
+          (route) => false,
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No se pudo iniciar sesión con Google.')),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al iniciar sesión con Google.')),
+      );
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -628,6 +677,26 @@ class _LoginScreenState extends State<LoginScreen>
                                   ),
                                 ),
                                 SizedBox(height: height * 0.02),
+                                ElevatedButton.icon(
+                                  icon: Image.asset(
+                                    'assets/images/google_logo.png', // Asegúrate de tener el logo de Google en assets/images
+                                    width: 24,
+                                    height: 24,
+                                  ),
+                                  label: Text('Iniciar sesión con Google'),
+                                  onPressed: () => signInWithGoogle(context),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: Colors.black,
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(12)),
+                                    padding: EdgeInsets.symmetric(
+                                        horizontal: 18, vertical: 12),
+                                    textStyle:
+                                        TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                ),
                               ],
                             ),
                           ),

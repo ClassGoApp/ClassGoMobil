@@ -21,6 +21,9 @@ import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:flutter_projects/view/tutor/instant_tutoring_screen.dart';
 import 'package:flutter_projects/view/tutor/student_calendar_screen.dart';
 import 'package:flutter_projects/view/tutor/student_history_screen.dart';
+import 'package:intl/intl.dart';
+import 'package:flutter_projects/view/bookSession/payment_methods.dart';
+import 'package:flutter_projects/view/tutor/payment_qr_screen.dart';
 
 class SearchTutorsScreen extends StatefulWidget {
   final String? initialKeyword;
@@ -105,6 +108,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   double _bottomBarOffset = 0.0; // Para animación slide
 
   late String selectedMode;
+
+  String? selectedSubject;
 
   void _onSearchChanged(String value) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
@@ -194,6 +199,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
         });
       }
     });
+
+    _searchFocusNode.unfocus(); // Asegura que no tenga foco al iniciar
   }
 
   @override
@@ -353,6 +360,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
         languageIds: languageIds,
         minCourses: minCourses ?? _minCourses,
         minRating: minRating ?? _minRating,
+        instant: selectedMode == 'instantanea',
       );
 
       print('DEBUG - Response completa: $response');
@@ -462,7 +470,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
         final token = authProvider.token;
 
         print(
-            'DEBUG - Llamando a la API verifiedTutors para la página ${currentPage + 1}');
+            'DEBUG - Llamando a la API verifiedTutors para la página [36m${currentPage + 1}[0m');
         final response = await getVerifiedTutors(
           token,
           page: currentPage + 1,
@@ -478,6 +486,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
           languageIds: selectedLanguageIds,
           minCourses: _minCourses,
           minRating: _minRating,
+          instant: selectedMode == 'instantanea',
         );
 
         if (response.containsKey('data') && response['data'] is Map) {
@@ -715,6 +724,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                   child: TextField(
                     controller: _searchController,
                     focusNode: _searchFocusNode,
+                    autofocus: false,
                     onChanged: _onSearchChanged,
                     decoration: InputDecoration(
                       hintText: 'Busca por materia...',
@@ -880,6 +890,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
         setState(() {
           selectedMode = mode;
         });
+        fetchInitialTutors();
       },
       child: AnimatedContainer(
         duration: Duration(milliseconds: 200),
@@ -977,11 +988,14 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
               final tutor = tutors[index];
               final profile = tutor['profile'] as Map<String, dynamic>;
               final subjects = tutor['subjects'] as List;
-              final validSubjects = subjects
+              final validSubjects = (subjects as List)
                   .where((subject) =>
                       subject['status'] == 'active' &&
                       subject['deleted_at'] == null)
-                  .map((subject) => subject['name'] as String)
+                  .map<Map<String, dynamic>>((subject) => {
+                        'id': subject['id'],
+                        'name': subject['name'],
+                      })
                   .toList();
               // Depuración de imágenes de tutores
               final hdUrl = highResTutorImages[tutor['id']];
@@ -1021,7 +1035,9 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                             ? tutor['avg_rating'].toDouble()
                                             : 0.0))
                                     : 0.0,
-                                subjects: validSubjects,
+                                subjects: validSubjects
+                                    .map((s) => s['name'] as String)
+                                    .toList(),
                                 completedCourses: (tutor[
                                         'completed_courses_count'] is int)
                                     ? tutor['completed_courses_count'] ?? 0
@@ -1074,7 +1090,9 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                               ? tutor['avg_rating'].toDouble()
                                               : 0.0))
                                       : 0.0,
-                                  subjects: validSubjects,
+                                  subjects: validSubjects
+                                      .map((s) => s['name'] as String)
+                                      .toList(),
                                   completedCourses: (tutor[
                                           'completed_courses_count'] is int)
                                       ? tutor['completed_courses_count'] ?? 0
@@ -1086,12 +1104,14 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                             );
                           },
                           onAcceptPressed: selectedMode == 'agendar'
-                              ? () {
-                                  showModalBottomSheet(
+                              ? () async {
+                                  _searchFocusNode.unfocus();
+                                  FocusScope.of(context).unfocus();
+                                  final result = await showModalBottomSheet(
                                     context: context,
                                     isScrollControlled: true,
                                     backgroundColor: Colors.transparent,
-                                    builder: (context) => _BookingModal(
+                                    builder: (context) => BookingModal(
                                       tutorName: profile['full_name'] ??
                                           'No name available',
                                       tutorImage:
@@ -1099,8 +1119,11 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                               profile['image'] ??
                                               AppImages.placeHolderImage,
                                       subjects: validSubjects,
+                                      tutorId: tutor['id'],
                                     ),
                                   );
+                                  _searchFocusNode.unfocus();
+                                  FocusScope.of(context).unfocus();
                                 }
                               : () {
                                   // Acción para tutoría instantánea (como antes)
@@ -1122,7 +1145,9 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                             highResTutorImages[tutor['id']] ??
                                                 profile['image'] ??
                                                 AppImages.placeHolderImage,
-                                        subjects: validSubjects,
+                                        subjects: validSubjects
+                                            .map((s) => s['name'] as String)
+                                            .toList(),
                                         tutorId: tutor['id'],
                                         subjectId: validSubjects.isNotEmpty
                                             ? 1
@@ -1132,7 +1157,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                   );
                                 },
                           tutorProfession: validSubjects.isNotEmpty
-                              ? validSubjects.first
+                              ? validSubjects.first['name']
                               : 'Profesión no disponible',
                           sessionDuration: 'Clases de 20 minutos',
                           isFavoriteInitial: tutor['is_favorite'] ?? false,
@@ -1140,7 +1165,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                             print(
                                 'Tutor ${profile['full_name'] ?? ''} es favorito: $isFavorite');
                           },
-                          subjectsString: validSubjects.join(', '),
+                          subjectsString:
+                              validSubjects.map((s) => s['name']).join(', '),
                           description: profile['description'] ??
                               'No hay descripción disponible.',
                           isVerified: true,
@@ -1386,37 +1412,31 @@ class _ModernNavBar extends StatelessWidget {
   }
 }
 
-class _BookingModal extends StatefulWidget {
+class BookingModal extends StatefulWidget {
   final String tutorName;
   final String tutorImage;
-  final List<String> subjects;
+  final List<Map<String, dynamic>> subjects;
+  final int tutorId;
 
-  const _BookingModal({
+  const BookingModal({
     required this.tutorName,
     required this.tutorImage,
     required this.subjects,
+    required this.tutorId,
   });
 
   @override
-  State<_BookingModal> createState() => _BookingModalState();
+  State<BookingModal> createState() => _BookingModalState();
 }
 
-class _BookingModalState extends State<_BookingModal> {
+class _BookingModalState extends State<BookingModal> {
   String? selectedSubject;
+  int? selectedSubjectId;
   DateTime? selectedDay;
   String? selectedHour;
 
-  final Map<int, List<String>> availableDays = {
-    3: ['09:00', '11:00', '15:00'],
-    5: ['10:00-14:00'],
-    8: ['08:00', '12:00', '16:00'],
-    12: ['09:00', '13:00'],
-    15: ['10:00-14:00'],
-    18: ['09:00', '11:00', '18:00'],
-    22: ['08:00', '12:00'],
-    25: ['09:00', '15:00'],
-  };
-
+  Map<String, List<dynamic>> availableSlots = {};
+  Map<int, List<String>> availableDays = {};
   DateTime currentMonth = DateTime.now();
   ScrollController? _sheetScrollController;
 
@@ -1505,33 +1525,66 @@ class _BookingModalState extends State<_BookingModal> {
   void initState() {
     super.initState();
     if (widget.subjects.isNotEmpty) {
-      selectedSubject = widget.subjects.first;
+      selectedSubject = widget.subjects.first['name'];
+      selectedSubjectId = widget.subjects.first['id'];
     }
+    _fetchAvailableSlots();
   }
 
-  List<String> _generateTimeSlots(String range) {
-    final parts = range.split('-');
-    if (parts.length != 2) return [];
-    final start = _parseTime(parts[0]);
-    final end = _parseTime(parts[1]);
-    if (start == null || end == null) return [];
-    List<String> slots = [];
-    DateTime slot = start;
-    while (slot.isBefore(end.subtract(Duration(minutes: 20))) ||
-        slot.isAtSameMomentAs(end.subtract(Duration(minutes: 20)))) {
-      slots.add(_formatTime(slot));
-      slot = slot.add(Duration(minutes: 20));
+  Future<void> _fetchAvailableSlots() async {
+    // Aquí debes llamar a la función real que obtiene los slots de la API
+    // y luego procesar esos datos para llenar availableDays
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final token = authProvider.token;
+    final response =
+        await getTutorAvailableSlots(token!, widget.tutorId.toString());
+    Map<String, List<dynamic>> processedSlots = {};
+    if (response['slots'] is List) {
+      List<dynamic> slots = response['slots'];
+      for (var slot in slots) {
+        String dateKey = slot['date'];
+        if (!processedSlots.containsKey(dateKey)) {
+          processedSlots[dateKey] = [];
+        }
+        processedSlots[dateKey]!.add(slot);
+      }
+    } else if (response['slots'] is Map<String, dynamic>) {
+      response['slots'].forEach((key, value) {
+        if (value is List) {
+          processedSlots[key] = value;
+        }
+      });
     }
-    return slots;
+    setState(() {
+      availableSlots = processedSlots;
+    });
+    _processAvailableSlots();
   }
 
-  DateTime? _parseTime(String hhmm) {
-    final parts = hhmm.split(':');
-    if (parts.length != 2) return null;
-    final hour = int.tryParse(parts[0]);
-    final min = int.tryParse(parts[1]);
-    if (hour == null || min == null) return null;
-    return DateTime(0, 1, 1, hour, min);
+  void _processAvailableSlots() {
+    final Map<int, List<String>> days = {};
+    for (final entry in availableSlots.entries) {
+      final date = DateTime.parse(entry.key);
+      if (date.year == currentMonth.year && date.month == currentMonth.month) {
+        final List<String> hours = [];
+        for (final slot in entry.value) {
+          final start = DateTime.parse(slot['start_time']);
+          final end = DateTime.parse(slot['end_time']);
+          DateTime t = start;
+          while (t.isBefore(end.subtract(Duration(minutes: 20))) ||
+              t.isAtSameMomentAs(end.subtract(Duration(minutes: 20)))) {
+            hours.add(_formatTime(t));
+            t = t.add(Duration(minutes: 20));
+          }
+        }
+        if (hours.isNotEmpty) {
+          days[date.day] = hours;
+        }
+      }
+    }
+    setState(() {
+      availableDays = days;
+    });
   }
 
   String _formatTime(DateTime t) {
@@ -1540,51 +1593,68 @@ class _BookingModalState extends State<_BookingModal> {
         t.minute.toString().padLeft(2, '0');
   }
 
-  bool _isTimeInRange(String range, String time) {
-    final parts = range.split('-');
-    if (parts.length != 2) return false;
-    final start = _parseTime(parts[0]);
-    final end = _parseTime(parts[1]);
-    final t = _parseTime(time);
-    if (start == null || end == null || t == null) return false;
-    return (t.isAtSameMomentAs(start) || t.isAfter(start)) &&
-        t.isBefore(
-            end.subtract(Duration(minutes: 20)).add(Duration(minutes: 1)));
-  }
-
-  Future<void> _pickTime(String range) async {
+  Future<void> _pickTime(List<String> hours) async {
     final now = TimeOfDay.now();
-    final parts = range.split('-');
-    final start = _parseTime(parts[0]);
-    final end = _parseTime(parts[1]);
-    final initial =
-        start != null ? TimeOfDay(hour: start.hour, minute: start.minute) : now;
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: initial,
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: ColorScheme.dark(
-            primary: AppColors.lightBlueColor,
-            onPrimary: Colors.white,
-            surface: AppColors.darkBlue,
-            onSurface: Colors.white,
+    final initial = hours.isNotEmpty
+        ? hours.first
+        : '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+    bool valid = false;
+    while (!valid) {
+      final picked = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay(
+            hour: int.parse(initial.split(':')[0]),
+            minute: int.parse(initial.split(':')[1])),
+        builder: (context, child) => Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.dark(
+              primary: AppColors.lightBlueColor,
+              onPrimary: Colors.white,
+              surface: AppColors.darkBlue,
+              onSurface: Colors.white,
+            ),
+            dialogBackgroundColor: AppColors.darkBlue,
           ),
-          dialogBackgroundColor: AppColors.darkBlue,
+          child: child!,
         ),
-        child: child!,
-      ),
-    );
-    if (picked != null) {
+      );
+      if (picked == null) {
+        // El usuario cerró el selector
+        break;
+      }
       final pickedStr = picked.hour.toString().padLeft(2, '0') +
           ':' +
           picked.minute.toString().padLeft(2, '0');
-      if (_isTimeInRange(range, pickedStr)) {
+      if (hours.contains(pickedStr)) {
         setState(() => selectedHour = pickedStr);
+        valid = true;
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hora fuera del rango permitido.')),
+        final minHour = hours.first;
+        final maxHour = hours.last;
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: AppColors.darkBlue,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Text('Hora fuera de rango',
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold)),
+            content: Text(
+                'Por favor escoge una hora entre $minHour y $maxHour.',
+                style: TextStyle(color: Colors.white70)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('OK',
+                    style: TextStyle(
+                        color: AppColors.lightBlueColor,
+                        fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
         );
+        // El selector sigue abierto, el usuario puede volver a intentar
       }
     }
   }
@@ -1596,6 +1666,16 @@ class _BookingModalState extends State<_BookingModal> {
     final firstWeekday =
         DateTime(currentMonth.year, currentMonth.month, 1).weekday;
     final weekDays = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+    final List<String> hoursForSelectedDay =
+        selectedDay != null && availableDays.containsKey(selectedDay!.day)
+            ? availableDays[selectedDay!.day]!
+            : [];
+    // Calcular el rango horario disponible para el texto
+    String horarioDisponible = '';
+    if (hoursForSelectedDay.isNotEmpty) {
+      horarioDisponible =
+          'Horario disponible: ${hoursForSelectedDay.first} - ${hoursForSelectedDay.last}';
+    }
     return DraggableScrollableSheet(
       initialChildSize: 0.7,
       minChildSize: 0.5,
@@ -1677,41 +1757,39 @@ class _BookingModalState extends State<_BookingModal> {
                               boxShadow: _highlightMateria
                                   ? [
                                       BoxShadow(
-                                        color: AppColors.lightBlueColor
-                                            .withOpacity(0.5),
-                                        blurRadius: 18,
-                                        spreadRadius: 2,
-                                      ),
+                                          color: AppColors.lightBlueColor
+                                              .withOpacity(0.5),
+                                          blurRadius: 18,
+                                          spreadRadius: 2)
                                     ]
                                   : [],
                             ),
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
                                 value: selectedSubject,
-                                dropdownColor: AppColors.darkBlue,
-                                borderRadius: BorderRadius.circular(12),
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold),
                                 items: widget.subjects
-                                    .map((s) => DropdownMenuItem(
-                                          value: s,
-                                          child: Text(s,
+                                    .map((s) => DropdownMenuItem<String>(
+                                          value: s['name'],
+                                          child: Text(s['name'],
                                               style: TextStyle(
                                                   color: Colors.white)),
                                         ))
                                     .toList(),
                                 onChanged: (v) {
-                                  setState(() => selectedSubject = v);
+                                  setState(() {
+                                    selectedSubject = v;
+                                    selectedSubjectId = widget.subjects
+                                        .firstWhere(
+                                            (s) => s['name'] == v)['id'];
+                                  });
                                   Future.delayed(Duration(milliseconds: 100),
                                       () {
                                     if (_sheetScrollController != null) {
                                       _sheetScrollController!.animateTo(
-                                        _sheetScrollController!
-                                            .position.maxScrollExtent,
-                                        duration: Duration(milliseconds: 400),
-                                        curve: Curves.easeOut,
-                                      );
+                                          _sheetScrollController!
+                                              .position.maxScrollExtent,
+                                          duration: Duration(milliseconds: 400),
+                                          curve: Curves.easeOut);
                                     }
                                   });
                                 },
@@ -1737,11 +1815,10 @@ class _BookingModalState extends State<_BookingModal> {
                               boxShadow: _highlightCalendar
                                   ? [
                                       BoxShadow(
-                                        color: AppColors.lightBlueColor
-                                            .withOpacity(0.5),
-                                        blurRadius: 18,
-                                        spreadRadius: 2,
-                                      ),
+                                          color: AppColors.lightBlueColor
+                                              .withOpacity(0.5),
+                                          blurRadius: 18,
+                                          spreadRadius: 2)
                                     ]
                                   : [],
                             ),
@@ -1769,15 +1846,15 @@ class _BookingModalState extends State<_BookingModal> {
                                                 currentMonth.month - 1);
                                             selectedDay = null;
                                             selectedHour = null;
+                                            _processAvailableSlots();
                                           });
                                         },
                                       ),
                                       Text(
-                                        '${_monthName(currentMonth.month)} ${currentMonth.year}',
-                                        style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold),
-                                      ),
+                                          '${_monthName(currentMonth.month)} ${currentMonth.year}',
+                                          style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold)),
                                       IconButton(
                                         icon: Icon(Icons.chevron_right,
                                             color: Colors.white70),
@@ -1788,6 +1865,7 @@ class _BookingModalState extends State<_BookingModal> {
                                                 currentMonth.month + 1);
                                             selectedDay = null;
                                             selectedHour = null;
+                                            _processAvailableSlots();
                                           });
                                         },
                                       ),
@@ -1799,13 +1877,12 @@ class _BookingModalState extends State<_BookingModal> {
                                         MainAxisAlignment.spaceAround,
                                     children: weekDays
                                         .map((d) => Expanded(
-                                              child: Center(
-                                                  child: Text(d,
-                                                      style: TextStyle(
-                                                          color: Colors.white54,
-                                                          fontWeight: FontWeight
-                                                              .bold))),
-                                            ))
+                                            child: Center(
+                                                child: Text(d,
+                                                    style: TextStyle(
+                                                        color: Colors.white54,
+                                                        fontWeight:
+                                                            FontWeight.bold)))))
                                         .toList(),
                                   ),
                                   SizedBox(height: 2),
@@ -1814,11 +1891,10 @@ class _BookingModalState extends State<_BookingModal> {
                                     physics: NeverScrollableScrollPhysics(),
                                     gridDelegate:
                                         SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 7,
-                                      mainAxisSpacing: 2,
-                                      crossAxisSpacing: 2,
-                                      childAspectRatio: 1.1,
-                                    ),
+                                            crossAxisCount: 7,
+                                            mainAxisSpacing: 2,
+                                            crossAxisSpacing: 2,
+                                            childAspectRatio: 1.1),
                                     itemCount: daysInMonth + firstWeekday - 1,
                                     itemBuilder: (context, i) {
                                       if (i < firstWeekday - 1)
@@ -1849,13 +1925,14 @@ class _BookingModalState extends State<_BookingModal> {
                                                       null) {
                                                     _sheetScrollController!
                                                         .animateTo(
-                                                      _sheetScrollController!
-                                                          .position
-                                                          .maxScrollExtent,
-                                                      duration: Duration(
-                                                          milliseconds: 400),
-                                                      curve: Curves.easeOut,
-                                                    );
+                                                            _sheetScrollController!
+                                                                .position
+                                                                .maxScrollExtent,
+                                                            duration: Duration(
+                                                                milliseconds:
+                                                                    400),
+                                                            curve:
+                                                                Curves.easeOut);
                                                   }
                                                 });
                                               }
@@ -1878,15 +1955,13 @@ class _BookingModalState extends State<_BookingModal> {
                                                 : null,
                                           ),
                                           child: Center(
-                                            child: Text(
-                                              '$day',
-                                              style: TextStyle(
-                                                color: isAvailable
-                                                    ? Colors.white
-                                                    : Colors.white24,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
+                                            child: Text('$day',
+                                                style: TextStyle(
+                                                    color: isAvailable
+                                                        ? Colors.white
+                                                        : Colors.white24,
+                                                    fontWeight:
+                                                        FontWeight.bold)),
                                           ),
                                         ),
                                       );
@@ -1904,6 +1979,14 @@ class _BookingModalState extends State<_BookingModal> {
                                     color: Colors.white70,
                                     fontWeight: FontWeight.bold)),
                             SizedBox(height: 6),
+                            if (horarioDisponible.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8.0),
+                                child: Text(horarioDisponible,
+                                    style: TextStyle(
+                                        color: Colors.white60,
+                                        fontWeight: FontWeight.w500)),
+                              ),
                             AnimatedContainer(
                               key: _hourKey,
                               duration: Duration(milliseconds: 400),
@@ -1918,90 +2001,43 @@ class _BookingModalState extends State<_BookingModal> {
                                 boxShadow: _highlightHour
                                     ? [
                                         BoxShadow(
-                                          color: AppColors.lightBlueColor
-                                              .withOpacity(0.5),
-                                          blurRadius: 18,
-                                          spreadRadius: 2,
-                                        ),
+                                            color: AppColors.lightBlueColor
+                                                .withOpacity(0.5),
+                                            blurRadius: 18,
+                                            spreadRadius: 2)
                                       ]
                                     : [],
                               ),
                               child: Builder(
                                 builder: (context) {
-                                  final slotsOrRanges =
-                                      availableDays[selectedDay!.day]!;
+                                  final hours = hoursForSelectedDay;
                                   final List<Widget> chips = [];
-                                  bool hasRange = false;
-                                  for (final slot in slotsOrRanges) {
-                                    if (slot.contains('-')) {
-                                      hasRange = true;
-                                      final intervals =
-                                          _generateTimeSlots(slot);
-                                      chips.addAll(intervals.map((h) =>
-                                          ChoiceChip(
-                                            label: Text(h,
-                                                style: TextStyle(
-                                                    color: selectedHour == h
-                                                        ? Colors.white
-                                                        : AppColors
-                                                            .lightBlueColor)),
-                                            selected: selectedHour == h,
-                                            selectedColor:
-                                                AppColors.lightBlueColor,
-                                            backgroundColor: AppColors
-                                                .lightBlueColor
-                                                .withOpacity(0.13),
-                                            onSelected: (_) {
-                                              setState(() => selectedHour = h);
-                                              Future.delayed(
-                                                  Duration(milliseconds: 100),
-                                                  () {
-                                                if (_sheetScrollController !=
-                                                    null) {
-                                                  _sheetScrollController!
-                                                      .animateTo(
-                                                    _sheetScrollController!
-                                                        .position
-                                                        .maxScrollExtent,
-                                                    duration: Duration(
-                                                        milliseconds: 400),
-                                                    curve: Curves.easeOut,
-                                                  );
-                                                }
-                                              });
-                                            },
-                                          )));
-                                    } else {
-                                      chips.add(ChoiceChip(
-                                        label: Text(slot,
-                                            style: TextStyle(
-                                                color: selectedHour == slot
-                                                    ? Colors.white
-                                                    : AppColors
-                                                        .lightBlueColor)),
-                                        selected: selectedHour == slot,
-                                        selectedColor: AppColors.lightBlueColor,
-                                        backgroundColor: AppColors
-                                            .lightBlueColor
-                                            .withOpacity(0.13),
-                                        onSelected: (_) {
-                                          setState(() => selectedHour = slot);
-                                          Future.delayed(
-                                              Duration(milliseconds: 100), () {
-                                            if (_sheetScrollController !=
-                                                null) {
-                                              _sheetScrollController!.animateTo(
+                                  for (final h in hours.take(12)) {
+                                    chips.add(ChoiceChip(
+                                      label: Text(h,
+                                          style: TextStyle(
+                                              color: selectedHour == h
+                                                  ? Colors.white
+                                                  : AppColors.lightBlueColor)),
+                                      selected: selectedHour == h,
+                                      selectedColor: AppColors.lightBlueColor,
+                                      backgroundColor: AppColors.lightBlueColor
+                                          .withOpacity(0.13),
+                                      onSelected: (_) {
+                                        setState(() => selectedHour = h);
+                                        Future.delayed(
+                                            Duration(milliseconds: 100), () {
+                                          if (_sheetScrollController != null) {
+                                            _sheetScrollController!.animateTo(
                                                 _sheetScrollController!
                                                     .position.maxScrollExtent,
                                                 duration:
                                                     Duration(milliseconds: 400),
-                                                curve: Curves.easeOut,
-                                              );
-                                            }
-                                          });
-                                        },
-                                      ));
-                                    }
+                                                curve: Curves.easeOut);
+                                          }
+                                        });
+                                      },
+                                    ));
                                   }
                                   return Column(
                                     crossAxisAlignment:
@@ -2009,7 +2045,6 @@ class _BookingModalState extends State<_BookingModal> {
                                     children: [
                                       LayoutBuilder(
                                         builder: (context, constraints) {
-                                          // Calcula cuántos botones caben por fila según el ancho
                                           int buttonsPerRow =
                                               (constraints.maxWidth / 90)
                                                   .floor();
@@ -2019,40 +2054,34 @@ class _BookingModalState extends State<_BookingModal> {
                                           for (int i = 0;
                                               i < chips.length;
                                               i += buttonsPerRow) {
-                                            rows.add(
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                children: chips
-                                                    .skip(i)
-                                                    .take(buttonsPerRow)
-                                                    .map((chip) => Expanded(
-                                                        child: Container(
-                                                            margin: EdgeInsets
-                                                                .symmetric(
-                                                                    horizontal:
-                                                                        4,
-                                                                    vertical:
-                                                                        6),
-                                                            child: chip)))
-                                                    .toList(),
-                                              ),
-                                            );
+                                            rows.add(Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: chips
+                                                  .skip(i)
+                                                  .take(buttonsPerRow)
+                                                  .map((chip) => Expanded(
+                                                      child: Container(
+                                                          margin: EdgeInsets
+                                                              .symmetric(
+                                                                  horizontal: 4,
+                                                                  vertical: 6),
+                                                          child: chip)))
+                                                  .toList(),
+                                            ));
                                           }
                                           return Column(children: rows);
                                         },
                                       ),
-                                      if (hasRange)
+                                      // Botón para elegir hora exacta
+                                      if (hours.isNotEmpty)
                                         Padding(
                                           padding:
                                               const EdgeInsets.only(top: 10.0),
                                           child: Center(
                                             child: ElevatedButton.icon(
                                               onPressed: () async {
-                                                final firstRange =
-                                                    slotsOrRanges.firstWhere(
-                                                        (s) => s.contains('-'));
-                                                await _pickTime(firstRange);
+                                                await _pickTime(hours);
                                                 Future.delayed(
                                                     Duration(milliseconds: 100),
                                                     () {
@@ -2060,13 +2089,14 @@ class _BookingModalState extends State<_BookingModal> {
                                                       null) {
                                                     _sheetScrollController!
                                                         .animateTo(
-                                                      _sheetScrollController!
-                                                          .position
-                                                          .maxScrollExtent,
-                                                      duration: Duration(
-                                                          milliseconds: 400),
-                                                      curve: Curves.easeOut,
-                                                    );
+                                                            _sheetScrollController!
+                                                                .position
+                                                                .maxScrollExtent,
+                                                            duration: Duration(
+                                                                milliseconds:
+                                                                    400),
+                                                            curve:
+                                                                Curves.easeOut);
                                                   }
                                                 });
                                               },
@@ -2102,14 +2132,13 @@ class _BookingModalState extends State<_BookingModal> {
                                                   size: 38),
                                               SizedBox(height: 0),
                                               Text(
-                                                'Selecciona una hora para continuar',
-                                                style: TextStyle(
-                                                  color: Colors.white70,
-                                                  fontWeight: FontWeight.w600,
-                                                  fontSize: 16,
-                                                ),
-                                                textAlign: TextAlign.center,
-                                              ),
+                                                  'Selecciona una hora para continuar',
+                                                  style: TextStyle(
+                                                      color: Colors.white70,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontSize: 16),
+                                                  textAlign: TextAlign.center),
                                               SizedBox(height: 0),
                                             ],
                                           ),
@@ -2151,15 +2180,13 @@ class _BookingModalState extends State<_BookingModal> {
                               SizedBox(width: 8),
                               Flexible(
                                 child: Text(
-                                  'Reserva: ${selectedDay!.day.toString().padLeft(2, '0')}/${selectedDay!.month.toString().padLeft(2, '0')}/${selectedDay!.year} a las $selectedHour',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
+                                    'Reserva: ${selectedDay!.day.toString().padLeft(2, '0')}/${selectedDay!.month.toString().padLeft(2, '0')}/${selectedDay!.year} a las $selectedHour',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis),
                               ),
                             ],
                           ),
@@ -2172,15 +2199,70 @@ class _BookingModalState extends State<_BookingModal> {
                                   selectedDay != null &&
                                   selectedHour != null)
                               ? () {
+                                  FocusScope.of(context)
+                                      .unfocus(); // Cierra el teclado si está abierto
+
+                                  // Cerrar el modal actual
                                   Navigator.pop(context);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                        content: Text(
-                                            '¡Tutoría reservada para $selectedSubject el ${selectedDay!.day}/${selectedDay!.month}/${selectedDay!.year} a las $selectedHour!')),
+
+                                  // Abrir PaymentQRScreen igual que en instantánea
+                                  Navigator.of(context).push(
+                                    PageRouteBuilder(
+                                      opaque: false,
+                                      barrierColor:
+                                          Colors.black.withOpacity(0.5),
+                                      pageBuilder: (context, animation,
+                                          secondaryAnimation) {
+                                        final startTime = DateTime(
+                                          selectedDay!.year,
+                                          selectedDay!.month,
+                                          selectedDay!.day,
+                                          int.parse(
+                                              selectedHour!.split(':')[0]),
+                                          int.parse(
+                                              selectedHour!.split(':')[1]),
+                                        );
+                                        final endTime = startTime
+                                            .add(Duration(minutes: 20));
+                                        return PaymentQRScreen(
+                                          tutorName: widget.tutorName,
+                                          tutorImage: widget.tutorImage,
+                                          selectedSubject: selectedSubject!,
+                                          amount: "15 Bs",
+                                          sessionDuration: "20 min",
+                                          tutorId: widget.tutorId,
+                                          subjectId: selectedSubjectId!,
+                                          startTime: startTime,
+                                          endTime: endTime,
+                                        );
+                                      },
+                                      transitionDuration:
+                                          Duration(milliseconds: 400),
+                                      reverseTransitionDuration:
+                                          Duration(milliseconds: 400),
+                                      transitionsBuilder: (context, animation,
+                                          secondaryAnimation, child) {
+                                        const begin = Offset(1.0, 0.0);
+                                        const end = Offset.zero;
+                                        const curve = Curves.easeOutCubic;
+                                        var tween = Tween(
+                                                begin: begin, end: end)
+                                            .chain(CurveTween(curve: curve));
+                                        var offsetAnimation =
+                                            animation.drive(tween);
+                                        return FadeTransition(
+                                          opacity: secondaryAnimation.drive(
+                                              Tween(begin: 1.0, end: 0.0)),
+                                          child: SlideTransition(
+                                            position: offsetAnimation,
+                                            child: child,
+                                          ),
+                                        );
+                                      },
+                                    ),
                                   );
                                 }
                               : () {
-                                  // --- NUEVO: Guía visual ---
                                   if (selectedSubject == null) {
                                     _scrollAndHighlight(_materiaKey, 'materia',
                                         'Debes seleccionar la materia');
@@ -2192,21 +2274,20 @@ class _BookingModalState extends State<_BookingModal> {
                                         'Debes seleccionar la hora');
                                   }
                                 },
-                          icon: Icon(Icons.check_circle,
+                          icon: Icon(Icons.payment,
                               color: (selectedSubject != null &&
                                       selectedDay != null &&
                                       selectedHour != null)
                                   ? Colors.white
                                   : Colors.white54),
-                          label: Text('Reservar',
+                          label: Text('Pagar y reservar',
                               style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: (selectedSubject != null &&
-                                        selectedDay != null &&
-                                        selectedHour != null)
-                                    ? Colors.white
-                                    : Colors.white54,
-                              )),
+                                  fontWeight: FontWeight.bold,
+                                  color: (selectedSubject != null &&
+                                          selectedDay != null &&
+                                          selectedHour != null)
+                                      ? Colors.white
+                                      : Colors.white54)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: (selectedSubject != null &&
                                     selectedDay != null &&
@@ -2216,13 +2297,12 @@ class _BookingModalState extends State<_BookingModal> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
                               side: BorderSide(
-                                color: (selectedSubject != null &&
-                                        selectedDay != null &&
-                                        selectedHour != null)
-                                    ? Colors.transparent
-                                    : Colors.white24,
-                                width: 1.2,
-                              ),
+                                  color: (selectedSubject != null &&
+                                          selectedDay != null &&
+                                          selectedHour != null)
+                                      ? Colors.transparent
+                                      : Colors.white24,
+                                  width: 1.2),
                             ),
                             padding: EdgeInsets.symmetric(vertical: 14),
                             elevation: 0,

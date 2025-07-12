@@ -6,6 +6,11 @@ import 'dart:ui';
 import 'package:flutter_projects/helpers/slide_up_route.dart';
 import 'package:flutter_projects/view/tutor/instant_tutoring_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_projects/api_structure/api_service.dart';
+import 'package:provider/provider.dart';
+import '../../provider/auth_provider.dart';
+import 'package:flutter_projects/view/tutor/search_tutors_screen.dart'
+    show BookingModal;
 
 class TutorProfileScreen extends StatefulWidget {
   final String tutorId;
@@ -44,11 +49,16 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
   bool _areAllSubjectsShown = false;
   static const int _initialSubjectCount = 6;
   static final _cacheManager = DefaultCacheManager();
+  bool _isCheckingAvailability = false;
+  bool _isAvailableNow = false;
+  OverlayEntry? _availabilityOverlay;
+  final GlobalKey _tutoriaAhoraKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
     _initializeVideo();
+    _checkAvailabilityNow();
   }
 
   void _initializeVideo() async {
@@ -77,6 +87,93 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
       // Manejar el error, por ejemplo si la URL del video es inválida
       print('Error al inicializar el video: $e');
     }
+  }
+
+  Future<void> _checkAvailabilityNow() async {
+    setState(() => _isCheckingAvailability = true);
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final token = authProvider.token;
+      final response =
+          await getTutorAvailableSlots(token!, widget.tutorId.toString());
+      final now = DateTime.now();
+      bool available = false;
+      if (response['slots'] is List) {
+        for (var slot in response['slots']) {
+          final start = DateTime.parse(slot['start_time']);
+          final end = DateTime.parse(slot['end_time']);
+          if (now.isAfter(start) &&
+              now.isBefore(end.subtract(Duration(minutes: 20)))) {
+            available = true;
+            break;
+          }
+        }
+      }
+      setState(() {
+        _isAvailableNow = available;
+        _isCheckingAvailability = false;
+      });
+    } catch (e) {
+      setState(() => _isCheckingAvailability = false);
+    }
+  }
+
+  void _showNotAvailableOverlay(BuildContext context, GlobalKey key) {
+    _availabilityOverlay?.remove();
+    final renderBox = key.currentContext?.findRenderObject() as RenderBox?;
+    final offset = renderBox?.localToGlobal(Offset.zero);
+    final size = renderBox?.size;
+    if (offset == null || size == null) return;
+    _availabilityOverlay = OverlayEntry(
+      builder: (context) => Positioned(
+        left: offset.dx,
+        top: offset.dy - 48,
+        width: size.width,
+        child: Material(
+          color: Colors.transparent,
+          child: AnimatedOpacity(
+            opacity: 1.0,
+            duration: Duration(milliseconds: 200),
+            child: Container(
+              padding: EdgeInsets.symmetric(vertical: 12, horizontal: 18),
+              decoration: BoxDecoration(
+                color: Colors.redAccent.withOpacity(0.95),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 12,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, color: Colors.white, size: 20),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'El tutor no está disponible en este momento',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    Overlay.of(context)?.insert(_availabilityOverlay!);
+    Future.delayed(Duration(seconds: 2), () {
+      _availabilityOverlay?.remove();
+      _availabilityOverlay = null;
+    });
   }
 
   @override
@@ -648,24 +745,36 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                           ],
                         ),
                         child: ElevatedButton(
-                          onPressed: () {
-                            showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.transparent,
-                              builder: (context) => InstantTutoringScreen(
-                                tutorName: widget.tutorName,
-                                tutorImage: widget.tutorImage,
-                                subjects: widget.subjects,
-                                tutorId: int.tryParse(widget.tutorId) ?? 1,
-                                subjectId: widget.subjects.isNotEmpty
-                                    ? 1
-                                    : 1, // Default subject ID
-                              ),
-                            );
-                          },
+                          key: _tutoriaAhoraKey,
+                          onPressed: _isCheckingAvailability
+                              ? null
+                              : _isAvailableNow
+                                  ? () {
+                                      showModalBottomSheet(
+                                        context: context,
+                                        isScrollControlled: true,
+                                        backgroundColor: Colors.transparent,
+                                        builder: (context) =>
+                                            InstantTutoringScreen(
+                                          tutorName: widget.tutorName,
+                                          tutorImage: widget.tutorImage,
+                                          subjects: widget.subjects,
+                                          tutorId:
+                                              int.tryParse(widget.tutorId) ?? 1,
+                                          subjectId: widget.subjects.isNotEmpty
+                                              ? 1
+                                              : 1, // Default subject ID
+                                        ),
+                                      );
+                                    }
+                                  : () {
+                                      _showNotAvailableOverlay(
+                                          context, _tutoriaAhoraKey);
+                                    },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.orangeprimary,
+                            backgroundColor: _isAvailableNow
+                                ? AppColors.orangeprimary
+                                : Colors.grey,
                             padding: EdgeInsets.symmetric(vertical: 12),
                             elevation: 0,
                             shape: RoundedRectangleBorder(
@@ -706,7 +815,24 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                         ),
                         child: ElevatedButton(
                           onPressed: () {
-                            // Aquí irá la lógica para reservar
+                            // Adaptar subjects a List<Map<String, dynamic>> si es necesario
+                            final List<Map<String, dynamic>> subjectMaps =
+                                widget.subjects
+                                    .where((s) => s is Map<String, dynamic>)
+                                    .map<Map<String, dynamic>>(
+                                        (s) => s as Map<String, dynamic>)
+                                    .toList();
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (context) => BookingModal(
+                                tutorName: widget.tutorName,
+                                tutorImage: widget.tutorImage,
+                                subjects: subjectMaps,
+                                tutorId: int.tryParse(widget.tutorId) ?? 1,
+                              ),
+                            );
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,

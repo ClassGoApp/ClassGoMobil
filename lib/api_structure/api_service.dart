@@ -260,6 +260,7 @@ Future<Map<String, dynamic>> getVerifiedTutors(
   List<int>? languageIds,
   int? minCourses,
   double? minRating,
+  bool instant = false,
 }) async {
   try {
     final Map<String, dynamic> queryParams = {
@@ -276,7 +277,9 @@ Future<Map<String, dynamic>> getVerifiedTutors(
       'min_courses': minCourses?.toString(),
       'min_rating': minRating?.toString(),
     };
-
+    if (instant) {
+      queryParams['instant'] = 'true';
+    }
     queryParams.removeWhere((key, value) => value == null);
 
     final Uri uri = Uri.parse('$baseUrl/verified-tutors')
@@ -621,7 +624,7 @@ Future<Map<String, dynamic>> updateEducation(
       body: jsonEncode(educationData),
     );
 
-    final decodedResponse = json.decode(response.body);
+    final decodedResponse = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
       return decodedResponse;
@@ -1160,12 +1163,8 @@ Future<Map<String, dynamic>> getInvoices(String token) async {
 }
 
 Future<Map<String, dynamic>> getTutorAvailableSlots(
-    String token, String userId) async {
-  final Uri uri = Uri.parse('$baseUrl/subject-slots').replace(
-    queryParameters: {
-      'user_id': userId,
-    },
-  );
+    String token, String tutorId) async {
+  final Uri uri = Uri.parse('$baseUrl/tutor/$tutorId/available-slots');
   final headers = {
     'Authorization': 'Bearer $token',
     'Accept': 'application/json',
@@ -1180,6 +1179,10 @@ Future<Map<String, dynamic>> getTutorAvailableSlots(
 
     if (response.statusCode == 200) {
       final decodedBody = json.decode(response.body);
+      // Si la respuesta es una lista, la envolvemos en un Map
+      if (decodedBody is List) {
+        return {'slots': decodedBody};
+      }
       return decodedBody;
     } else {
       final error = json.decode(response.body);

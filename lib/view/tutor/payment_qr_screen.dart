@@ -12,6 +12,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:overlay_support/overlay_support.dart';
 import 'package:provider/provider.dart';
 import '../../provider/auth_provider.dart';
+import 'package:flutter_projects/animated_screen/animated_thank_you.dart';
 
 class PaymentQRScreen extends StatefulWidget {
   final String tutorName;
@@ -21,6 +22,8 @@ class PaymentQRScreen extends StatefulWidget {
   final String sessionDuration;
   final int tutorId;
   final int subjectId;
+  final DateTime? startTime;
+  final DateTime? endTime;
 
   const PaymentQRScreen({
     Key? key,
@@ -31,6 +34,8 @@ class PaymentQRScreen extends StatefulWidget {
     required this.sessionDuration,
     required this.tutorId,
     required this.subjectId,
+    this.startTime,
+    this.endTime,
   }) : super(key: key);
 
   @override
@@ -264,8 +269,8 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
 
       // 1. Crear el slot booking
       final now = DateTime.now();
-      final startTime = now;
-      final endTime = now.add(Duration(minutes: 20));
+      final startTime = widget.startTime ?? now;
+      final endTime = widget.endTime ?? now.add(Duration(minutes: 20));
 
       final slotBookingData = {
         'student_id': studentId,
@@ -278,7 +283,11 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
         'calendar_event_id': 'instant_${DateTime.now().millisecondsSinceEpoch}',
         'meeting_link': '',
         'status': 2,
-        'meta_data': {'comentario': 'Tutoría instantánea'},
+        'meta_data': {
+          'comentario': widget.startTime != null
+              ? 'Reserva agendada'
+              : 'Tutoría instantánea'
+        },
         'subject_id': widget.subjectId,
       };
 
@@ -320,14 +329,19 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
       }
 
       // Éxito - mostrar mensaje y navegar
-      showCustomToast(context,
-          '¡Pago procesado exitosamente! La tutoría ha sido creada.', true);
-
-      // Esperar un momento y luego navegar
-      await Future.delayed(Duration(seconds: 2));
-
+      await Future.delayed(Duration(milliseconds: 300));
       if (mounted) {
-        Navigator.of(context).pop(); // Volver a la pantalla anterior
+        Navigator.of(context).pop(); // Cierra el modal de pago
+        await Future.delayed(Duration(milliseconds: 300));
+        final result = await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => ThankYouPage(),
+          ),
+        );
+        if (result == true && mounted) {
+          Navigator.of(context)
+              .pop(true); // Devuelve true a la home para refrescar
+        }
       }
     } catch (e) {
       print('Error inesperado en _submitPayment: $e');

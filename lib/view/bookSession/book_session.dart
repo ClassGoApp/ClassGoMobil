@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../provider/auth_provider.dart';
 import '../components/reusable_session_card.dart';
+import '../home/home_screen.dart';
 
 class BookSessionScreen extends StatefulWidget {
   final Map<String, dynamic> tutorProfile;
@@ -98,7 +99,7 @@ class _BookSessionScreenState extends State<BookSessionScreen> {
               "description": slot["description"] ?? "Sin descripción",
               "students": slot["students"],
               "formatted_time_range":
-              "${DateFormat('hh:mm a').format(DateTime.parse(slot["start_time"].trim()))} - ${DateFormat('hh:mm a').format(DateTime.parse(slot["end_time"].trim()))}",
+                  "${DateFormat('hh:mm a').format(DateTime.parse(slot["start_time"].trim()))} - ${DateFormat('hh:mm a').format(DateTime.parse(slot["end_time"].trim()))}",
               "subject": subjectData["info"]["subject"],
               "group": groupName,
             });
@@ -138,7 +139,6 @@ class _BookSessionScreenState extends State<BookSessionScreen> {
     }
   }
 
-
   Future<void> _fetchSessionsForSelectedDate(DateTime date) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final token = authProvider.token;
@@ -148,8 +148,8 @@ class _BookSessionScreenState extends State<BookSessionScreen> {
         isLoading = true;
       });
 
-      final response = await getTutorAvailableSlots(
-          token!, widget.tutor['id'].toString());
+      final response =
+          await getTutorAvailableSlots(token!, widget.tutor['id'].toString());
 
       setState(() {
         sessionData = response['data'];
@@ -235,7 +235,13 @@ class _BookSessionScreenState extends State<BookSessionScreen> {
                         icon: Icon(Icons.arrow_back_ios,
                             size: 20, color: Colors.white),
                         onPressed: () {
-                          Navigator.of(context).pop();
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  HomeScreen(forceRefresh: true),
+                            ),
+                          );
                         },
                       ),
                     ),
@@ -256,6 +262,45 @@ class _BookSessionScreenState extends State<BookSessionScreen> {
     );
   }
 
+  // Devuelve los días con disponibilidad real
+  Set<DateTime> getAvailableDays() {
+    Set<DateTime> days = {};
+    sessionData.forEach((dateKey, sessions) {
+      if (sessions is List && sessions.isNotEmpty) {
+        DateTime day = DateFormat('dd MMM yyyy').parse(dateKey);
+        days.add(DateTime(day.year, day.month, day.day));
+      }
+    });
+    return days;
+  }
+
+  // Devuelve los horarios de inicio válidos para el día seleccionado
+  List<DateTime> getAvailableStartTimesForSelectedDate() {
+    String selectedDate =
+        DateFormat('dd MMM yyyy').format(dateList[selectedIndex]);
+    List<DateTime> availableTimes = [];
+    if (sessionData.containsKey(selectedDate)) {
+      for (var session in sessionData[selectedDate]) {
+        DateTime start = DateTime.parse(session['start_time']);
+        DateTime end = DateTime.parse(session['end_time']);
+        DateTime lastStart = end.subtract(Duration(minutes: 20));
+        for (DateTime t = start;
+            !t.isAfter(lastStart);
+            t = t.add(Duration(minutes: 20))) {
+          availableTimes.add(t);
+        }
+      }
+    }
+    return availableTimes;
+  }
+
+  // Opciones rápidas: los próximos 3 horarios disponibles
+  List<DateTime> getQuickStartTimes() {
+    List<DateTime> all = getAvailableStartTimesForSelectedDate();
+    return all.take(3).toList();
+  }
+
+  // Modifica el _buildDateSelector para solo habilitar días con disponibilidad
   Widget _buildDateSelector() {
     if (isLoading) {
       return Container(
@@ -280,6 +325,8 @@ class _BookSessionScreenState extends State<BookSessionScreen> {
         ),
       );
     }
+
+    Set<DateTime> availableDays = getAvailableDays();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
@@ -308,53 +355,104 @@ class _BookSessionScreenState extends State<BookSessionScreen> {
         itemCount: dateList.length,
         itemBuilder: (context, index) {
           bool isSelected = selectedIndex == index;
+          DateTime day = dateList[index];
+          bool isAvailable =
+              availableDays.contains(DateTime(day.year, day.month, day.day));
 
           return GestureDetector(
-            onTap: () {
-              setState(() {
-                selectedIndex = index;
-              });
-              _fetchSessionsForSelectedDate(dateList[index]);
-            },
-            child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: isSelected ? AppColors.navbar.withOpacity(0.8) : AppColors.primaryGreen,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                padding: EdgeInsets.symmetric(horizontal: 15, vertical: 4),
-                child: Column(
-                  children: [
-                    Text(
-                      DateFormat('dd MMM').format(dateList[index]),
-                      style: TextStyle(
-                        color: AppColors.whiteColor,
-                        fontSize: FontSize.scale(context, 17),
-                        fontFamily: 'SF-Pro-Text',
-                        fontWeight: FontWeight.w500,
-                        fontStyle: FontStyle.normal,
+            onTap: isAvailable
+                ? () {
+                    setState(() {
+                      selectedIndex = index;
+                    });
+                    _fetchSessionsForSelectedDate(dateList[index]);
+                  }
+                : null,
+            child: Opacity(
+              opacity: isAvailable ? 1.0 : 0.3,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12.0, vertical: 10.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.navbar.withOpacity(0.8)
+                        : AppColors.primaryGreen,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 15, vertical: 4),
+                  child: Column(
+                    children: [
+                      Text(
+                        DateFormat('dd MMM').format(dateList[index]),
+                        style: TextStyle(
+                          color: AppColors.whiteColor,
+                          fontSize: FontSize.scale(context, 17),
+                          fontFamily: 'SF-Pro-Text',
+                          fontWeight: FontWeight.w500,
+                          fontStyle: FontStyle.normal,
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      dayList[index],
-                      style: TextStyle(
-                        color: AppColors.whiteColor,
-                        fontSize: FontSize.scale(context, 16),
-                        fontFamily: 'SF-Pro-Text',
-                        fontWeight: FontWeight.w400,
-                        fontStyle: FontStyle.normal,
+                      SizedBox(height: 4),
+                      Text(
+                        dayList[index],
+                        style: TextStyle(
+                          color: AppColors.whiteColor,
+                          fontSize: FontSize.scale(context, 16),
+                          fontFamily: 'SF-Pro-Text',
+                          fontWeight: FontWeight.w400,
+                          fontStyle: FontStyle.normal,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
           );
         },
       ),
+    );
+  }
+
+  // Ejemplo de selector de hora usando los horarios válidos
+  Widget buildHourSelector() {
+    List<DateTime> availableTimes = getAvailableStartTimesForSelectedDate();
+    if (availableTimes.isEmpty) {
+      return Text('No hay horarios disponibles');
+    }
+    return DropdownButton<DateTime>(
+      value: availableTimes.first,
+      items: availableTimes.map((dt) {
+        return DropdownMenuItem<DateTime>(
+          value: dt,
+          child: Text(DateFormat('HH:mm').format(dt)),
+        );
+      }).toList(),
+      onChanged: (dt) {
+        // Actualiza el estado según la selección
+      },
+    );
+  }
+
+  // Ejemplo de opciones rápidas
+  Widget buildQuickHourOptions() {
+    List<DateTime> quickTimes = getQuickStartTimes();
+    if (quickTimes.isEmpty) {
+      return Text('No hay horarios rápidos');
+    }
+    return Row(
+      children: quickTimes.map((dt) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4.0),
+          child: ElevatedButton(
+            onPressed: () {
+              // Actualiza el estado según la selección
+            },
+            child: Text(DateFormat('HH:mm').format(dt)),
+          ),
+        );
+      }).toList(),
     );
   }
 
@@ -375,7 +473,8 @@ class _BookSessionScreenState extends State<BookSessionScreen> {
     }
 
     // Formatear la fecha seleccionada para acceder a los datos
-    String selectedDate = DateFormat('dd MMM yyyy').format(dateList[selectedIndex]);
+    String selectedDate =
+        DateFormat('dd MMM yyyy').format(dateList[selectedIndex]);
 
     if (sessionData.containsKey(selectedDate)) {
       List<dynamic> sessions = sessionData[selectedDate];
@@ -442,5 +541,4 @@ class _BookSessionScreenState extends State<BookSessionScreen> {
       );
     }
   }
-
 }

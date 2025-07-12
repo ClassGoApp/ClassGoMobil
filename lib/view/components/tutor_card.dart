@@ -228,6 +228,7 @@ class _TutorCardState extends State<TutorCard> {
                       elevation: 0,
                     ),
                     child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         widget.showStartButton
@@ -236,17 +237,20 @@ class _TutorCardState extends State<TutorCard> {
                             : const Icon(Icons.calendar_today,
                                 color: Colors.white, size: 20),
                         const SizedBox(width: 8),
-                        Text(
-                          widget.showStartButton
-                              ? 'Empezar tutoría'
-                              : 'Agendar',
-                          style: AppTextStyles.button.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
+                        Flexible(
+                          child: Text(
+                            widget.showStartButton
+                                ? 'Empezar tutoría'
+                                : 'Agendar',
+                            style: AppTextStyles.button.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15, // Puedes bajarlo a 15 o 14 si sigue el problema
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            softWrap: false,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
