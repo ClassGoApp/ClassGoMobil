@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_projects/view/home/home_screen.dart';
 import 'package:overlay_support/overlay_support.dart';
 import 'package:flutter_projects/helpers/pusher_service.dart';
+import 'package:flutter_projects/services/deep_link_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'helpers/firebase_messaging_service.dart';
 
@@ -38,8 +39,22 @@ void main() async {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({Key? key}) : super(key: key);
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    // Inicializar el servicio de deep links después de que el widget esté montado
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      DeepLinkService().initialize(navigatorKey.currentContext!);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +74,16 @@ class MyApp extends StatelessWidget {
             colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
             useMaterial3: true,
           ),
-          home: HomeScreen(),
+          home: Consumer<AuthProvider>(
+            builder: (context, authProvider, child) {
+              // Verificar si el usuario está autenticado
+              if (authProvider.isLoggedIn) {
+                return HomeScreen();
+              } else {
+                return LoginScreen();
+              }
+            },
+          ),
         ),
       ),
     );
@@ -126,7 +150,7 @@ class Lernen extends StatelessWidget {
 
         return MaterialApp(
           debugShowCheckedModeBanner: false,
-          home: authProvider.isLoggedIn ? SearchTutorsScreen() : LoginScreen(),
+          home: authProvider.isLoggedIn ? HomeScreen() : LoginScreen(),
         );
       },
     );

@@ -10,6 +10,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
 import 'login_screen.dart';
+import 'verification_pending_screen.dart';
 
 class RegistrationScreen extends StatefulWidget {
   @override
@@ -200,11 +201,17 @@ class _RegistrationScreenState extends State<RegistrationScreen>
         showCustomToast(context,
             responseData['message'] ?? 'Registration successful', true);
 
-        Navigator.push(
+        // Redirigir a la pantalla de verificación pendiente en lugar del login
+        Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-              builder: (context) => LoginScreen(
-                    registrationResponse: responseData,
+              builder: (context) => VerificationPendingScreen(
+                    userData: {
+                      'email': email,
+                      'first_name': firstName,
+                      'last_name': lastName,
+                      'response': responseData,
+                    },
                   )),
         );
       } catch (error) {
@@ -291,7 +298,6 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-
                             SvgPicture.asset(
                               AppImages.logo,
                               width: 150,
@@ -329,10 +335,8 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                               ),
                             ),
                             SizedBox(height: 60),
-
                             Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.stretch,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 CustomTextField(
                                   hint: 'Nombres',
@@ -343,20 +347,18 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                                 ),
                                 if (_firstNameErrorMessage.isNotEmpty)
                                   Padding(
-                                    padding:
-                                        const EdgeInsets.only(top: 8.0),
+                                    padding: const EdgeInsets.only(top: 8.0),
                                     child: Text(
                                       _firstNameErrorMessage,
-                                      style: TextStyle(
-                                          color: AppColors.redColor),
+                                      style:
+                                          TextStyle(color: AppColors.redColor),
                                     ),
                                   ),
                               ],
                             ),
                             SizedBox(height: 15),
                             Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.stretch,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 CustomTextField(
                                   hint: 'Apellidos',
@@ -367,12 +369,11 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                                 ),
                                 if (_lastNameErrorMessage.isNotEmpty)
                                   Padding(
-                                    padding:
-                                        const EdgeInsets.only(top: 8.0),
+                                    padding: const EdgeInsets.only(top: 8.0),
                                     child: Text(
                                       _lastNameErrorMessage,
-                                      style: TextStyle(
-                                          color: AppColors.redColor),
+                                      style:
+                                          TextStyle(color: AppColors.redColor),
                                     ),
                                   ),
                               ],
@@ -599,13 +600,13 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                                           TextSpan(
                                             text: 'Terminos y condiciones',
                                             style: TextStyle(
-                                              fontSize:
-                                                  FontSize.scale(context, 14),
-                                              fontFamily: 'SF-Pro-Text',
-                                              fontWeight: FontWeight.w500,
-                                              color: AppColors.blueColor,
-                                                decoration: TextDecoration.underline
-                                            ),
+                                                fontSize:
+                                                    FontSize.scale(context, 14),
+                                                fontFamily: 'SF-Pro-Text',
+                                                fontWeight: FontWeight.w500,
+                                                color: AppColors.blueColor,
+                                                decoration:
+                                                    TextDecoration.underline),
                                             recognizer: TapGestureRecognizer()
                                               ..onTap = () {},
                                           ),
@@ -626,13 +627,13 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                                           TextSpan(
                                             text: 'Políticas de Privacidad',
                                             style: TextStyle(
-                                              fontSize:
-                                                  FontSize.scale(context, 14),
-                                              fontFamily: 'SF-Pro-Text',
-                                              fontWeight: FontWeight.w400,
-                                              color: AppColors.blueColor,
-                                                decoration: TextDecoration.underline
-                                            ),
+                                                fontSize:
+                                                    FontSize.scale(context, 14),
+                                                fontFamily: 'SF-Pro-Text',
+                                                fontWeight: FontWeight.w400,
+                                                color: AppColors.blueColor,
+                                                decoration:
+                                                    TextDecoration.underline),
                                             recognizer: TapGestureRecognizer()
                                               ..onTap = () {},
                                           ),

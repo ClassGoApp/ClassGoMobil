@@ -43,4 +43,15 @@ class AuthHelper {
       onAuthenticated();
     }
   }
+
+  static Future<void> loginAfterVerification(
+      BuildContext context, String token, Map<String, dynamic> userData) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    await authProvider.setToken(token);
+    await authProvider
+        .setUserData({'user': userData}); // Asegura estructura correcta
+    await authProvider.setAuthToken(token);
+    await Future.delayed(
+        Duration(milliseconds: 200)); // Da tiempo a notificar listeners
+  }
 }

@@ -142,17 +142,23 @@ class _HomeScreenState extends State<HomeScreen>
         final slotBookingId = parsedData['slotBookingId'].toString();
         final newStatus = parsedData['newStatus'];
         bool updated = false;
-        setState(() {
-          for (var booking in _todaysBookings) {
-            if (booking['id'].toString() == slotBookingId) {
-              booking['status'] = newStatus;
-              updated = true;
-            }
+
+        // Usar Future.microtask para evitar setState durante build
+        Future.microtask(() {
+          if (mounted) {
+            setState(() {
+              for (var booking in _todaysBookings) {
+                if (booking['id'].toString() == slotBookingId) {
+                  booking['status'] = newStatus;
+                  updated = true;
+                }
+              }
+            });
           }
         });
+
         if (updated) {
           print('Actualizada la tutoría $slotBookingId a estado $newStatus');
-          setState(() {});
         } else {
           print(
               'Tutoría con id $slotBookingId no encontrada en la lista actual. Actualizando lista completa...');
@@ -3563,7 +3569,10 @@ class _CustomDrawerHeader extends StatelessWidget {
                   children: [
                     if (userData != null)
                       Text(
-                        userData['user']?['profile']?['full_name'] ?? 'Usuario',
+                        userData['user']?['profile']?['full_name'] ??
+                            userData['user']?['name'] ??
+                            userData['user']?['email'] ??
+                            'Usuario',
                         style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
