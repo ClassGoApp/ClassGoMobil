@@ -50,6 +50,22 @@ class AuthProvider with ChangeNotifier {
 
   bool get isLoggedIn => _token != null;
 
+  /// Obtiene el rol del usuario
+  String? get userRole {
+    if (_userData != null &&
+        _userData!.containsKey('user') &&
+        _userData!['user'].containsKey('user_role')) {
+      return _userData!['user']['user_role'];
+    }
+    return null;
+  }
+
+  /// Verifica si el usuario es un tutor
+  bool get isTutor => userRole == 'tutor';
+
+  /// Verifica si el usuario es un estudiante
+  bool get isStudent => userRole == 'student';
+
   int? get userId {
     if (_userData != null &&
         _userData!.containsKey('user') &&
@@ -538,6 +554,51 @@ class AuthProvider with ChangeNotifier {
     _zipCode = prefs.getString('zipCode') ?? '';
     _description = prefs.getString('description') ?? '';
     _company = prefs.getString('company') ?? '';
+
+    notifyListeners();
+  }
+
+  /// Cierra la sesión del usuario
+  Future<void> logout() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    // Limpiar token
+    _token = null;
+    await prefs.remove('token');
+
+    // Limpiar datos del usuario
+    _userData = null;
+    await prefs.remove('userData');
+
+    // Limpiar listas
+    _educationList.clear();
+    _experienceList.clear();
+    _certificateList.clear();
+    await prefs.remove('educationList');
+    await prefs.remove('experienceList');
+
+    // Limpiar datos del perfil
+    _firstName = null;
+    _lastName = null;
+    _email = null;
+    _phone = null;
+    _country = null;
+    _state = null;
+    _city = null;
+    _zipCode = null;
+    _description = null;
+    _company = null;
+
+    await prefs.remove('firstName');
+    await prefs.remove('lastName');
+    await prefs.remove('email');
+    await prefs.remove('phone');
+    await prefs.remove('country');
+    await prefs.remove('state');
+    await prefs.remove('city');
+    await prefs.remove('zipCode');
+    await prefs.remove('description');
+    await prefs.remove('company');
 
     notifyListeners();
   }

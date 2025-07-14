@@ -15,6 +15,10 @@ import 'package:flutter_projects/helpers/pusher_service.dart';
 import 'package:flutter_projects/services/deep_link_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'helpers/firebase_messaging_service.dart';
+import 'package:flutter_projects/view/tutor/dashboard_tutor.dart';
+import 'package:flutter_projects/view/components/role_based_navigation.dart';
+import 'package:flutter_projects/provider/booking_provider.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -64,6 +68,7 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider(create: (context) => SettingsProvider()),
         ChangeNotifierProvider(create: (context) => ConnectivityProvider()),
         ChangeNotifierProvider(create: (context) => PusherService()),
+        ChangeNotifierProvider(create: (context) => BookingProvider()),
       ],
       child: OverlaySupport.global(
         child: MaterialApp(
@@ -74,85 +79,18 @@ class _MyAppState extends State<MyApp> {
             colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
             useMaterial3: true,
           ),
-          home: Consumer<AuthProvider>(
-            builder: (context, authProvider, child) {
-              // Verificar si el usuario está autenticado
-              if (authProvider.isLoggedIn) {
-                return HomeScreen();
-              } else {
-                return LoginScreen();
-              }
-            },
-          ),
+          localizationsDelegates: [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [
+            Locale('es'),
+            Locale('en'),
+          ],
+          home: RoleBasedNavigation(),
         ),
       ),
-    );
-  }
-}
-
-class SplashScreen extends StatefulWidget {
-  @override
-  _SplashScreenState createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends State<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    Future.delayed(Duration(seconds: 2), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => Lernen()),
-      );
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.primaryGreen,
-      body: Center(
-        child: SvgPicture.asset(
-          AppImages.splash,
-          width: MediaQuery.of(context).size.width * 0.4,
-          height: MediaQuery.of(context).size.height * 0.4,
-          fit: BoxFit.contain,
-        ),
-      ),
-    );
-  }
-}
-
-class Lernen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<ConnectivityProvider>(
-      builder: (context, connectivityProvider, _) {
-        final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
-        if (!connectivityProvider.isConnected) {
-          return MaterialApp(
-            navigatorKey: navigatorKey,
-            debugShowCheckedModeBanner: false,
-            home: Scaffold(
-              backgroundColor: AppColors.backgroundColor,
-              body: Center(
-                child: InternetAlertDialog(
-                  onRetry: () async {
-                    await connectivityProvider.checkInitialConnection();
-                    (context as Element).reassemble();
-                  },
-                ),
-              ),
-            ),
-          );
-        }
-
-        return MaterialApp(
-          debugShowCheckedModeBanner: false,
-          home: authProvider.isLoggedIn ? HomeScreen() : LoginScreen(),
-        );
-      },
     );
   }
 }
