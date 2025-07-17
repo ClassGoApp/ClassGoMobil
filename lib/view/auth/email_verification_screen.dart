@@ -4,7 +4,7 @@ import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/helpers/deep_link_handler.dart';
 import 'package:flutter_projects/helpers/email_verification_helper.dart';
 import 'package:flutter_projects/view/auth/login_screen.dart';
-import 'package:flutter_projects/view/home/home_screen.dart';
+import 'package:flutter_projects/view/components/role_based_navigation.dart';
 import 'package:flutter_projects/helpers/auth_helper.dart';
 import 'package:flutter_projects/view/components/success_verification_dialog.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -64,10 +64,15 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
 
   Future<void> _verifyEmail() async {
     try {
+      print('Iniciando verificación de email...');
+      print('ID: ${widget.verificationId}, Hash: ${widget.verificationHash}');
+
       final result = await EmailVerificationHelper.verifyEmail(
         widget.verificationId,
         widget.verificationHash,
       );
+
+      print('Resultado de verificación: $result');
 
       if (mounted) {
         setState(() {
@@ -81,15 +86,26 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
         });
 
         if (result['success']) {
+          print('Verificación exitosa, procesando datos del usuario...');
           // Guardar token y datos del usuario si vienen en la respuesta (dentro de result['data'])
           final data = result['data'] ?? {};
           final token = data['token'];
           final user = data['user'];
+
+          print('Token recibido: ${token != null ? 'Sí' : 'No'}');
+          print('Datos de usuario recibidos: ${user != null ? 'Sí' : 'No'}');
+
           if (token != null && user != null) {
+            print('Guardando datos de autenticación...');
             await AuthHelper.loginAfterVerification(context, token, user);
+            print('Datos de autenticación guardados exitosamente');
+          } else {
+            print('No se recibieron token o datos de usuario en la respuesta');
           }
+
           // Mostrar modal de éxito con sonido y cerrar automáticamente
           if (mounted) {
+            print('Mostrando modal de éxito...');
             await showDialog(
               context: context,
               barrierDismissible: false,
@@ -98,18 +114,21 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
             // Esperar 2 segundos y luego cerrar el modal y navegar a Home
             await Future.delayed(Duration(seconds: 2));
             if (mounted) {
+              print('Navegando a RoleBasedNavigation...');
               Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (context) => HomeScreen()),
+                MaterialPageRoute(builder: (context) => RoleBasedNavigation()),
                 (Route<dynamic> route) => false,
               );
             }
           }
         } else {
+          print('Verificación fallida: ${result['message']}');
           // Mostrar mensaje de error
           EmailVerificationHelper.showResultSnackBar(context, result);
         }
       }
     } catch (e) {
+      print('Error durante la verificación: $e');
       if (mounted) {
         setState(() {
           _isVerifying = false;

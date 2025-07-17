@@ -189,8 +189,9 @@ class _RegistrationScreenState extends State<RegistrationScreen>
       };
 
       try {
+        print('Iniciando proceso de registro...');
         final responseData = await registerUser(userData);
-
+        print('Respuesta del registro: $responseData');
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         if (responseData.containsKey('data') &&
             responseData['data'].containsKey('token')) {
@@ -215,13 +216,28 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                   )),
         );
       } catch (error) {
+        print('Error capturado en registro: $error');
+        print('Tipo de error: ${error.runtimeType}');
+
+        String errorMessage = 'Registration failed: ';
+
         if (error is Map<String, dynamic> && error.containsKey('message')) {
-          showCustomToast(
-              context, 'Registration failed: ${error['message']}', false);
+          errorMessage += error['message'];
+          print('Error estructurado: ${error['message']}');
+        } else if (error.toString().contains('HandshakeException')) {
+          errorMessage +=
+              'Error de conexión segura. Verifica tu conexión a internet.';
+          print('Error de SSL detectado en pantalla');
+        } else if (error.toString().contains('SocketException')) {
+          errorMessage +=
+              'No se pudo conectar al servidor. Verifica tu conexión a internet.';
+          print('Error de conexión detectado en pantalla');
         } else {
-          showCustomToast(
-              context, 'Registration failed: An unknown error occurred', false);
+          errorMessage += 'An unknown error occurred: ${error.toString()}';
+          print('Error inesperado en pantalla: $error');
         }
+
+        showCustomToast(context, errorMessage, false);
       } finally {
         setState(() {
           _isLoading = false;

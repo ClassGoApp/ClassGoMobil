@@ -10,6 +10,12 @@ class RoleBasedNavigation extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
+        // Mostrar pantalla de carga mientras la sesión no esté lista
+        if (!authProvider.isSessionLoaded) {
+          return Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
         // Si no está autenticado, mostrar login
         if (!authProvider.isLoggedIn) {
           return LoginScreen();

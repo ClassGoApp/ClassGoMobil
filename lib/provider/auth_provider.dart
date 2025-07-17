@@ -29,6 +29,8 @@ class AuthProvider with ChangeNotifier {
   String? _description;
   String? _company;
   bool _isLoading = true;
+  bool _isSessionLoaded =
+      false; // Nuevo: indica si la sesión se cargó completamente
 
   String? get firstName => _firstName;
   String? get lastName => _lastName;
@@ -47,24 +49,38 @@ class AuthProvider with ChangeNotifier {
   List<Experience> get experienceList => _experienceList;
   List<Certificate> get certificateList => _certificateList;
   bool get isLoading => _isLoading;
+  bool get isSessionLoaded => _isSessionLoaded; // Nuevo getter
 
-  bool get isLoggedIn => _token != null;
+  bool get isLoggedIn =>
+      _token != null &&
+      _isSessionLoaded; // Modificado: requiere que la sesión esté cargada
 
   /// Obtiene el rol del usuario
   String? get userRole {
     if (_userData != null &&
         _userData!.containsKey('user') &&
-        _userData!['user'].containsKey('user_role')) {
-      return _userData!['user']['user_role'];
+        _userData!['user'].containsKey('role')) {
+      String role = _userData!['user']['role'];
+      print('DEBUG - userRole detectado: $role');
+      return role;
     }
+    print('DEBUG - userRole no encontrado. userData: $_userData');
     return null;
   }
 
   /// Verifica si el usuario es un tutor
-  bool get isTutor => userRole == 'tutor';
+  bool get isTutor {
+    bool result = userRole == 'tutor';
+    print('DEBUG - isTutor: $result (userRole: ${userRole})');
+    return result;
+  }
 
   /// Verifica si el usuario es un estudiante
-  bool get isStudent => userRole == 'student';
+  bool get isStudent {
+    bool result = userRole == 'student';
+    print('DEBUG - isStudent: $result (userRole: ${userRole})');
+    return result;
+  }
 
   int? get userId {
     if (_userData != null &&
@@ -96,10 +112,20 @@ class AuthProvider with ChangeNotifier {
   Future<void> _loadSession() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     _token = prefs.getString('token');
+    print('DEBUG - Token cargado: ${_token != null ? "SÍ" : "NO"}');
 
     final userDataString = prefs.getString('userData');
     if (userDataString != null) {
       _userData = jsonDecode(userDataString) as Map<String, dynamic>;
+      print('DEBUG - userData cargado: ${_userData != null ? "SÍ" : "NO"}');
+      if (_userData != null) {
+        print('DEBUG - userData keys: ${_userData!.keys}');
+        if (_userData!.containsKey('user')) {
+          print('DEBUG - user keys: ${_userData!['user'].keys}');
+        }
+      }
+    } else {
+      print('DEBUG - No se encontró userData en SharedPreferences');
     }
 
     final educationListString = prefs.getString('educationList');
@@ -122,6 +148,11 @@ class AuthProvider with ChangeNotifier {
       _experienceList = [];
     }
 
+    // Marcar que la sesión se cargó completamente
+    _isSessionLoaded = true;
+    _isLoading = false;
+    print(
+        'DEBUG - Sesión cargada. isLoggedIn: $isLoggedIn, isTutor: $isTutor, isStudent: $isStudent');
     notifyListeners();
   }
 
@@ -235,9 +266,9 @@ class AuthProvider with ChangeNotifier {
     // Enviar el token FCM al backend
     print('Obteniendo token FCM...');
     String? fcmToken = await FirebaseMessaging.instance.getToken();
-    print('Token FCM obtenido: [32m${fcmToken ?? 'null'}[0m');
+    print('Token FCM obtenido:  [32m${fcmToken ?? 'null'} [0m');
     int? userIdValue = userId;
-    print('User ID obtenido: [32m$userIdValue[0m');
+    print('User ID obtenido:  [32m$userIdValue [0m');
 
     if (fcmToken != null && userIdValue != null) {
       try {
@@ -257,7 +288,7 @@ class AuthProvider with ChangeNotifier {
           body: jsonEncode({'user_id': userIdValue, 'fcm_token': fcmToken}),
         );
         print(
-            'Respuesta backend FCM: [34m${response.statusCode}[0m - ${response.body}');
+            'Respuesta backend FCM:  [34m${response.statusCode} [0m - ${response.body}');
 
         if (response.statusCode == 200) {
           print('Token FCM enviado exitosamente al backend');
@@ -276,7 +307,7 @@ class AuthProvider with ChangeNotifier {
     FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
       int? userIdValue = userId;
       print('Token FCM actualizado: $newToken');
-      print('User ID obtenido: [32m$userIdValue[0m');
+      print('User ID obtenido:  [32m$userIdValue [0m');
       if (userIdValue != null) {
         try {
           print('Enviando token FCM actualizado al backend...');
@@ -290,7 +321,7 @@ class AuthProvider with ChangeNotifier {
             body: jsonEncode({'user_id': userIdValue, 'fcm_token': newToken}),
           );
           print(
-              'FCM token actualizado en backend: [34m${response.statusCode}[0m - ${response.body}');
+              'FCM token actualizado en backend:  [34m${response.statusCode} [0m - ${response.body}');
 
           if (response.statusCode == 200) {
             print('Token FCM actualizado exitosamente en el backend');

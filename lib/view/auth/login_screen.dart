@@ -10,6 +10,7 @@ import 'package:flutter_projects/base_components/textfield.dart';
 import 'package:flutter_projects/view/auth/register_screen.dart';
 import 'package:flutter_projects/view/auth/reset_password_screen.dart';
 import 'package:flutter_projects/view/home/home_screen.dart';
+import 'package:flutter_projects/view/tutor/dashboard_tutor.dart';
 
 class LoginScreen extends StatefulWidget {
   final Map<String, dynamic>? registrationResponse;
@@ -101,10 +102,19 @@ class _LoginScreenState extends State<LoginScreen>
           _isLoading = false;
         });
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => HomeScreen()),
-        );
+        // Redirigir según el rol
+        final String? role = userData['user']?['role'];
+        if (role == 'tutor') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => DashboardTutor()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => HomeScreen()),
+          );
+        }
 
         _emailController.clear();
         _passwordController.clear();

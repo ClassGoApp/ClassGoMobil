@@ -18,27 +18,59 @@ import 'helpers/firebase_messaging_service.dart';
 import 'package:flutter_projects/view/tutor/dashboard_tutor.dart';
 import 'package:flutter_projects/view/components/role_based_navigation.dart';
 import 'package:flutter_projects/provider/booking_provider.dart';
+import 'package:flutter_projects/provider/tutor_subjects_provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'dart:io';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: const FirebaseOptions(
-      apiKey: 'AIzaSyDs5zKv82dGel5tUUIWE7MsLLyEBCKNW1g',
-      appId: '1:934911540456:android:306f0e768c07edede45d5d',
-      messagingSenderId: '934911540456',
-      projectId: 'classgo-fec0d',
-      storageBucket: 'classgo-fec0d.firebasestorage.app',
-    ),
-  );
-  await FirebaseMessagingService.initialize();
-  print('¡Firebase inicializado correctamente!');
+
+  // Inicializar Firebase de forma opcional
+  bool firebaseInitialized = false;
+  try {
+    await Firebase.initializeApp(
+      options: const FirebaseOptions(
+        apiKey: 'AIzaSyDs5zKv82dGel5tUUIWE7MsLLyEBCKNW1g',
+        appId: '1:934911540456:android:306f0e768c07edede45d5d',
+        messagingSenderId: '934911540456',
+        projectId: 'classgo-fec0d',
+        storageBucket: 'classgo-fec0d.firebasestorage.app',
+      ),
+    );
+    firebaseInitialized = true;
+    print('¡Firebase inicializado correctamente!');
+  } catch (e) {
+    print('Error al inicializar Firebase: $e');
+    print('La aplicación continuará sin Firebase');
+  }
+
+  // Inicializar Firebase Messaging solo si Firebase se inicializó correctamente
+  if (firebaseInitialized) {
+    try {
+      // Verificar si estamos en Android antes de inicializar Firebase Messaging
+      bool isAndroid = Platform.isAndroid;
+      print('Plataforma Android: $isAndroid');
+
+      if (isAndroid) {
+        await FirebaseMessagingService.initialize();
+      } else {
+        print('No es Android. Firebase Messaging omitido.');
+      }
+    } catch (e) {
+      print('Error al inicializar Firebase Messaging: $e');
+      print('La aplicación continuará sin notificaciones push');
+    }
+  } else {
+    print('Firebase Messaging omitido - Firebase no está disponible');
+  }
 
   try {
     await AppConfig().getSettings();
-  } catch (e) {}
+  } catch (e) {
+    print('Error al obtener configuraciones: $e');
+  }
 
   runApp(const MyApp());
 }
@@ -69,6 +101,7 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider(create: (context) => ConnectivityProvider()),
         ChangeNotifierProvider(create: (context) => PusherService()),
         ChangeNotifierProvider(create: (context) => BookingProvider()),
+        ChangeNotifierProvider(create: (context) => TutorSubjectsProvider()),
       ],
       child: OverlaySupport.global(
         child: MaterialApp(

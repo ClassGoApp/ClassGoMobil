@@ -3,21 +3,31 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
+import 'dart:io';
+import 'dart:io' show File;
+import 'package:path/path.dart' as path;
 
 final String baseUrl = 'https://classgoapp.com/api';
 
 Future<Map<String, dynamic>> registerUser(Map<String, dynamic> userData) async {
   try {
+    print('Iniciando registro de usuario con datos: $userData');
+    print('URL de registro: $baseUrl/register');
     final response = await http.post(
       Uri.parse('$baseUrl/register'),
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
       body: jsonEncode(userData),
     );
 
+    print('Respuesta del servidor - Status: ${response.statusCode}');
+    print('Respuesta del servidor - Body: ${response.body}');
+
     if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
+      print('Registro exitoso: $responseData');
       return responseData;
     } else if (response.statusCode == 422) {
       try {
@@ -34,11 +44,13 @@ Future<Map<String, dynamic>> registerUser(Map<String, dynamic> userData) async {
           errorMessage = 'Validation error occurred';
         }
 
+        print('Error de validación: $errorMessage');
         throw {
           'message': errorMessage,
           'status': response.statusCode,
         };
       } catch (e) {
+        print('Error al parsear respuesta de validación: $e');
         throw {
           'message':
               'Validation error occurred, but the response could not be parsed.',
@@ -49,12 +61,14 @@ Future<Map<String, dynamic>> registerUser(Map<String, dynamic> userData) async {
       if (response.headers['content-type']?.contains('application/json') ??
           false) {
         final responseData = jsonDecode(response.body);
+        print('Error del servidor: $responseData');
         throw {
           'message': responseData['message'] ??
               'An error occurred during registration',
           'status': response.statusCode,
         };
       } else {
+        print('Respuesta no JSON del servidor: ${response.body}');
         throw {
           'message':
               'An unexpected response was received from the server. Please try again later.',
@@ -63,10 +77,31 @@ Future<Map<String, dynamic>> registerUser(Map<String, dynamic> userData) async {
       }
     }
   } catch (e) {
+    print('Error en registerUser: $e');
+    print('Tipo de error: ${e.runtimeType}');
+
     if (e is Map<String, dynamic> && e.containsKey('message')) {
+      print('Error estructurado: $e');
       throw e;
+    } else if (e.toString().contains('HandshakeException')) {
+      print('Error de SSL/TLS detectado');
+      throw {
+        'message': 'Error de conexión segura. Verifica tu conexión a internet.',
+        'status': 0
+      };
+    } else if (e.toString().contains('SocketException')) {
+      print('Error de conexión detectado');
+      throw {
+        'message':
+            'No se pudo conectar al servidor. Verifica tu conexión a internet.',
+        'status': 0
+      };
     } else {
-      throw {'message': 'An unexpected error occurred during registration.'};
+      print('Error inesperado: $e');
+      throw {
+        'message':
+            'An unexpected error occurred during registration: ${e.toString()}'
+      };
     }
   }
 }
@@ -1638,5 +1673,133 @@ Future<List<Map<String, dynamic>>> getUserBookingsById(
     return data.cast<Map<String, dynamic>>();
   } else {
     throw Exception('Error al obtener las tutorías del usuario');
+  }
+}
+
+// Tutor Subjects API Methods
+Future<Map<String, dynamic>> getTutorSubjects(String token, int userId) async {
+  try {
+    final response = await http.get(
+      Uri.parse('$baseUrl/tutor-subjects?user_id=$userId'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    );
+
+    print(
+        'DEBUG - getTutorSubjects response: ${response.statusCode} - ${response.body}');
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to get tutor subjects: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('Error getting tutor subjects: $e');
+    throw e;
+  }
+}
+
+Future<Map<String, dynamic>> addTutorSubject(String token, int userId,
+    int subjectId, String description, String? imagePath) async {
+  try {
+    var request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/tutor-subjects'),
+    );
+
+    request.headers.addAll({
+      'Authorization': 'Bearer $token',
+      'Accept': 'application/json',
+    });
+
+    request.fields['user_id'] = userId.toString();
+    request.fields['subject_id'] = subjectId.toString();
+    request.fields['description'] = description;
+
+    if (imagePath != null && imagePath.isNotEmpty) {
+      final file = File(imagePath);
+      if (await file.exists()) {
+        final stream = http.ByteStream(file.openRead());
+        final length = await file.length();
+        final multipartFile = http.MultipartFile(
+          'image',
+          stream,
+          length,
+          filename: path.basename(imagePath),
+        );
+        request.files.add(multipartFile);
+      }
+    }
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    print(
+        'DEBUG - addTutorSubject response: ${response.statusCode} - ${response.body}');
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to add tutor subject: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('Error adding tutor subject: $e');
+    throw e;
+  }
+}
+
+Future<Map<String, dynamic>> deleteTutorSubject(
+    String token, int subjectId) async {
+  try {
+    final response = await http.delete(
+      Uri.parse('$baseUrl/tutor-subjects/$subjectId'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    );
+
+    print(
+        'DEBUG - deleteTutorSubject response: ${response.statusCode} - ${response.body}');
+
+    if (response.statusCode == 200 || response.statusCode == 204) {
+      return {'success': true, 'message': 'Subject deleted successfully'};
+    } else {
+      throw Exception('Failed to delete tutor subject: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('Error deleting tutor subject: $e');
+    throw e;
+  }
+}
+
+// Get available subjects for dropdown
+Future<Map<String, dynamic>> getAvailableSubjects(String token) async {
+  try {
+    final response = await http.get(
+      Uri.parse('$baseUrl/subjects'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    );
+
+    print(
+        'DEBUG - getAvailableSubjects response: ${response.statusCode} - ${response.body}');
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception(
+          'Failed to get available subjects: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('Error getting available subjects: $e');
+    throw e;
   }
 }

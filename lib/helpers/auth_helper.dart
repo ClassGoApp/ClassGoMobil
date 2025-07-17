@@ -46,12 +46,53 @@ class AuthHelper {
 
   static Future<void> loginAfterVerification(
       BuildContext context, String token, Map<String, dynamic> userData) async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    await authProvider.setToken(token);
-    await authProvider
-        .setUserData({'user': userData}); // Asegura estructura correcta
-    await authProvider.setAuthToken(token);
-    await Future.delayed(
-        Duration(milliseconds: 200)); // Da tiempo a notificar listeners
+    try {
+      print('AuthHelper: Iniciando login después de verificación...');
+      print('AuthHelper: Token: ${token.substring(0, 20)}...');
+      print('AuthHelper: UserData: $userData');
+
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+      // Guardar token
+      print('AuthHelper: Guardando token...');
+      await authProvider.setToken(token);
+      print('AuthHelper: Token guardado');
+
+      // Guardar datos del usuario con estructura correcta
+      print('AuthHelper: Guardando datos de usuario...');
+      await authProvider.setUserData({'user': userData});
+      print('AuthHelper: Datos de usuario guardados');
+
+      // Configurar autenticación completa (con manejo de errores)
+      print('AuthHelper: Configurando autenticación completa...');
+      try {
+        await authProvider.setAuthToken(token);
+        print('AuthHelper: Autenticación completa configurada');
+      } catch (e) {
+        print('AuthHelper: Error en setAuthToken (probablemente FCM): $e');
+        print('AuthHelper: Continuando sin FCM...');
+        // No propagamos el error para no bloquear el login
+      }
+
+      // Dar tiempo a que se notifiquen los listeners
+      await Future.delayed(Duration(milliseconds: 500));
+      print('AuthHelper: Login después de verificación completado');
+
+      // Verificar que todo se guardó correctamente
+      print('AuthHelper: Verificando estado de autenticación...');
+      print('AuthHelper: isLoggedIn: ${authProvider.isLoggedIn}');
+      print('AuthHelper: userId: ${authProvider.userId}');
+      print('AuthHelper: userData: ${authProvider.userData}');
+    } catch (e) {
+      print('AuthHelper: Error durante login después de verificación: $e');
+      // Solo propagamos errores que no sean de FCM
+      if (!e.toString().contains('SERVICE_NOT_AVAILABLE') &&
+          !e.toString().contains('firebase_messaging')) {
+        rethrow;
+      } else {
+        print(
+            'AuthHelper: Error de FCM ignorado, login completado exitosamente');
+      }
+    }
   }
 }

@@ -1,206 +1,1410 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
+import 'package:flutter_projects/view/components/tutor_card.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_projects/provider/tutor_subjects_provider.dart';
+import 'package:flutter_projects/provider/auth_provider.dart';
+import 'package:flutter_projects/view/tutor/add_subject_modal.dart';
 
-class DashboardTutor extends StatelessWidget {
+// --- Tarjeta de tutoría al estilo UpcomingSessionBanner ---
+class _TutorUpcomingSessionCard extends StatelessWidget {
+  final Map<String, dynamic> booking;
+  const _TutorUpcomingSessionCard({required this.booking});
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.darkBlue,
-      appBar: AppBar(
-        backgroundColor: AppColors.darkBlue,
-        elevation: 0,
-        title: Text(
-          'Panel de Tutor',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-          ),
+    final now = DateTime.now();
+    final start = DateTime.tryParse(booking['start_time'] ?? '') ?? now;
+    final end = DateTime.tryParse(booking['end_time'] ?? '') ?? now;
+    final status = (booking['status'] ?? '').toString().trim().toLowerCase();
+    final isAceptado = status == 'aceptada' || status == 'aceptado';
+    final isRechazado = status == 'rechazada' || status == 'rechazado';
+    final isLive = now.isAfter(start) && now.isBefore(end);
+    final isSoon = !isLive && start.isAfter(now);
+    final subject = booking['subject_name'] ?? 'Tutoría';
+    final hourStr =
+        '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')} - ${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}';
+
+    String mainText = '';
+    String lottieAsset = '';
+    Color color = Colors.blueAccent.withOpacity(0.85);
+    Color textColor = Colors.white;
+
+    if (isRechazado) {
+      mainText = 'Tutoría rechazada';
+      lottieAsset =
+          'https://assets2.lottiefiles.com/packages/lf20_4kx2q32n.json';
+      color = Colors.grey.withOpacity(0.85);
+      textColor = Colors.white;
+    } else if (status == 'pendiente' || status == 'solicitada') {
+      mainText = 'Pendiente de aceptación';
+      lottieAsset =
+          'https://assets2.lottiefiles.com/packages/lf20_4kx2q32n.json';
+      color = Colors.orangeAccent.withOpacity(0.95);
+      textColor = Colors.black;
+    } else if (isAceptado && isLive) {
+      mainText = 'EN VIVO';
+      lottieAsset =
+          'https://assets2.lottiefiles.com/packages/lf20_30305_back_to_school.json';
+      color = Colors.redAccent.withOpacity(0.85);
+      textColor = Colors.white;
+    } else if (isAceptado && isSoon) {
+      mainText = 'Próxima tutoría';
+      lottieAsset =
+          'https://assets2.lottiefiles.com/packages/lf20_30305_back_to_school.json';
+      color = Colors.blueAccent.withOpacity(0.85);
+      textColor = Colors.white;
+    } else if (isLive) {
+      mainText = 'En horario, pero no aceptada';
+      lottieAsset =
+          'https://assets2.lottiefiles.com/packages/lf20_4kx2q32n.json';
+      color = Colors.amber.withOpacity(0.95);
+      textColor = Colors.black;
+    } else {
+      mainText = 'Tutoría programada para hoy';
+      lottieAsset =
+          'https://assets2.lottiefiles.com/packages/lf20_30305_back_to_school.json';
+      color = Colors.blueGrey.withOpacity(0.85);
+      textColor = Colors.white;
+    }
+
+    String statusText = 'Estado: ${booking['status'] ?? ''}';
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        gradient: LinearGradient(
+          colors: [color, Colors.white.withOpacity(0.10)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.account_circle, color: Colors.white),
-            onPressed: () {
-              // Navegar a perfil del tutor
-            },
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.18),
+            blurRadius: 16,
+            offset: Offset(0, 8),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Banner de bienvenida
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(22),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 36,
+            height: 36,
+            child: Lottie.network(
+              lottieAsset,
+              width: 36,
+              height: 36,
+              repeat: true,
+              animate: true,
+              options: LottieOptions(enableMergePaths: true),
+              errorBuilder: (context, error, stackTrace) {
+                final visibleColor = Colors.white;
+                if (isLive && isAceptado) {
+                  return Icon(Icons.play_circle_fill,
+                      color: visibleColor, size: 32);
+                } else if (isLive && !isAceptado) {
+                  return Icon(Icons.warning_amber_rounded,
+                      color: Colors.amber, size: 32);
+                } else if (isSoon &&
+                    (status == 'pendiente' || status == 'solicitada')) {
+                  return Icon(Icons.warning_amber_rounded,
+                      color: Colors.orangeAccent, size: 32);
+                } else if (isSoon && isAceptado) {
+                  return Icon(Icons.schedule, color: visibleColor, size: 32);
+                } else if (isRechazado) {
+                  return Icon(Icons.cancel, color: Colors.grey, size: 32);
+                } else {
+                  return Icon(Icons.school, color: visibleColor, size: 32);
+                }
+              },
+            ),
+          ),
+          SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  mainText,
+                  style: TextStyle(
+                    color: color.computeLuminance() > 0.5
+                        ? Colors.black
+                        : Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    letterSpacing: 0.5,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 4),
+                Text(
+                  subject,
+                  style: TextStyle(
+                    color: textColor,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 2),
+                Text(
+                  hourStr,
+                  style: TextStyle(
+                    color: textColor.withOpacity(0.8),
+                    fontWeight: FontWeight.w400,
+                    fontSize: 14,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  statusText,
+                  style: TextStyle(
+                    color: textColor.withOpacity(0.9),
+                    fontWeight: FontWeight.w500,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// --- Tarjeta de próxima tutoría estilo PedidosYa ---
+class TutorBookingCard extends StatelessWidget {
+  final Map<String, dynamic> booking;
+  const TutorBookingCard({required this.booking});
+
+  Color _statusColor(String status) {
+    switch (status) {
+      case 'aceptada':
+      case 'aceptado':
+        return AppColors.lightBlueColor;
+      case 'en vivo':
+        return Colors.redAccent;
+      case 'completada':
+        return AppColors.primaryGreen;
+      case 'rechazada':
+      case 'rechazado':
+        return AppColors.redColor;
+      case 'pendiente':
+      case 'solicitada':
+        return AppColors.orangeprimary;
+      default:
+        return AppColors.mediumGreyColor;
+    }
+  }
+
+  IconData _statusIcon(String status) {
+    switch (status) {
+      case 'aceptada':
+      case 'aceptado':
+        return Icons.check_circle_outline;
+      case 'en vivo':
+        return Icons.play_circle_fill;
+      case 'completada':
+        return Icons.verified;
+      case 'rechazada':
+      case 'rechazado':
+        return Icons.cancel;
+      case 'pendiente':
+      case 'solicitada':
+        return Icons.access_time;
+      default:
+        return Icons.info_outline;
+    }
+  }
+
+  String _statusText(String status) {
+    switch (status) {
+      case 'aceptada':
+      case 'aceptado':
+        return 'Aceptada';
+      case 'en vivo':
+        return 'En Vivo';
+      case 'completada':
+        return 'Completada';
+      case 'rechazada':
+      case 'rechazado':
+        return 'Rechazada';
+      case 'pendiente':
+      case 'solicitada':
+        return 'Pendiente';
+      default:
+        return 'Programada';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final start = DateTime.tryParse(booking['start_time'] ?? '') ?? now;
+    final end = DateTime.tryParse(booking['end_time'] ?? '') ?? now;
+    final status = (booking['status'] ?? '').toString().trim().toLowerCase();
+    final subject = booking['subject_name'] ?? 'Tutoría';
+    final student = booking['student_name'] ?? 'Estudiante';
+    final hourStr =
+        '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')} - ${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}';
+    final dateStr =
+        '${start.day.toString().padLeft(2, '0')}/${start.month.toString().padLeft(2, '0')}/${start.year}';
+    final Color barColor = _statusColor(status);
+    final String statusText = _statusText(status);
+    final IconData statusIcon = _statusIcon(status);
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: 500),
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 20 * (1 - value)),
+            child: Card(
+              elevation: 8,
+              margin: EdgeInsets.only(bottom: 22),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(26)),
+              child: Container(
                 decoration: BoxDecoration(
-                  color: AppColors.lightBlueColor.withOpacity(0.18),
-                  borderRadius: BorderRadius.circular(18),
+                  gradient: LinearGradient(
+                    colors: [AppColors.darkBlue, AppColors.backgroundColor],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(26),
+                  boxShadow: [
+                    BoxShadow(
+                      color: barColor.withOpacity(0.18),
+                      blurRadius: 18,
+                      offset: Offset(0, 8),
+                    ),
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '¡Bienvenido, Tutor!',
-                      style: TextStyle(
-                        color: AppColors.lightBlueColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
+                    // Barra de estado
+                    Container(
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: barColor,
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(26)),
                       ),
                     ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Gestiona tus tutorías, materias y disponibilidad desde aquí.',
+                    Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Icono grande de estado
+                          Container(
+                            decoration: BoxDecoration(
+                              color: barColor.withOpacity(0.13),
+                              shape: BoxShape.circle,
+                            ),
+                            padding: EdgeInsets.all(16),
+                            child: Icon(statusIcon, color: barColor, size: 38),
+                          ),
+                          SizedBox(width: 18),
+                          // Info principal
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(subject,
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 20)),
+                                SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: barColor.withOpacity(0.18),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.circle,
+                                              color: barColor, size: 10),
+                                          SizedBox(width: 4),
+                                          Text(statusText,
+                                              style: TextStyle(
+                                                  color: barColor,
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 13)),
+                                        ],
+                                      ),
+                                    ),
+                                    SizedBox(width: 12),
+                                    Icon(Icons.person,
+                                        color: Colors.white70, size: 18),
+                                    SizedBox(width: 4),
+                                    Text(student,
+                                        style: TextStyle(
+                                            color: Colors.white70,
+                                            fontWeight: FontWeight.w500)),
+                                  ],
+                                ),
+                                SizedBox(height: 10),
+                                Row(
+                                  children: [
+                                    Icon(Icons.calendar_today,
+                                        color: AppColors.lightBlueColor,
+                                        size: 16),
+                                    SizedBox(width: 6),
+                                    Text(dateStr,
+                                        style: TextStyle(
+                                            color: Colors.white70,
+                                            fontWeight: FontWeight.w500)),
+                                    SizedBox(width: 14),
+                                    Icon(Icons.access_time,
+                                        color: AppColors.lightBlueColor,
+                                        size: 16),
+                                    SizedBox(width: 6),
+                                    Text(hourStr,
+                                        style: TextStyle(
+                                            color: Colors.white70,
+                                            fontWeight: FontWeight.w500)),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding:
+                          const EdgeInsets.only(right: 20, bottom: 16, top: 2),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          ElevatedButton(
+                            onPressed: () {},
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: barColor,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                              elevation: 0,
+                            ),
+                            child: Text('Ver detalles',
+                                style: TextStyle(color: Colors.white)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class DashboardTutor extends StatefulWidget {
+  @override
+  _DashboardTutorState createState() => _DashboardTutorState();
+}
+
+class _DashboardTutorState extends State<DashboardTutor> {
+  bool isAvailable = false;
+  List<Map<String, String>> freeTimes = [
+    {'day': 'Lunes', 'start': '14:00', 'end': '16:00'},
+    {'day': 'Miércoles', 'start': '10:00', 'end': '12:00'},
+  ]; // Placeholder
+
+  // Para el calendario de tiempos libres
+  DateTime _focusedDay = DateTime.now();
+  DateTime? _selectedDay;
+  Map<DateTime, List<Map<String, String>>> freeTimesByDay = {};
+
+  @override
+  void initState() {
+    super.initState();
+    // Simular tiempos libres agrupados por día
+    for (var ft in freeTimes) {
+      final now = DateTime.now();
+      final day = ft['day'] == 'Lunes'
+          ? DateTime(now.year, now.month, now.day - now.weekday + 1)
+          : ft['day'] == 'Miércoles'
+              ? DateTime(now.year, now.month, now.day - now.weekday + 3)
+              : now;
+      freeTimesByDay.putIfAbsent(day, () => []).add(ft);
+    }
+
+    // Cargar materias del tutor
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final subjectsProvider =
+          Provider.of<TutorSubjectsProvider>(context, listen: false);
+      subjectsProvider.loadTutorSubjects(authProvider);
+    });
+  }
+
+  void _showAvailabilityDialog(bool newValue) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.darkBlue.withOpacity(0.98),
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.4),
+                  blurRadius: 24,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: newValue
+                        ? AppColors.primaryGreen.withOpacity(0.15)
+                        : AppColors.redColor.withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  padding: EdgeInsets.all(18),
+                  child: Icon(
+                    newValue
+                        ? Icons.check_circle_outline
+                        : Icons.cancel_outlined,
+                    color:
+                        newValue ? AppColors.primaryGreen : AppColors.redColor,
+                    size: 48,
+                  ),
+                ),
+                SizedBox(height: 18),
+                Text(
+                  newValue
+                      ? '¿Habilitar disponibilidad?'
+                      : '¿Deshabilitar disponibilidad?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 22,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+                SizedBox(height: 14),
+                Text(
+                  newValue
+                      ? 'Al habilitar esta opción, los usuarios podrán encontrarte y asignarte nuevas tutorías en cualquier momento. ¡Asegúrate de estar listo para recibir solicitudes!'
+                      : 'Al deshabilitar esta opción, dejarás de estar disponible para ser escogido por los usuarios. No recibirás nuevas solicitudes de tutoría hasta que vuelvas a habilitarte.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: Colors.white70, fontSize: 16, height: 1.5),
+                ),
+                SizedBox(height: 28),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: OutlinedButton.styleFrom(
+                          side:
+                              BorderSide(color: AppColors.redColor, width: 1.2),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                          backgroundColor: Colors.transparent,
+                          padding: EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child: Text('Cancelar',
+                            style: TextStyle(
+                                color: AppColors.redColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16)),
+                      ),
+                    ),
+                    SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: newValue
+                              ? AppColors.primaryGreen
+                              : AppColors.redColor,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                          padding: EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            isAvailable = newValue;
+                          });
+                          Navigator.of(context).pop();
+                        },
+                        child: Text('Confirmar',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showAddSubjectModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => AddSubjectModal(),
+    );
+  }
+
+  void _deleteSubject(int subjectId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.darkBlue,
+        title: Text(
+          'Eliminar materia',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: Text(
+          '¿Estás seguro de que quieres eliminar esta materia?',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              'Cancelar',
+              style: TextStyle(color: Colors.white70),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              final authProvider =
+                  Provider.of<AuthProvider>(context, listen: false);
+              final subjectsProvider =
+                  Provider.of<TutorSubjectsProvider>(context, listen: false);
+
+              final success = await subjectsProvider.deleteTutorSubjectFromApi(
+                authProvider,
+                subjectId,
+              );
+
+              if (success) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Materia eliminada exitosamente'),
+                    backgroundColor: AppColors.primaryGreen,
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(subjectsProvider.error ??
+                        'Error al eliminar la materia'),
+                    backgroundColor: AppColors.redColor,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.redColor,
+            ),
+            child: Text(
+              'Eliminar',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddFreeTimeModal() async {
+    DateTime selectedDay = DateTime.now();
+    TimeOfDay? startTime;
+    TimeOfDay? endTime;
+    List<Map<String, dynamic>> tempFreeTimes = [];
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              padding: EdgeInsets.only(
+                left: 18,
+                right: 18,
+                top: 24,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 18,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.darkBlue,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 5,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  Text('Agregar tiempo libre',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.85),
-                        fontSize: 15,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20)),
+                  SizedBox(height: 18),
+                  // Selector de día
+                  Row(
+                    children: [
+                      Icon(Icons.calendar_today, color: AppColors.primaryGreen),
+                      SizedBox(width: 10),
+                      Text('Día:',
+                          style: TextStyle(
+                              color: Colors.white70,
+                              fontWeight: FontWeight.w600)),
+                      SizedBox(width: 10),
+                      Text(DateFormat('EEEE, d MMMM', 'es').format(selectedDay),
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold)),
+                      Spacer(),
+                      TextButton(
+                        onPressed: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: selectedDay,
+                            firstDate: DateTime.now(),
+                            lastDate: DateTime.now().add(Duration(days: 365)),
+                            builder: (context, child) {
+                              return Theme(
+                                data: ThemeData.dark().copyWith(
+                                  colorScheme: ColorScheme.dark(
+                                    primary: AppColors.primaryGreen,
+                                    surface: AppColors.darkBlue,
+                                    onSurface: Colors.white,
+                                  ),
+                                  dialogBackgroundColor:
+                                      AppColors.backgroundColor,
+                                ),
+                                child: child!,
+                              );
+                            },
+                          );
+                          if (picked != null) {
+                            setModalState(() {
+                              selectedDay = picked;
+                            });
+                          }
+                        },
+                        child: Text('Cambiar',
+                            style: TextStyle(color: AppColors.primaryGreen)),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 16),
+                  // Selector de hora inicio y fin
+                  Row(
+                    children: [
+                      Icon(Icons.access_time, color: AppColors.primaryGreen),
+                      SizedBox(width: 10),
+                      Text('Hora inicio:',
+                          style: TextStyle(color: Colors.white70)),
+                      SizedBox(width: 10),
+                      Text(startTime?.format(context) ?? '--:--',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold)),
+                      Spacer(),
+                      TextButton(
+                        onPressed: () async {
+                          final picked = await showTimePicker(
+                            context: context,
+                            initialTime: TimeOfDay.now(),
+                            builder: (context, child) {
+                              return Theme(
+                                data: ThemeData.dark().copyWith(
+                                  colorScheme: ColorScheme.dark(
+                                    primary: AppColors.primaryGreen,
+                                    surface: AppColors.darkBlue,
+                                    onSurface: Colors.white,
+                                  ),
+                                ),
+                                child: child!,
+                              );
+                            },
+                          );
+                          if (picked != null) {
+                            setModalState(() {
+                              startTime = picked;
+                            });
+                          }
+                        },
+                        child: Text('Elegir',
+                            style: TextStyle(color: AppColors.primaryGreen)),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Icon(Icons.access_time, color: AppColors.primaryGreen),
+                      SizedBox(width: 10),
+                      Text('Hora fin:',
+                          style: TextStyle(color: Colors.white70)),
+                      SizedBox(width: 10),
+                      Text(endTime?.format(context) ?? '--:--',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold)),
+                      Spacer(),
+                      TextButton(
+                        onPressed: () async {
+                          final picked = await showTimePicker(
+                            context: context,
+                            initialTime: startTime ?? TimeOfDay.now(),
+                            builder: (context, child) {
+                              return Theme(
+                                data: ThemeData.dark().copyWith(
+                                  colorScheme: ColorScheme.dark(
+                                    primary: AppColors.primaryGreen,
+                                    surface: AppColors.darkBlue,
+                                    onSurface: Colors.white,
+                                  ),
+                                ),
+                                child: child!,
+                              );
+                            },
+                          );
+                          if (picked != null) {
+                            setModalState(() {
+                              endTime = picked;
+                            });
+                          }
+                        },
+                        child: Text('Elegir',
+                            style: TextStyle(color: AppColors.primaryGreen)),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 18),
+                  Center(
+                    child: ElevatedButton.icon(
+                      onPressed: (startTime != null && endTime != null)
+                          ? () {
+                              setModalState(() {
+                                tempFreeTimes.add({
+                                  'day': selectedDay,
+                                  'start': startTime!,
+                                  'end': endTime!,
+                                });
+                                startTime = null;
+                                endTime = null;
+                              });
+                            }
+                          : null,
+                      icon: Icon(Icons.add, color: Colors.white),
+                      label: Text('Agregar a la lista',
+                          style: TextStyle(color: Colors.white)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryGreen,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                        elevation: 0,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 18),
+                  if (tempFreeTimes.isNotEmpty)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Tiempos libres a agregar:',
+                            style: TextStyle(
+                                color: Colors.white70,
+                                fontWeight: FontWeight.bold)),
+                        SizedBox(height: 8),
+                        ...tempFreeTimes.asMap().entries.map((entry) {
+                          final i = entry.key;
+                          final ft = entry.value;
+                          final day = ft['day'] as DateTime;
+                          final start = ft['start'] as TimeOfDay;
+                          final end = ft['end'] as TimeOfDay;
+                          return Card(
+                            color: AppColors.backgroundColor,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                            child: ListTile(
+                              leading: Icon(Icons.access_time,
+                                  color: AppColors.primaryGreen),
+                              title: Text(
+                                  '${DateFormat('EEEE, d MMM', 'es').format(day)}',
+                                  style: TextStyle(color: Colors.white)),
+                              subtitle: Text(
+                                  '${start.format(context)} - ${end.format(context)}',
+                                  style: TextStyle(color: Colors.white70)),
+                              trailing: IconButton(
+                                icon: Icon(Icons.delete,
+                                    color: AppColors.redColor),
+                                onPressed: () {
+                                  setModalState(() {
+                                    tempFreeTimes.removeAt(i);
+                                  });
+                                },
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ],
+                    ),
+                  SizedBox(height: 18),
+                  Center(
+                    child: ElevatedButton(
+                      onPressed: tempFreeTimes.isNotEmpty
+                          ? () {
+                              Navigator.of(context).pop();
+                              ScaffoldMessenger.of(this.context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                      '¡Tiempos libres agregados (solo frontend)!'),
+                                  backgroundColor: AppColors.primaryGreen,
+                                ),
+                              );
+                            }
+                          : null,
+                      child: Text('Guardar',
+                          style: TextStyle(color: Colors.white)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryGreen,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                        elevation: 0,
+                        minimumSize: Size(double.infinity, 48),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final String tutorName = 'Nombre del Tutor'; // Placeholder
+    final int completedSessions = 12; // Placeholder
+    final int upcomingSessions = 2; // Placeholder
+    final double rating = 4.8; // Placeholder
+
+    return Scaffold(
+      backgroundColor: AppColors.darkBlue,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Tarjeta de bienvenida
+              Card(
+                color: AppColors.primaryGreen,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18)),
+                elevation: 6,
+                child: Stack(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 32,
+                            backgroundColor: AppColors.lightBlueColor,
+                            child: Icon(Icons.person,
+                                color: Colors.white, size: 36),
+                          ),
+                          SizedBox(width: 18),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('¡Bienvenido,',
+                                    style: TextStyle(
+                                        color: Colors.white70, fontSize: 16)),
+                                Text(tutorName,
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 22)),
+                                SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Icon(Icons.star,
+                                        color: AppColors.starYellow, size: 18),
+                                    SizedBox(width: 4),
+                                    Text('$rating',
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w600)),
+                                    SizedBox(width: 16),
+                                    Icon(Icons.check_circle,
+                                        color: AppColors.primaryWhiteColor,
+                                        size: 18),
+                                    SizedBox(width: 4),
+                                    Text('$completedSessions completadas',
+                                        style:
+                                            TextStyle(color: Colors.white70)),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Logo en la esquina superior derecha
+                    Positioned(
+                      top: 12,
+                      right: 18,
+                      child: Image.asset(
+                        'assets/images/logo_classgo.png',
+                        width: 48,
+                        height: 48,
+                        fit: BoxFit.contain,
+                        opacity: AlwaysStoppedAnimation(0.90),
                       ),
                     ),
                   ],
                 ),
               ),
               SizedBox(height: 24),
-              // Sección de próximas tutorías
-              Text(
-                'Próximas Tutorías',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-              SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.lightBlueColor.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Center(
-                  child: Text(
-                    'Aquí verás tus próximas tutorías reservadas.',
-                    style: TextStyle(color: Colors.white70, fontSize: 15),
+              // Disponibilidad
+              Card(
+                color: AppColors.lightBlueColor,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+                elevation: 3,
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.toggle_on,
+                              color: isAvailable
+                                  ? AppColors.primaryGreen
+                                  : Colors.white,
+                              size: 32),
+                          SizedBox(width: 10),
+                          Text(
+                            isAvailable
+                                ? 'Disponible para tutorías'
+                                : 'No disponible',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16),
+                          ),
+                        ],
+                      ),
+                      Switch(
+                        value: isAvailable,
+                        activeColor: AppColors.primaryGreen,
+                        onChanged: (val) {
+                          _showAvailabilityDialog(val);
+                        },
+                      ),
+                    ],
                   ),
                 ),
               ),
-              SizedBox(height: 28),
-              // Accesos rápidos
-              Text(
-                'Accesos Rápidos',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
+              SizedBox(height: 24),
+              // Materias
+              Consumer<TutorSubjectsProvider>(
+                builder: (context, subjectsProvider, child) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Materias',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18)),
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              _showAddSubjectModal();
+                            },
+                            icon: Icon(Icons.add, color: Colors.white),
+                            label: Text('Añadir',
+                                style: TextStyle(color: Colors.white)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryGreen,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10)),
+                              elevation: 0,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 10),
+                      if (subjectsProvider.isLoading)
+                        Center(
+                          child: CircularProgressIndicator(
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      else if (subjectsProvider.subjects.isEmpty)
+                        Container(
+                          padding: EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            'No tienes materias agregadas. Haz clic en "Añadir" para agregar tu primera materia.',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        )
+                      else
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 8,
+                          children: subjectsProvider.subjects
+                              .map((subject) => Chip(
+                                    label: Text(
+                                      subject.subject.name,
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                    backgroundColor: AppColors.lightBlueColor,
+                                    deleteIcon: Icon(Icons.close,
+                                        color: Colors.white70, size: 18),
+                                    onDeleted: () {
+                                      _deleteSubject(subject.id);
+                                    },
+                                  ))
+                              .toList(),
+                        ),
+                    ],
+                  );
+                },
               ),
-              SizedBox(height: 14),
+              SizedBox(height: 28),
+              // Tiempos libres
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _QuickAction(
-                    icon: Icons.book,
-                    label: 'Mis Materias',
-                    color: AppColors.orangeprimary,
-                    onTap: () {
-                      // Navegar a gestión de materias
-                    },
-                  ),
-                  _QuickAction(
-                    icon: Icons.schedule,
-                    label: 'Disponibilidad',
-                    color: AppColors.lightBlueColor,
-                    onTap: () {
-                      // Navegar a gestión de disponibilidad
-                    },
-                  ),
-                  _QuickAction(
-                    icon: Icons.person,
-                    label: 'Mi Perfil',
-                    color: Colors.green,
-                    onTap: () {
-                      // Navegar a perfil
-                    },
+                  Text('Tiempos libres',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18)),
+                  ElevatedButton.icon(
+                    onPressed: _showAddFreeTimeModal,
+                    icon: Icon(Icons.calendar_today, color: Colors.white),
+                    label:
+                        Text('Agregar', style: TextStyle(color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.lightBlueColor,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                      elevation: 0,
+                    ),
                   ),
                 ],
               ),
-              SizedBox(height: 32),
-              // Sección para futuras estadísticas, feedback, etc.
-              Text(
-                'Estadísticas (próximamente)',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
               SizedBox(height: 10),
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Center(
-                  child: Text(
-                    'Aquí verás tus estadísticas de tutoría y feedback de estudiantes.',
-                    style: TextStyle(color: Colors.white54, fontSize: 14),
-                  ),
-                ),
-              ),
+              // Calendario visual de tiempos libres
+              _buildFreeTimeCalendar(),
+              SizedBox(height: 28),
+              // Próximas tutorías
+              Text('Próximas tutorías',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18)),
+              SizedBox(height: 10),
+              // Tarjeta de tutoría al estilo UpcomingSessionBanner
+              _buildUpcomingSessionBanner(),
+              SizedBox(height: 30),
             ],
           ),
         ),
       ),
     );
   }
-}
 
-class _QuickAction extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _QuickAction({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 90,
-        height: 90,
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.18),
-          borderRadius: BorderRadius.circular(18),
-        ),
+  // --- Widgets auxiliares ---
+  Widget _buildFreeTimeCalendar() {
+    final daysInMonth =
+        DateUtils.getDaysInMonth(_focusedDay.year, _focusedDay.month);
+    final firstDayOfMonth = DateTime(_focusedDay.year, _focusedDay.month, 1);
+    final lastDayOfMonth =
+        DateTime(_focusedDay.year, _focusedDay.month, daysInMonth);
+    final weekDayOffset = firstDayOfMonth.weekday - 1;
+    final days = List.generate(daysInMonth,
+        (i) => DateTime(_focusedDay.year, _focusedDay.month, i + 1));
+    // Corregir el error de rango en los nombres de los días de la semana
+    final weekDays = List.generate(
+        7, (i) => DateFormat.E('es').dateSymbols.STANDALONESHORTWEEKDAYS[i]);
+    return Card(
+      color: AppColors.darkBlue,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 36),
-            SizedBox(height: 10),
-            Text(
-              label,
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  icon: Icon(Icons.chevron_left, color: Colors.white),
+                  onPressed: () {
+                    setState(() {
+                      _focusedDay =
+                          DateTime(_focusedDay.year, _focusedDay.month - 1, 1);
+                    });
+                  },
+                ),
+                Text(
+                    DateFormat('MMMM yyyy', 'es')
+                        .format(_focusedDay)
+                        .toUpperCase(),
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16)),
+                IconButton(
+                  icon: Icon(Icons.chevron_right, color: Colors.white),
+                  onPressed: () {
+                    setState(() {
+                      _focusedDay =
+                          DateTime(_focusedDay.year, _focusedDay.month + 1, 1);
+                    });
+                  },
+                ),
+              ],
+            ),
+            SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: weekDays
+                  .map((d) => Text(d[0],
+                      style: TextStyle(
+                          color: Colors.white70, fontWeight: FontWeight.bold)))
+                  .toList(),
+            ),
+            SizedBox(height: 4),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 7,
+                mainAxisSpacing: 4,
+                crossAxisSpacing: 4,
+                childAspectRatio: 1.1,
               ),
-              textAlign: TextAlign.center,
+              itemCount: daysInMonth + weekDayOffset,
+              itemBuilder: (context, i) {
+                if (i < weekDayOffset) return SizedBox.shrink();
+                final day = days[i - weekDayOffset];
+                final hasFreeTime =
+                    freeTimesByDay.keys.any((d) => DateUtils.isSameDay(d, day));
+                return GestureDetector(
+                  onTap: hasFreeTime
+                      ? () {
+                          setState(() {
+                            _selectedDay = day;
+                          });
+                          _showFreeTimesForDay(day);
+                        }
+                      : null,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: _selectedDay != null &&
+                              DateUtils.isSameDay(_selectedDay, day)
+                          ? AppColors.primaryGreen.withOpacity(0.7)
+                          : hasFreeTime
+                              ? AppColors.lightBlueColor.withOpacity(0.5)
+                              : Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: hasFreeTime
+                            ? AppColors.primaryGreen
+                            : Colors.white24,
+                        width: hasFreeTime ? 2 : 1,
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text('${day.day}',
+                        style: TextStyle(
+                          color: hasFreeTime ? Colors.white : Colors.white38,
+                          fontWeight: FontWeight.bold,
+                        )),
+                  ),
+                );
+              },
             ),
           ],
         ),
       ),
+    );
+  }
+
+  void _showFreeTimesForDay(DateTime day) {
+    final times = freeTimesByDay.entries.firstWhere(
+        (e) => DateUtils.isSameDay(e.key, day),
+        orElse: () => MapEntry(day, []));
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.darkBlue,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 5,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+              Text(
+                'Tiempos libres del ${day.day}/${day.month}/${day.year}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+              const SizedBox(height: 12),
+              if (times.value.isEmpty)
+                Text('No hay tiempos libres para este día',
+                    style: TextStyle(color: Colors.white70)),
+              ...times.value.map((ft) => ListTile(
+                    leading:
+                        Icon(Icons.access_time, color: AppColors.primaryGreen),
+                    title: Text('${ft['start']} - ${ft['end']}',
+                        style: TextStyle(color: Colors.white)),
+                  )),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildUpcomingSessionBanner() {
+    // Simulación de una tutoría próxima
+    final now = DateTime.now();
+    final List<Map<String, dynamic>> bookings = [
+      {
+        'start_time': DateFormat('yyyy-MM-dd HH:mm:ss')
+            .format(now.add(Duration(hours: 2))),
+        'end_time': DateFormat('yyyy-MM-dd HH:mm:ss')
+            .format(now.add(Duration(hours: 3))),
+        'status': 'aceptada',
+        'subject_name': 'Matemáticas',
+        'student_name': 'Ana López',
+      },
+      {
+        'start_time': DateFormat('yyyy-MM-dd HH:mm:ss')
+            .format(now.add(Duration(days: 1, hours: 1))),
+        'end_time': DateFormat('yyyy-MM-dd HH:mm:ss')
+            .format(now.add(Duration(days: 1, hours: 2))),
+        'status': 'pendiente',
+        'subject_name': 'Física',
+        'student_name': 'Pedro Ruiz',
+      },
+    ];
+    return Column(
+      children: bookings
+          .map((b) => TutorCard(
+                name: b['student_name'] ?? 'Sin nombre',
+                rating: 5.0,
+                reviews: 10,
+                imageUrl:
+                    'https://ui-avatars.com/api/?name=${b['student_name'] ?? 'Tutor'}',
+                onRejectPressed: () {},
+                onAcceptPressed: () {},
+                tutorProfession: 'Tutor',
+                sessionDuration: '1h',
+                isFavoriteInitial: false,
+                onFavoritePressed: (fav) {},
+                subjectsString: b['subject_name'] ?? '',
+                description: 'Próxima tutoría',
+                tagline: b['status'] ?? '',
+                isVerified: true,
+                tutorId: '1',
+                tutorVideo: null,
+                showStartButton: false,
+              ))
+          .toList(),
     );
   }
 }
