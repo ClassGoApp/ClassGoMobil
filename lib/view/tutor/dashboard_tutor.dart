@@ -938,254 +938,261 @@ class _DashboardTutorState extends State<DashboardTutor> {
 
   @override
   Widget build(BuildContext context) {
-    final String tutorName = 'Nombre del Tutor'; // Placeholder
-    final int completedSessions = 12; // Placeholder
-    final int upcomingSessions = 2; // Placeholder
-    final double rating = 4.8; // Placeholder
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        final String tutorName = authProvider.userName;
+        final int completedSessions = 12; // Placeholder
+        final int upcomingSessions = 2; // Placeholder
+        final double rating = 4.8; // Placeholder
 
-    return Scaffold(
-      backgroundColor: AppColors.darkBlue,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Tarjeta de bienvenida
-              Card(
-                color: AppColors.primaryGreen,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18)),
-                elevation: 6,
-                child: Stack(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 32,
-                            backgroundColor: AppColors.lightBlueColor,
-                            child: Icon(Icons.person,
-                                color: Colors.white, size: 36),
-                          ),
-                          SizedBox(width: 18),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('¡Bienvenido,',
-                                    style: TextStyle(
-                                        color: Colors.white70, fontSize: 16)),
-                                Text(tutorName,
-                                    style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 22)),
-                                SizedBox(height: 8),
-                                Row(
+        return Scaffold(
+          backgroundColor: AppColors.darkBlue,
+          body: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Tarjeta de bienvenida
+                  Card(
+                    color: AppColors.primaryGreen,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18)),
+                    elevation: 6,
+                    child: Stack(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 32,
+                                backgroundColor: AppColors.lightBlueColor,
+                                child: Icon(Icons.person,
+                                    color: Colors.white, size: 36),
+                              ),
+                              SizedBox(width: 18),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Icon(Icons.star,
-                                        color: AppColors.starYellow, size: 18),
-                                    SizedBox(width: 4),
-                                    Text('$rating',
+                                    Text('¡Bienvenido,',
+                                        style: TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 16)),
+                                    Text(tutorName,
                                         style: TextStyle(
                                             color: Colors.white,
-                                            fontWeight: FontWeight.w600)),
-                                    SizedBox(width: 16),
-                                    Icon(Icons.check_circle,
-                                        color: AppColors.primaryWhiteColor,
-                                        size: 18),
-                                    SizedBox(width: 4),
-                                    Text('$completedSessions completadas',
-                                        style:
-                                            TextStyle(color: Colors.white70)),
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 22)),
+                                    SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        Icon(Icons.star,
+                                            color: AppColors.starYellow,
+                                            size: 18),
+                                        SizedBox(width: 4),
+                                        Text('$rating',
+                                            style: TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w600)),
+                                        SizedBox(width: 16),
+                                        Icon(Icons.check_circle,
+                                            color: AppColors.primaryWhiteColor,
+                                            size: 18),
+                                        SizedBox(width: 4),
+                                        Text('$completedSessions completadas',
+                                            style: TextStyle(
+                                                color: Colors.white70)),
+                                      ],
+                                    ),
                                   ],
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Logo en la esquina superior derecha
+                        Positioned(
+                          top: 12,
+                          right: 18,
+                          child: Image.asset(
+                            'assets/images/logo_classgo.png',
+                            width: 48,
+                            height: 48,
+                            fit: BoxFit.contain,
+                            opacity: AlwaysStoppedAnimation(0.90),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 24),
+                  // Disponibilidad
+                  Card(
+                    color: AppColors.lightBlueColor,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                    elevation: 3,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 18, vertical: 18),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.toggle_on,
+                                  color: isAvailable
+                                      ? AppColors.primaryGreen
+                                      : Colors.white,
+                                  size: 32),
+                              SizedBox(width: 10),
+                              Text(
+                                isAvailable
+                                    ? 'Disponible para tutorías'
+                                    : 'No disponible',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16),
+                              ),
+                            ],
+                          ),
+                          Switch(
+                            value: isAvailable,
+                            activeColor: AppColors.primaryGreen,
+                            onChanged: (val) {
+                              _showAvailabilityDialog(val);
+                            },
                           ),
                         ],
                       ),
                     ),
-                    // Logo en la esquina superior derecha
-                    Positioned(
-                      top: 12,
-                      right: 18,
-                      child: Image.asset(
-                        'assets/images/logo_classgo.png',
-                        width: 48,
-                        height: 48,
-                        fit: BoxFit.contain,
-                        opacity: AlwaysStoppedAnimation(0.90),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 24),
-              // Disponibilidad
-              Card(
-                color: AppColors.lightBlueColor,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
-                elevation: 3,
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
-                  child: Row(
+                  ),
+                  SizedBox(height: 24),
+                  // Materias
+                  Consumer<TutorSubjectsProvider>(
+                    builder: (context, subjectsProvider, child) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Materias',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18)),
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  _showAddSubjectModal();
+                                },
+                                icon: Icon(Icons.add, color: Colors.white),
+                                label: Text('Añadir',
+                                    style: TextStyle(color: Colors.white)),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primaryGreen,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10)),
+                                  elevation: 0,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 10),
+                          if (subjectsProvider.isLoading)
+                            Center(
+                              child: CircularProgressIndicator(
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          else if (subjectsProvider.subjects.isEmpty)
+                            Container(
+                              padding: EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                'No tienes materias agregadas. Haz clic en "Añadir" para agregar tu primera materia.',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 14,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            )
+                          else
+                            Wrap(
+                              spacing: 10,
+                              runSpacing: 8,
+                              children: subjectsProvider.subjects
+                                  .map((subject) => Chip(
+                                        label: Text(
+                                          subject.subject.name,
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                        backgroundColor:
+                                            AppColors.lightBlueColor,
+                                        deleteIcon: Icon(Icons.close,
+                                            color: Colors.white70, size: 18),
+                                        onDeleted: () {
+                                          _deleteSubject(subject.id);
+                                        },
+                                      ))
+                                  .toList(),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
+                  SizedBox(height: 28),
+                  // Tiempos libres
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Icon(Icons.toggle_on,
-                              color: isAvailable
-                                  ? AppColors.primaryGreen
-                                  : Colors.white,
-                              size: 32),
-                          SizedBox(width: 10),
-                          Text(
-                            isAvailable
-                                ? 'Disponible para tutorías'
-                                : 'No disponible',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16),
-                          ),
-                        ],
-                      ),
-                      Switch(
-                        value: isAvailable,
-                        activeColor: AppColors.primaryGreen,
-                        onChanged: (val) {
-                          _showAvailabilityDialog(val);
-                        },
+                      Text('Tiempos libres',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18)),
+                      ElevatedButton.icon(
+                        onPressed: _showAddFreeTimeModal,
+                        icon: Icon(Icons.calendar_today, color: Colors.white),
+                        label: Text('Agregar',
+                            style: TextStyle(color: Colors.white)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.lightBlueColor,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                          elevation: 0,
+                        ),
                       ),
                     ],
                   ),
-                ),
-              ),
-              SizedBox(height: 24),
-              // Materias
-              Consumer<TutorSubjectsProvider>(
-                builder: (context, subjectsProvider, child) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Materias',
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18)),
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              _showAddSubjectModal();
-                            },
-                            icon: Icon(Icons.add, color: Colors.white),
-                            label: Text('Añadir',
-                                style: TextStyle(color: Colors.white)),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primaryGreen,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10)),
-                              elevation: 0,
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 10),
-                      if (subjectsProvider.isLoading)
-                        Center(
-                          child: CircularProgressIndicator(
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      else if (subjectsProvider.subjects.isEmpty)
-                        Container(
-                          padding: EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            'No tienes materias agregadas. Haz clic en "Añadir" para agregar tu primera materia.',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 14,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        )
-                      else
-                        Wrap(
-                          spacing: 10,
-                          runSpacing: 8,
-                          children: subjectsProvider.subjects
-                              .map((subject) => Chip(
-                                    label: Text(
-                                      subject.subject.name,
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                    backgroundColor: AppColors.lightBlueColor,
-                                    deleteIcon: Icon(Icons.close,
-                                        color: Colors.white70, size: 18),
-                                    onDeleted: () {
-                                      _deleteSubject(subject.id);
-                                    },
-                                  ))
-                              .toList(),
-                        ),
-                    ],
-                  );
-                },
-              ),
-              SizedBox(height: 28),
-              // Tiempos libres
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Tiempos libres',
+                  SizedBox(height: 10),
+                  // Calendario visual de tiempos libres
+                  _buildFreeTimeCalendar(),
+                  SizedBox(height: 28),
+                  // Próximas tutorías
+                  Text('Próximas tutorías',
                       style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 18)),
-                  ElevatedButton.icon(
-                    onPressed: _showAddFreeTimeModal,
-                    icon: Icon(Icons.calendar_today, color: Colors.white),
-                    label:
-                        Text('Agregar', style: TextStyle(color: Colors.white)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.lightBlueColor,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                      elevation: 0,
-                    ),
-                  ),
+                  SizedBox(height: 10),
+                  // Tarjeta de tutoría al estilo UpcomingSessionBanner
+                  _buildUpcomingSessionBanner(),
+                  SizedBox(height: 30),
                 ],
               ),
-              SizedBox(height: 10),
-              // Calendario visual de tiempos libres
-              _buildFreeTimeCalendar(),
-              SizedBox(height: 28),
-              // Próximas tutorías
-              Text('Próximas tutorías',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18)),
-              SizedBox(height: 10),
-              // Tarjeta de tutoría al estilo UpcomingSessionBanner
-              _buildUpcomingSessionBanner(),
-              SizedBox(height: 30),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 

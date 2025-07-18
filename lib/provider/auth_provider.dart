@@ -91,6 +91,62 @@ class AuthProvider with ChangeNotifier {
     return null;
   }
 
+  /// Obtiene el nombre completo del usuario
+  String get userName {
+    print('DEBUG - userName llamado');
+    print('DEBUG - userData: $_userData');
+
+    if (_userData != null && _userData!.containsKey('user')) {
+      final user = _userData!['user'];
+      print('DEBUG - user keys: ${user.keys}');
+      print('DEBUG - user data: $user');
+
+      // Verificar si existe profile
+      if (user['profile'] != null) {
+        final profile = user['profile'];
+        print('DEBUG - profile keys: ${profile.keys}');
+        print('DEBUG - profile data: $profile');
+
+        // Intentar obtener full_name primero
+        if (profile['full_name'] != null) {
+          print('DEBUG - Usando full_name: ${profile['full_name']}');
+          return profile['full_name'];
+        }
+
+        // Intentar obtener first_name y last_name
+        if (profile['first_name'] != null && profile['last_name'] != null) {
+          final name = '${profile['first_name']} ${profile['last_name']}';
+          print('DEBUG - Usando first_name + last_name: $name');
+          return name;
+        } else if (profile['first_name'] != null) {
+          print('DEBUG - Usando solo first_name: ${profile['first_name']}');
+          return profile['first_name'];
+        } else if (profile['last_name'] != null) {
+          print('DEBUG - Usando solo last_name: ${profile['last_name']}');
+          return profile['last_name'];
+        }
+      }
+
+      // Fallback: buscar en user directamente
+      if (user['first_name'] != null && user['last_name'] != null) {
+        final name = '${user['first_name']} ${user['last_name']}';
+        print('DEBUG - Usando first_name + last_name del user: $name');
+        return name;
+      } else if (user['first_name'] != null) {
+        print('DEBUG - Usando solo first_name del user: ${user['first_name']}');
+        return user['first_name'];
+      } else if (user['last_name'] != null) {
+        print('DEBUG - Usando solo last_name del user: ${user['last_name']}');
+        return user['last_name'];
+      } else if (user['name'] != null) {
+        print('DEBUG - Usando name del user: ${user['name']}');
+        return user['name'];
+      }
+    }
+    print('DEBUG - No se encontró nombre, usando "Usuario"');
+    return 'Usuario';
+  }
+
   AuthProvider() {
     _loadSession();
     loadFromPreferences();
