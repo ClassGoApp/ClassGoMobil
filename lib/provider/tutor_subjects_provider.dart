@@ -33,10 +33,6 @@ class TutorSubjectsProvider with ChangeNotifier {
         final List<dynamic> subjectsData = response['data'];
         _subjects =
             subjectsData.map((json) => TutorSubject.fromJson(json)).toList();
-        print('DEBUG - Materias cargadas: ${_subjects.length}');
-        for (var subject in _subjects) {
-          print('DEBUG - Materia: ${subject.subject.name}');
-        }
       } else {
         _error = response['message'] ?? 'Error al cargar las materias';
       }

@@ -1215,6 +1215,16 @@ Future<Map<String, dynamic>> getTutorAvailableSlots(
 
     if (response.statusCode == 200) {
       final decodedBody = json.decode(response.body);
+
+      // Si la respuesta es una lista, convertirla a un Map con estructura estándar
+      if (decodedBody is List) {
+        return {
+          'status': 200,
+          'data': decodedBody,
+        };
+      }
+
+      // Si ya es un Map, devolverlo tal como está
       return decodedBody;
     } else {
       final error = json.decode(response.body);
@@ -1688,9 +1698,6 @@ Future<Map<String, dynamic>> getTutorSubjects(String token, int userId) async {
       },
     );
 
-    print(
-        'DEBUG - getTutorSubjects response: ${response.statusCode} - ${response.body}');
-
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
@@ -1737,9 +1744,6 @@ Future<Map<String, dynamic>> addTutorSubject(String token, int userId,
     final streamedResponse = await request.send();
     final response = await http.Response.fromStream(streamedResponse);
 
-    print(
-        'DEBUG - addTutorSubject response: ${response.statusCode} - ${response.body}');
-
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);
     } else {
@@ -1762,9 +1766,6 @@ Future<Map<String, dynamic>> deleteTutorSubject(
         'Accept': 'application/json',
       },
     );
-
-    print(
-        'DEBUG - deleteTutorSubject response: ${response.statusCode} - ${response.body}');
 
     if (response.statusCode == 200 || response.statusCode == 204) {
       return {'success': true, 'message': 'Subject deleted successfully'};
@@ -1789,9 +1790,6 @@ Future<Map<String, dynamic>> getAvailableSubjects(String token) async {
       },
     );
 
-    print(
-        'DEBUG - getAvailableSubjects response: ${response.statusCode} - ${response.body}');
-
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
@@ -1801,5 +1799,67 @@ Future<Map<String, dynamic>> getAvailableSubjects(String token) async {
   } catch (e) {
     print('Error getting available subjects: $e');
     throw e;
+  }
+}
+
+// Create user subject slot
+Future<Map<String, dynamic>> createUserSubjectSlot(
+    String token, Map<String, dynamic> slotData) async {
+  try {
+    // Preparar los datos según el nuevo formato requerido
+    final Map<String, dynamic> requestData = {
+      'user_id': slotData['user_id'],
+      'start_time': slotData['start_time'],
+      'end_time': slotData['end_time'],
+      'date': slotData['date'],
+      'duracion': slotData['duracion'],
+    };
+
+    print('DEBUG - createUserSubjectSlot request data: $requestData');
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/tutor/slots'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: jsonEncode(requestData),
+    );
+
+    print(
+        'DEBUG - createUserSubjectSlot response: ${response.statusCode} - ${response.body}');
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final responseData = jsonDecode(response.body);
+
+      // Verificar si la respuesta tiene el formato esperado
+      if (responseData['success'] == true) {
+        return {
+          'success': true,
+          'message': responseData['message'] ?? 'Slot creado exitosamente',
+          'data': responseData['data'],
+        };
+      } else {
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Error al crear el slot',
+          'data': responseData['data'],
+        };
+      }
+    } else {
+      final errorData = jsonDecode(response.body);
+      return {
+        'success': false,
+        'message': errorData['message'] ?? 'Error al crear el slot',
+        'status': response.statusCode,
+      };
+    }
+  } catch (e) {
+    print('Error creating user subject slot: $e');
+    return {
+      'success': false,
+      'message': 'Error de conexión: $e',
+    };
   }
 }

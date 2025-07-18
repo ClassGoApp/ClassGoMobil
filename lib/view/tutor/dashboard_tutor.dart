@@ -8,6 +8,104 @@ import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/tutor_subjects_provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/view/tutor/add_subject_modal.dart';
+import 'package:flutter_projects/api_structure/api_service.dart';
+
+// --- Widget reutilizable para tarjetas de tiempo libre ---
+class FreeTimeSlotCard extends StatelessWidget {
+  final String startTime;
+  final String endTime;
+  final String? description;
+  final VoidCallback? onDelete;
+  final bool isPreview;
+
+  const FreeTimeSlotCard({
+    Key? key,
+    required this.startTime,
+    required this.endTime,
+    this.description,
+    this.onDelete,
+    this.isPreview = false,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.darkBlue.withOpacity(0.8),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.lightBlueColor.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.lightBlueColor.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.access_time,
+              color: AppColors.lightBlueColor,
+              size: 18,
+            ),
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$startTime - $endTime',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  ),
+                ),
+                if (description != null && description!.isNotEmpty)
+                  Text(
+                    description!,
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+              ],
+            ),
+          ),
+          if (onDelete != null)
+            Container(
+              padding: EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: AppColors.redColor.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: IconButton(
+                icon: Icon(
+                  Icons.close,
+                  color: AppColors.redColor,
+                  size: 16,
+                ),
+                onPressed: onDelete,
+                padding: EdgeInsets.zero,
+                constraints: BoxConstraints(
+                  minWidth: 24,
+                  minHeight: 24,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
 
 // --- Tarjeta de tutoría al estilo UpcomingSessionBanner ---
 class _TutorUpcomingSessionCard extends StatelessWidget {
@@ -437,6 +535,8 @@ class _DashboardTutorState extends State<DashboardTutor> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   Map<DateTime, List<Map<String, String>>> freeTimesByDay = {};
+  List<Map<String, dynamic>> _availableSlots = [];
+  bool _isLoadingSlots = false;
 
   @override
   void initState() {
@@ -458,7 +558,104 @@ class _DashboardTutorState extends State<DashboardTutor> {
       final subjectsProvider =
           Provider.of<TutorSubjectsProvider>(context, listen: false);
       subjectsProvider.loadTutorSubjects(authProvider);
+      _loadAvailableSlots();
     });
+  }
+
+  Future<void> _loadAvailableSlots() async {
+    setState(() {
+      _isLoadingSlots = true;
+    });
+
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.token != null && authProvider.userId != null) {
+        final response = await getTutorAvailableSlots(
+          authProvider.token!,
+          authProvider.userId!.toString(),
+        );
+
+        if (response['status'] == 200 && response['data'] != null) {
+          final List<dynamic> slotsData = response['data'] as List<dynamic>;
+          setState(() {
+            _availableSlots = slotsData.cast<Map<String, dynamic>>();
+            _updateFreeTimesByDay();
+          });
+        } else {
+          setState(() {
+            _availableSlots = [];
+            _updateFreeTimesByDay();
+          });
+        }
+      }
+    } catch (e) {
+      print('Error loading available slots: $e');
+    } finally {
+      setState(() {
+        _isLoadingSlots = false;
+      });
+    }
+  }
+
+  String _formatTimeString(String timeStr) {
+    if (timeStr.isEmpty) return '';
+
+    try {
+      // Si ya está en formato HH:mm, devolverlo tal como está
+      if (RegExp(r'^\d{1,2}:\d{2}$').hasMatch(timeStr)) {
+        final parts = timeStr.split(':');
+        final hour = int.parse(parts[0]);
+        final minute = int.parse(parts[1]);
+        return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+      }
+
+      // Si es formato ISO datetime completo
+      if (timeStr.contains('T') && timeStr.contains('Z')) {
+        final dateTime = DateTime.tryParse(timeStr);
+        if (dateTime != null) {
+          return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+        }
+      }
+
+      // Si es solo fecha con hora
+      final dateTime = DateTime.tryParse(timeStr);
+      if (dateTime != null) {
+        return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+      }
+
+      return timeStr;
+    } catch (e) {
+      print('Error formatting time: $e for string: $timeStr');
+      return timeStr;
+    }
+  }
+
+  void _updateFreeTimesByDay() {
+    freeTimesByDay.clear();
+
+    for (var slot in _availableSlots) {
+      final dateStr = slot['date'];
+      if (dateStr != null) {
+        final date = DateTime.tryParse(dateStr);
+        if (date != null) {
+          final day = DateTime(date.year, date.month, date.day);
+
+          final formattedStart = _formatTimeString(slot['start_time'] ?? '');
+          final formattedEnd = _formatTimeString(slot['end_time'] ?? '');
+
+          print(
+              'DEBUG - Original times: ${slot['start_time']} - ${slot['end_time']}');
+          print('DEBUG - Formatted times: $formattedStart - $formattedEnd');
+
+          freeTimesByDay.putIfAbsent(day, () => []).add({
+            'start': formattedStart,
+            'end': formattedEnd,
+            'id': slot['id']?.toString() ?? '',
+            'description': slot['description'] ?? '',
+          });
+        }
+      }
+    }
   }
 
   void _showAvailabilityDialog(bool newValue) {
@@ -874,29 +1071,18 @@ class _DashboardTutorState extends State<DashboardTutor> {
                           final day = ft['day'] as DateTime;
                           final start = ft['start'] as TimeOfDay;
                           final end = ft['end'] as TimeOfDay;
-                          return Card(
-                            color: AppColors.backgroundColor,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                            child: ListTile(
-                              leading: Icon(Icons.access_time,
-                                  color: AppColors.primaryGreen),
-                              title: Text(
-                                  '${DateFormat('EEEE, d MMM', 'es').format(day)}',
-                                  style: TextStyle(color: Colors.white)),
-                              subtitle: Text(
-                                  '${start.format(context)} - ${end.format(context)}',
-                                  style: TextStyle(color: Colors.white70)),
-                              trailing: IconButton(
-                                icon: Icon(Icons.delete,
-                                    color: AppColors.redColor),
-                                onPressed: () {
-                                  setModalState(() {
-                                    tempFreeTimes.removeAt(i);
-                                  });
-                                },
-                              ),
-                            ),
+                          return FreeTimeSlotCard(
+                            startTime:
+                                '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')}',
+                            endTime:
+                                '${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}',
+                            description:
+                                '${DateFormat('EEEE, d MMM', 'es').format(day)}',
+                            onDelete: () {
+                              setModalState(() {
+                                tempFreeTimes.removeAt(i);
+                              });
+                            },
                           );
                         }).toList(),
                       ],
@@ -905,15 +1091,9 @@ class _DashboardTutorState extends State<DashboardTutor> {
                   Center(
                     child: ElevatedButton(
                       onPressed: tempFreeTimes.isNotEmpty
-                          ? () {
+                          ? () async {
                               Navigator.of(context).pop();
-                              ScaffoldMessenger.of(this.context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                      '¡Tiempos libres agregados (solo frontend)!'),
-                                  backgroundColor: AppColors.primaryGreen,
-                                ),
-                              );
+                              await _createSlots(tempFreeTimes);
                             }
                           : null,
                       child: Text('Guardar',
@@ -934,6 +1114,85 @@ class _DashboardTutorState extends State<DashboardTutor> {
         );
       },
     );
+  }
+
+  Future<void> _createSlots(List<Map<String, dynamic>> tempFreeTimes) async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.token == null || authProvider.userId == null) return;
+
+      int successCount = 0;
+      int errorCount = 0;
+
+      for (var ft in tempFreeTimes) {
+        final day = ft['day'] as DateTime;
+        final start = ft['start'] as TimeOfDay;
+        final end = ft['end'] as TimeOfDay;
+
+        // Calcular la duración en minutos
+        final startMinutes = start.hour * 60 + start.minute;
+        final endMinutes = end.hour * 60 + end.minute;
+        final duration = endMinutes - startMinutes;
+
+        final slotData = {
+          'user_id': authProvider.userId,
+          'start_time':
+              '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')}',
+          'end_time':
+              '${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}',
+          'date':
+              '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}',
+          'duracion': duration,
+        };
+
+        final response =
+            await createUserSubjectSlot(authProvider.token!, slotData);
+
+        if (response['success'] == true) {
+          print('Slot creado exitosamente: ${response['data']}');
+          successCount++;
+        } else {
+          print('Error creando slot: ${response['message']}');
+          errorCount++;
+        }
+      }
+
+      // Recargar los slots después de crear
+      await _loadAvailableSlots();
+
+      // Mostrar mensaje apropiado
+      if (successCount > 0 && errorCount == 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                '$successCount tiempo(s) libre(s) agregado(s) exitosamente'),
+            backgroundColor: AppColors.primaryGreen,
+          ),
+        );
+      } else if (successCount > 0 && errorCount > 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$successCount creado(s), $errorCount error(es)'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al crear los tiempos libres'),
+            backgroundColor: AppColors.redColor,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error creating slots: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error de conexión al agregar tiempos libres'),
+          backgroundColor: AppColors.redColor,
+        ),
+      );
+    }
   }
 
   @override
@@ -1176,6 +1435,16 @@ class _DashboardTutorState extends State<DashboardTutor> {
                   SizedBox(height: 10),
                   // Calendario visual de tiempos libres
                   _buildFreeTimeCalendar(),
+                  if (_isLoadingSlots)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: CircularProgressIndicator(
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      ),
+                    ),
                   SizedBox(height: 28),
                   // Próximas tutorías
                   Text('Próximas tutorías',
@@ -1352,13 +1621,21 @@ class _DashboardTutorState extends State<DashboardTutor> {
               const SizedBox(height: 12),
               if (times.value.isEmpty)
                 Text('No hay tiempos libres para este día',
-                    style: TextStyle(color: Colors.white70)),
-              ...times.value.map((ft) => ListTile(
-                    leading:
-                        Icon(Icons.access_time, color: AppColors.primaryGreen),
-                    title: Text('${ft['start']} - ${ft['end']}',
-                        style: TextStyle(color: Colors.white)),
-                  )),
+                    style: TextStyle(color: Colors.white70))
+              else
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: times.value.length,
+                    itemBuilder: (context, index) {
+                      final slot = times.value[index];
+                      return FreeTimeSlotCard(
+                        startTime: slot['start'] ?? '',
+                        endTime: slot['end'] ?? '',
+                        description: slot['description'],
+                      );
+                    },
+                  ),
+                ),
             ],
           ),
         );
