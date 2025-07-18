@@ -4,6 +4,7 @@ import 'package:flutter_projects/provider/tutor_subjects_provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
 import 'package:provider/provider.dart';
+import 'dart:async';
 
 class AddSubjectModal extends StatefulWidget {
   @override
@@ -17,29 +18,68 @@ class _AddSubjectModalState extends State<AddSubjectModal> {
   String? _selectedImagePath;
   bool _isLoading = false;
   bool _isLoadingSubjects = true;
+  bool _subjectsLoadError = false;
   List<Map<String, dynamic>> _availableSubjects = [];
+  int _currentPage = 1;
+  int _lastPage = 1;
+  bool _isLoadingMore = false;
+  ScrollController _scrollController = ScrollController();
+  TextEditingController _searchController = TextEditingController();
+  Timer? _debounceTimer;
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _loadAvailableSubjects();
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
     _descriptionController.dispose();
+    _scrollController.dispose();
+    _searchController.dispose();
+    _debounceTimer?.cancel();
     super.dispose();
   }
 
-  Future<void> _loadAvailableSubjects() async {
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 100 &&
+        !_isLoadingMore &&
+        _currentPage < _lastPage &&
+        !_subjectsLoadError) {
+      _loadMoreSubjects();
+    }
+  }
+
+  void _onSearchChanged(String query) {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(Duration(milliseconds: 500), () {
+      setState(() {
+        _searchQuery = query;
+      });
+      _searchSubjects();
+    });
+  }
+
+  Future<void> _searchSubjects() async {
+    if (_searchQuery.trim().isEmpty) {
+      _loadAvailableSubjects();
+      return;
+    }
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       if (authProvider.token == null) return;
 
-      final response = await getAvailableSubjects(authProvider.token!);
+      final response = await getAllSubjects(authProvider.token!,
+          page: 1, perPage: 20, keyword: _searchQuery.trim());
 
-      if (response['status'] == 200 && response['data'] != null) {
-        final List<dynamic> subjectsData = response['data'];
+      if (response['status'] == 200 &&
+          response['data'] != null &&
+          response['data']['data'] != null) {
+        final List<dynamic> subjectsData = response['data']['data'];
         setState(() {
           _availableSubjects = subjectsData
               .map((subject) => {
@@ -48,42 +88,92 @@ class _AddSubjectModalState extends State<AddSubjectModal> {
                   })
               .toList();
           _isLoadingSubjects = false;
+          _subjectsLoadError = false;
+          _currentPage = response['data']['current_page'] ?? 1;
+          _lastPage = response['data']['last_page'] ?? 1;
         });
       } else {
-        // Si no hay API de materias disponibles, usar lista por defecto
         setState(() {
-          _availableSubjects = [
-            {'id': 1, 'name': 'Matemáticas'},
-            {'id': 2, 'name': 'Física'},
-            {'id': 3, 'name': 'Química'},
-            {'id': 4, 'name': 'Biología'},
-            {'id': 5, 'name': 'Historia'},
-            {'id': 6, 'name': 'Geografía'},
-            {'id': 7, 'name': 'Literatura'},
-            {'id': 8, 'name': 'Inglés'},
-            {'id': 9, 'name': 'Español'},
-            {'id': 10, 'name': 'Programación'},
-          ];
           _isLoadingSubjects = false;
+          _subjectsLoadError = true;
         });
       }
     } catch (e) {
-      print('Error loading available subjects: $e');
-      // Usar lista por defecto en caso de error
+      print('Error searching subjects: $e');
       setState(() {
-        _availableSubjects = [
-          {'id': 1, 'name': 'Matemáticas'},
-          {'id': 2, 'name': 'Física'},
-          {'id': 3, 'name': 'Química'},
-          {'id': 4, 'name': 'Biología'},
-          {'id': 5, 'name': 'Historia'},
-          {'id': 6, 'name': 'Geografía'},
-          {'id': 7, 'name': 'Literatura'},
-          {'id': 8, 'name': 'Inglés'},
-          {'id': 9, 'name': 'Español'},
-          {'id': 10, 'name': 'Programación'},
-        ];
         _isLoadingSubjects = false;
+        _subjectsLoadError = true;
+      });
+    }
+  }
+
+  Future<void> _loadAvailableSubjects() async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.token == null) return;
+
+      final response =
+          await getAllSubjects(authProvider.token!, page: 1, perPage: 20);
+
+      if (response['status'] == 200 &&
+          response['data'] != null &&
+          response['data']['data'] != null) {
+        final List<dynamic> subjectsData = response['data']['data'];
+        setState(() {
+          _availableSubjects = subjectsData
+              .map((subject) => {
+                    'id': subject['id'],
+                    'name': subject['name'],
+                  })
+              .toList();
+          _isLoadingSubjects = false;
+          _subjectsLoadError = false;
+          _currentPage = response['data']['current_page'] ?? 1;
+          _lastPage = response['data']['last_page'] ?? 1;
+        });
+      } else {
+        setState(() {
+          _isLoadingSubjects = false;
+          _subjectsLoadError = true;
+        });
+      }
+    } catch (e) {
+      print('Error loading all subjects: $e');
+      setState(() {
+        _isLoadingSubjects = false;
+        _subjectsLoadError = true;
+      });
+    }
+  }
+
+  Future<void> _loadMoreSubjects() async {
+    if (_isLoadingMore || _currentPage >= _lastPage) return;
+    setState(() {
+      _isLoadingMore = true;
+    });
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final nextPage = _currentPage + 1;
+      final response = await getAllSubjects(authProvider.token!,
+          page: nextPage, perPage: 20);
+      if (response['status'] == 200 &&
+          response['data'] != null &&
+          response['data']['data'] != null) {
+        final List<dynamic> subjectsData = response['data']['data'];
+        setState(() {
+          _availableSubjects.addAll(subjectsData.map((subject) => {
+                'id': subject['id'],
+                'name': subject['name'],
+              }));
+          _currentPage = response['data']['current_page'] ?? _currentPage;
+          _lastPage = response['data']['last_page'] ?? _lastPage;
+        });
+      }
+    } catch (e) {
+      print('Error loading more subjects: $e');
+    } finally {
+      setState(() {
+        _isLoadingMore = false;
       });
     }
   }
@@ -100,6 +190,14 @@ class _AddSubjectModalState extends State<AddSubjectModal> {
     setState(() {
       _isLoading = true;
     });
+
+    // DEPURACIÓN: Mostrar el id y nombre de la materia seleccionada
+    final selectedSubject = _availableSubjects.firstWhere(
+      (s) => s['id'] == _selectedSubjectId,
+      orElse: () => {},
+    );
+    print(
+        'Materia seleccionada: id= [32m$_selectedSubjectId [0m, nombre=${selectedSubject['name']}');
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final subjectsProvider =
@@ -211,6 +309,28 @@ class _AddSubjectModalState extends State<AddSubjectModal> {
                   ],
                 ),
               )
+            else if (_subjectsLoadError)
+              Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.red.withOpacity(0.2)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.error, color: Colors.red, size: 20),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'No se pudieron cargar las materias. Intenta más tarde.',
+                        style: TextStyle(
+                            color: Colors.red, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+              )
             else
               Container(
                 decoration: BoxDecoration(
@@ -218,34 +338,95 @@ class _AddSubjectModalState extends State<AddSubjectModal> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.white.withOpacity(0.2)),
                 ),
-                child: DropdownButtonFormField<int>(
-                  value: _selectedSubjectId,
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    hintText: 'Selecciona una materia',
-                    hintStyle: TextStyle(color: Colors.white70),
-                  ),
-                  dropdownColor: AppColors.darkBlue,
-                  style: TextStyle(color: Colors.white),
-                  items: _availableSubjects.map((subject) {
-                    return DropdownMenuItem<int>(
-                      value: subject['id'],
-                      child: Text(subject['name']),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedSubjectId = value;
-                    });
-                  },
-                  validator: (value) {
-                    if (value == null) {
-                      return 'Por favor selecciona una materia';
-                    }
-                    return null;
-                  },
+                child: Column(
+                  children: [
+                    // Campo de búsqueda
+                    Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: _onSearchChanged,
+                        style: TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          hintText: 'Buscar materia...',
+                          hintStyle: TextStyle(color: Colors.white70),
+                          prefixIcon: Icon(Icons.search, color: Colors.white70),
+                          suffixIcon: _searchController.text.isNotEmpty
+                              ? IconButton(
+                                  icon:
+                                      Icon(Icons.clear, color: Colors.white70),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    _onSearchChanged('');
+                                  },
+                                )
+                              : null,
+                          filled: true,
+                          fillColor: Colors.white.withOpacity(0.1),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                                color: Colors.white.withOpacity(0.2)),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                                color: Colors.white.withOpacity(0.2)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide:
+                                BorderSide(color: AppColors.primaryGreen),
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      height: 250,
+                      child: Scrollbar(
+                        controller: _scrollController,
+                        thumbVisibility: true,
+                        child: ListView.builder(
+                          controller: _scrollController,
+                          itemCount: _availableSubjects.length +
+                              (_isLoadingMore ? 1 : 0),
+                          itemBuilder: (context, index) {
+                            if (index >= _availableSubjects.length) {
+                              return Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                            }
+                            final subject = _availableSubjects[index];
+                            return RadioListTile<int>(
+                              value: subject['id'],
+                              groupValue: _selectedSubjectId,
+                              onChanged: _subjectsLoadError
+                                  ? null
+                                  : (value) {
+                                      setState(() {
+                                        _selectedSubjectId = value;
+                                      });
+                                    },
+                              title: Text(subject['name'],
+                                  style: TextStyle(color: Colors.white)),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    if (_currentPage < _lastPage &&
+                        !_isLoadingMore &&
+                        _searchQuery.trim().isEmpty)
+                      TextButton.icon(
+                        onPressed: _loadMoreSubjects,
+                        icon: Icon(Icons.add, color: AppColors.primaryGreen),
+                        label: Text('Cargar más',
+                            style: TextStyle(color: AppColors.primaryGreen)),
+                      ),
+                  ],
                 ),
               ),
             SizedBox(height: 20),
@@ -317,7 +498,8 @@ class _AddSubjectModalState extends State<AddSubjectModal> {
                 SizedBox(width: 16),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _addSubject,
+                    onPressed:
+                        _isLoading || _subjectsLoadError ? null : _addSubject,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGreen,
                       shape: RoundedRectangleBorder(
