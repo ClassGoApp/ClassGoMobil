@@ -1212,966 +1212,20 @@ class _DashboardTutorState extends State<DashboardTutor> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Tarjeta de bienvenida
-                  Card(
-                    color: AppColors.primaryGreen,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18)),
-                    elevation: 6,
-                    child: Stack(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 32,
-                                backgroundColor: AppColors.lightBlueColor,
-                                child: Icon(Icons.person,
-                                    color: Colors.white, size: 36),
-                              ),
-                              SizedBox(width: 18),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('¡Bienvenido,',
-                                        style: TextStyle(
-                                            color: Colors.white70,
-                                            fontSize: 16)),
-                                    Text(tutorName,
-                                        style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 22)),
-                                    SizedBox(height: 8),
-                                    Row(
-                                      children: [
-                                        Icon(Icons.star,
-                                            color: AppColors.starYellow,
-                                            size: 18),
-                                        SizedBox(width: 4),
-                                        Text('$rating',
-                                            style: TextStyle(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.w600)),
-                                        SizedBox(width: 16),
-                                        Icon(Icons.check_circle,
-                                            color: AppColors.primaryWhiteColor,
-                                            size: 18),
-                                        SizedBox(width: 4),
-                                        Text('$completedSessions completadas',
-                                            style: TextStyle(
-                                                color: Colors.white70)),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        // Logo en la esquina superior derecha
-                        Positioned(
-                          top: 12,
-                          right: 18,
-                          child: Image.asset(
-                            'assets/images/logo_classgo.png',
-                            width: 48,
-                            height: 48,
-                            fit: BoxFit.contain,
-                            opacity: AlwaysStoppedAnimation(0.90),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  // Encabezado mejorado con toggle de visibilidad
+                  _buildHeader(tutorName, rating, completedSessions),
                   SizedBox(height: 24),
-                  // Tarjeta de progreso del perfil
-                  Consumer<TutorSubjectsProvider>(
-                    builder: (context, subjectsProvider, child) {
-                      final int totalSteps = 3;
-                      int completedSteps = 0;
 
-                      // Contar pasos completados
-                      if (isAvailable) completedSteps++;
-                      if (subjectsProvider.subjects.isNotEmpty)
-                        completedSteps++;
-                      if (_availableSlots.isNotEmpty) completedSteps++;
-
-                      final double progress = completedSteps / totalSteps;
-                      final bool isProfileComplete =
-                          completedSteps == totalSteps;
-
-                      return Container(
-                        margin: EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: isProfileComplete
-                                ? [
-                                    AppColors.primaryGreen,
-                                    Color(0xFF2E7D32),
-                                  ]
-                                : [
-                                    Color(0xFF1A237E),
-                                    Color(0xFF283593),
-                                  ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(
-                            color: isProfileComplete
-                                ? AppColors.primaryGreen
-                                : AppColors.lightBlueColor,
-                            width: 1.5,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 8,
-                              offset: Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Icon(
-                                      isProfileComplete
-                                          ? Icons.verified
-                                          : Icons.assignment,
-                                      color: isProfileComplete
-                                          ? AppColors.primaryGreen
-                                          : AppColors.lightBlueColor,
-                                      size: 24,
-                                    ),
-                                  ),
-                                  SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          isProfileComplete
-                                              ? '¡Perfil completo!'
-                                              : 'Completa tu perfil',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 18,
-                                          ),
-                                        ),
-                                        Text(
-                                          isProfileComplete
-                                              ? 'Estás listo para recibir estudiantes'
-                                              : '$completedSteps de $totalSteps pasos completados',
-                                          style: TextStyle(
-                                            color:
-                                                Colors.white.withOpacity(0.9),
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 16),
-                              // Barra de progreso
-                              Container(
-                                height: 10,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.15),
-                                  borderRadius: BorderRadius.circular(5),
-                                  border: Border.all(
-                                    color: Colors.white.withOpacity(0.3),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: FractionallySizedBox(
-                                  alignment: Alignment.centerLeft,
-                                  widthFactor: progress,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          Colors.white,
-                                          Colors.white.withOpacity(0.9),
-                                        ],
-                                      ),
-                                      borderRadius: BorderRadius.circular(5),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              SizedBox(height: 12),
-                              // Lista de pasos
-                              Column(
-                                children: [
-                                  _buildProgressStep(
-                                    'Activar disponibilidad',
-                                    isAvailable,
-                                    Icons.visibility,
-                                  ),
-                                  SizedBox(height: 8),
-                                  _buildProgressStep(
-                                    'Agregar materias',
-                                    subjectsProvider.subjects.isNotEmpty,
-                                    Icons.school,
-                                  ),
-                                  SizedBox(height: 8),
-                                  _buildProgressStep(
-                                    'Configurar horarios',
-                                    _availableSlots.isNotEmpty,
-                                    Icons.schedule,
-                                  ),
-                                ],
-                              ),
-                              if (!isProfileComplete) ...[
-                                SizedBox(height: 16),
-                                Container(
-                                  padding: EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.08),
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(
-                                      color: Colors.white.withOpacity(0.25),
-                                      width: 1,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.tips_and_updates,
-                                        color: Colors.white.withOpacity(0.8),
-                                        size: 20,
-                                      ),
-                                      SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          'Completa todos los pasos para maximizar tus oportunidades de tutoría',
-                                          style: TextStyle(
-                                            color:
-                                                Colors.white.withOpacity(0.9),
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  // Tarjeta informativa de disponibilidad
-                  Container(
-                    margin: EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.lightBlueColor,
-                          Color(0xFF1976D2),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                        color: AppColors.lightBlueColor,
-                        width: 1.5,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 8,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
-                                      blurRadius: 8,
-                                      offset: Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: Icon(
-                                  Icons.visibility,
-                                  color: AppColors.lightBlueColor,
-                                  size: 24,
-                                ),
-                              ),
-                              SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Visibilidad',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                    Text(
-                                      'Controla si los estudiantes pueden encontrarte',
-                                      style: TextStyle(
-                                        color: Colors.white.withOpacity(0.9),
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  isAvailable
-                                      ? '¡Perfecto! Los estudiantes pueden contactarte'
-                                      : 'Activa para recibir solicitudes de tutoría',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                              Switch(
-                                value: isAvailable,
-                                activeColor: AppColors.primaryGreen,
-                                onChanged: (val) {
-                                  _showAvailabilityDialog(val);
-                                },
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  // Tarjeta de acciones rápidas
+                  _buildQuickActionsCard(),
                   SizedBox(height: 24),
-                  // Tarjeta informativa de materias
-                  Container(
-                    margin: EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.primaryGreen,
-                          Color(0xFF2E7D32),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                        color: AppColors.primaryGreen,
-                        width: 1.5,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 8,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
-                                      blurRadius: 8,
-                                      offset: Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: Icon(
-                                  Icons.school,
-                                  color: AppColors.primaryGreen,
-                                  size: 24,
-                                ),
-                              ),
-                              SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Materias que enseñas',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                    Text(
-                                      'Define en qué áreas puedes ayudar a los estudiantes',
-                                      style: TextStyle(
-                                        color: Colors.white.withOpacity(0.9),
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 16),
-                          Consumer<TutorSubjectsProvider>(
-                            builder: (context, subjectsProvider, child) {
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        'Materias agregadas: ${subjectsProvider.subjects.length}',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                      ElevatedButton.icon(
-                                        onPressed: () {
-                                          _showAddSubjectModal();
-                                        },
-                                        icon: Icon(Icons.add,
-                                            color: Colors.white, size: 18),
-                                        label: Text('Añadir',
-                                            style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 13)),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor:
-                                              AppColors.primaryGreen,
-                                          foregroundColor: Colors.white,
-                                          shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8)),
-                                          elevation: 0,
-                                          padding: EdgeInsets.symmetric(
-                                              horizontal: 12, vertical: 8),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  SizedBox(height: 8),
-                                  if (subjectsProvider.subjects.isEmpty)
-                                    Container(
-                                      padding: EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.08),
-                                        borderRadius: BorderRadius.circular(10),
-                                        border: Border.all(
-                                          color: Colors.white.withOpacity(0.25),
-                                          width: 1,
-                                        ),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.lightbulb_outline,
-                                            color:
-                                                Colors.white.withOpacity(0.8),
-                                            size: 20,
-                                          ),
-                                          SizedBox(width: 8),
-                                          Expanded(
-                                            child: Text(
-                                              '¡Agrega tu primera materia para empezar a recibir estudiantes!',
-                                              style: TextStyle(
-                                                color: Colors.white
-                                                    .withOpacity(0.9),
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    )
-                                  else if (subjectsProvider.subjects.length < 3)
-                                    Container(
-                                      padding: EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.08),
-                                        borderRadius: BorderRadius.circular(10),
-                                        border: Border.all(
-                                          color: Colors.white.withOpacity(0.25),
-                                          width: 1,
-                                        ),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.trending_up,
-                                            color:
-                                                Colors.white.withOpacity(0.8),
-                                            size: 20,
-                                          ),
-                                          SizedBox(width: 8),
-                                          Expanded(
-                                            child: Text(
-                                              '¡Excelente! Agrega más materias para aumentar tus oportunidades',
-                                              style: TextStyle(
-                                                color: Colors.white
-                                                    .withOpacity(0.9),
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    )
-                                  else
-                                    Container(
-                                      padding: EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.08),
-                                        borderRadius: BorderRadius.circular(10),
-                                        border: Border.all(
-                                          color: Colors.white.withOpacity(0.25),
-                                          width: 1,
-                                        ),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.star,
-                                            color:
-                                                Colors.white.withOpacity(0.8),
-                                            size: 20,
-                                          ),
-                                          SizedBox(width: 8),
-                                          Expanded(
-                                            child: Text(
-                                              '¡Impresionante! Tienes un perfil muy completo',
-                                              style: TextStyle(
-                                                color: Colors.white
-                                                    .withOpacity(0.9),
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                ],
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  // Materias
-                  Consumer<TutorSubjectsProvider>(
-                    builder: (context, subjectsProvider, child) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(height: 10),
-                          if (subjectsProvider.isLoading)
-                            Center(
-                              child: CircularProgressIndicator(
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
-                          else if (subjectsProvider.subjects.isEmpty)
-                            Container(
-                              padding: EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                'No tienes materias agregadas. Haz clic en "Añadir" para agregar tu primera materia.',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 14,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            )
-                          else
-                            Column(
-                              children: [
-                                // Mostrar solo las primeras 5 materias
-                                ...subjectsProvider.subjects
-                                    .take(5)
-                                    .map((subject) => Container(
-                                          margin: EdgeInsets.only(bottom: 8),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.darkBlue
-                                                .withOpacity(0.8),
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                            border: Border.all(
-                                              color: AppColors.lightBlueColor
-                                                  .withOpacity(0.2),
-                                              width: 1,
-                                            ),
-                                          ),
-                                          child: Material(
-                                            color: Colors.transparent,
-                                            child: InkWell(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                              onTap: () {
-                                                // Aquí se puede agregar funcionalidad para editar la materia
-                                              },
-                                              child: Padding(
-                                                padding: EdgeInsets.symmetric(
-                                                    horizontal: 16,
-                                                    vertical: 12),
-                                                child: Row(
-                                                  children: [
-                                                    Container(
-                                                      padding:
-                                                          EdgeInsets.all(8),
-                                                      decoration: BoxDecoration(
-                                                        color: AppColors
-                                                            .lightBlueColor
-                                                            .withOpacity(0.2),
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(10),
-                                                      ),
-                                                      child: Icon(
-                                                        Icons.school,
-                                                        color: AppColors
-                                                            .lightBlueColor,
-                                                        size: 20,
-                                                      ),
-                                                    ),
-                                                    SizedBox(width: 12),
-                                                    Expanded(
-                                                      child: Text(
-                                                        subject.subject.name,
-                                                        style: TextStyle(
-                                                          color: Colors.white,
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                          fontSize: 15,
-                                                        ),
-                                                        maxLines: 1,
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
-                                                      ),
-                                                    ),
-                                                    Container(
-                                                      padding:
-                                                          EdgeInsets.all(4),
-                                                      decoration: BoxDecoration(
-                                                        color: AppColors
-                                                            .redColor
-                                                            .withOpacity(0.15),
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(8),
-                                                      ),
-                                                      child: IconButton(
-                                                        icon: Icon(
-                                                          Icons.close,
-                                                          color: AppColors
-                                                              .redColor,
-                                                          size: 16,
-                                                        ),
-                                                        onPressed: () {
-                                                          _deleteSubject(
-                                                              subject.id);
-                                                        },
-                                                        padding:
-                                                            EdgeInsets.zero,
-                                                        constraints:
-                                                            BoxConstraints(
-                                                          minWidth: 20,
-                                                          minHeight: 20,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        )),
-                                // Botón "Ver más" si hay más de 5 materias
-                                if (subjectsProvider.subjects.length > 5)
-                                  Container(
-                                    margin: EdgeInsets.only(top: 8),
-                                    child: ElevatedButton(
-                                      onPressed: () => _showAllSubjectsModal(
-                                          subjectsProvider.subjects),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor:
-                                            AppColors.lightBlueColor,
-                                        foregroundColor: Colors.white,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                        elevation: 0,
-                                        side: BorderSide(
-                                          color: AppColors.lightBlueColor,
-                                          width: 1.5,
-                                        ),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(Icons.expand_more, size: 18),
-                                          SizedBox(width: 6),
-                                          Text(
-                                            'Ver ${subjectsProvider.subjects.length - 5} más',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 14,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                        ],
-                      );
-                    },
-                  ),
-                  SizedBox(height: 28),
-                  // Tarjeta informativa de tiempos libres
-                  Container(
-                    margin: EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.orangeprimary,
-                          Color(0xFFE65100),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                        color: AppColors.orangeprimary,
-                        width: 1.5,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 8,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
-                                      blurRadius: 8,
-                                      offset: Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: Icon(
-                                  Icons.schedule,
-                                  color: AppColors.orangeprimary,
-                                  size: 24,
-                                ),
-                              ),
-                              SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Horarios disponibles',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                    Text(
-                                      'Define cuándo estás disponible para tutorías',
-                                      style: TextStyle(
-                                        color: Colors.white.withOpacity(0.9),
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Slots configurados: ${_availableSlots.length}',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                    SizedBox(height: 4),
-                                    if (_availableSlots.isEmpty)
-                                      Text(
-                                        'Agrega horarios para que los estudiantes puedan reservar',
-                                        style: TextStyle(
-                                          color: Colors.white.withOpacity(0.8),
-                                          fontSize: 12,
-                                        ),
-                                      )
-                                    else if (_availableSlots.length < 5)
-                                      Text(
-                                        '¡Bien! Agrega más horarios para mayor flexibilidad',
-                                        style: TextStyle(
-                                          color: Colors.white.withOpacity(0.8),
-                                          fontSize: 12,
-                                        ),
-                                      )
-                                    else
-                                      Text(
-                                        '¡Excelente! Tienes muchos horarios disponibles',
-                                        style: TextStyle(
-                                          color: Colors.white.withOpacity(0.8),
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                              ElevatedButton.icon(
-                                onPressed: _showAddFreeTimeModal,
-                                icon: Icon(Icons.add,
-                                    color: Colors.white, size: 18),
-                                label: Text('Agregar',
-                                    style: TextStyle(
-                                        color: Colors.white, fontSize: 13)),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.orangeprimary,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8)),
-                                  elevation: 0,
-                                  padding: EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 8),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  // Tiempos libres
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Tiempos libres',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18)),
-                      ElevatedButton.icon(
-                        onPressed: _showAddFreeTimeModal,
-                        icon: Icon(Icons.calendar_today, color: Colors.white),
-                        label: Text('Agregar',
-                            style: TextStyle(color: Colors.white)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.orangeprimary,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
-                          elevation: 3,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 10),
-                  // Calendario visual de tiempos libres
-                  _buildFreeTimeCalendar(),
-                  if (_isLoadingSlots)
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: CircularProgressIndicator(
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      ),
-                    ),
+
+                  // Sección de materias con chips
+                  _buildSubjectsSection(),
+                  SizedBox(height: 24),
+
+                  // Sección unificada de disponibilidad
+                  _buildAvailabilitySection(),
                 ],
               ),
             ),
@@ -2182,6 +1236,639 @@ class _DashboardTutorState extends State<DashboardTutor> {
   }
 
   // --- Widgets auxiliares ---
+
+  // Encabezado mejorado con toggle de visibilidad
+  Widget _buildHeader(String tutorName, double rating, int completedSessions) {
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppColors.primaryGreen, Color(0xFF2E7D32)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 12,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 28,
+            backgroundColor: Colors.white.withOpacity(0.2),
+            child: Icon(Icons.person, color: Colors.white, size: 32),
+          ),
+          SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '¡Hola, $tutorName!',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(Icons.star, color: AppColors.starYellow, size: 16),
+                    SizedBox(width: 4),
+                    Text(
+                      '$rating',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Icon(Icons.check_circle, color: Colors.white, size: 16),
+                    SizedBox(width: 4),
+                    Text(
+                      '$completedSessions sesiones',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // Toggle de visibilidad integrado
+          Column(
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isAvailable
+                      ? Colors.white.withOpacity(0.2)
+                      : Colors.black.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isAvailable ? Icons.visibility : Icons.visibility_off,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      isAvailable ? 'Online' : 'Offline',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 8),
+              Switch(
+                value: isAvailable,
+                activeColor: Colors.white,
+                onChanged: (val) => _showAvailabilityDialog(val),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Tarjeta de acciones rápidas
+  Widget _buildQuickActionsCard() {
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.darkBlue.withOpacity(0.8),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: AppColors.lightBlueColor.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Acciones Rápidas',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
+          SizedBox(height: 16),
+          GridView.count(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 1.2,
+            children: [
+              _buildQuickActionButton(
+                'Gestionar\nMaterias',
+                Icons.school,
+                AppColors.primaryGreen,
+                () => _showAddSubjectModal(),
+              ),
+              _buildQuickActionButton(
+                'Definir\nHorarios',
+                Icons.schedule,
+                AppColors.orangeprimary,
+                () => _showAddFreeTimeModal(),
+              ),
+              _buildQuickActionButton(
+                'Ver Mis\nEstudiantes',
+                Icons.people,
+                AppColors.lightBlueColor,
+                () {
+                  // TODO: Navegar a estudiantes
+                },
+              ),
+              _buildQuickActionButton(
+                'Ver Mis\nGanancias',
+                Icons.attach_money,
+                AppColors.starYellow,
+                () {
+                  // TODO: Navegar a ganancias
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickActionButton(
+      String title, IconData icon, Color color, VoidCallback onTap) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Container(
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: color.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: color, size: 28),
+              SizedBox(height: 8),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Sección de materias con chips
+  Widget _buildSubjectsSection() {
+    return Consumer<TutorSubjectsProvider>(
+      builder: (context, subjectsProvider, child) {
+        return Container(
+          padding: EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.darkBlue.withOpacity(0.8),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: AppColors.primaryGreen.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Mis Materias (${subjectsProvider.subjects.length})',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: () => _showAddSubjectModal(),
+                    icon: Icon(Icons.add, color: Colors.white, size: 16),
+                    label: Text('Añadir',
+                        style: TextStyle(color: Colors.white, fontSize: 12)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGreen,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 16),
+              if (subjectsProvider.isLoading)
+                Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              else if (subjectsProvider.subjects.isEmpty)
+                Container(
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    'No tienes materias agregadas. ¡Añade tu primera materia para empezar!',
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
+                    textAlign: TextAlign.center,
+                  ),
+                )
+              else
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: subjectsProvider.subjects.map((subject) {
+                    return Container(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: AppColors.primaryGreen.withOpacity(0.5),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.school,
+                            color: AppColors.primaryGreen,
+                            size: 16,
+                          ),
+                          SizedBox(width: 6),
+                          Text(
+                            subject.subject.name,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 13,
+                            ),
+                          ),
+                          SizedBox(width: 6),
+                          GestureDetector(
+                            onTap: () => _deleteSubject(subject.id),
+                            child: Container(
+                              padding: EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                color: AppColors.redColor.withOpacity(0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.close,
+                                color: AppColors.redColor,
+                                size: 14,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Sección unificada de disponibilidad
+  Widget _buildAvailabilitySection() {
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.darkBlue.withOpacity(0.8),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: AppColors.orangeprimary.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Mi Calendario de Horarios',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+              ElevatedButton.icon(
+                onPressed: () => _showAddFreeTimeModal(),
+                icon: Icon(Icons.add, color: Colors.white, size: 16),
+                label: Text('Añadir',
+                    style: TextStyle(color: Colors.white, fontSize: 12)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.orangeprimary,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16),
+          _buildInteractiveCalendar(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInteractiveCalendar() {
+    final daysInMonth =
+        DateUtils.getDaysInMonth(_focusedDay.year, _focusedDay.month);
+    final firstDayOfMonth = DateTime(_focusedDay.year, _focusedDay.month, 1);
+    final weekDayOffset = firstDayOfMonth.weekday - 1;
+    final days = List.generate(daysInMonth,
+        (i) => DateTime(_focusedDay.year, _focusedDay.month, i + 1));
+    final weekDays = List.generate(
+        7, (i) => DateFormat.E('es').dateSymbols.STANDALONESHORTWEEKDAYS[i]);
+
+    return Column(
+      children: [
+        // Navegación del calendario
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            IconButton(
+              icon: Icon(Icons.chevron_left, color: Colors.white),
+              onPressed: () {
+                setState(() {
+                  _focusedDay =
+                      DateTime(_focusedDay.year, _focusedDay.month - 1, 1);
+                });
+              },
+            ),
+            Text(
+              DateFormat('MMMM yyyy', 'es').format(_focusedDay).toUpperCase(),
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            IconButton(
+              icon: Icon(Icons.chevron_right, color: Colors.white),
+              onPressed: () {
+                setState(() {
+                  _focusedDay =
+                      DateTime(_focusedDay.year, _focusedDay.month + 1, 1);
+                });
+              },
+            ),
+          ],
+        ),
+        SizedBox(height: 8),
+
+        // Días de la semana
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: weekDays
+              .map((d) => Text(
+                    d[0],
+                    style: TextStyle(
+                        color: Colors.white70, fontWeight: FontWeight.bold),
+                  ))
+              .toList(),
+        ),
+        SizedBox(height: 4),
+
+        // Grilla del calendario
+        GridView.builder(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 7,
+            mainAxisSpacing: 4,
+            crossAxisSpacing: 4,
+            childAspectRatio: 1.1,
+          ),
+          itemCount: daysInMonth + weekDayOffset,
+          itemBuilder: (context, i) {
+            if (i < weekDayOffset) return SizedBox.shrink();
+            final day = days[i - weekDayOffset];
+            final hasFreeTime =
+                freeTimesByDay.keys.any((d) => DateUtils.isSameDay(d, day));
+
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  _selectedDay = day;
+                });
+                if (hasFreeTime) {
+                  _showFreeTimesForDay(day);
+                } else {
+                  _showAddTimeForDay(day);
+                }
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: _selectedDay != null &&
+                          DateUtils.isSameDay(_selectedDay, day)
+                      ? AppColors.orangeprimary.withOpacity(0.7)
+                      : hasFreeTime
+                          ? AppColors.primaryGreen.withOpacity(0.3)
+                          : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color:
+                        hasFreeTime ? AppColors.primaryGreen : Colors.white24,
+                    width: hasFreeTime ? 2 : 1,
+                  ),
+                ),
+                alignment: Alignment.center,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Text(
+                      '${day.day}',
+                      style: TextStyle(
+                        color: hasFreeTime ? Colors.white : Colors.white70,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (hasFreeTime)
+                      Positioned(
+                        bottom: 2,
+                        child: Container(
+                          width: 4,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryGreen,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+
+        // Horarios del día seleccionado
+        if (_selectedDay != null) ...[
+          SizedBox(height: 16),
+          _buildSelectedDaySchedule(),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildSelectedDaySchedule() {
+    final times = freeTimesByDay.entries.firstWhere(
+      (e) => DateUtils.isSameDay(e.key, _selectedDay!),
+      orElse: () => MapEntry(_selectedDay!, []),
+    );
+
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.orangeprimary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.orangeprimary.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Horarios para ${DateFormat('EEEE, d MMMM', 'es').format(_selectedDay!)}:',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
+          SizedBox(height: 8),
+          if (times.value.isEmpty)
+            Text(
+              'No hay horarios configurados para este día',
+              style: TextStyle(color: Colors.white70, fontSize: 13),
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: times.value.map((slot) {
+                return Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.orangeprimary.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppColors.orangeprimary.withOpacity(0.5),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.access_time,
+                        color: AppColors.orangeprimary,
+                        size: 14,
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        '${slot['start']} - ${slot['end']}',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 12,
+                        ),
+                      ),
+                      SizedBox(width: 6),
+                      GestureDetector(
+                        onTap: () => _deleteTimeSlot(slot),
+                        child: Container(
+                          padding: EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: AppColors.redColor.withOpacity(0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.close,
+                            color: AppColors.redColor,
+                            size: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          SizedBox(height: 8),
+          ElevatedButton.icon(
+            onPressed: () => _showAddTimeForDay(_selectedDay!),
+            icon: Icon(Icons.add, color: Colors.white, size: 16),
+            label: Text('Añadir bloque horario',
+                style: TextStyle(color: Colors.white, fontSize: 12)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.orangeprimary,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildFreeTimeCalendar() {
     final daysInMonth =
         DateUtils.getDaysInMonth(_focusedDay.year, _focusedDay.month);
@@ -2531,6 +2218,264 @@ class _DashboardTutorState extends State<DashboardTutor> {
           ),
         );
       },
+    );
+  }
+
+  // Método para mostrar modal de agregar tiempo para un día específico
+  void _showAddTimeForDay(DateTime day) {
+    TimeOfDay? startTime;
+    TimeOfDay? endTime;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              padding: EdgeInsets.only(
+                left: 18,
+                right: 18,
+                top: 24,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 18,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.darkBlue,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 5,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  Text(
+                    'Agregar horario para ${DateFormat('EEEE, d MMMM', 'es').format(day)}',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                  SizedBox(height: 20),
+
+                  // Selector de hora inicio
+                  Row(
+                    children: [
+                      Icon(Icons.access_time, color: AppColors.orangeprimary),
+                      SizedBox(width: 10),
+                      Text('Hora inicio:',
+                          style: TextStyle(color: Colors.white70)),
+                      SizedBox(width: 10),
+                      Text(
+                        startTime?.format(context) ?? '--:--',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Spacer(),
+                      TextButton(
+                        onPressed: () async {
+                          final picked = await showTimePicker(
+                            context: context,
+                            initialTime: TimeOfDay.now(),
+                            builder: (context, child) {
+                              return Theme(
+                                data: ThemeData.dark().copyWith(
+                                  colorScheme: ColorScheme.dark(
+                                    primary: AppColors.orangeprimary,
+                                    surface: AppColors.darkBlue,
+                                    onSurface: Colors.white,
+                                  ),
+                                ),
+                                child: child!,
+                              );
+                            },
+                          );
+                          if (picked != null) {
+                            setModalState(() {
+                              startTime = picked;
+                            });
+                          }
+                        },
+                        child: Text('Elegir',
+                            style: TextStyle(color: AppColors.orangeprimary)),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 12),
+
+                  // Selector de hora fin
+                  Row(
+                    children: [
+                      Icon(Icons.access_time, color: AppColors.orangeprimary),
+                      SizedBox(width: 10),
+                      Text('Hora fin:',
+                          style: TextStyle(color: Colors.white70)),
+                      SizedBox(width: 10),
+                      Text(
+                        endTime?.format(context) ?? '--:--',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Spacer(),
+                      TextButton(
+                        onPressed: () async {
+                          final picked = await showTimePicker(
+                            context: context,
+                            initialTime: startTime ?? TimeOfDay.now(),
+                            builder: (context, child) {
+                              return Theme(
+                                data: ThemeData.dark().copyWith(
+                                  colorScheme: ColorScheme.dark(
+                                    primary: AppColors.orangeprimary,
+                                    surface: AppColors.darkBlue,
+                                    onSurface: Colors.white,
+                                  ),
+                                ),
+                                child: child!,
+                              );
+                            },
+                          );
+                          if (picked != null) {
+                            setModalState(() {
+                              endTime = picked;
+                            });
+                          }
+                        },
+                        child: Text('Elegir',
+                            style: TextStyle(color: AppColors.orangeprimary)),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 24),
+
+                  ElevatedButton(
+                    onPressed: (startTime != null && endTime != null)
+                        ? () async {
+                            Navigator.of(context).pop();
+                            await _createSingleSlot(day, startTime!, endTime!);
+                          }
+                        : null,
+                    child: Text('Guardar horario',
+                        style: TextStyle(color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.orangeprimary,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                      minimumSize: Size(double.infinity, 48),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // Método para crear un solo slot de tiempo
+  Future<void> _createSingleSlot(
+      DateTime day, TimeOfDay start, TimeOfDay end) async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.token == null || authProvider.userId == null) return;
+
+      final startMinutes = start.hour * 60 + start.minute;
+      final endMinutes = end.hour * 60 + end.minute;
+      final duration = endMinutes - startMinutes;
+
+      final slotData = {
+        'user_id': authProvider.userId,
+        'start_time':
+            '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')}',
+        'end_time':
+            '${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}',
+        'date':
+            '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}',
+        'duracion': duration,
+      };
+
+      final response =
+          await createUserSubjectSlot(authProvider.token!, slotData);
+
+      if (response['success'] == true) {
+        await _loadAvailableSlots();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Horario agregado exitosamente'),
+            backgroundColor: AppColors.primaryGreen,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al agregar el horario'),
+            backgroundColor: AppColors.redColor,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error creating single slot: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error de conexión'),
+          backgroundColor: AppColors.redColor,
+        ),
+      );
+    }
+  }
+
+  // Método para eliminar un slot de tiempo
+  void _deleteTimeSlot(Map<String, String> slot) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.darkBlue,
+        title: Text(
+          'Eliminar horario',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: Text(
+          '¿Estás seguro de que quieres eliminar este horario?',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Cancelar', style: TextStyle(color: Colors.white70)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              // TODO: Implementar eliminación de slot
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Horario eliminado'),
+                  backgroundColor: AppColors.primaryGreen,
+                ),
+              );
+            },
+            style:
+                ElevatedButton.styleFrom(backgroundColor: AppColors.redColor),
+            child: Text('Eliminar', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
     );
   }
 }
