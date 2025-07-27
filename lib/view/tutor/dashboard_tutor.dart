@@ -9,6 +9,7 @@ import 'package:flutter_projects/provider/tutor_subjects_provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/view/tutor/add_subject_modal.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
+import 'package:flutter_projects/view/auth/login_screen.dart';
 
 // --- Widget reutilizable para tarjetas de tiempo libre ---
 class FreeTimeSlotCard extends StatelessWidget {
@@ -1292,11 +1293,14 @@ class _DashboardTutorState extends State<DashboardTutor> {
                     SizedBox(width: 12),
                     Icon(Icons.check_circle, color: Colors.white, size: 16),
                     SizedBox(width: 4),
-                    Text(
-                      '$completedSessions sesiones',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 14,
+                    Expanded(
+                      child: Text(
+                        '$completedSessions sesiones',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.9),
+                          fontSize: 14,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -1304,16 +1308,18 @@ class _DashboardTutorState extends State<DashboardTutor> {
               ],
             ),
           ),
-          // Toggle de visibilidad integrado
+          // Controles del lado derecho
           Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
+              // Toggle de visibilidad
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                 decoration: BoxDecoration(
                   color: isAvailable
                       ? Colors.white.withOpacity(0.2)
                       : Colors.black.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -1321,27 +1327,56 @@ class _DashboardTutorState extends State<DashboardTutor> {
                     Icon(
                       isAvailable ? Icons.visibility : Icons.visibility_off,
                       color: Colors.white,
-                      size: 16,
+                      size: 14,
                     ),
-                    SizedBox(width: 4),
+                    SizedBox(width: 3),
                     Text(
                       isAvailable ? 'Online' : 'Offline',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
-                        fontSize: 12,
+                        fontSize: 10,
                       ),
                     ),
                   ],
                 ),
               ),
-              SizedBox(height: 8),
-              Switch(
-                value: isAvailable,
-                activeColor: Colors.white,
-                onChanged: (val) => _showAvailabilityDialog(val),
+              SizedBox(height: 6),
+              Transform.scale(
+                scale: 0.8,
+                child: Switch(
+                  value: isAvailable,
+                  activeColor: Colors.white,
+                  onChanged: (val) => _showAvailabilityDialog(val),
+                ),
               ),
             ],
+          ),
+          // Botón de cerrar sesión
+          SizedBox(width: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+            child: IconButton(
+              onPressed: () => _showLogoutDialog(),
+              icon: Icon(
+                Icons.logout_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
+              tooltip: 'Cerrar sesión',
+              padding: EdgeInsets.all(6),
+              constraints: BoxConstraints(
+                minWidth: 32,
+                minHeight: 32,
+              ),
+            ),
           ),
         ],
       ),
@@ -2477,5 +2512,197 @@ class _DashboardTutorState extends State<DashboardTutor> {
         ],
       ),
     );
+  }
+
+  // Método para mostrar diálogo de cerrar sesión
+  void _showLogoutDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.darkBlue.withOpacity(0.98),
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.4),
+                  blurRadius: 24,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Icono de logout con animación
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.redColor.withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  padding: EdgeInsets.all(18),
+                  child: Icon(
+                    Icons.logout_rounded,
+                    color: AppColors.redColor,
+                    size: 48,
+                  ),
+                ),
+                SizedBox(height: 18),
+                Text(
+                  '¿Cerrar sesión?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 22,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+                SizedBox(height: 14),
+                Text(
+                  'Al cerrar sesión, tendrás que volver a iniciar sesión para acceder a tu cuenta de tutor.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 16,
+                    height: 1.5,
+                  ),
+                ),
+                SizedBox(height: 28),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: Colors.white70, width: 1.2),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          backgroundColor: Colors.transparent,
+                          padding: EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child: Text(
+                          'Cancelar',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.redColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        onPressed: () => _performLogout(),
+                        child: Text(
+                          'Cerrar Sesión',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // Método para realizar el logout
+  void _performLogout() async {
+    try {
+      // Cerrar el diálogo
+      Navigator.of(context).pop();
+
+      // Mostrar indicador de carga
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: AppColors.darkBlue.withOpacity(0.9),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Cerrando sesión...',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      // Obtener el AuthProvider y hacer logout
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.logout();
+
+      // Cerrar el indicador de carga
+      Navigator.of(context).pop();
+
+      // Navegar al login y limpiar el stack de navegación
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (context) => LoginScreen(),
+        ),
+        (Route<dynamic> route) => false,
+      );
+
+      // Mostrar mensaje de éxito
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Sesión cerrada exitosamente'),
+          backgroundColor: AppColors.primaryGreen,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      // Cerrar el indicador de carga si hay error
+      Navigator.of(context).pop();
+
+      // Mostrar mensaje de error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al cerrar sesión: $e'),
+          backgroundColor: AppColors.redColor,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
   }
 }

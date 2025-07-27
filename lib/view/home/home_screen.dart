@@ -122,54 +122,53 @@ class _HomeScreenState extends State<HomeScreen>
 
     // Inicializa PusherService global solo una vez
     final pusherService = Provider.of<PusherService>(context, listen: false);
-    pusherService.init(onSlotBookingStatusChanged: (data) {
-      try {
-        print('DEBUG: Tipo de data: \\${data.runtimeType}');
-        print('DEBUG: Contenido de data: \\${data}');
-        if (data == null) {
-          print('Error: Evento de Pusher recibido pero data es null');
-          return;
-        }
-        Map<String, dynamic> parsedData;
-        if (data is String) {
-          parsedData = json.decode(data);
-        } else if (data is Map<String, dynamic>) {
-          parsedData = data;
-        } else {
-          print('Error: Formato de data no reconocido: \\${data.runtimeType}');
-          return;
-        }
-        final slotBookingId = parsedData['slotBookingId'].toString();
-        final newStatus = parsedData['newStatus'];
-        bool updated = false;
+    print('🎯 Configurando callback de Pusher en HomeScreen');
+    pusherService.init(
+      onSlotBookingStatusChanged: (data) {
+        print('📡 Evento del canal recibido: $data');
 
-        // Usar Future.microtask para evitar setState durante build
-        Future.microtask(() {
-          if (mounted) {
-            setState(() {
-              for (var booking in _todaysBookings) {
-                if (booking['id'].toString() == slotBookingId) {
-                  booking['status'] = newStatus;
-                  updated = true;
-                }
-              }
-            });
+        try {
+          // Parsear el JSON del evento
+          Map<String, dynamic> eventData;
+          if (data is String) {
+            eventData = json.decode(data);
+          } else if (data is Map<String, dynamic>) {
+            eventData = data;
+          } else {
+            print('❌ Formato de data no válido');
+            return;
           }
-        });
 
-        if (updated) {
-          print('Actualizada la tutoría $slotBookingId a estado $newStatus');
-        } else {
+          // Obtener el student_id del evento
+          final int? eventStudentId = eventData['student_id'];
+
+          // Obtener el ID del usuario logueado
+          final int? currentUserId =
+              Provider.of<AuthProvider>(context, listen: false).userId;
+
           print(
-              'Tutoría con id $slotBookingId no encontrada en la lista actual. Actualizando lista completa...');
-          _fetchTodaysBookings();
+              '🔍 Comparando: student_id del evento: $eventStudentId, usuario logueado: $currentUserId');
+
+          // Verificar si el evento es para el usuario logueado
+          if (eventStudentId != null &&
+              currentUserId != null &&
+              eventStudentId == currentUserId) {
+            print(
+                '✅ Evento relevante para este usuario, procediendo con la lógica...');
+            // Aquí irá la lógica que me indiques después
+          } else {
+            print('⏩ Evento ignorado (no es para este usuario)');
+          }
+        } catch (e) {
+          print('❌ Error procesando evento: $e');
         }
-        print(
-            'Lista de tutorías tras actualizar: ' + _todaysBookings.toString());
-      } catch (e, stack) {
-        print('Error en el callback de Pusher: $e');
-        print(stack);
-      }
+      },
+      context: context,
+    );
+
+    // Verificar estado de suscripción después de inicializar
+    Future.delayed(Duration(seconds: 2), () {
+      pusherService.checkSubscriptionStatus();
     });
   }
 
