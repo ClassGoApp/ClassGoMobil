@@ -154,8 +154,28 @@ class _HomeScreenState extends State<HomeScreen>
               currentUserId != null &&
               eventStudentId == currentUserId) {
             print(
-                '✅ Evento relevante para este usuario, procediendo con la lógica...');
-            // Aquí irá la lógica que me indiques después
+                '✅ Evento relevante para este usuario, actualizando estado de tutoría...');
+
+            // Extraer información del evento
+            final int? slotBookingId = eventData['slotBookingId'];
+            final String? newStatus = eventData['newStatus'];
+
+            print(
+                '🔄 Actualizando tutoría ID: $slotBookingId al estado: $newStatus');
+
+            // Actualizar el estado de la tutoría en la lista local
+            setState(() {
+              for (int i = 0; i < _todaysBookings.length; i++) {
+                if (_todaysBookings[i]['id'] == slotBookingId) {
+                  _todaysBookings[i]['status'] = newStatus;
+                  print('✅ Tutoría actualizada en la lista local');
+                  break;
+                }
+              }
+            });
+
+            // La actualización local es suficiente, no necesitamos refrescar desde el servidor
+            // ya que el evento del canal nos da la información actualizada
           } else {
             print('⏩ Evento ignorado (no es para este usuario)');
           }
@@ -328,16 +348,9 @@ class _HomeScreenState extends State<HomeScreen>
                         // --- BANNER DE TUTORÍAS PRÓXIMAS/EN VIVO ---
                         if (!_isLoadingBookings && _todaysBookings.isNotEmpty)
                           UpcomingSessionBanner(
-                            key: ValueKey(_todaysBookings.isNotEmpty
-                                ? _todaysBookings.first['id'].toString() +
-                                    (_todaysBookings.first['status'] ?? '')
-                                        .toString() +
-                                    DateTime.now()
-                                        .millisecondsSinceEpoch
-                                        .toString()
-                                : DateTime.now()
-                                    .millisecondsSinceEpoch
-                                    .toString()),
+                            key: ValueKey(_todaysBookings
+                                .map((b) => '${b['id']}_${b['status']}')
+                                .join('_')),
                             bookings: List<Map<String, dynamic>>.from(
                                 _todaysBookings),
                           ),
@@ -3631,9 +3644,37 @@ class UpcomingSessionBanner extends StatefulWidget {
 }
 
 class _UpcomingSessionBannerState extends State<UpcomingSessionBanner> {
+  // Cache para evitar llamadas repetidas a la API
+  final Map<int, Future<Map<String, dynamic>?>> _slotDetailCache = {};
+
+  // Función para mapear estados numéricos a string
+  String _mapStatusToString(dynamic status) {
+    if (status == null) return '';
+
+    // Si ya es string, retornarlo
+    if (status is String) return status.toLowerCase().trim();
+
+    // Mapear estados numéricos
+    switch (status.toString()) {
+      case '1':
+        return 'pendiente';
+      case '2':
+        return 'aceptada';
+      case '3':
+        return 'rechazada';
+      case '4':
+        return 'completada';
+      case '5':
+        return 'cancelada';
+      case '6':
+        return 'cursando';
+      default:
+        return status.toString().toLowerCase().trim();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    print('DEBUG: UpcomingSessionBanner se está reconstruyendo');
     if (widget.bookings.isEmpty) return SizedBox.shrink();
     final now = DateTime.now();
     // Filtrar solo tutorías cuya hora de finalización es igual o posterior a la hora actual
@@ -3660,7 +3701,7 @@ class _UpcomingSessionBannerState extends State<UpcomingSessionBanner> {
     booking ??= validBookings.first;
     final start = DateTime.tryParse(booking['start_time'] ?? '') ?? now;
     final end = DateTime.tryParse(booking['end_time'] ?? '') ?? now;
-    final status = (booking['status'] ?? '').toString().trim().toLowerCase();
+    final status = _mapStatusToString(booking['status']);
     // Permitir tanto 'aceptado' como 'aceptada' como estado válido
     final isAceptado = status == 'aceptada' || status == 'aceptado';
     // Permitir tanto 'rechazado' como 'rechazada' como estado válido
@@ -3701,6 +3742,13 @@ class _UpcomingSessionBannerState extends State<UpcomingSessionBanner> {
           'https://assets2.lottiefiles.com/packages/lf20_4kx2q32n.json';
       color = Colors.orangeAccent.withOpacity(0.95);
       textColor = Colors.black;
+    } else if (status == 'cursando') {
+      print('DEBUG: ESTADO CURSANDO - Color verde');
+      mainText = 'Tutoría en curso';
+      lottieAsset =
+          'https://assets2.lottiefiles.com/packages/lf20_30305_back_to_school.json';
+      color = Colors.greenAccent.withOpacity(0.85);
+      textColor = Colors.white;
     } else if (isAceptado && isLive) {
       // Estado aceptado EN VIVO: rojo
       print('DEBUG: ESTADO ACEPTADO EN VIVO - Color rojo');
@@ -3738,6 +3786,12 @@ class _UpcomingSessionBannerState extends State<UpcomingSessionBanner> {
 
     String statusText = 'Estado: \\${booking['status'] ?? ''}';
 
+    // Si la tutoría está en curso (cursando), usar el nuevo diseño
+    if (status == 'cursando') {
+      return _buildLiveSessionCard(booking, start, subject);
+    }
+
+    // Para otros estados, usar el diseño original
     return GestureDetector(
       onTap: () {
         showModalBottomSheet(
@@ -3796,6 +3850,9 @@ class _UpcomingSessionBannerState extends State<UpcomingSessionBanner> {
                       (status == 'pendiente' || status == 'solicitada')) {
                     return Icon(Icons.warning_amber_rounded,
                         color: Colors.orangeAccent, size: 32);
+                  } else if (status == 'cursando') {
+                    return Icon(Icons.play_circle_fill,
+                        color: Colors.greenAccent, size: 32);
                   } else if (isSoon && isAceptado) {
                     return Icon(Icons.schedule, color: visibleColor, size: 32);
                   } else if (isRechazado) {
@@ -3860,6 +3917,422 @@ class _UpcomingSessionBannerState extends State<UpcomingSessionBanner> {
         ),
       ),
     );
+  }
+
+  Widget _buildLiveSessionCard(
+      Map<String, dynamic> booking, DateTime start, String subject) {
+    return FutureBuilder<Map<String, dynamic>?>(
+      key: ValueKey('slot_detail_${booking['id']}'),
+      future: _fetchSlotDetail(booking['id']),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return _buildLiveSessionCardSkeleton();
+        }
+
+        final slotData = snapshot.data;
+        final tutorData = slotData?['tutor'];
+        final tutorName = tutorData?['full_name'] ?? 'Tutor';
+        final tutorId = tutorData?['user_id'];
+        final subjectName = slotData?['subject']?['name'] ?? subject;
+        final startTime =
+            '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')}';
+
+        return FutureBuilder<String?>(
+          future: tutorId != null
+              ? _fetchTutorProfileImage(tutorId)
+              : Future.value(null),
+          builder: (context, imageSnapshot) {
+            final tutorImage = imageSnapshot.data;
+
+            return GestureDetector(
+              onTap: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (context) => _BookingDetailModal(
+                    booking: booking,
+                    highResTutorImages: (context
+                            .findAncestorStateOfType<_HomeScreenState>()
+                            ?.highResTutorImages) ??
+                        {},
+                  ),
+                );
+              },
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.8, end: 1.0),
+                duration: Duration(milliseconds: 300),
+                builder: (context, value, child) {
+                  return Transform.scale(
+                    scale: value,
+                    child: Container(
+                      margin: EdgeInsets.only(bottom: 8),
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Color(0xFF1a1a2e),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.red, width: 1),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.red.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Fila superior: Información del tutor y hora de inicio
+                          Row(
+                            children: [
+                              // Foto del tutor con animación de pulso
+                              TweenAnimationBuilder<double>(
+                                tween: Tween(begin: 0.9, end: 1.1),
+                                duration: Duration(milliseconds: 1500),
+                                builder: (context, pulseValue, child) {
+                                  return Transform.scale(
+                                    scale: pulseValue,
+                                    child: CircleAvatar(
+                                      radius: 16,
+                                      backgroundImage: tutorImage != null &&
+                                              tutorImage.isNotEmpty
+                                          ? CachedNetworkImageProvider(
+                                              tutorImage)
+                                          : null,
+                                      child: tutorImage == null ||
+                                              tutorImage.isEmpty
+                                          ? Icon(Icons.person,
+                                              color: Colors.white, size: 18)
+                                          : null,
+                                    ),
+                                  );
+                                },
+                              ),
+                              SizedBox(width: 10),
+                              // Nombre del tutor
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      tutorName,
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    SizedBox(height: 3),
+                                    // Tag de tutor
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Color(0xFF4a90e2),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.school,
+                                              color: Colors.white, size: 10),
+                                          SizedBox(width: 3),
+                                          Text(
+                                            'Tutor',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              // Hora de inicio con animación
+                              TweenAnimationBuilder<double>(
+                                tween: Tween(begin: 0.8, end: 1.0),
+                                duration: Duration(milliseconds: 800),
+                                builder: (context, animValue, child) {
+                                  return Transform.scale(
+                                    scale: animValue,
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 6, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: Color(0xFF4a90e2),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        'Inició a las $startTime',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 12),
+                          // Mensaje de estado con animación de pulso
+                          TweenAnimationBuilder<double>(
+                            tween: Tween(begin: 0.95, end: 1.05),
+                            duration: Duration(milliseconds: 2000),
+                            builder: (context, pulseValue, child) {
+                              return Transform.scale(
+                                scale: pulseValue,
+                                child: Text(
+                                  '¡La tutoría está en curso!',
+                                  style: TextStyle(
+                                    color: Colors.red,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          SizedBox(height: 6),
+                          // Mensaje instructivo
+                          Text(
+                            '¡Tu tutor te está esperando! Ingresa a la reunión para comenzar...',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                            ),
+                          ),
+                          SizedBox(height: 6),
+                          // Materia
+                          Row(
+                            children: [
+                              Container(
+                                width: 12,
+                                height: 12,
+                                decoration: BoxDecoration(
+                                  color: Color(0xFF4a90e2),
+                                  borderRadius: BorderRadius.circular(3),
+                                ),
+                                child: Icon(Icons.book,
+                                    color: Colors.white, size: 8),
+                              ),
+                              SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  subjectName,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 12),
+                          // Botón de unirse a la reunión con animación
+                          TweenAnimationBuilder<double>(
+                            tween: Tween(begin: 0.9, end: 1.0),
+                            duration: Duration(milliseconds: 600),
+                            builder: (context, animValue, child) {
+                              return Transform.scale(
+                                scale: animValue,
+                                child: Container(
+                                  width: double.infinity,
+                                  padding: EdgeInsets.symmetric(vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    borderRadius: BorderRadius.circular(6),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.red.withOpacity(0.4),
+                                        blurRadius: 4,
+                                        offset: Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.videocam,
+                                          color: Colors.white, size: 16),
+                                      SizedBox(width: 6),
+                                      Text(
+                                        'Unirse a la reunión',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildLiveSessionCardSkeleton() {
+    return Container(
+      margin: EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Color(0xFF1a1a2e),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.red, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: Colors.grey[600],
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      height: 16,
+                      width: 120,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[600],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Container(
+                      height: 20,
+                      width: 60,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[600],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                height: 24,
+                width: 100,
+                decoration: BoxDecoration(
+                  color: Colors.grey[600],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16),
+          Container(
+            height: 20,
+            width: 200,
+            decoration: BoxDecoration(
+              color: Colors.grey[600],
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          SizedBox(height: 8),
+          Container(
+            height: 16,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.grey[600],
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          SizedBox(height: 8),
+          Container(
+            height: 16,
+            width: 150,
+            decoration: BoxDecoration(
+              color: Colors.grey[600],
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          SizedBox(height: 16),
+          Container(
+            height: 44,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.grey[600],
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<Map<String, dynamic>?> _fetchSlotDetail(int slotId) async {
+    // Verificar si ya tenemos el resultado en cache
+    if (_slotDetailCache.containsKey(slotId)) {
+      print('DEBUG: Usando cache para slot ID: $slotId');
+      return await _slotDetailCache[slotId]!;
+    }
+
+    print('DEBUG: Haciendo llamada a API para slot ID: $slotId');
+    try {
+      final url = Uri.parse('https://classgoapp.com/api/slot-detail/$slotId');
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['status'] == 200 && data['data'] != null) {
+          final result = data['data'];
+          // Guardar en cache
+          _slotDetailCache[slotId] = Future.value(result);
+          return result;
+        }
+      }
+    } catch (e) {
+      print('Error fetching slot detail: $e');
+    }
+    return null;
+  }
+
+  Future<String?> _fetchTutorProfileImage(int tutorId) async {
+    try {
+      final url = Uri.parse(
+          'https://classgoapp.com/api/verified-tutors-photos?tutor_id=$tutorId');
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['status'] == 200 &&
+            data['data'] is List &&
+            data['data'].isNotEmpty) {
+          final tutorData = data['data'].firstWhere(
+            (tutor) => tutor['id'] == tutorId,
+            orElse: () => null,
+          );
+          if (tutorData != null && tutorData['profile_image'] != null) {
+            return tutorData['profile_image'] as String;
+          }
+        }
+      }
+    } catch (e) {
+      print('Error fetching tutor profile image: $e');
+    }
+    return null;
   }
 }
 

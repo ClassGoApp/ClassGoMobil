@@ -1863,3 +1863,51 @@ Future<Map<String, dynamic>> createUserSubjectSlot(
     };
   }
 }
+
+// Cambiar estado de tutoría a "Cursando"
+Future<Map<String, dynamic>> changeBookingToCursando(
+    String token, int bookingId) async {
+  try {
+    print(
+        'DEBUG - Cambiando estado de tutoría a Cursando: booking_id = $bookingId');
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/booking/change-to-cursando'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: jsonEncode({
+        'booking_id': bookingId,
+      }),
+    );
+
+    print(
+        'DEBUG - Respuesta del servidor: ${response.statusCode} - ${response.body}');
+
+    if (response.statusCode == 200) {
+      final responseData = jsonDecode(response.body);
+      return {
+        'success': true,
+        'message': responseData['message'] ??
+            'Estado cambiado a Cursando exitosamente',
+        'data': responseData['data'],
+      };
+    } else {
+      final errorData = jsonDecode(response.body);
+      return {
+        'success': false,
+        'message':
+            errorData['message'] ?? 'Error al cambiar el estado de la tutoría',
+        'status': response.statusCode,
+      };
+    }
+  } catch (e) {
+    print('Error changing booking to cursando: $e');
+    return {
+      'success': false,
+      'message': 'Error de conexión: $e',
+    };
+  }
+}

@@ -10,6 +10,10 @@ import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/view/tutor/add_subject_modal.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
 import 'package:flutter_projects/view/auth/login_screen.dart';
+import 'package:flutter_projects/helpers/pusher_service.dart';
+import 'dart:convert';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 // --- Widget reutilizable para tarjetas de tiempo libre ---
 class FreeTimeSlotCard extends StatelessWidget {
@@ -539,6 +543,11 @@ class _DashboardTutorState extends State<DashboardTutor> {
   List<Map<String, dynamic>> _availableSlots = [];
   bool _isLoadingSlots = false;
 
+  // Para las tutorías del tutor
+  List<Map<String, dynamic>> _tutorBookings = [];
+  bool _isLoadingBookings = true;
+  AuthProvider? _authProvider;
+
   @override
   void initState() {
     super.initState();
@@ -560,6 +569,7 @@ class _DashboardTutorState extends State<DashboardTutor> {
           Provider.of<TutorSubjectsProvider>(context, listen: false);
       subjectsProvider.loadTutorSubjects(authProvider);
       _loadAvailableSlots();
+      _fetchTutorBookings();
     });
   }
 
@@ -596,6 +606,169 @@ class _DashboardTutorState extends State<DashboardTutor> {
         _isLoadingSlots = false;
       });
     }
+  }
+
+  // Método para cargar las tutorías del tutor
+  Future<void> _fetchTutorBookings() async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final token = authProvider.token;
+      final userId = authProvider.userId;
+
+      if (token != null && userId != null) {
+        final bookings = await getUserBookingsById(token, userId);
+        print('Tutorías obtenidas para el tutor: ${bookings.length}');
+
+        // Imprimir detalles de cada tutoría para debug
+        // print('🔍 DEBUG - Detalles de todas las tutorías:');
+        // for (int i = 0; i < bookings.length; i++) {
+        //   final booking = bookings[i];
+        //   print('📋 Tutoría $i:');
+        //   print('   ID: ${booking['id']}');
+        //   print('   Estado: ${booking['status']}');
+        //   print('   Meeting Link: "${booking['meeting_link']}"');
+        //   print('   Subject: ${booking['subject_name']}');
+        //   print('   Student: ${booking['student_name']}');
+        //   print('   Start Time: ${booking['start_time']}');
+        //   print('   End Time: ${booking['end_time']}');
+        //   print('   ---');
+        // }
+
+        // Filtrar solo tutorías con estado "aceptado" en adelante
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+
+        _tutorBookings = bookings.where((b) {
+          final status = (b['status'] ?? '').toString().toLowerCase();
+          final start = DateTime.tryParse(b['start_time'] ?? '') ?? now;
+
+          // Solo mostrar tutorías aceptadas, en curso, completadas, etc.
+          final isAcceptedOrHigher = status == 'aceptado' ||
+              status == 'aceptada' ||
+              status == 'cursando' ||
+              status == 'completada' ||
+              status == 'completado';
+
+          // Solo mostrar tutorías de hoy o futuras
+          final isTodayOrFuture = start.year == today.year &&
+              start.month == today.month &&
+              start.day >= today.day;
+
+          return isAcceptedOrHigher && isTodayOrFuture;
+        }).toList();
+
+        print('Tutorías filtradas para el tutor: ${_tutorBookings.length}');
+
+        // Imprimir detalles de las tutorías filtradas
+        // print('🔍 DEBUG - Tutorías filtradas:');
+        // for (int i = 0; i < _tutorBookings.length; i++) {
+        //   final booking = _tutorBookings[i];
+        //   print('📋 Tutoría filtrada $i:');
+        //   print('   ID: ${booking['id']}');
+        //   print('   Subject: ${booking['subject_name']}');
+        //   print('   Student: ${booking['student_name']}');
+        //   print('   Start Time: ${booking['start_time']}');
+        //   print('   End Time: ${booking['end_time']}');
+        //   print('   ---');
+        // }
+      }
+    } catch (e) {
+      print('Error al obtener tutorías del tutor: $e');
+      _tutorBookings = [];
+    }
+
+    setState(() {
+      _isLoadingBookings = false;
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final authProvider = Provider.of<AuthProvider>(context);
+    if (_authProvider != authProvider) {
+      _authProvider = authProvider;
+      _checkAndFetchBookings();
+      _authProvider!.addListener(_checkAndFetchBookings);
+    }
+
+    // Configurar eventos de Pusher para el tutor
+    final pusherService = Provider.of<PusherService>(context, listen: false);
+    print('🎯 Configurando callback de Pusher en DashboardTutor');
+    pusherService.init(
+      onSlotBookingStatusChanged: (data) {
+        print('📡 Evento del canal recibido en DashboardTutor: $data');
+
+        try {
+          // Parsear el JSON del evento
+          Map<String, dynamic> eventData;
+          if (data is String) {
+            eventData = json.decode(data);
+          } else if (data is Map<String, dynamic>) {
+            eventData = data;
+          } else {
+            print('❌ Formato de data no válido');
+            return;
+          }
+
+          // Obtener el tutor_id del evento
+          final int? eventTutorId = eventData['tutor_id'];
+
+          // Obtener el ID del usuario logueado
+          final int? currentUserId =
+              Provider.of<AuthProvider>(context, listen: false).userId;
+
+          print(
+              '🔍 Comparando: tutor_id del evento: $eventTutorId, usuario logueado: $currentUserId');
+
+          // Verificar si el evento es para el tutor logueado
+          if (eventTutorId != null &&
+              currentUserId != null &&
+              eventTutorId == currentUserId) {
+            print(
+                '✅ Evento relevante para este tutor, actualizando estado de tutoría...');
+
+            // Extraer información del evento
+            final int? slotBookingId = eventData['slotBookingId'];
+            final String? newStatus = eventData['newStatus'];
+
+            print(
+                '🔄 Actualizando tutoría ID: $slotBookingId al estado: $newStatus');
+
+            // Actualizar el estado de la tutoría en la lista local
+            setState(() {
+              for (int i = 0; i < _tutorBookings.length; i++) {
+                if (_tutorBookings[i]['id'] == slotBookingId) {
+                  _tutorBookings[i]['status'] = newStatus;
+                  print('✅ Tutoría actualizada en la lista local del tutor');
+                  break;
+                }
+              }
+            });
+
+            // Refrescar las tutorías para asegurar que se muestren las nuevas
+            _fetchTutorBookings();
+          } else {
+            print('⏩ Evento ignorado (no es para este tutor)');
+          }
+        } catch (e) {
+          print('❌ Error procesando evento: $e');
+        }
+      },
+      context: context,
+    );
+  }
+
+  void _checkAndFetchBookings() {
+    if (_authProvider?.token != null && _authProvider?.userId != null) {
+      _fetchTutorBookings();
+    }
+  }
+
+  @override
+  void dispose() {
+    _authProvider?.removeListener(_checkAndFetchBookings);
+    super.dispose();
   }
 
   String _formatTimeString(String timeStr) {
@@ -1227,6 +1400,10 @@ class _DashboardTutorState extends State<DashboardTutor> {
 
                   // Sección unificada de disponibilidad
                   _buildAvailabilitySection(),
+                  SizedBox(height: 24),
+
+                  // Sección de tutorías del tutor
+                  _buildTutorBookingsSection(),
                 ],
               ),
             ),
@@ -2701,6 +2878,686 @@ class _DashboardTutorState extends State<DashboardTutor> {
           content: Text('Error al cerrar sesión: $e'),
           backgroundColor: AppColors.redColor,
           duration: Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  // Sección de tutorías del tutor
+  Widget _buildTutorBookingsSection() {
+    if (_isLoadingBookings) {
+      return Container(
+        padding: EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppColors.darkBlue.withOpacity(0.6),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: AppColors.lightBlueColor.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.lightBlueColor),
+          ),
+        ),
+      );
+    }
+
+    if (_tutorBookings.isEmpty) {
+      return Container(
+        padding: EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: AppColors.darkBlue.withOpacity(0.6),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: AppColors.lightBlueColor.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              Icons.school_outlined,
+              color: AppColors.lightBlueColor.withOpacity(0.6),
+              size: 48,
+            ),
+            SizedBox(height: 12),
+            Text(
+              'No hay tutorías programadas',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.8),
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Las tutorías aceptadas aparecerán aquí',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.6),
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Título de la sección
+        Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.lightBlueColor.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                Icons.school,
+                color: AppColors.lightBlueColor,
+                size: 20,
+              ),
+            ),
+            SizedBox(width: 12),
+            Text(
+              'Mis Tutorías',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+            Spacer(),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.lightBlueColor.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${_tutorBookings.length}',
+                style: TextStyle(
+                  color: AppColors.lightBlueColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 16),
+
+        // Lista de tutorías
+        ..._tutorBookings
+            .map((booking) => _buildTutorBookingCard(booking))
+            .toList(),
+      ],
+    );
+  }
+
+  // Tarjeta individual de tutoría para el tutor
+  Widget _buildTutorBookingCard(Map<String, dynamic> booking) {
+    final now = DateTime.now();
+    final start = DateTime.tryParse(booking['start_time'] ?? '') ?? now;
+    final end = DateTime.tryParse(booking['end_time'] ?? '') ?? now;
+    final status = (booking['status'] ?? '').toString().toLowerCase();
+    final subject = booking['subject_name'] ?? 'Tutoría';
+    final studentName = booking['student_name'] ?? 'Estudiante';
+
+    // Determinar si está en vivo
+    final isLive = now.isAfter(start) && now.isBefore(end);
+
+    // Lógica de colores y estados
+    String mainText = '';
+    Color color = AppColors.lightBlueColor;
+    IconData icon = Icons.school;
+
+    if (status == 'cursando' ||
+        (status == 'aceptado' && isLive) ||
+        (status == 'aceptada' && isLive)) {
+      mainText = 'EN VIVO';
+      color = Colors.redAccent;
+      icon = Icons.play_circle_fill;
+    } else if (status == 'aceptado' || status == 'aceptada') {
+      mainText = 'Próxima tutoría';
+      color = AppColors.lightBlueColor;
+      icon = Icons.schedule;
+    } else if (status == 'completada' || status == 'completado') {
+      mainText = 'Completada';
+      color = AppColors.primaryGreen;
+      icon = Icons.check_circle;
+    } else {
+      mainText = 'Programada';
+      color = AppColors.lightBlueColor;
+      icon = Icons.school;
+    }
+
+    final hourStr =
+        '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')} - ${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}';
+    final dateStr = DateFormat('dd/MM/yyyy').format(start);
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [color.withOpacity(0.15), color.withOpacity(0.05)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.1),
+            blurRadius: 8,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Row(
+          children: [
+            // Icono de estado
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                color: color,
+                size: 24,
+              ),
+            ),
+            SizedBox(width: 16),
+
+            // Información de la tutoría
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    mainText,
+                    style: TextStyle(
+                      color: color,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    subject,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.person,
+                        color: Colors.white70,
+                        size: 14,
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        studentName,
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today,
+                        color: AppColors.lightBlueColor,
+                        size: 14,
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        dateStr,
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 13,
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Icon(
+                        Icons.access_time,
+                        color: AppColors.lightBlueColor,
+                        size: 14,
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        hourStr,
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // Botón de acción según el estado
+            _buildActionButton(booking, status, color),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Botón de acción según el estado de la tutoría
+  Widget _buildActionButton(
+      Map<String, dynamic> booking, String status, Color color) {
+    final bookingId = booking['id'];
+    final meetLink = booking['meeting_link'] ?? '';
+
+    // IMPRIMIR TODOS LOS VALORES DE LA TUTORÍA PARA DEBUG
+    // print('🔍 DEBUG - Valores completos de la tutoría:');
+    // print('📋 ID: $bookingId');
+    // print('📋 Estado: $status');
+    // print('📋 Meeting Link: "$meetLink"');
+    // print('📋 Meeting Link length: ${meetLink.length}');
+    // print('📋 Meeting Link isEmpty: ${meetLink.isEmpty}');
+    // print('📋 Meeting Link isNotEmpty: ${meetLink.isNotEmpty}');
+
+    // Imprimir todos los campos disponibles en la tutoría
+    // print('📋 Todos los campos de la tutoría:');
+    // booking.forEach((key, value) {
+    //   print('   $key: $value');
+    // });
+
+    if (status == 'aceptado' || status == 'aceptada') {
+      // Botón para cambiar estado a "Cursando"
+      return GestureDetector(
+        onTap: () => _changeToCursando(bookingId),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.green.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.green.withOpacity(0.5),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.green.withOpacity(0.1),
+                blurRadius: 4,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.play_circle_outline,
+                color: Colors.green,
+                size: 16,
+              ),
+              SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  'Iniciar\nTutoría',
+                  style: TextStyle(
+                    color: Colors.green,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 10,
+                    height: 1.2,
+                  ),
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    } else if (status == 'cursando') {
+      // Botón para entrar a la reunión
+      // print('🎯 ESTADO CURSANDO - Verificando enlace de Meet');
+      // print('🎯 Meeting Link encontrado: "$meetLink"');
+      // print('🎯 ¿Tiene enlace?: ${meetLink.isNotEmpty}');
+
+      if (meetLink.isNotEmpty) {
+        return GestureDetector(
+          onTap: () => _openMeetLink(meetLink),
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.red.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.red.withOpacity(0.5),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.red.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.video_call,
+                  color: Colors.red,
+                  size: 16,
+                ),
+                SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    'Entrar a\nMeet',
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 10,
+                      height: 1.2,
+                    ),
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      } else {
+        // print('❌ NO HAY ENLACE - Mostrando "Sin enlace"');
+        // print('❌ Meeting Link vacío o nulo: "$meetLink"');
+
+        return Container(
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.grey.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.grey.withOpacity(0.5),
+              width: 1,
+            ),
+          ),
+          child: Text(
+            'Sin enlace',
+            style: TextStyle(
+              color: Colors.grey,
+              fontWeight: FontWeight.bold,
+              fontSize: 11,
+            ),
+          ),
+        );
+      }
+    } else {
+      // Botón por defecto
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: color.withOpacity(0.5),
+            width: 1,
+          ),
+        ),
+        child: Text(
+          'Ver',
+          style: TextStyle(
+            color: color,
+            fontWeight: FontWeight.bold,
+            fontSize: 11,
+          ),
+        ),
+      );
+    }
+  }
+
+  // Método para cambiar estado a "Cursando"
+  Future<void> _changeToCursando(int bookingId) async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final token = authProvider.token;
+
+      if (token == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: No hay token de autenticación'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Mostrar diálogo de confirmación
+      bool confirmed = await showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => Dialog(
+              backgroundColor: Colors.transparent,
+              child: Container(
+                padding: EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: AppColors.darkBlue.withOpacity(0.95),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Colors.green.withOpacity(0.3),
+                    width: 2,
+                  ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.play_circle_fill,
+                        color: Colors.green,
+                        size: 48,
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      '¿Iniciar Tutoría?',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 12),
+                    Text(
+                      'Al iniciar la tutoría:\n• El estudiante podrá ver que ya estás en la reunión\n• Se activará el enlace de Google Meet\n• La sesión comenzará oficialmente',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                        height: 1.4,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: Colors.grey, width: 1),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            child: Text(
+                              'Cancelar',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            child: Text(
+                              'Iniciar',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ) ??
+          false;
+
+      if (!confirmed) return;
+
+      // Mostrar indicador de carga
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: AppColors.darkBlue.withOpacity(0.9),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Iniciando tutoría...',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      final result = await changeBookingToCursando(token, bookingId);
+
+      // Cerrar indicador de carga
+      Navigator.of(context).pop();
+
+      if (result['success'] == true) {
+        // print('✅ CAMBIO EXITOSO - Estado cambiado a cursando');
+        // print('✅ Respuesta del servidor: $result');
+
+        // Mostrar mensaje de éxito con información adicional
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '¡Tutoría iniciada exitosamente!',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'El estudiante ya puede ver que estás en la reunión',
+                  style: TextStyle(fontSize: 14),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 4),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+
+        // Refrescar las tutorías para mostrar el nuevo estado
+        _fetchTutorBookings();
+      } else {
+        // Mostrar mensaje de error
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'Error al cambiar el estado'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      // Cerrar indicador de carga si hay error
+      Navigator.of(context).pop();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  // Método para abrir enlace de Meet
+  void _openMeetLink(String meetLink) {
+    try {
+      // Usar url_launcher para abrir el enlace
+      launchUrl(Uri.parse(meetLink), mode: LaunchMode.externalApplication);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al abrir el enlace: $e'),
+          backgroundColor: Colors.red,
         ),
       );
     }
