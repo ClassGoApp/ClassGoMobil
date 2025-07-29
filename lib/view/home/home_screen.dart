@@ -88,6 +88,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   List<Map<String, dynamic>> _todaysBookings = [];
   bool _isLoadingBookings = true;
+  int _bookingUpdateTimestamp = 0; // Nueva variable para forzar reconstrucción
 
   AuthProvider? _authProvider;
   int? _lastFetchedUserId;
@@ -165,13 +166,20 @@ class _HomeScreenState extends State<HomeScreen>
 
             // Actualizar el estado de la tutoría en la lista local
             setState(() {
-              for (int i = 0; i < _todaysBookings.length; i++) {
-                if (_todaysBookings[i]['id'] == slotBookingId) {
-                  _todaysBookings[i]['status'] = newStatus;
-                  print('✅ Tutoría actualizada en la lista local');
-                  break;
+              _todaysBookings = _todaysBookings.map((booking) {
+                if (booking['id'] == slotBookingId) {
+                  print(
+                      '🔄 Actualizando booking ID: ${booking['id']} de estado: ${booking['status']} a: $newStatus');
+                  return {...booking, 'status': newStatus};
                 }
-              }
+                return booking;
+              }).toList();
+              _bookingUpdateTimestamp = DateTime.now()
+                  .millisecondsSinceEpoch; // Forzar reconstrucción
+              print(
+                  '✅ Tutoría actualizada en la lista local (nueva referencia)');
+              print(
+                  '📊 Lista actualizada: ${_todaysBookings.map((b) => 'ID:${b['id']}-Status:${b['status']}').join(', ')}');
             });
 
             // La actualización local es suficiente, no necesitamos refrescar desde el servidor
@@ -348,9 +356,8 @@ class _HomeScreenState extends State<HomeScreen>
                         // --- BANNER DE TUTORÍAS PRÓXIMAS/EN VIVO ---
                         if (!_isLoadingBookings && _todaysBookings.isNotEmpty)
                           UpcomingSessionBanner(
-                            key: ValueKey(_todaysBookings
-                                .map((b) => '${b['id']}_${b['status']}')
-                                .join('_')),
+                            key: ValueKey(
+                                '${_todaysBookings.map((b) => '${b['id']}_${b['status']}').join('_')}_$_bookingUpdateTimestamp'),
                             bookings: List<Map<String, dynamic>>.from(
                                 _todaysBookings),
                           ),
@@ -3212,6 +3219,45 @@ class _HomeScreenState extends State<HomeScreen>
     }
     return '';
   }
+
+  // // Función para mapear estados numéricos a string
+  // String _mapStatusToString(dynamic status) {
+  //   print(
+  //       '🔍 Mapeando estado: $status (tipo: ${status.runtimeType}) - FUNCIÓN CORREGIDA');
+  //   if (status == null) return '';
+
+  //   // Convertir a string primero para manejar tanto strings como números
+  //   final statusStr = status.toString().trim();
+  //   print('🔍 Estado convertido a string: "$statusStr"');
+
+  //   // Mapear estados numéricos (tanto como string como número)
+  //   switch (statusStr) {
+  //     case '1':
+  //       print('🔍 Mapeando 1 -> pendiente');
+  //       return 'pendiente';
+  //     case '2':
+  //       print('🔍 Mapeando 2 -> aceptada');
+  //       return 'aceptada';
+  //     case '3':
+  //       print('🔍 Mapeando 3 -> rechazada');
+  //       return 'rechazada';
+  //     case '4':
+  //       print('🔍 Mapeando 4 -> completada');
+  //       return 'completada';
+  //     case '5':
+  //       print('🔍 Mapeando 5 -> cancelada');
+  //       return 'cancelada';
+  //     case '6':
+  //       print('🔍 Mapeando 6 -> cursando');
+  //       print('🔍 ✅ Estado 6 mapeado correctamente a cursando');
+  //       return 'cursando';
+  //     default:
+  //       // Si no es un número, tratar como string
+  //       final result = statusStr.toLowerCase().trim();
+  //       print('🔍 Estado por defecto: $result');
+  //       return result;
+  //   }
+  // }
 }
 
 class _StepCard extends StatelessWidget {
@@ -3648,33 +3694,89 @@ class _UpcomingSessionBannerState extends State<UpcomingSessionBanner> {
   final Map<int, Future<Map<String, dynamic>?>> _slotDetailCache = {};
 
   // Función para mapear estados numéricos a string
+  // String _mapStatusToString(dynamic status) {
+  //   print('🔍 Mapeando estado: $status (tipo: ${status.runtimeType})');
+  //   if (status == null) return '';
+
+  //   // Si ya es string, retornarlo
+  //   if (status is String) {
+  //     final result = status.toLowerCase().trim();
+  //     print('🔍 Estado es string, resultado: $result');
+  //     return result;
+  //   }
+
+  //   // Mapear estados numéricos
+  //   final statusStr = status.toString();
+  //   print('🔍 Estado convertido a string: $statusStr');
+
+  //   switch (statusStr) {
+  //     case '1':
+  //       print('🔍 Mapeando 1 -> pendiente');
+  //       return 'pendiente';
+  //     case '2':
+  //       print('🔍 Mapeando 2 -> aceptada');
+  //       return 'aceptada';
+  //     case '3':
+  //       print('🔍 Mapeando 3 -> rechazada');
+  //       return 'rechazada';
+  //     case '4':
+  //       print('🔍 Mapeando 4 -> completada');
+  //       return 'completada';
+  //     case '5':
+  //       print('🔍 Mapeando 5 -> cancelada');
+  //       return 'cancelada';
+  //     case '6':
+  //       print('🔍 Mapeando 6 -> cursando');
+  //       return 'cursando';
+  //     default:
+  //       final result = statusStr.toLowerCase().trim();
+  //       print('🔍 Estado por defecto: $result');
+  //       return result;
+  //   }
+  // }
+  // Función para mapear estados numéricos a string
   String _mapStatusToString(dynamic status) {
+    print(
+        '�� Mapeando estado: $status (tipo: ${status.runtimeType}) - FUNCIÓN CORREGIDA');
     if (status == null) return '';
 
-    // Si ya es string, retornarlo
-    if (status is String) return status.toLowerCase().trim();
+    // Convertir a string primero para manejar tanto strings como números
+    final statusStr = status.toString().trim();
+    print('🔍 Estado convertido a string: "$statusStr"');
 
-    // Mapear estados numéricos
-    switch (status.toString()) {
+    // Mapear estados numéricos (tanto como string como número)
+    switch (statusStr) {
       case '1':
+        print('�� Mapeando 1 -> pendiente');
         return 'pendiente';
       case '2':
+        print('🔍 Mapeando 2 -> aceptada');
         return 'aceptada';
       case '3':
+        print('�� Mapeando 3 -> rechazada');
         return 'rechazada';
       case '4':
+        print('🔍 Mapeando 4 -> completada');
         return 'completada';
       case '5':
+        print('🔍 Mapeando 5 -> cancelada');
         return 'cancelada';
       case '6':
+        print('�� Mapeando 6 -> cursando');
+        print('�� ✅ Estado 6 mapeado correctamente a cursando');
         return 'cursando';
       default:
-        return status.toString().toLowerCase().trim();
+        // Si no es un número, tratar como string
+        final result = statusStr.toLowerCase().trim();
+        print('�� Estado por defecto: $result');
+        return result;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    print(
+        '🏗️ UpcomingSessionBanner build - Bookings: ${widget.bookings.map((b) => 'ID:${b['id']}-Status:${b['status']}').join(', ')}');
     if (widget.bookings.isEmpty) return SizedBox.shrink();
     final now = DateTime.now();
     // Filtrar solo tutorías cuya hora de finalización es igual o posterior a la hora actual
@@ -3702,6 +3804,9 @@ class _UpcomingSessionBannerState extends State<UpcomingSessionBanner> {
     final start = DateTime.tryParse(booking['start_time'] ?? '') ?? now;
     final end = DateTime.tryParse(booking['end_time'] ?? '') ?? now;
     final status = _mapStatusToString(booking['status']);
+    print(
+        '🔍 Status original: ${booking['status']} (tipo: ${booking['status'].runtimeType})');
+    print('🔍 Status mapeado: $status');
     // Permitir tanto 'aceptado' como 'aceptada' como estado válido
     final isAceptado = status == 'aceptada' || status == 'aceptado';
     // Permitir tanto 'rechazado' como 'rechazada' como estado válido
@@ -3744,6 +3849,7 @@ class _UpcomingSessionBannerState extends State<UpcomingSessionBanner> {
       textColor = Colors.black;
     } else if (status == 'cursando') {
       print('DEBUG: ESTADO CURSANDO - Color verde');
+      print('DEBUG: ✅ Condición status == "cursando" se cumple');
       mainText = 'Tutoría en curso';
       lottieAsset =
           'https://assets2.lottiefiles.com/packages/lf20_30305_back_to_school.json';
