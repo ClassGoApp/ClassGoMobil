@@ -25,6 +25,28 @@ import 'package:pusher_channels_flutter/pusher_channels_flutter.dart';
 import 'package:flutter_projects/helpers/pusher_service.dart';
 import 'package:flutter_projects/helpers/auth_helper.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter/services.dart';
+import 'package:flutter_projects/base_components/custom_dropdown.dart';
+import 'package:flutter_projects/helpers/slide_up_route.dart';
+import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/view/auth/login_screen.dart';
+import 'package:flutter_projects/view/components/login_required_alert.dart';
+import 'package:flutter_projects/view/components/main_header.dart';
+import 'package:flutter_projects/view/components/tutoring_status_cards.dart';
+import 'package:flutter_projects/view/detailPage/detail_screen.dart';
+import 'package:flutter_projects/view/profile/profile_screen.dart';
+import 'package:flutter_projects/view/tutor/search_tutors_screen.dart';
+import 'package:flutter_projects/view/tutor/student_calendar_screen.dart';
+import 'package:flutter_projects/view/tutor/student_history_screen.dart';
+import 'package:flutter_projects/view/tutor/tutor_profile_screen.dart';
+import 'package:flutter_projects/view/tutor/instant_tutoring_screen.dart';
+import 'package:flutter_projects/view/tutor/payment_qr_screen.dart';
+import 'package:flutter_projects/view/tutor/booking_success_screen.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart';
+import '../../provider/auth_provider.dart';
+import 'dart:async';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
 // 1. Agrega RouteObserver para detectar cuando se vuelve a la pantalla principal
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
@@ -88,13 +110,18 @@ class _HomeScreenState extends State<HomeScreen>
 
   List<Map<String, dynamic>> _todaysBookings = [];
   bool _isLoadingBookings = true;
-  int _bookingUpdateTimestamp = 0; // Nueva variable para forzar reconstrucción
+  int _bookingUpdateTimestamp =
+      0; // Para forzar reconstrucción en eventos Pusher
 
   AuthProvider? _authProvider;
   int? _lastFetchedUserId;
 
   Timer? _bookingsTimer;
   PusherChannelsFlutter? _pusher;
+
+  // Cache para datos de slots y tutor images
+  final Map<int, Map<String, dynamic>> _slotDataCache = {};
+  final Map<int, String?> _tutorImageCache = {};
 
   @override
   void initState() {
@@ -1499,6 +1526,15 @@ class _HomeScreenState extends State<HomeScreen>
                                                 width: double.infinity,
                                                 child: ElevatedButton(
                                                   onPressed: () {
+                                                    // Obtener el subjectId correcto de la primera materia disponible
+                                                    final firstSubject =
+                                                        subjects.isNotEmpty
+                                                            ? subjects.first
+                                                            : null;
+                                                    final subjectId =
+                                                        firstSubject?['id'] ??
+                                                            1;
+
                                                     showModalBottomSheet(
                                                       context: context,
                                                       isScrollControlled: true,
@@ -1517,10 +1553,8 @@ class _HomeScreenState extends State<HomeScreen>
                                                                 baseImageUrl),
                                                         subjects: validSubjects,
                                                         tutorId: tutor['id'],
-                                                        subjectId: validSubjects
-                                                                .isNotEmpty
-                                                            ? 1
-                                                            : 1, // Default subject ID
+                                                        subjectId:
+                                                            subjectId, // Usar el ID correcto
                                                       ),
                                                     );
                                                   },
@@ -3692,6 +3726,7 @@ class UpcomingSessionBanner extends StatefulWidget {
 class _UpcomingSessionBannerState extends State<UpcomingSessionBanner> {
   // Cache para evitar llamadas repetidas a la API
   final Map<int, Future<Map<String, dynamic>?>> _slotDetailCache = {};
+  final Map<int, String?> _tutorImageCache = {};
 
   // Función para mapear estados numéricos a string
   // String _mapStatusToString(dynamic status) {
@@ -3735,9 +3770,69 @@ class _UpcomingSessionBannerState extends State<UpcomingSessionBanner> {
   //   }
   // }
   // Función para mapear estados numéricos a string
+  // Función para abrir el link de la tutoría en el navegador
+  Future<void> _openTutoringLink(Map<String, dynamic> booking) async {
+    print('🔍 === DEBUGGING TUTORING LINK ===');
+    print('🔍 Booking completo: $booking');
+    print('🔍 Keys disponibles: ${booking.keys.toList()}');
+    print('🔍 meeting_link: ${booking['meeting_link']}');
+    print('🔍 link: ${booking['link']}');
+    print('🔍 url: ${booking['url']}');
+    print('🔍 slot_id: ${booking['slot_id']}');
+    print('🔍 id: ${booking['id']}');
+
+    try {
+      // Obtener el link de la tutoría desde los datos del booking
+      final tutoringLink =
+          booking['meeting_link'] ?? booking['link'] ?? booking['url'];
+
+      print('🔍 Link encontrado: $tutoringLink');
+
+      if (tutoringLink != null && tutoringLink.toString().isNotEmpty) {
+        final Uri url = Uri.parse(tutoringLink.toString());
+
+        if (await canLaunchUrl(url)) {
+          await launchUrl(
+            url,
+            mode: LaunchMode.externalApplication, // Abre en navegador externo
+          );
+          print('✅ Link de tutoría abierto: $tutoringLink');
+        } else {
+          print('❌ No se pudo abrir el link: $tutoringLink');
+          // Mostrar mensaje de error al usuario
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('No se pudo abrir el link de la tutoría'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } else {
+        print('❌ No hay link de tutoría disponible');
+        print('🔍 meeting_link es null: ${booking['meeting_link'] == null}');
+        print('🔍 link es null: ${booking['link'] == null}');
+        print('🔍 url es null: ${booking['url'] == null}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Link de tutoría no disponible'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } catch (e) {
+      print('❌ Error al abrir link de tutoría: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al abrir el link de la tutoría'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   String _mapStatusToString(dynamic status) {
     print(
-        '�� Mapeando estado: $status (tipo: ${status.runtimeType}) - FUNCIÓN CORREGIDA');
+        ' Mapeando estado: $status (tipo: ${status.runtimeType}) - FUNCIÓN CORREGIDA');
     if (status == null) return '';
 
     // Convertir a string primero para manejar tanto strings como números
@@ -3747,22 +3842,22 @@ class _UpcomingSessionBannerState extends State<UpcomingSessionBanner> {
     // Mapear estados numéricos (tanto como string como número)
     switch (statusStr) {
       case '1':
-        print('�� Mapeando 1 -> pendiente');
-        return 'pendiente';
-      case '2':
-        print('🔍 Mapeando 2 -> aceptada');
+        print('🔍 Mapeando 1 -> aceptada');
         return 'aceptada';
+      case '2':
+        print('🔍 Mapeando 2 -> pendiente');
+        return 'pendiente';
       case '3':
-        print('�� Mapeando 3 -> rechazada');
+        print('🔍 Mapeando 3 -> rechazada');
         return 'rechazada';
       case '4':
-        print('🔍 Mapeando 4 -> completada');
-        return 'completada';
+        print('🔍 Mapeando 4 -> rechazada');
+        return 'rechazada';
       case '5':
-        print('🔍 Mapeando 5 -> cancelada');
-        return 'cancelada';
+        print('🔍 Mapeando 5 -> completada');
+        return 'completada';
       case '6':
-        print('�� Mapeando 6 -> cursando');
+        print('🔍 Mapeando 6 -> cursando');
         print('�� ✅ Estado 6 mapeado correctamente a cursando');
         return 'cursando';
       default:
@@ -3817,211 +3912,95 @@ class _UpcomingSessionBannerState extends State<UpcomingSessionBanner> {
     final hourStr =
         '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')} - ${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}';
 
-    // Lógica de colores y animaciones según estado y momento
-    String mainText = '';
-    String lottieAsset = '';
-    Color color = Colors.blueAccent.withOpacity(0.85);
-    Color textColor = Colors.white;
-
     print('DEBUG: isLive = $isLive, isSoon = $isSoon, status = "$status"');
 
-    // Lógica de colores por estado específico primero
-    if (isRechazado) {
-      print('DEBUG: ESTADO RECHAZADO - Color gris');
-      mainText = 'Tutoría rechazada';
-      lottieAsset =
-          'https://assets2.lottiefiles.com/packages/lf20_4kx2q32n.json';
-      color = Colors.grey.withOpacity(0.85);
-      textColor = Colors.white;
-    } else if (status == 'pendiente') {
-      print('DEBUG: ESTADO PENDIENTE - Color naranja');
-      mainText = 'Pendiente de aceptación';
-      lottieAsset =
-          'https://assets2.lottiefiles.com/packages/lf20_4kx2q32n.json';
-      color = Colors.orangeAccent.withOpacity(0.95);
-      textColor = Colors.black;
-    } else if (status == 'solicitada') {
-      print('DEBUG: ESTADO SOLICITADA - Color naranja');
-      mainText = 'Pendiente de aceptación';
-      lottieAsset =
-          'https://assets2.lottiefiles.com/packages/lf20_4kx2q32n.json';
-      color = Colors.orangeAccent.withOpacity(0.95);
-      textColor = Colors.black;
-    } else if (status == 'cursando') {
-      print('DEBUG: ESTADO CURSANDO - Color verde');
-      print('DEBUG: ✅ Condición status == "cursando" se cumple');
-      mainText = 'Tutoría en curso';
-      lottieAsset =
-          'https://assets2.lottiefiles.com/packages/lf20_30305_back_to_school.json';
-      color = Colors.greenAccent.withOpacity(0.85);
-      textColor = Colors.white;
-    } else if (isAceptado && isLive) {
-      // Estado aceptado EN VIVO: rojo
-      print('DEBUG: ESTADO ACEPTADO EN VIVO - Color rojo');
-      mainText = 'EN VIVO';
-      lottieAsset =
-          'https://assets2.lottiefiles.com/packages/lf20_30305_back_to_school.json';
-      color = Colors.redAccent.withOpacity(0.85);
-      textColor = Colors.white;
-    } else if (isAceptado && isSoon) {
-      // Estado aceptado PRÓXIMA: azul
-      print('DEBUG: ESTADO ACEPTADO PRÓXIMA - Color azul');
-      mainText = 'Próxima tutoría';
-      lottieAsset =
-          'https://assets2.lottiefiles.com/packages/lf20_30305_back_to_school.json';
-      color = Colors.blueAccent.withOpacity(0.85);
-      textColor = Colors.white;
-    } else if (isLive) {
-      print('DEBUG: EN HORARIO PERO NO ACEPTADA - Color ámbar');
-      mainText = 'En horario, pero no aceptada';
-      lottieAsset =
-          'https://assets2.lottiefiles.com/packages/lf20_4kx2q32n.json';
-      color = Colors.amber.withOpacity(0.95);
-      textColor = Colors.black;
-    } else {
-      print('DEBUG: ESTADO DEFAULT - Color azul gris');
-      mainText = 'Tutoría programada para hoy';
-      lottieAsset =
-          'https://assets2.lottiefiles.com/packages/lf20_30305_back_to_school.json';
-      color = Colors.blueGrey.withOpacity(0.85);
-      textColor = Colors.white;
-    }
-
-    print('DEBUG: Color final seleccionado: $color');
-    print('DEBUG: Texto final: $mainText');
-
-    String statusText = 'Estado: \\${booking['status'] ?? ''}';
-
-    // Si la tutoría está en curso (cursando), usar el nuevo diseño
+    // Si la tutoría está en curso (cursando), usar el diseño actual
     if (status == 'cursando') {
       return _buildLiveSessionCard(booking, start, subject);
     }
 
-    // Para otros estados, usar el diseño original
-    return GestureDetector(
-      onTap: () {
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder: (context) => _BookingDetailModal(
-            booking: booking!,
-            highResTutorImages: (context
-                    .findAncestorStateOfType<_HomeScreenState>()
-                    ?.highResTutorImages) ??
-                {},
-          ),
+    // Para otros estados, usar el nuevo sistema de tarjetas
+    // Obtener información del tutor
+    final tutorName = booking['tutor_name'] ?? 'Tutor';
+    final tutorImage = booking['tutor_image'] ?? '';
+
+    print('🔍 === DEBUGGING NUEVO SISTEMA DE TARJETAS ===');
+    print('🔍 Status: $status');
+    print('🔍 TutorName: $tutorName');
+    print('🔍 TutorImage: $tutorImage');
+    print('🔍 Subject: $subject');
+    print('🔍 Booking ID: ${booking['id']}');
+    print('🔍 Booking completo: $booking');
+
+    // Usar un solo FutureBuilder para obtener todos los datos necesarios
+    return FutureBuilder<Map<String, dynamic>>(
+      key: ValueKey('tutor_data_${booking['id']}'),
+      future: _getTutorDataForCard(booking['id'], subject),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Container(
+            margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.lightBlueColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border:
+                  Border.all(color: AppColors.lightBlueColor.withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                CircleAvatar(radius: 20, backgroundColor: Colors.grey[300]),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                          height: 16, width: 120, color: Colors.grey[300]),
+                      SizedBox(height: 8),
+                      Container(height: 12, width: 80, color: Colors.grey[300]),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final tutorData = snapshot.data ?? {};
+        final realTutorName = tutorData['tutorName'] ?? 'Tutor';
+        final realTutorImage = tutorData['tutorImage'] ?? '';
+        final realSubject = tutorData['subject'] ?? subject;
+
+        print('🔍 === DATOS REALES DEL TUTOR ===');
+        print('🔍 RealTutorName: $realTutorName');
+        print('🔍 RealTutorImage: $realTutorImage');
+        print('🔍 RealSubject: $realSubject');
+
+        return TutoringStatusCards.buildStatusCard(
+          booking!,
+          start,
+          realSubject,
+          status,
+          realTutorName,
+          realTutorImage,
+          _openTutoringLink,
+          (booking) {
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (context) => _BookingDetailModal(
+                booking: booking,
+                highResTutorImages: (context
+                        .findAncestorStateOfType<_HomeScreenState>()
+                        ?.highResTutorImages) ??
+                    {},
+              ),
+            );
+          },
         );
       },
-      child: Container(
-        margin: EdgeInsets.only(bottom: 8),
-        padding: EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          gradient: LinearGradient(
-            colors: [color, Colors.white.withOpacity(0.10)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.18),
-              blurRadius: 16,
-              offset: Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: 36,
-              height: 36,
-              child: Lottie.network(
-                lottieAsset,
-                width: 36,
-                height: 36,
-                repeat: true,
-                animate: true,
-                options: LottieOptions(enableMergePaths: true),
-                errorBuilder: (context, error, stackTrace) {
-                  final visibleColor = Colors.white;
-                  if (isLive && isAceptado) {
-                    return Icon(Icons.play_circle_fill,
-                        color: visibleColor, size: 32);
-                  } else if (isLive && !isAceptado) {
-                    return Icon(Icons.warning_amber_rounded,
-                        color: Colors.amber, size: 32);
-                  } else if (isSoon &&
-                      (status == 'pendiente' || status == 'solicitada')) {
-                    return Icon(Icons.warning_amber_rounded,
-                        color: Colors.orangeAccent, size: 32);
-                  } else if (status == 'cursando') {
-                    return Icon(Icons.play_circle_fill,
-                        color: Colors.greenAccent, size: 32);
-                  } else if (isSoon && isAceptado) {
-                    return Icon(Icons.schedule, color: visibleColor, size: 32);
-                  } else if (isRechazado) {
-                    return Icon(Icons.cancel, color: Colors.grey, size: 32);
-                  } else {
-                    return Icon(Icons.school, color: visibleColor, size: 32);
-                  }
-                },
-              ),
-            ),
-            SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    mainText,
-                    style: TextStyle(
-                      color: color.computeLuminance() > 0.5
-                          ? Colors.black
-                          : Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      letterSpacing: 0.5,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    subject,
-                    style: TextStyle(
-                      color: textColor,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(height: 2),
-                  Text(
-                    hourStr,
-                    style: TextStyle(
-                      color: textColor.withOpacity(0.8),
-                      fontWeight: FontWeight.w400,
-                      fontSize: 14,
-                    ),
-                  ),
-                  SizedBox(height: 2),
-                  Text(
-                    statusText,
-                    style: TextStyle(
-                      color: textColor.withOpacity(0.9),
-                      fontWeight: FontWeight.w500,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -4075,7 +4054,8 @@ class _UpcomingSessionBannerState extends State<UpcomingSessionBanner> {
                       margin: EdgeInsets.only(bottom: 8),
                       padding: EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Color(0xFF1a1a2e),
+                        color: Color(
+                            0xFF2C3E50), // Cambio de azul oscuro a un gris azulado más claro
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.red, width: 1),
                         boxShadow: [
@@ -4242,46 +4222,153 @@ class _UpcomingSessionBannerState extends State<UpcomingSessionBanner> {
                             ],
                           ),
                           SizedBox(height: 12),
-                          // Botón de unirse a la reunión con animación
-                          TweenAnimationBuilder<double>(
-                            tween: Tween(begin: 0.9, end: 1.0),
-                            duration: Duration(milliseconds: 600),
-                            builder: (context, animValue, child) {
-                              return Transform.scale(
-                                scale: animValue,
-                                child: Container(
-                                  width: double.infinity,
-                                  padding: EdgeInsets.symmetric(vertical: 10),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red,
-                                    borderRadius: BorderRadius.circular(6),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.red.withOpacity(0.4),
-                                        blurRadius: 4,
-                                        offset: Offset(0, 2),
+                          // Botón de unirse a la reunión con animación mejorada
+                          // TweenAnimationBuilder<double>(
+                          //   tween: Tween(begin: 0.95, end: 1.0),
+                          //   duration: Duration(milliseconds: 800),
+                          //   builder: (context, animValue, child) {
+                          //     return Transform.scale(
+                          //       scale: animValue,
+                          //       child: Container(
+                          //         width: double.infinity,
+                          //         padding: EdgeInsets.symmetric(
+                          //             vertical: 12, horizontal: 16),
+                          //         decoration: BoxDecoration(
+                          //           gradient: LinearGradient(
+                          //             colors: [
+                          //               Colors.red.shade600,
+                          //               Colors.red.shade500,
+                          //             ],
+                          //             begin: Alignment.topLeft,
+                          //             end: Alignment.bottomRight,
+                          //           ),
+                          //           borderRadius: BorderRadius.circular(10),
+                          //           boxShadow: [
+                          //             BoxShadow(
+                          //               color: Colors.red.withOpacity(0.4),
+                          //               blurRadius: 8,
+                          //               offset: Offset(0, 3),
+                          //               spreadRadius: 1,
+                          //             ),
+                          //           ],
+                          //         ),
+                          //         child: Row(
+                          //           mainAxisAlignment: MainAxisAlignment.center,
+                          //           children: [
+                          //             // Icono con animación de pulso
+                          //             TweenAnimationBuilder<double>(
+                          //               tween: Tween(begin: 0.8, end: 1.2),
+                          //               duration: Duration(milliseconds: 1200),
+                          //               builder: (context, pulseValue, child) {
+                          //                 return Transform.scale(
+                          //                   scale: pulseValue,
+                          //                   child: Icon(
+                          //                     Icons.videocam,
+                          //                     color: Colors.white,
+                          //                     size: 18,
+                          //                   ),
+                          //                 );
+                          //               },
+                          //             ),
+                          //             SizedBox(width: 8),
+                          //             Text(
+                          //               'Unirse a la reunión',
+                          //               style: TextStyle(
+                          //                 color: Colors.white,
+                          //                 fontWeight: FontWeight.w600,
+                          //                 fontSize: 15,
+                          //                 letterSpacing: 0.5,
+                          //               ),
+                          //             ),
+                          //             SizedBox(width: 8),
+                          //             // Flecha indicativa
+                          //             Icon(
+                          //               Icons.arrow_forward_ios,
+                          //               color: Colors.white,
+                          //               size: 14,
+                          //             ),
+                          //           ],
+                          //         ),
+                          //       ),
+                          //     );
+                          //   },
+                          // ),
+                          // Botón de unirse a la reunión con animación mejorada
+                          GestureDetector(
+                            onTap: () => _openTutoringLink(booking),
+                            child: TweenAnimationBuilder<double>(
+                              tween: Tween(begin: 0.95, end: 1.0),
+                              duration: Duration(milliseconds: 800),
+                              builder: (context, animValue, child) {
+                                return Transform.scale(
+                                  scale: animValue,
+                                  child: Container(
+                                    width: double.infinity,
+                                    padding: EdgeInsets.symmetric(
+                                        vertical: 12, horizontal: 16),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          Colors.red.shade600,
+                                          Colors.red.shade500,
+                                        ],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
                                       ),
-                                    ],
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.videocam,
-                                          color: Colors.white, size: 16),
-                                      SizedBox(width: 6),
-                                      Text(
-                                        'Unirse a la reunión',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
+                                      borderRadius: BorderRadius.circular(10),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.red.withOpacity(0.4),
+                                          blurRadius: 8,
+                                          offset: Offset(0, 3),
+                                          spreadRadius: 1,
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        // Icono con animación de pulso
+                                        TweenAnimationBuilder<double>(
+                                          tween: Tween(begin: 0.8, end: 1.2),
+                                          duration:
+                                              Duration(milliseconds: 1200),
+                                          builder:
+                                              (context, pulseValue, child) {
+                                            return Transform.scale(
+                                              scale: pulseValue,
+                                              child: Icon(
+                                                Icons.videocam,
+                                                color: Colors.white,
+                                                size: 18,
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'Unirse a la reunión',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 15,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                        SizedBox(width: 8),
+                                        // Flecha indicativa
+                                        Icon(
+                                          Icons.arrow_forward_ios,
+                                          color: Colors.white,
+                                          size: 14,
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              );
-                            },
+                                );
+                              },
+                            ),
                           ),
                         ],
                       ),
@@ -4417,6 +4504,11 @@ class _UpcomingSessionBannerState extends State<UpcomingSessionBanner> {
   }
 
   Future<String?> _fetchTutorProfileImage(int tutorId) async {
+    // Verificar cache primero
+    if (_tutorImageCache.containsKey(tutorId)) {
+      return _tutorImageCache[tutorId];
+    }
+
     try {
       final url = Uri.parse(
           'https://classgoapp.com/api/verified-tutors-photos?tutor_id=$tutorId');
@@ -4431,7 +4523,10 @@ class _UpcomingSessionBannerState extends State<UpcomingSessionBanner> {
             orElse: () => null,
           );
           if (tutorData != null && tutorData['profile_image'] != null) {
-            return tutorData['profile_image'] as String;
+            final imageUrl = tutorData['profile_image'] as String;
+            // Guardar en cache
+            _tutorImageCache[tutorId] = imageUrl;
+            return imageUrl;
           }
         }
       }
@@ -4439,6 +4534,46 @@ class _UpcomingSessionBannerState extends State<UpcomingSessionBanner> {
       print('Error fetching tutor profile image: $e');
     }
     return null;
+  }
+
+  // Función combinada para obtener todos los datos del tutor para una tarjeta
+  Future<Map<String, dynamic>> _getTutorDataForCard(
+      int slotId, String fallbackSubject) async {
+    try {
+      // Obtener datos del slot
+      final slotData = await _fetchSlotDetail(slotId);
+      if (slotData == null) {
+        return {
+          'tutorName': 'Tutor',
+          'tutorImage': '',
+          'subject': fallbackSubject,
+        };
+      }
+
+      final tutorData = slotData['tutor'];
+      final realTutorName = tutorData?['full_name'] ?? 'Tutor';
+      final tutorId = tutorData?['user_id'];
+      final realSubject = slotData['subject']?['name'] ?? fallbackSubject;
+
+      // Obtener imagen del tutor si hay tutorId
+      String? realTutorImage = '';
+      if (tutorId != null) {
+        realTutorImage = await _fetchTutorProfileImage(tutorId);
+      }
+
+      return {
+        'tutorName': realTutorName,
+        'tutorImage': realTutorImage ?? '',
+        'subject': realSubject,
+      };
+    } catch (e) {
+      print('Error getting tutor data for card: $e');
+      return {
+        'tutorName': 'Tutor',
+        'tutorImage': '',
+        'subject': fallbackSubject,
+      };
+    }
   }
 }
 

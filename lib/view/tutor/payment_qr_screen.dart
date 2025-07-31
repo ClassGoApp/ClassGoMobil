@@ -12,6 +12,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:overlay_support/overlay_support.dart';
 import 'package:provider/provider.dart';
 import '../../provider/auth_provider.dart';
+import 'booking_success_screen.dart';
 
 class PaymentQRScreen extends StatefulWidget {
   final String tutorName;
@@ -327,7 +328,18 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
       await Future.delayed(Duration(seconds: 2));
 
       if (mounted) {
-        Navigator.of(context).pop(); // Volver a la pantalla anterior
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => BookingSuccessScreen(
+              tutorName: widget.tutorName,
+              tutorImage: widget.tutorImage,
+              subjectName: widget.selectedSubject,
+              sessionDuration: widget.sessionDuration,
+              amount: widget.amount,
+              sessionTime: DateTime.now(), // Para tutorías instantáneas
+            ),
+          ),
+        );
       }
     } catch (e) {
       print('Error inesperado en _submitPayment: $e');

@@ -21,6 +21,8 @@ import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:flutter_projects/view/tutor/instant_tutoring_screen.dart';
 import 'package:flutter_projects/view/tutor/student_calendar_screen.dart';
 import 'package:flutter_projects/view/tutor/student_history_screen.dart';
+import 'package:flutter_projects/view/tutor/payment_qr_screen.dart';
+import 'package:flutter_projects/view/tutor/booking_success_screen.dart';
 
 class SearchTutorsScreen extends StatefulWidget {
   final String? initialKeyword;
@@ -983,6 +985,15 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                       subject['deleted_at'] == null)
                   .map((subject) => subject['name'] as String)
                   .toList();
+
+              // Obtener el primer subject válido para el ID
+              final firstValidSubject = subjects
+                  .where((subject) =>
+                      subject['status'] == 'active' &&
+                      subject['deleted_at'] == null)
+                  .firstOrNull;
+              final subjectId = firstValidSubject?['id'] ?? 1;
+
               // Depuración de imágenes de tutores
               final hdUrl = highResTutorImages[tutor['id']];
               print(
@@ -1099,6 +1110,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                               profile['image'] ??
                                               AppImages.placeHolderImage,
                                       subjects: validSubjects,
+                                      tutorId: tutor['id'],
+                                      subjectId: subjectId,
                                     ),
                                   );
                                 }
@@ -1124,9 +1137,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                                 AppImages.placeHolderImage,
                                         subjects: validSubjects,
                                         tutorId: tutor['id'],
-                                        subjectId: validSubjects.isNotEmpty
-                                            ? 1
-                                            : 1, // Default subject ID
+                                        subjectId: subjectId,
                                       ),
                                     ),
                                   );
@@ -1390,11 +1401,15 @@ class _BookingModal extends StatefulWidget {
   final String tutorName;
   final String tutorImage;
   final List<String> subjects;
+  final int tutorId;
+  final int subjectId;
 
   const _BookingModal({
     required this.tutorName,
     required this.tutorImage,
     required this.subjects,
+    required this.tutorId,
+    required this.subjectId,
   });
 
   @override
@@ -2172,11 +2187,30 @@ class _BookingModalState extends State<_BookingModal> {
                                   selectedDay != null &&
                                   selectedHour != null)
                               ? () {
+                                  // Cerrar el modal de agendar
                                   Navigator.pop(context);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                        content: Text(
-                                            '¡Tutoría reservada para $selectedSubject el ${selectedDay!.day}/${selectedDay!.month}/${selectedDay!.year} a las $selectedHour!')),
+
+                                  // Navegar a la vista instant tutoring
+                                  showModalBottomSheet(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    backgroundColor: Colors.transparent,
+                                    builder: (context) => Container(
+                                      margin: EdgeInsets.only(top: 60),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.darkBlue,
+                                        borderRadius: BorderRadius.vertical(
+                                            top: Radius.circular(24)),
+                                      ),
+                                      child: InstantTutoringScreen(
+                                        tutorName: widget.tutorName,
+                                        tutorImage: widget.tutorImage,
+                                        subjects: widget.subjects,
+                                        selectedSubject: selectedSubject,
+                                        tutorId: widget.tutorId,
+                                        subjectId: widget.subjectId,
+                                      ),
+                                    ),
                                   );
                                 }
                               : () {
