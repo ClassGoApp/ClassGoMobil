@@ -47,6 +47,7 @@ import 'package:provider/provider.dart';
 import '../../provider/auth_provider.dart';
 import 'dart:async';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'package:flutter/widgets.dart';
 
 // 1. Agrega RouteObserver para detectar cuando se vuelve a la pantalla principal
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
@@ -139,8 +140,11 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final authProvider = Provider.of<AuthProvider>(context);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     if (_authProvider != authProvider) {
+      // Remover listener anterior si existe
+      _authProvider?.removeListener(_checkAndFetchBookings);
+
       _authProvider = authProvider;
       _checkAndFetchBookings();
       _authProvider!.addListener(_checkAndFetchBookings);
@@ -236,6 +240,7 @@ class _HomeScreenState extends State<HomeScreen>
       _activeController!.dispose();
     }
     _thumbnailCache.clear();
+    _debounce?.cancel();
     _searchController.dispose();
     _debounce?.cancel();
     _featuredTutorsScrollController.dispose();
@@ -284,6 +289,10 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Usar un key único para evitar rebuilds innecesarios
+    final screenKey =
+        ValueKey('home_screen_${_todaysBookings.length}_${_isLoadingBookings}');
+
     return Scaffold(
       body: Stack(
         children: [
@@ -382,11 +391,11 @@ class _HomeScreenState extends State<HomeScreen>
                         SizedBox(height: 24),
                         // --- BANNER DE TUTORÍAS PRÓXIMAS/EN VIVO ---
                         if (!_isLoadingBookings && _todaysBookings.isNotEmpty)
-                          UpcomingSessionBanner(
-                            key: ValueKey(
-                                '${_todaysBookings.map((b) => '${b['id']}_${b['status']}').join('_')}_$_bookingUpdateTimestamp'),
-                            bookings: List<Map<String, dynamic>>.from(
-                                _todaysBookings),
+                          RepaintBoundary(
+                            child: UpcomingSessionBanner(
+                              key: ValueKey('upcoming_session_banner'),
+                              bookings: _todaysBookings,
+                            ),
                           ),
                         // --- FIN BANNER ---
                         // Barra de búsqueda principal (como en Yango)
@@ -2950,9 +2959,15 @@ class _HomeScreenState extends State<HomeScreen>
       }
     }
 
-    // Solo llamar setState si hay cambios significativos
+    // Solo llamar setState si hay cambios significativos y no es un scroll mínimo
     if (hasChanges && mounted) {
-      setState(() {});
+      // Usar debounce más largo para evitar setState excesivos
+      _debounce?.cancel();
+      _debounce = Timer(Duration(milliseconds: 300), () {
+        if (mounted) {
+          setState(() {});
+        }
+      });
     }
   }
 
@@ -3721,12 +3736,48 @@ class UpcomingSessionBanner extends StatefulWidget {
 
   @override
   State<UpcomingSessionBanner> createState() => _UpcomingSessionBannerState();
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is UpcomingSessionBanner &&
+        other.key == key &&
+        _areBookingsEqual(other.bookings, bookings);
+  }
+
+  @override
+  int get hashCode => Object.hash(key, _getBookingsHash(bookings));
+
+  static bool _areBookingsEqual(
+      List<Map<String, dynamic>> a, List<Map<String, dynamic>> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i]['id'] != b[i]['id'] || a[i]['status'] != b[i]['status']) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  static int _getBookingsHash(List<Map<String, dynamic>> bookings) {
+    return bookings.fold(0,
+        (hash, booking) => Object.hash(hash, booking['id'], booking['status']));
+  }
 }
 
-class _UpcomingSessionBannerState extends State<UpcomingSessionBanner> {
+class _UpcomingSessionBannerState extends State<UpcomingSessionBanner>
+    with AutomaticKeepAliveClientMixin {
   // Cache para evitar llamadas repetidas a la API
   final Map<int, Future<Map<String, dynamic>?>> _slotDetailCache = {};
   final Map<int, String?> _tutorImageCache = {};
+  final Map<String, Future<Map<String, dynamic>>> _tutorDataCache = {};
+
+  // Cache para el último booking procesado
+  Map<String, dynamic>? _lastProcessedBooking;
+  String? _lastBookingKey;
+
+  @override
+  bool get wantKeepAlive => true;
 
   // Función para mapear estados numéricos a string
   // String _mapStatusToString(dynamic status) {
@@ -3872,14 +3923,19 @@ class _UpcomingSessionBannerState extends State<UpcomingSessionBanner> {
   Widget build(BuildContext context) {
     print(
         '🏗️ UpcomingSessionBanner build - Bookings: ${widget.bookings.map((b) => 'ID:${b['id']}-Status:${b['status']}').join(', ')}');
-    if (widget.bookings.isEmpty) return SizedBox.shrink();
+
+    // Usar un key único basado en los datos para evitar rebuilds innecesarios
+    final bookingKey =
+        widget.bookings.map((b) => '${b['id']}_${b['status']}').join('_');
+
+    if (widget.bookings.isEmpty) return const SizedBox.shrink();
     final now = DateTime.now();
     // Filtrar solo tutorías cuya hora de finalización es igual o posterior a la hora actual
     final validBookings = widget.bookings.where((b) {
       final end = DateTime.tryParse(b['end_time'] ?? '') ?? now;
       return end.isAfter(now) || end.isAtSameMomentAs(now);
     }).toList();
-    if (validBookings.isEmpty) return SizedBox.shrink();
+    if (validBookings.isEmpty) return const SizedBox.shrink();
     // Ordenar por hora de inicio
     validBookings.sort(
         (a, b) => (a['start_time'] ?? '').compareTo(b['start_time'] ?? ''));
@@ -3896,6 +3952,16 @@ class _UpcomingSessionBannerState extends State<UpcomingSessionBanner> {
       }
     }
     booking ??= validBookings.first;
+
+    // Verificar si el booking cambió para evitar rebuilds innecesarios
+    final currentBookingKey = '${booking['id']}_${booking['status']}';
+    if (_lastBookingKey == currentBookingKey && _lastProcessedBooking != null) {
+      booking = _lastProcessedBooking!;
+    } else {
+      _lastBookingKey = currentBookingKey;
+      _lastProcessedBooking = booking;
+    }
+
     final start = DateTime.tryParse(booking['start_time'] ?? '') ?? now;
     final end = DateTime.tryParse(booking['end_time'] ?? '') ?? now;
     final status = _mapStatusToString(booking['status']);
@@ -4539,15 +4605,27 @@ class _UpcomingSessionBannerState extends State<UpcomingSessionBanner> {
   // Función combinada para obtener todos los datos del tutor para una tarjeta
   Future<Map<String, dynamic>> _getTutorDataForCard(
       int slotId, String fallbackSubject) async {
+    final cacheKey = '${slotId}_$fallbackSubject';
+
+    // Verificar cache primero
+    if (_tutorDataCache.containsKey(cacheKey)) {
+      print('DEBUG: Usando cache para tutor data: $cacheKey');
+      return await _tutorDataCache[cacheKey]!;
+    }
+
+    print('DEBUG: Haciendo llamada para tutor data: $cacheKey');
+
     try {
       // Obtener datos del slot
       final slotData = await _fetchSlotDetail(slotId);
       if (slotData == null) {
-        return {
+        final result = {
           'tutorName': 'Tutor',
           'tutorImage': '',
           'subject': fallbackSubject,
         };
+        _tutorDataCache[cacheKey] = Future.value(result);
+        return result;
       }
 
       final tutorData = slotData['tutor'];
@@ -4561,18 +4639,24 @@ class _UpcomingSessionBannerState extends State<UpcomingSessionBanner> {
         realTutorImage = await _fetchTutorProfileImage(tutorId);
       }
 
-      return {
+      final result = {
         'tutorName': realTutorName,
         'tutorImage': realTutorImage ?? '',
         'subject': realSubject,
       };
+
+      // Guardar en cache
+      _tutorDataCache[cacheKey] = Future.value(result);
+      return result;
     } catch (e) {
       print('Error getting tutor data for card: $e');
-      return {
+      final result = {
         'tutorName': 'Tutor',
         'tutorImage': '',
         'subject': fallbackSubject,
       };
+      _tutorDataCache[cacheKey] = Future.value(result);
+      return result;
     }
   }
 }
