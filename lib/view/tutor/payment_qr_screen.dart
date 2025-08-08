@@ -6,7 +6,7 @@ import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
 import 'package:flutter_projects/base_components/custom_snack_bar.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:qr_flutter/qr_flutter.dart';
+
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:overlay_support/overlay_support.dart';
@@ -52,7 +52,6 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
   int _currentPage = 0;
 
   // Datos del pago (actualizados)
-  final String _qrData = "https://classgo.com/pay/session_12345";
   bool _isPaymentCompleted = false;
 
   @override
@@ -183,7 +182,8 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
         if (!status.isGranted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-                content: Text('Se necesitan permisos para descargar el QR')),
+                content:
+                    Text('Se necesitan permisos para descargar la imagen')),
           );
           return;
         }
@@ -198,17 +198,12 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
         return;
       }
 
-      // Crear nombre de archivo único
-      final fileName =
-          'classgo_payment_qr_${DateTime.now().millisecondsSinceEpoch}.png';
-      final filePath = '${directory.path}/$fileName';
-
-      // Aquí normalmente generarías y guardarías el QR
+      // Aquí normalmente guardarías la imagen de cobro
       await Future.delayed(Duration(seconds: 1)); // Simulación
 
       // Notificación moderna que ahora usa el CONTEXTO LOCAL
       showSimpleNotification(
-        Text("¡QR guardado en tu galería!",
+        Text("¡Imagen guardada en tu galería!",
             style: TextStyle(color: Colors.white)),
         leading: Icon(Icons.download_done, color: Colors.white),
         background: AppColors.lightBlueColor,
@@ -562,7 +557,7 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text('💳 Escanea para pagar',
+          Text('💳 Información de pago',
               style: TextStyle(
                   color: AppColors.darkBlue,
                   fontSize: 16,
@@ -571,19 +566,22 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
           Expanded(
             child: ScaleTransition(
               scale: _qrScaleAnimation,
-              child: QrImageView(
-                  data: _qrData,
-                  version: QrVersions.auto,
-                  size: 200.0,
-                  backgroundColor: Colors.white,
-                  foregroundColor: AppColors.darkBlue),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.asset(
+                  'assets/images/cobro.jpeg',
+                  width: 200.0,
+                  height: 200.0,
+                  fit: BoxFit.contain,
+                ),
+              ),
             ),
           ),
           SizedBox(height: 16),
           ElevatedButton.icon(
             onPressed: _downloadQR,
             icon: Icon(Icons.download, color: AppColors.darkBlue),
-            label: Text('Descargar QR',
+            label: Text('Descargar imagen',
                 style: TextStyle(color: AppColors.darkBlue)),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,

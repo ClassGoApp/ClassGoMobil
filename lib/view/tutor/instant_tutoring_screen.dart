@@ -391,14 +391,14 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                             ),
                           ],
                         ),
-                        SizedBox(height: 40),
+                        SizedBox(height: 24),
                         // 2. Selector de Materia
                         Text(
                           'Elige la materia',
                           style: AppTextStyles.heading2
                               .copyWith(color: Colors.white, fontSize: 18),
                         ),
-                        SizedBox(height: 12),
+                        SizedBox(height: 8),
                         GestureDetector(
                           key: _subjectSelectorKey,
                           onTap: _toggleDropdown,
@@ -434,11 +434,11 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                             ),
                           ),
                         ),
-                        SizedBox(height: 40),
+                        SizedBox(height: 24),
 
                         // 3. Scroll Horizontal para Imagen y Notas
                         Container(
-                          height: 320, // Reducida de 400 a 320
+                          height: 280, // Reducida de 320 a 280
                           child: Column(
                             children: [
                               // PageView para el contenido
@@ -475,8 +475,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                         );
                                       },
                                       child: Container(
-                                        padding: EdgeInsets.all(
-                                            16), // Reducido de 20 a 16
+                                        padding: EdgeInsets.all(12),
                                         decoration: BoxDecoration(
                                           color: Colors.white.withOpacity(0.05),
                                           borderRadius:
@@ -494,11 +493,8 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                                 Icon(Icons.lightbulb_outline,
                                                     color: AppColors
                                                         .lightBlueColor,
-                                                    size:
-                                                        20), // Reducido de 24 a 20
-                                                SizedBox(
-                                                    width:
-                                                        8), // Reducido de 12 a 8
+                                                    size: 18),
+                                                SizedBox(width: 6),
                                                 Expanded(
                                                   child: Text(
                                                     '📸 ¡Acelera tu aprendizaje!',
@@ -506,8 +502,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                                         .heading2
                                                         .copyWith(
                                                             color: Colors.white,
-                                                            fontSize:
-                                                                15, // Reducido de 16 a 15
+                                                            fontSize: 14,
                                                             fontWeight:
                                                                 FontWeight
                                                                     .bold),
@@ -515,24 +510,18 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                                 ),
                                               ],
                                             ),
-                                            SizedBox(
-                                                height:
-                                                    8), // Reducido de 12 a 8
+                                            SizedBox(height: 6),
                                             Text(
                                               'Sube una foto de tu ejercicio. Ayuda al tutor a:\n'
                                               '• Preparar la sesión con anticipación\n'
                                               '• Entender exactamente qué necesitas',
                                               style: TextStyle(
                                                 color: Colors.white70,
-                                                fontSize:
-                                                    13, // Reducido de 14 a 13
-                                                height:
-                                                    1.3, // Reducido de 1.4 a 1.3
+                                                fontSize: 12,
+                                                height: 1.2,
                                               ),
                                             ),
-                                            SizedBox(
-                                                height:
-                                                    16), // Reducido de 20 a 16
+                                            SizedBox(height: 12),
 
                                             // Vista previa de imagen o botón para subir
                                             if (_selectedImage != null) ...[
@@ -540,8 +529,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                                 children: [
                                                   Container(
                                                     width: double.infinity,
-                                                    height:
-                                                        160, // Reducido de 200 a 160
+                                                    height: 120,
                                                     decoration: BoxDecoration(
                                                       borderRadius:
                                                           BorderRadius.circular(
@@ -554,8 +542,8 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                                     ),
                                                   ),
                                                   Positioned(
-                                                    top: 8,
-                                                    right: 8,
+                                                    top: 6,
+                                                    right: 6,
                                                     child: GestureDetector(
                                                       onTap: () {
                                                         setState(() {
@@ -563,8 +551,8 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                                         });
                                                       },
                                                       child: Container(
-                                                        padding: EdgeInsets.all(
-                                                            6), // Reducido de 8 a 6
+                                                        padding:
+                                                            EdgeInsets.all(4),
                                                         decoration:
                                                             BoxDecoration(
                                                           color: Colors.black
@@ -574,23 +562,19 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                                         ),
                                                         child: Icon(Icons.close,
                                                             color: Colors.white,
-                                                            size:
-                                                                16), // Reducido de 20 a 16
+                                                            size: 14),
                                                       ),
                                                     ),
                                                   ),
                                                 ],
                                               ),
-                                              SizedBox(
-                                                  height:
-                                                      8), // Reducido de 12 a 8
+                                              SizedBox(height: 6),
                                               Text(
                                                 '✅ Imagen añadida correctamente',
                                                 style: TextStyle(
                                                   color:
                                                       AppColors.lightBlueColor,
-                                                  fontSize:
-                                                      13, // Reducido de 14 a 13
+                                                  fontSize: 12,
                                                   fontWeight: FontWeight.w500,
                                                 ),
                                               ),
@@ -599,8 +583,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                                 onTap: _showImageSourceDialog,
                                                 child: Container(
                                                   width: double.infinity,
-                                                  height:
-                                                      100, // Reducido de 120 a 100
+                                                  height: 80,
                                                   decoration: BoxDecoration(
                                                     color: Colors.white
                                                         .withOpacity(0.1),
@@ -622,29 +605,22 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                                         Icons.add_a_photo,
                                                         color: AppColors
                                                             .lightBlueColor,
-                                                        size:
-                                                            28, // Reducido de 32 a 28
+                                                        size: 24,
                                                       ),
-                                                      SizedBox(
-                                                          height:
-                                                              6), // Reducido de 8 a 6
+                                                      SizedBox(height: 4),
                                                       Text(
                                                         'Toca para añadir foto',
                                                         style: TextStyle(
                                                           color: Colors.white70,
-                                                          fontSize:
-                                                              13, // Reducido de 14 a 13
+                                                          fontSize: 12,
                                                         ),
                                                       ),
-                                                      SizedBox(
-                                                          height:
-                                                              2), // Reducido de 4 a 2
+                                                      SizedBox(height: 2),
                                                       Text(
                                                         'Cámara o Galería',
                                                         style: TextStyle(
                                                           color: Colors.white54,
-                                                          fontSize:
-                                                              11, // Reducido de 12 a 11
+                                                          fontSize: 10,
                                                         ),
                                                       ),
                                                     ],
@@ -678,8 +654,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                         );
                                       },
                                       child: Container(
-                                        padding: EdgeInsets.all(
-                                            16), // Reducido de 20 a 16
+                                        padding: EdgeInsets.all(12),
                                         decoration: BoxDecoration(
                                           color: Colors.white.withOpacity(0.05),
                                           borderRadius:
@@ -697,11 +672,8 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                                 Icon(Icons.edit_note,
                                                     color: AppColors
                                                         .lightBlueColor,
-                                                    size:
-                                                        20), // Reducido de 24 a 20
-                                                SizedBox(
-                                                    width:
-                                                        8), // Reducido de 12 a 8
+                                                    size: 18),
+                                                SizedBox(width: 6),
                                                 Expanded(
                                                   child: Text(
                                                     '✍️ Cuéntale al tutor',
@@ -709,8 +681,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                                         .heading2
                                                         .copyWith(
                                                             color: Colors.white,
-                                                            fontSize:
-                                                                15, // Reducido de 16 a 15
+                                                            fontSize: 14,
                                                             fontWeight:
                                                                 FontWeight
                                                                     .bold),
@@ -718,42 +689,33 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                                 ),
                                               ],
                                             ),
-                                            SizedBox(
-                                                height:
-                                                    8), // Reducido de 12 a 8
+                                            SizedBox(height: 6),
                                             Text(
                                               'Describe qué necesitas ayuda:\n'
                                               '• ¿Qué tema quieres repasar?\n'
                                               '• ¿Qué esperas de esta sesión?',
                                               style: TextStyle(
                                                 color: Colors.white70,
-                                                fontSize:
-                                                    13, // Reducido de 14 a 13
-                                                height:
-                                                    1.3, // Reducido de 1.4 a 1.3
+                                                fontSize: 12,
+                                                height: 1.2,
                                               ),
                                             ),
-                                            SizedBox(
-                                                height:
-                                                    16), // Reducido de 20 a 16
+                                            SizedBox(height: 12),
 
                                             // Campo de texto para notas
                                             TextField(
-                                              maxLines: 6, // Reducido de 8 a 6
+                                              maxLines: 4,
                                               style: TextStyle(
                                                   color: Colors.white,
-                                                  fontSize:
-                                                      13), // Reducido de 14 a 13
+                                                  fontSize: 12),
                                               decoration: InputDecoration(
                                                 hintText:
                                                     'Ej: "Necesito repasar las leyes de Newton, especialmente la tercera ley..."',
                                                 hintStyle: TextStyle(
                                                   color: Colors.white
                                                       .withOpacity(0.5),
-                                                  fontSize:
-                                                      13, // Reducido de 14 a 13
-                                                  height:
-                                                      1.3, // Reducido de 1.4 a 1.3
+                                                  fontSize: 12,
+                                                  height: 1.2,
                                                 ),
                                                 filled: true,
                                                 fillColor: Colors.white
@@ -765,9 +727,8 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                                 ),
                                                 contentPadding:
                                                     EdgeInsets.symmetric(
-                                                        horizontal: 16,
-                                                        vertical:
-                                                            12), // Reducido de 16 a 12
+                                                        horizontal: 12,
+                                                        vertical: 8),
                                               ),
                                             ),
                                           ],

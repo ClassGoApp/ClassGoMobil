@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
+import 'package:flutter_projects/view/home/home_screen.dart';
 import 'package:flutter_projects/provider/connectivity_provider.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/auth/login_screen.dart';
@@ -375,7 +376,10 @@ class _TutorDetailScreenState extends State<TutorDetailScreen> {
                       icon: Icon(Icons.arrow_back_ios,
                           color: AppColors.whiteColor, size: 20),
                       onPressed: () {
-                        Navigator.of(context).pop();
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(builder: (context) => HomeScreen()),
+                          (route) => false,
+                        );
                       },
                     ),
                   ),

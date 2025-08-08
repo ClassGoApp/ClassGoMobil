@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
+import 'package:flutter_projects/view/home/home_screen.dart';
 import 'package:flutter_projects/provider/connectivity_provider.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/bookSession/skeleton/book_session_screen_skeleton.dart';
@@ -66,8 +67,28 @@ class _BookSessionScreenState extends State<BookSessionScreen> {
         isLoading = true;
       });
 
+      // DEBUG: parámetros de entrada
+      print(
+          '[BookSessionScreen] DEBUG _fetchTutorAvailableSlots tutorId=$tutorId tokenIsNull=${token == null}');
+
       final response = await getTutorAvailableSlots(token!, tutorId.toString());
-      print(response);
+
+      // DEBUG: estructura de la respuesta
+      print('[BookSessionScreen] DEBUG response type=${response.runtimeType}');
+      final Map<String, dynamic> responseMap = response;
+      print(
+          '[BookSessionScreen] DEBUG response keys=${responseMap.keys.toList()}');
+      if (responseMap.containsKey('data')) {
+        final data = responseMap['data'];
+        print(
+            '[BookSessionScreen] DEBUG response["data"] type=${data.runtimeType}');
+        if (data is Map) {
+          print(
+              '[BookSessionScreen] DEBUG data keys(sample)=${data.keys.take(3).toList()}');
+        } else if (data is List) {
+          print('[BookSessionScreen] DEBUG data length=${data.length}');
+        }
+      }
 
       DateTime startDate = DateTime.now();
       DateTime endDate = startDate.add(Duration(days: 10));
@@ -75,11 +96,49 @@ class _BookSessionScreenState extends State<BookSessionScreen> {
 
       Map<String, dynamic> formattedSessionData = {};
 
-      response.forEach((groupName, subjects) {
-        subjects.forEach((subjectName, subjectData) {
-          List<dynamic> slots = subjectData["slots"];
+      // Intentar usar response['data'] si existe, sino el response directamente
+      final dynamic source =
+          responseMap.containsKey('data') ? responseMap['data'] : responseMap;
 
-          for (var slot in slots) {
+      if (source is Map) {
+        source.forEach((groupName, subjects) {
+          if (subjects is Map) {
+            subjects.forEach((subjectName, subjectData) {
+              final List<dynamic> slots = subjectData["slots"] ?? [];
+
+              for (var slot in slots) {
+                DateTime slotDate = DateTime.parse(slot["start_time"].trim());
+                String formattedDate =
+                    DateFormat('dd MMM yyyy').format(slotDate);
+
+                if (!formattedSessionData.containsKey(formattedDate)) {
+                  formattedSessionData[formattedDate] = [];
+                }
+
+                formattedSessionData[formattedDate].add({
+                  "id": slot["id"],
+                  "start_time": slot["start_time"].trim(),
+                  "end_time": slot["end_time"],
+                  "spaces": slot["spaces"],
+                  "session_fee": slot["session_fee"],
+                  "total_booked": slot["total_booked"],
+                  "description": slot["description"] ?? "Sin descripción",
+                  "students": slot["students"],
+                  "formatted_time_range":
+                      "${DateFormat('hh:mm a').format(DateTime.parse(slot["start_time"].trim()))} - ${DateFormat('hh:mm a').format(DateTime.parse(slot["end_time"].trim()))}",
+                  "subject": subjectData["info"]?["subject"],
+                  "group": groupName,
+                });
+              }
+            });
+          }
+        });
+      } else if (source is List) {
+        // Si la API devuelve una lista plana de slots
+        print(
+            '[BookSessionScreen] DEBUG source is List (slots length=${source.length})');
+        for (final slot in source) {
+          try {
             DateTime slotDate = DateTime.parse(slot["start_time"].trim());
             String formattedDate = DateFormat('dd MMM yyyy').format(slotDate);
 
@@ -87,7 +146,6 @@ class _BookSessionScreenState extends State<BookSessionScreen> {
               formattedSessionData[formattedDate] = [];
             }
 
-            // Extraer datos correctamente
             formattedSessionData[formattedDate].add({
               "id": slot["id"],
               "start_time": slot["start_time"].trim(),
@@ -98,13 +156,18 @@ class _BookSessionScreenState extends State<BookSessionScreen> {
               "description": slot["description"] ?? "Sin descripción",
               "students": slot["students"],
               "formatted_time_range":
-              "${DateFormat('hh:mm a').format(DateTime.parse(slot["start_time"].trim()))} - ${DateFormat('hh:mm a').format(DateTime.parse(slot["end_time"].trim()))}",
-              "subject": subjectData["info"]["subject"],
-              "group": groupName,
+                  "${DateFormat('hh:mm a').format(DateTime.parse(slot["start_time"].trim()))} - ${DateFormat('hh:mm a').format(DateTime.parse(slot["end_time"].trim()))}",
+              "subject": slot["subject"],
+              "group": slot["group"],
             });
+          } catch (e) {
+            print('[BookSessionScreen] DEBUG error parsing slot item: $e');
           }
-        });
-      });
+        }
+      } else {
+        print(
+            '[BookSessionScreen] WARN unexpected source data type: ${source.runtimeType}');
+      }
 
       setState(() {
         sessionData = formattedSessionData;
@@ -138,23 +201,21 @@ class _BookSessionScreenState extends State<BookSessionScreen> {
     }
   }
 
-
   Future<void> _fetchSessionsForSelectedDate(DateTime date) async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final token = authProvider.token;
+    // No usamos token aquí porque no hacemos refetch; mantenemos datos en memoria
 
     try {
       setState(() {
         isLoading = true;
       });
-
-      final response = await getTutorAvailableSlots(
-          token!, widget.tutor['id'].toString());
-
-      setState(() {
-        sessionData = response['data'];
-      });
+      print(
+          '[BookSessionScreen] DEBUG _fetchSessionsForSelectedDate date=$date selectedIndex=$selectedIndex');
+      // Nota: ya tenemos los datos en sessionData; si se requiere refetch por fecha, descomentar:
+      // final response = await getTutorAvailableSlots(token!, widget.tutor['id'].toString());
+      // print('[BookSessionScreen] DEBUG refetch response keys=${response is Map ? response.keys.toList() : response.runtimeType}');
+      // Mantener sessionData como está, solo actualizar UI
     } catch (e) {
+      print('[BookSessionScreen] ERROR _fetchSessionsForSelectedDate: $e');
     } finally {
       setState(() {
         isLoading = false;
@@ -235,7 +296,11 @@ class _BookSessionScreenState extends State<BookSessionScreen> {
                         icon: Icon(Icons.arrow_back_ios,
                             size: 20, color: Colors.white),
                         onPressed: () {
-                          Navigator.of(context).pop();
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(
+                                builder: (context) => HomeScreen()),
+                            (route) => false,
+                          );
                         },
                       ),
                     ),
@@ -321,7 +386,9 @@ class _BookSessionScreenState extends State<BookSessionScreen> {
                   const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
               child: Container(
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.navbar.withOpacity(0.8) : AppColors.primaryGreen,
+                  color: isSelected
+                      ? AppColors.navbar.withOpacity(0.8)
+                      : AppColors.primaryGreen,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 padding: EdgeInsets.symmetric(horizontal: 15, vertical: 4),
@@ -375,10 +442,15 @@ class _BookSessionScreenState extends State<BookSessionScreen> {
     }
 
     // Formatear la fecha seleccionada para acceder a los datos
-    String selectedDate = DateFormat('dd MMM yyyy').format(dateList[selectedIndex]);
+    String selectedDate =
+        DateFormat('dd MMM yyyy').format(dateList[selectedIndex]);
+
+    print(
+        '[BookSessionScreen] DEBUG selectedDate=$selectedDate hasData=${sessionData.containsKey(selectedDate)} totalDates=${sessionData.keys.length}');
 
     if (sessionData.containsKey(selectedDate)) {
       List<dynamic> sessions = sessionData[selectedDate];
+      print('[BookSessionScreen] DEBUG sessionsCount=${sessions.length}');
 
       if (sessions.isEmpty) {
         return Center(
@@ -442,5 +514,4 @@ class _BookSessionScreenState extends State<BookSessionScreen> {
       );
     }
   }
-
 }

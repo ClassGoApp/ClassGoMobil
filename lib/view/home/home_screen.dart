@@ -48,6 +48,9 @@ import '../../provider/auth_provider.dart';
 import 'dart:async';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:flutter/widgets.dart';
+import 'package:vibration/vibration.dart';
+import 'package:flutter/services.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 // 1. Agrega RouteObserver para detectar cuando se vuelve a la pantalla principal
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
@@ -124,6 +127,118 @@ class _HomeScreenState extends State<HomeScreen>
   final Map<int, Map<String, dynamic>> _slotDataCache = {};
   final Map<int, String?> _tutorImageCache = {};
 
+  // Control para evitar doble reproducción de sonido
+  static DateTime? _lastSoundPlayed;
+  static String? _lastSoundStatus;
+
+  // Función para reproducir sonido de cambio de estado
+  static Future<void> _playStatusChangeSound([String? status]) async {
+    try {
+      final now = DateTime.now();
+
+      // Evitar doble reproducción: solo reproducir si han pasado más de 2 segundos
+      // o si es un estado diferente al último reproducido
+      if (_lastSoundPlayed != null &&
+          now.difference(_lastSoundPlayed!).inSeconds < 2 &&
+          _lastSoundStatus == status) {
+        print('🔇 Evitando doble reproducción de sonido');
+        return;
+      }
+
+      print('🔊 Reproduciendo sonido de cambio de estado...');
+      final audioPlayer = AudioPlayer();
+      await audioPlayer.play(AssetSource('sounds/cambioEstado.mp3'));
+
+      // Actualizar control de tiempo y estado
+      _lastSoundPlayed = now;
+      _lastSoundStatus = status;
+
+      print('✅ Sonido reproducido exitosamente');
+    } catch (e) {
+      print('❌ Error reproduciendo sonido: $e');
+    }
+  }
+
+  // Función para vibrar según el estado de la tutoría
+  Future<void> _vibrateForStatus(String status) async {
+    try {
+      final hasVibrator = await Vibration.hasVibrator();
+
+      if (hasVibrator ?? false) {
+        switch (status.toLowerCase()) {
+          case 'aceptada':
+          case 'aceptado':
+            // Vibración larga para aceptación
+            await Vibration.vibrate(duration: 800);
+            break;
+          case 'rechazada':
+          case 'rechazado':
+            // Vibración corta para rechazo
+            await Vibration.vibrate(duration: 300);
+            break;
+          case 'cursando':
+            // Patrón especial para inicio de tutoría
+            await Vibration.vibrate(pattern: [0, 400, 100, 400, 100, 400]);
+            break;
+          case 'pendiente':
+            // Vibración suave para actualización
+            await Vibration.vibrate(duration: 200);
+            break;
+          default:
+            // Vibración por defecto
+            await Vibration.vibrate(duration: 500);
+        }
+      }
+    } catch (e) {
+      print('Error al vibrar: $e');
+    }
+  }
+
+  // Función para refrescar los datos de un booking específico
+  Future<void> _refreshBookingData(int bookingId) async {
+    try {
+      print('🔄 Refrescando datos del booking ID: $bookingId');
+
+      // Obtener los datos actualizados del servidor
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final token = authProvider.token;
+      final userId = authProvider.userId;
+
+      if (token != null && userId != null) {
+        final bookings = await getUserBookingsById(token, userId);
+
+        // Encontrar el booking actualizado
+        final updatedBooking = bookings.firstWhere(
+          (booking) => booking['id'] == bookingId,
+          orElse: () => <String, dynamic>{},
+        );
+
+        if (updatedBooking.isNotEmpty) {
+          print(
+              '🔄 Booking actualizado encontrado: ${updatedBooking['meeting_link']}');
+
+          // Actualizar la lista local con los datos frescos
+          setState(() {
+            _todaysBookings = _todaysBookings.map((booking) {
+              if (booking['id'] == bookingId) {
+                print('🔄 Actualizando booking con datos frescos del servidor');
+                return updatedBooking;
+              }
+              return booking;
+            }).toList();
+            _bookingUpdateTimestamp = DateTime.now().millisecondsSinceEpoch;
+          });
+
+          print('✅ Booking actualizado exitosamente con datos frescos');
+        } else {
+          print('❌ No se encontró el booking actualizado en el servidor');
+        }
+      }
+    } catch (e) {
+      print('❌ Error refrescando datos del booking: $e');
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -134,6 +249,7 @@ class _HomeScreenState extends State<HomeScreen>
     fetchAlliancesData();
     fetchInitialSubjects();
     fetchHighResTutorImages();
+
     // _initPusherService(); // Elimino inicialización local
   }
 
@@ -195,23 +311,35 @@ class _HomeScreenState extends State<HomeScreen>
             print(
                 '🔄 Actualizando tutoría ID: $slotBookingId al estado: $newStatus');
 
-            // Actualizar el estado de la tutoría en la lista local
-            setState(() {
-              _todaysBookings = _todaysBookings.map((booking) {
-                if (booking['id'] == slotBookingId) {
-                  print(
-                      '🔄 Actualizando booking ID: ${booking['id']} de estado: ${booking['status']} a: $newStatus');
-                  return {...booking, 'status': newStatus};
-                }
-                return booking;
-              }).toList();
-              _bookingUpdateTimestamp = DateTime.now()
-                  .millisecondsSinceEpoch; // Forzar reconstrucción
+            // Reproducir sonido y hacer vibrar según el nuevo estado
+            _HomeScreenState._playStatusChangeSound(newStatus);
+            _vibrateForStatus(newStatus ?? '');
+
+            // Si el estado cambia a cursando, necesitamos actualizar los datos completos
+            if (newStatus == '6' || newStatus == 'cursando') {
               print(
-                  '✅ Tutoría actualizada en la lista local (nueva referencia)');
-              print(
-                  '📊 Lista actualizada: ${_todaysBookings.map((b) => 'ID:${b['id']}-Status:${b['status']}').join(', ')}');
-            });
+                  '🔄 Estado cambió a cursando, actualizando datos completos...');
+              // Refrescar los datos desde el servidor para obtener el meeting_link actualizado
+              _refreshBookingData(slotBookingId!);
+            } else {
+              // Para otros estados, solo actualizar el status
+              setState(() {
+                _todaysBookings = _todaysBookings.map((booking) {
+                  if (booking['id'] == slotBookingId) {
+                    print(
+                        '🔄 Actualizando booking ID: ${booking['id']} de estado: ${booking['status']} a: $newStatus');
+                    return {...booking, 'status': newStatus};
+                  }
+                  return booking;
+                }).toList();
+                _bookingUpdateTimestamp = DateTime.now()
+                    .millisecondsSinceEpoch; // Forzar reconstrucción
+                print(
+                    '✅ Tutoría actualizada en la lista local (nueva referencia)');
+                print(
+                    '📊 Lista actualizada: ${_todaysBookings.map((b) => 'ID:${b['id']}-Status:${b['status']}').join(', ')}');
+              });
+            }
 
             // La actualización local es suficiente, no necesitamos refrescar desde el servidor
             // ya que el evento del canal nos da la información actualizada
@@ -410,706 +538,699 @@ class _HomeScreenState extends State<HomeScreen>
                               color: Colors.white.withOpacity(0.12),
                               borderRadius: BorderRadius.circular(16),
                             ),
-                            child: Row(
+                            child: Stack(
                               children: [
-                                Icon(Icons.search,
-                                    color: Colors.white, size: 28),
-                                SizedBox(width: 12),
-                                Text(
-                                  '¿Qué materia necesitas?',
-                                  style: TextStyle(
-                                      color: Colors.white.withOpacity(0.8),
-                                      fontSize: 18),
+                                Row(
+                                  children: [
+                                    SizedBox(
+                                        width:
+                                            40), // Espacio para la imagen más grande
+                                    Text(
+                                      '¿Qué materia necesitas?',
+                                      style: TextStyle(
+                                          color: Colors.white.withOpacity(0.8),
+                                          fontSize: 18),
+                                    ),
+                                    Spacer(),
+                                    Icon(Icons.arrow_forward_ios,
+                                        color: Colors.white, size: 16),
+                                  ],
                                 ),
-                                Spacer(),
-                                Icon(Icons.arrow_forward_ios,
-                                    color: Colors.white, size: 16),
+                                Positioned(
+                                  left: 0,
+                                  top: -6, // Ajustar posición vertical
+                                  child: Image.asset(
+                                    'assets/images/cara.png',
+                                    width: 40,
+                                    height: 40,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
                         ),
                         SizedBox(height: 24),
                         // Menú de opciones estilo Yango
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Builder(
-                              builder: (mainContext) => _buildMenuOption(
-                                context,
-                                icon: Icons.flash_on,
-                                label: 'Tutor\nal Instante',
-                                onTap: () async {
-                                  if (!AuthHelper.requireAuth(mainContext,
-                                      customTitle: 'Acceso a Tutor al Instante',
-                                      customMessage:
-                                          'Para acceder a tutorías instantáneas, necesitas iniciar sesión en tu cuenta.'))
-                                    return;
-                                  // Espera a que se precarguen las materias si aún no están listas
-                                  if (_subjects.isEmpty && _isLoadingSubjects) {
-                                    await Future.doWhile(() async {
-                                      await Future.delayed(
-                                          Duration(milliseconds: 100));
-                                      return _isLoadingSubjects;
-                                    });
-                                  }
-                                  await showModalBottomSheet(
-                                    context: mainContext,
-                                    isScrollControlled: true,
-                                    backgroundColor: Colors.transparent,
-                                    builder: (context) {
-                                      final TextEditingController
-                                          searchController =
-                                          TextEditingController();
-                                      String search = '';
-                                      // Inicializar con las materias precargadas
-                                      List<dynamic> filteredSubjects =
-                                          List<dynamic>.from(_subjects);
-                                      bool isSearchingAPI = false;
-                                      return StatefulBuilder(
-                                        builder: (context, setModalState) {
-                                          // Filtrar materias localmente primero
-                                          List<dynamic> displaySubjects =
-                                              filteredSubjects
-                                                  .where((s) => (s['name'] ??
-                                                          '')
-                                                      .toLowerCase()
-                                                      .contains(
-                                                          search.toLowerCase()))
-                                                  .toList();
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Builder(
+                                builder: (mainContext) => _buildMenuOption(
+                                  context,
+                                  icon: Icons.flash_on,
+                                  label: 'Tutor\nal Instante',
+                                  imageAsset: 'assets/images/aguilaTI.png',
+                                  onTap: () async {
+                                    if (!AuthHelper.requireAuth(mainContext,
+                                        customTitle:
+                                            'Acceso a Tutor al Instante',
+                                        customMessage:
+                                            'Para acceder a tutorías instantáneas, necesitas iniciar sesión en tu cuenta.'))
+                                      return;
+                                    // Espera a que se precarguen las materias si aún no están listas
+                                    if (_subjects.isEmpty &&
+                                        _isLoadingSubjects) {
+                                      await Future.doWhile(() async {
+                                        await Future.delayed(
+                                            Duration(milliseconds: 100));
+                                        return _isLoadingSubjects;
+                                      });
+                                    }
+                                    await showModalBottomSheet(
+                                      context: mainContext,
+                                      isScrollControlled: true,
+                                      backgroundColor: Colors.transparent,
+                                      builder: (context) {
+                                        final TextEditingController
+                                            searchController =
+                                            TextEditingController();
+                                        String search = '';
+                                        // Inicializar con las materias precargadas
+                                        List<dynamic> filteredSubjects =
+                                            List<dynamic>.from(_subjects);
+                                        bool isSearchingAPI = false;
+                                        return StatefulBuilder(
+                                          builder: (context, setModalState) {
+                                            // Filtrar materias localmente primero
+                                            List<dynamic> displaySubjects =
+                                                filteredSubjects
+                                                    .where((s) =>
+                                                        (s['name'] ?? '')
+                                                            .toLowerCase()
+                                                            .contains(search
+                                                                .toLowerCase()))
+                                                    .toList();
 
-                                          return SafeArea(
-                                            child: Container(
-                                              constraints: BoxConstraints(
-                                                maxHeight:
-                                                    MediaQuery.of(context)
-                                                            .size
-                                                            .height *
-                                                        0.85,
-                                                minHeight:
-                                                    MediaQuery.of(context)
-                                                            .size
-                                                            .height *
-                                                        0.5,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: AppColors.darkBlue,
-                                                borderRadius: BorderRadius.only(
-                                                  topLeft: Radius.circular(24),
-                                                  topRight: Radius.circular(24),
+                                            return SafeArea(
+                                              child: Container(
+                                                constraints: BoxConstraints(
+                                                  maxHeight:
+                                                      MediaQuery.of(context)
+                                                              .size
+                                                              .height *
+                                                          0.85,
+                                                  minHeight:
+                                                      MediaQuery.of(context)
+                                                              .size
+                                                              .height *
+                                                          0.5,
                                                 ),
-                                              ),
-                                              child: Column(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  if (search.trim().isEmpty)
-                                                    Padding(
-                                                      padding:
-                                                          const EdgeInsets.only(
-                                                              top: 18,
-                                                              left: 12,
-                                                              right: 12,
-                                                              bottom: 8),
-                                                      child: Container(
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          color: AppColors
-                                                              .lightBlueColor
-                                                              .withOpacity(
-                                                                  0.18),
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(18),
-                                                          border: Border.all(
-                                                              color: AppColors
-                                                                  .lightBlueColor,
-                                                              width: 1.2),
-                                                          boxShadow: [
-                                                            BoxShadow(
-                                                              color: AppColors
-                                                                  .lightBlueColor
-                                                                  .withOpacity(
-                                                                      0.10),
-                                                              blurRadius: 12,
-                                                              offset:
-                                                                  Offset(0, 4),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                        padding: EdgeInsets
-                                                            .symmetric(
-                                                                horizontal: 16,
-                                                                vertical: 14),
-                                                        child: Row(
-                                                          children: [
-                                                            Container(
-                                                              decoration:
-                                                                  BoxDecoration(
+                                                decoration: BoxDecoration(
+                                                  color: AppColors.darkBlue,
+                                                  borderRadius:
+                                                      BorderRadius.only(
+                                                    topLeft:
+                                                        Radius.circular(24),
+                                                    topRight:
+                                                        Radius.circular(24),
+                                                  ),
+                                                ),
+                                                child: Column(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    if (search.trim().isEmpty)
+                                                      Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .only(
+                                                                top: 18,
+                                                                left: 12,
+                                                                right: 12,
+                                                                bottom: 8),
+                                                        child: Container(
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            color: AppColors
+                                                                .lightBlueColor
+                                                                .withOpacity(
+                                                                    0.18),
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        18),
+                                                            border: Border.all(
                                                                 color: AppColors
                                                                     .lightBlueColor,
-                                                                shape: BoxShape
-                                                                    .circle,
+                                                                width: 1.2),
+                                                            boxShadow: [
+                                                              BoxShadow(
+                                                                color: AppColors
+                                                                    .lightBlueColor
+                                                                    .withOpacity(
+                                                                        0.10),
+                                                                blurRadius: 12,
+                                                                offset: Offset(
+                                                                    0, 4),
                                                               ),
-                                                              padding:
-                                                                  EdgeInsets
-                                                                      .all(10),
-                                                              child: Icon(
-                                                                  Icons
-                                                                      .flash_on,
-                                                                  color: Colors
-                                                                      .white,
-                                                                  size: 28),
-                                                            ),
-                                                            SizedBox(width: 14),
-                                                            Expanded(
-                                                              child: Column(
-                                                                crossAxisAlignment:
-                                                                    CrossAxisAlignment
-                                                                        .start,
-                                                                children: [
-                                                                  Text(
-                                                                    '¡Tutor al Instante!',
-                                                                    style:
-                                                                        TextStyle(
-                                                                      color: Colors
-                                                                          .white,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .bold,
-                                                                      fontSize:
-                                                                          16,
+                                                            ],
+                                                          ),
+                                                          padding: EdgeInsets
+                                                              .symmetric(
+                                                                  horizontal:
+                                                                      16,
+                                                                  vertical: 14),
+                                                          child: Row(
+                                                            children: [
+                                                              Container(
+                                                                decoration:
+                                                                    BoxDecoration(
+                                                                  color: AppColors
+                                                                      .lightBlueColor,
+                                                                  shape: BoxShape
+                                                                      .circle,
+                                                                ),
+                                                                padding:
+                                                                    EdgeInsets
+                                                                        .all(
+                                                                            10),
+                                                                child: Icon(
+                                                                    Icons
+                                                                        .flash_on,
+                                                                    color: Colors
+                                                                        .white,
+                                                                    size: 28),
+                                                              ),
+                                                              SizedBox(
+                                                                  width: 14),
+                                                              Expanded(
+                                                                child: Column(
+                                                                  crossAxisAlignment:
+                                                                      CrossAxisAlignment
+                                                                          .start,
+                                                                  children: [
+                                                                    Text(
+                                                                      '¡Tutor al Instante!',
+                                                                      style:
+                                                                          TextStyle(
+                                                                        color: Colors
+                                                                            .white,
+                                                                        fontWeight:
+                                                                            FontWeight.bold,
+                                                                        fontSize:
+                                                                            16,
+                                                                      ),
                                                                     ),
-                                                                  ),
-                                                                  SizedBox(
-                                                                      height:
-                                                                          4),
-                                                                  Text(
-                                                                    'Elige una materia y conecta al momento con un tutor disponible.',
-                                                                    style:
-                                                                        TextStyle(
+                                                                    SizedBox(
+                                                                        height:
+                                                                            4),
+                                                                    Text(
+                                                                      'Elige una materia y conecta al momento con un tutor disponible.',
+                                                                      style:
+                                                                          TextStyle(
+                                                                        color: Colors
+                                                                            .white
+                                                                            .withOpacity(0.85),
+                                                                        fontSize:
+                                                                            13,
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    Padding(
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              16.0),
+                                                      child: TextField(
+                                                        controller:
+                                                            searchController,
+                                                        autofocus: true,
+                                                        decoration:
+                                                            InputDecoration(
+                                                          hintText:
+                                                              'Busca tu materia...',
+                                                          hintStyle: TextStyle(
+                                                              color: Colors
+                                                                  .white
+                                                                  .withOpacity(
+                                                                      0.6)),
+                                                          prefixIcon:
+                                                              Image.asset(
+                                                            'assets/images/cara.png',
+                                                            width: 28,
+                                                            height: 28,
+                                                          ),
+                                                          filled: true,
+                                                          fillColor: Colors
+                                                              .white
+                                                              .withOpacity(0.1),
+                                                          contentPadding:
+                                                              EdgeInsets
+                                                                  .symmetric(
+                                                                      vertical:
+                                                                          14),
+                                                          border:
+                                                              OutlineInputBorder(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        30),
+                                                            borderSide:
+                                                                BorderSide.none,
+                                                          ),
+                                                        ),
+                                                        style: TextStyle(
+                                                            color:
+                                                                Colors.white),
+                                                        onChanged: (value) {
+                                                          if (_debounce
+                                                                  ?.isActive ??
+                                                              false)
+                                                            _debounce!.cancel();
+                                                          _debounce = Timer(
+                                                              const Duration(
+                                                                  milliseconds:
+                                                                      300),
+                                                              () async {
+                                                            setModalState(() {
+                                                              search = value;
+                                                            });
+
+                                                            // Si la búsqueda está vacía, mostrar materias precargadas
+                                                            if (value
+                                                                .trim()
+                                                                .isEmpty) {
+                                                              setModalState(() {
+                                                                filteredSubjects =
+                                                                    List<dynamic>.from(
+                                                                        _subjects);
+                                                                isSearchingAPI =
+                                                                    false;
+                                                              });
+                                                              return;
+                                                            }
+
+                                                            // Primero filtrar localmente
+                                                            List<dynamic> localResults = _subjects
+                                                                .where((s) => (s[
+                                                                            'name'] ??
+                                                                        '')
+                                                                    .toLowerCase()
+                                                                    .contains(value
+                                                                        .toLowerCase()))
+                                                                .toList();
+
+                                                            // Si hay suficientes resultados locales, usarlos
+                                                            if (localResults
+                                                                    .length >=
+                                                                3) {
+                                                              setModalState(() {
+                                                                filteredSubjects =
+                                                                    localResults;
+                                                                isSearchingAPI =
+                                                                    false;
+                                                              });
+                                                            } else {
+                                                              // Si no hay suficientes resultados, buscar en API
+                                                              setModalState(() {
+                                                                isSearchingAPI =
+                                                                    true;
+                                                              });
+                                                              try {
+                                                                final response =
+                                                                    await getAllSubjects(
+                                                                  null,
+                                                                  page: 1,
+                                                                  perPage: 100,
+                                                                  keyword:
+                                                                      value,
+                                                                );
+                                                                List<dynamic>
+                                                                    newSubjects =
+                                                                    [];
+                                                                if (response !=
+                                                                        null &&
+                                                                    response.containsKey(
+                                                                        'data')) {
+                                                                  final responseData =
+                                                                      response[
+                                                                          'data'];
+                                                                  if (responseData is Map<
+                                                                          String,
+                                                                          dynamic> &&
+                                                                      responseData
+                                                                          .containsKey(
+                                                                              'data')) {
+                                                                    newSubjects =
+                                                                        responseData[
+                                                                            'data'];
+                                                                  }
+                                                                }
+                                                                setModalState(
+                                                                    () {
+                                                                  filteredSubjects =
+                                                                      newSubjects;
+                                                                  isSearchingAPI =
+                                                                      false;
+                                                                });
+                                                              } catch (e) {
+                                                                setModalState(
+                                                                    () {
+                                                                  filteredSubjects =
+                                                                      localResults; // Usar resultados locales como fallback
+                                                                  isSearchingAPI =
+                                                                      false;
+                                                                });
+                                                              }
+                                                            }
+                                                          });
+                                                        },
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      child: isSearchingAPI
+                                                          ? Center(
+                                                              child: CircularProgressIndicator(
+                                                                  color: Colors
+                                                                      .white))
+                                                          : displaySubjects
+                                                                  .isEmpty
+                                                              ? Center(
+                                                                  child: Text(
+                                                                      'No se encontraron materias',
+                                                                      style: TextStyle(
+                                                                          color: Colors
+                                                                              .white70)))
+                                                              : ListView
+                                                                  .separated(
+                                                                  itemCount:
+                                                                      displaySubjects
+                                                                          .length,
+                                                                  separatorBuilder: (context, index) => Divider(
                                                                       color: Colors
                                                                           .white
                                                                           .withOpacity(
-                                                                              0.85),
-                                                                      fontSize:
-                                                                          13,
-                                                                    ),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  Padding(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                            16.0),
-                                                    child: TextField(
-                                                      controller:
-                                                          searchController,
-                                                      autofocus: true,
-                                                      decoration:
-                                                          InputDecoration(
-                                                        hintText:
-                                                            'Busca tu materia...',
-                                                        hintStyle: TextStyle(
-                                                            color: Colors.white
-                                                                .withOpacity(
-                                                                    0.6)),
-                                                        prefixIcon: Icon(
-                                                            Icons.search,
-                                                            color: Colors.white
-                                                                .withOpacity(
-                                                                    0.6)),
-                                                        filled: true,
-                                                        fillColor: Colors.white
-                                                            .withOpacity(0.1),
-                                                        contentPadding:
-                                                            EdgeInsets
-                                                                .symmetric(
-                                                                    vertical:
-                                                                        14),
-                                                        border:
-                                                            OutlineInputBorder(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(30),
-                                                          borderSide:
-                                                              BorderSide.none,
-                                                        ),
-                                                      ),
-                                                      style: TextStyle(
-                                                          color: Colors.white),
-                                                      onChanged: (value) {
-                                                        if (_debounce
-                                                                ?.isActive ??
-                                                            false)
-                                                          _debounce!.cancel();
-                                                        _debounce = Timer(
-                                                            const Duration(
-                                                                milliseconds:
-                                                                    300),
-                                                            () async {
-                                                          setModalState(() {
-                                                            search = value;
-                                                          });
-
-                                                          // Si la búsqueda está vacía, mostrar materias precargadas
-                                                          if (value
-                                                              .trim()
-                                                              .isEmpty) {
-                                                            setModalState(() {
-                                                              filteredSubjects =
-                                                                  List<dynamic>.from(
-                                                                      _subjects);
-                                                              isSearchingAPI =
-                                                                  false;
-                                                            });
-                                                            return;
-                                                          }
-
-                                                          // Primero filtrar localmente
-                                                          List<dynamic> localResults = _subjects
-                                                              .where((s) => (s[
-                                                                          'name'] ??
-                                                                      '')
-                                                                  .toLowerCase()
-                                                                  .contains(value
-                                                                      .toLowerCase()))
-                                                              .toList();
-
-                                                          // Si hay suficientes resultados locales, usarlos
-                                                          if (localResults
-                                                                  .length >=
-                                                              3) {
-                                                            setModalState(() {
-                                                              filteredSubjects =
-                                                                  localResults;
-                                                              isSearchingAPI =
-                                                                  false;
-                                                            });
-                                                          } else {
-                                                            // Si no hay suficientes resultados, buscar en API
-                                                            setModalState(() {
-                                                              isSearchingAPI =
-                                                                  true;
-                                                            });
-                                                            try {
-                                                              final response =
-                                                                  await getAllSubjects(
-                                                                null,
-                                                                page: 1,
-                                                                perPage: 100,
-                                                                keyword: value,
-                                                              );
-                                                              List<dynamic>
-                                                                  newSubjects =
-                                                                  [];
-                                                              if (response !=
-                                                                      null &&
-                                                                  response.containsKey(
-                                                                      'data')) {
-                                                                final responseData =
-                                                                    response[
-                                                                        'data'];
-                                                                if (responseData
-                                                                        is Map<
-                                                                            String,
-                                                                            dynamic> &&
-                                                                    responseData
-                                                                        .containsKey(
-                                                                            'data')) {
-                                                                  newSubjects =
-                                                                      responseData[
-                                                                          'data'];
-                                                                }
-                                                              }
-                                                              setModalState(() {
-                                                                filteredSubjects =
-                                                                    newSubjects;
-                                                                isSearchingAPI =
-                                                                    false;
-                                                              });
-                                                            } catch (e) {
-                                                              setModalState(() {
-                                                                filteredSubjects =
-                                                                    localResults; // Usar resultados locales como fallback
-                                                                isSearchingAPI =
-                                                                    false;
-                                                              });
-                                                            }
-                                                          }
-                                                        });
-                                                      },
-                                                    ),
-                                                  ),
-                                                  Expanded(
-                                                    child: isSearchingAPI
-                                                        ? Center(
-                                                            child:
-                                                                CircularProgressIndicator(
-                                                                    color: Colors
-                                                                        .white))
-                                                        : displaySubjects
-                                                                .isEmpty
-                                                            ? Center(
-                                                                child: Text(
-                                                                    'No se encontraron materias',
-                                                                    style: TextStyle(
-                                                                        color: Colors
-                                                                            .white70)))
-                                                            : ListView
-                                                                .separated(
-                                                                itemCount:
-                                                                    displaySubjects
-                                                                        .length,
-                                                                separatorBuilder: (context,
-                                                                        index) =>
-                                                                    Divider(
-                                                                        color: Colors
-                                                                            .white
-                                                                            .withOpacity(
-                                                                                0.1),
-                                                                        height:
-                                                                            1,
-                                                                        indent:
-                                                                            16,
-                                                                        endIndent:
-                                                                            16),
-                                                                itemBuilder:
-                                                                    (context,
-                                                                        index) {
-                                                                  final subject =
-                                                                      displaySubjects[
-                                                                          index];
-                                                                  return ListTile(
-                                                                    title: Text(
-                                                                        subject['name'] ??
-                                                                            'Materia desconocida',
-                                                                        style: TextStyle(
-                                                                            color:
-                                                                                Colors.white)),
-                                                                    onTap:
-                                                                        () async {
-                                                                      Navigator.pop(
-                                                                          context); // Cierra el modal de selección
-                                                                      final subjectName =
+                                                                              0.1),
+                                                                      height: 1,
+                                                                      indent:
+                                                                          16,
+                                                                      endIndent:
+                                                                          16),
+                                                                  itemBuilder:
+                                                                      (context,
+                                                                          index) {
+                                                                    final subject =
+                                                                        displaySubjects[
+                                                                            index];
+                                                                    return ListTile(
+                                                                      title: Text(
                                                                           subject['name'] ??
-                                                                              '';
-                                                                      final subjectId =
-                                                                          subject[
-                                                                              'id'];
-                                                                      print(
-                                                                          'DEBUG: subjectId seleccionado: $subjectId, subjectName: $subjectName');
-                                                                      final authProvider = Provider.of<
-                                                                              AuthProvider>(
-                                                                          mainContext,
-                                                                          listen:
-                                                                              false);
-                                                                      final token =
-                                                                          authProvider
-                                                                              .token;
-                                                                      // Mostrar loader
-                                                                      showDialog(
-                                                                        context:
+                                                                              'Materia desconocida',
+                                                                          style:
+                                                                              TextStyle(color: Colors.white)),
+                                                                      onTap:
+                                                                          () async {
+                                                                        Navigator.pop(
+                                                                            context); // Cierra el modal de selección
+                                                                        final subjectName =
+                                                                            subject['name'] ??
+                                                                                '';
+                                                                        final subjectId =
+                                                                            subject['id'];
+                                                                        print(
+                                                                            'DEBUG: subjectId seleccionado: $subjectId, subjectName: $subjectName');
+                                                                        final authProvider = Provider.of<AuthProvider>(
                                                                             mainContext,
-                                                                        barrierDismissible:
-                                                                            false,
-                                                                        builder:
-                                                                            (context) =>
-                                                                                Center(
-                                                                          child:
-                                                                              Material(
-                                                                            color:
-                                                                                Colors.transparent,
+                                                                            listen:
+                                                                                false);
+                                                                        final token =
+                                                                            authProvider.token;
+                                                                        // Mostrar loader
+                                                                        showDialog(
+                                                                          context:
+                                                                              mainContext,
+                                                                          barrierDismissible:
+                                                                              false,
+                                                                          builder: (context) =>
+                                                                              Center(
                                                                             child:
-                                                                                Container(
-                                                                              width: MediaQuery.of(context).size.width * 0.82,
-                                                                              padding: EdgeInsets.symmetric(horizontal: 28, vertical: 36),
-                                                                              decoration: BoxDecoration(
-                                                                                gradient: LinearGradient(
-                                                                                  colors: [
-                                                                                    AppColors.darkBlue,
-                                                                                    AppColors.blurprimary
-                                                                                  ],
-                                                                                  begin: Alignment.topLeft,
-                                                                                  end: Alignment.bottomRight,
-                                                                                ),
-                                                                                borderRadius: BorderRadius.circular(24),
-                                                                                boxShadow: [
-                                                                                  BoxShadow(
-                                                                                    color: Colors.black.withOpacity(0.18),
-                                                                                    blurRadius: 32,
-                                                                                    offset: Offset(0, 12),
+                                                                                Material(
+                                                                              color: Colors.transparent,
+                                                                              child: Container(
+                                                                                width: MediaQuery.of(context).size.width * 0.82,
+                                                                                padding: EdgeInsets.symmetric(horizontal: 28, vertical: 36),
+                                                                                decoration: BoxDecoration(
+                                                                                  gradient: LinearGradient(
+                                                                                    colors: [
+                                                                                      AppColors.darkBlue,
+                                                                                      AppColors.blurprimary
+                                                                                    ],
+                                                                                    begin: Alignment.topLeft,
+                                                                                    end: Alignment.bottomRight,
                                                                                   ),
-                                                                                ],
-                                                                                border: Border.all(color: Colors.white.withOpacity(0.10)),
+                                                                                  borderRadius: BorderRadius.circular(24),
+                                                                                  boxShadow: [
+                                                                                    BoxShadow(
+                                                                                      color: Colors.black.withOpacity(0.18),
+                                                                                      blurRadius: 32,
+                                                                                      offset: Offset(0, 12),
+                                                                                    ),
+                                                                                  ],
+                                                                                  border: Border.all(color: Colors.white.withOpacity(0.10)),
+                                                                                ),
+                                                                                child: Column(
+                                                                                  mainAxisSize: MainAxisSize.min,
+                                                                                  children: [
+                                                                                    // Icono de búsqueda
+                                                                                    Image.asset(
+                                                                                      'assets/images/busqueda.png',
+                                                                                      width: 80,
+                                                                                      height: 80,
+                                                                                    ),
+                                                                                    SizedBox(height: 24),
+                                                                                    Text(
+                                                                                      'Buscando el mejor tutor para ti',
+                                                                                      style: TextStyle(
+                                                                                        color: Colors.white,
+                                                                                        fontWeight: FontWeight.bold,
+                                                                                        fontSize: 19,
+                                                                                      ),
+                                                                                      textAlign: TextAlign.center,
+                                                                                    ),
+                                                                                    SizedBox(height: 14),
+                                                                                    Text(
+                                                                                      'Estamos conectando con tutores verificados de la materia seleccionada. Esto puede tomar unos segundos.',
+                                                                                      style: TextStyle(
+                                                                                        color: Colors.white.withOpacity(0.85),
+                                                                                        fontSize: 15,
+                                                                                      ),
+                                                                                      textAlign: TextAlign.center,
+                                                                                    ),
+                                                                                    SizedBox(height: 24),
+                                                                                    _AnimatedDots(),
+                                                                                  ],
+                                                                                ),
                                                                               ),
-                                                                              child: Column(
-                                                                                mainAxisSize: MainAxisSize.min,
-                                                                                children: [
-                                                                                  // Icono animado con glow
-                                                                                  Container(
+                                                                            ),
+                                                                          ),
+                                                                          useRootNavigator:
+                                                                              true,
+                                                                        );
+                                                                        try {
+                                                                          print(
+                                                                              'DEBUG: Llamando a getVerifiedTutors con subjectId: $subjectId');
+                                                                          final response =
+                                                                              await getVerifiedTutors(
+                                                                            token,
+                                                                            perPage:
+                                                                                50,
+                                                                            subjectId:
+                                                                                subjectId,
+                                                                          );
+                                                                          print(
+                                                                              'DEBUG: Respuesta de getVerifiedTutors: $response');
+                                                                          List<dynamic>
+                                                                              tutors =
+                                                                              [];
+                                                                          if (response
+                                                                              .containsKey('data')) {
+                                                                            final data =
+                                                                                response['data'];
+                                                                            if (data
+                                                                                is List) {
+                                                                              tutors = data;
+                                                                            } else if (data is Map &&
+                                                                                data.containsKey('data') &&
+                                                                                data['data'] is List) {
+                                                                              tutors = data['data'];
+                                                                            } else if (data is Map && data.containsKey('list') && data['list'] is List) {
+                                                                              tutors = data['list'];
+                                                                            }
+                                                                          }
+                                                                          print(
+                                                                              'DEBUG: Tutores encontrados: ${tutors.length}');
+                                                                          Navigator.of(mainContext, rootNavigator: true)
+                                                                              .pop(); // Cierra el loader
+                                                                          if (tutors
+                                                                              .isNotEmpty) {
+                                                                            final randomTutor =
+                                                                                (tutors..shuffle()).first;
+                                                                            final profile =
+                                                                                randomTutor['profile'] ?? {};
+                                                                            final tutorName =
+                                                                                profile['full_name'] ?? 'Sin nombre';
+                                                                            final tutorImage = highResTutorImages != null && highResTutorImages[randomTutor['id']] != null
+                                                                                ? highResTutorImages[randomTutor['id']]
+                                                                                : profile['image'] ?? '';
+                                                                            final validSubjects =
+                                                                                (randomTutor['subjects'] as List).where((s) => s['status'] == 'active' && s['deleted_at'] == null).map((s) => s['name'].toString()).toList();
+                                                                            showModalBottomSheet(
+                                                                              context: mainContext,
+                                                                              isScrollControlled: true,
+                                                                              backgroundColor: Colors.transparent,
+                                                                              builder: (context) => InstantTutoringScreen(
+                                                                                tutorName: tutorName,
+                                                                                tutorImage: tutorImage,
+                                                                                subjects: validSubjects,
+                                                                                selectedSubject: subjectName, // <-- Pasar la materia seleccionada
+                                                                                tutorId: randomTutor['id'],
+                                                                                subjectId: subjectId,
+                                                                              ),
+                                                                            );
+                                                                          } else {
+                                                                            print('DEBUG: No hay tutores disponibles para esta materia.');
+                                                                            await showDialog(
+                                                                              context: mainContext,
+                                                                              barrierDismissible: true,
+                                                                              builder: (context) => Center(
+                                                                                child: Material(
+                                                                                  color: Colors.transparent,
+                                                                                  child: Container(
+                                                                                    width: MediaQuery.of(context).size.width * 0.85,
+                                                                                    padding: EdgeInsets.symmetric(horizontal: 28, vertical: 32),
                                                                                     decoration: BoxDecoration(
-                                                                                      shape: BoxShape.circle,
+                                                                                      color: AppColors.darkBlue,
+                                                                                      borderRadius: BorderRadius.circular(24),
                                                                                       boxShadow: [
                                                                                         BoxShadow(
-                                                                                          color: AppColors.orangeprimary.withOpacity(0.5),
-                                                                                          blurRadius: 24,
-                                                                                          spreadRadius: 2,
+                                                                                          color: Colors.black.withOpacity(0.18),
+                                                                                          blurRadius: 32,
+                                                                                          offset: Offset(0, 12),
+                                                                                        ),
+                                                                                      ],
+                                                                                      border: Border.all(color: Colors.white.withOpacity(0.08)),
+                                                                                    ),
+                                                                                    child: Column(
+                                                                                      mainAxisSize: MainAxisSize.min,
+                                                                                      children: [
+                                                                                        Icon(Icons.sentiment_dissatisfied_rounded, color: AppColors.orangeprimary, size: 54),
+                                                                                        SizedBox(height: 18),
+                                                                                        Text(
+                                                                                          '¡Ups! No hay tutores disponibles',
+                                                                                          style: TextStyle(
+                                                                                            color: Colors.white,
+                                                                                            fontWeight: FontWeight.bold,
+                                                                                            fontSize: 20,
+                                                                                          ),
+                                                                                          textAlign: TextAlign.center,
+                                                                                        ),
+                                                                                        SizedBox(height: 12),
+                                                                                        Text(
+                                                                                          'Por el momento no hay tutores disponibles para la materia seleccionada. Puedes intentarlo más tarde o elegir otra materia.',
+                                                                                          style: TextStyle(
+                                                                                            color: Colors.white.withOpacity(0.85),
+                                                                                            fontSize: 15,
+                                                                                          ),
+                                                                                          textAlign: TextAlign.center,
+                                                                                        ),
+                                                                                        SizedBox(height: 28),
+                                                                                        SizedBox(
+                                                                                          width: double.infinity,
+                                                                                          child: ElevatedButton.icon(
+                                                                                            onPressed: () => Navigator.of(context).pop(),
+                                                                                            icon: Icon(Icons.close, color: Colors.white),
+                                                                                            label: Text('Cerrar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                                                                            style: ElevatedButton.styleFrom(
+                                                                                              backgroundColor: AppColors.orangeprimary,
+                                                                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                                                                              padding: EdgeInsets.symmetric(vertical: 14),
+                                                                                            ),
+                                                                                          ),
                                                                                         ),
                                                                                       ],
                                                                                     ),
-                                                                                    child: CircleAvatar(
-                                                                                      radius: 32,
-                                                                                      backgroundColor: AppColors.orangeprimary.withOpacity(0.12),
-                                                                                      child: Icon(Icons.flash_on, color: AppColors.orangeprimary, size: 28),
-                                                                                    ),
-                                                                                  ),
-                                                                                  SizedBox(height: 24),
-                                                                                  Text(
-                                                                                    'Buscando el mejor tutor para ti',
-                                                                                    style: TextStyle(
-                                                                                      color: Colors.white,
-                                                                                      fontWeight: FontWeight.bold,
-                                                                                      fontSize: 19,
-                                                                                    ),
-                                                                                    textAlign: TextAlign.center,
-                                                                                  ),
-                                                                                  SizedBox(height: 14),
-                                                                                  Text(
-                                                                                    'Estamos conectando con tutores verificados de la materia seleccionada. Esto puede tomar unos segundos.',
-                                                                                    style: TextStyle(
-                                                                                      color: Colors.white.withOpacity(0.85),
-                                                                                      fontSize: 15,
-                                                                                    ),
-                                                                                    textAlign: TextAlign.center,
-                                                                                  ),
-                                                                                  SizedBox(height: 24),
-                                                                                  _AnimatedDots(),
-                                                                                ],
-                                                                              ),
-                                                                            ),
-                                                                          ),
-                                                                        ),
-                                                                        useRootNavigator:
-                                                                            true,
-                                                                      );
-                                                                      try {
-                                                                        print(
-                                                                            'DEBUG: Llamando a getVerifiedTutors con subjectId: $subjectId');
-                                                                        final response =
-                                                                            await getVerifiedTutors(
-                                                                          token,
-                                                                          perPage:
-                                                                              50,
-                                                                          subjectId:
-                                                                              subjectId,
-                                                                        );
-                                                                        print(
-                                                                            'DEBUG: Respuesta de getVerifiedTutors: $response');
-                                                                        List<dynamic>
-                                                                            tutors =
-                                                                            [];
-                                                                        if (response
-                                                                            .containsKey('data')) {
-                                                                          final data =
-                                                                              response['data'];
-                                                                          if (data
-                                                                              is List) {
-                                                                            tutors =
-                                                                                data;
-                                                                          } else if (data is Map &&
-                                                                              data.containsKey(
-                                                                                  'data') &&
-                                                                              data['data']
-                                                                                  is List) {
-                                                                            tutors =
-                                                                                data['data'];
-                                                                          } else if (data is Map &&
-                                                                              data.containsKey('list') &&
-                                                                              data['list'] is List) {
-                                                                            tutors =
-                                                                                data['list'];
-                                                                          }
-                                                                        }
-                                                                        print(
-                                                                            'DEBUG: Tutores encontrados: ${tutors.length}');
-                                                                        Navigator.of(mainContext,
-                                                                                rootNavigator: true)
-                                                                            .pop(); // Cierra el loader
-                                                                        if (tutors
-                                                                            .isNotEmpty) {
-                                                                          final randomTutor =
-                                                                              (tutors..shuffle()).first;
-                                                                          final profile =
-                                                                              randomTutor['profile'] ?? {};
-                                                                          final tutorName =
-                                                                              profile['full_name'] ?? 'Sin nombre';
-                                                                          final tutorImage = highResTutorImages != null && highResTutorImages[randomTutor['id']] != null
-                                                                              ? highResTutorImages[randomTutor['id']]
-                                                                              : profile['image'] ?? '';
-                                                                          final validSubjects = (randomTutor['subjects'] as List)
-                                                                              .where((s) => s['status'] == 'active' && s['deleted_at'] == null)
-                                                                              .map((s) => s['name'].toString())
-                                                                              .toList();
-                                                                          showModalBottomSheet(
-                                                                            context:
-                                                                                mainContext,
-                                                                            isScrollControlled:
-                                                                                true,
-                                                                            backgroundColor:
-                                                                                Colors.transparent,
-                                                                            builder: (context) =>
-                                                                                InstantTutoringScreen(
-                                                                              tutorName: tutorName,
-                                                                              tutorImage: tutorImage,
-                                                                              subjects: validSubjects,
-                                                                              selectedSubject: subjectName, // <-- Pasar la materia seleccionada
-                                                                              tutorId: randomTutor['id'],
-                                                                              subjectId: subjectId,
-                                                                            ),
-                                                                          );
-                                                                        } else {
-                                                                          print(
-                                                                              'DEBUG: No hay tutores disponibles para esta materia.');
-                                                                          await showDialog(
-                                                                            context:
-                                                                                mainContext,
-                                                                            barrierDismissible:
-                                                                                true,
-                                                                            builder: (context) =>
-                                                                                Center(
-                                                                              child: Material(
-                                                                                color: Colors.transparent,
-                                                                                child: Container(
-                                                                                  width: MediaQuery.of(context).size.width * 0.85,
-                                                                                  padding: EdgeInsets.symmetric(horizontal: 28, vertical: 32),
-                                                                                  decoration: BoxDecoration(
-                                                                                    color: AppColors.darkBlue,
-                                                                                    borderRadius: BorderRadius.circular(24),
-                                                                                    boxShadow: [
-                                                                                      BoxShadow(
-                                                                                        color: Colors.black.withOpacity(0.18),
-                                                                                        blurRadius: 32,
-                                                                                        offset: Offset(0, 12),
-                                                                                      ),
-                                                                                    ],
-                                                                                    border: Border.all(color: Colors.white.withOpacity(0.08)),
-                                                                                  ),
-                                                                                  child: Column(
-                                                                                    mainAxisSize: MainAxisSize.min,
-                                                                                    children: [
-                                                                                      Icon(Icons.sentiment_dissatisfied_rounded, color: AppColors.orangeprimary, size: 54),
-                                                                                      SizedBox(height: 18),
-                                                                                      Text(
-                                                                                        '¡Ups! No hay tutores disponibles',
-                                                                                        style: TextStyle(
-                                                                                          color: Colors.white,
-                                                                                          fontWeight: FontWeight.bold,
-                                                                                          fontSize: 20,
-                                                                                        ),
-                                                                                        textAlign: TextAlign.center,
-                                                                                      ),
-                                                                                      SizedBox(height: 12),
-                                                                                      Text(
-                                                                                        'Por el momento no hay tutores disponibles para la materia seleccionada. Puedes intentarlo más tarde o elegir otra materia.',
-                                                                                        style: TextStyle(
-                                                                                          color: Colors.white.withOpacity(0.85),
-                                                                                          fontSize: 15,
-                                                                                        ),
-                                                                                        textAlign: TextAlign.center,
-                                                                                      ),
-                                                                                      SizedBox(height: 28),
-                                                                                      SizedBox(
-                                                                                        width: double.infinity,
-                                                                                        child: ElevatedButton.icon(
-                                                                                          onPressed: () => Navigator.of(context).pop(),
-                                                                                          icon: Icon(Icons.close, color: Colors.white),
-                                                                                          label: Text('Cerrar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                                                                          style: ElevatedButton.styleFrom(
-                                                                                            backgroundColor: AppColors.orangeprimary,
-                                                                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                                                                            padding: EdgeInsets.symmetric(vertical: 14),
-                                                                                          ),
-                                                                                        ),
-                                                                                      ),
-                                                                                    ],
                                                                                   ),
                                                                                 ),
                                                                               ),
+                                                                            );
+                                                                          }
+                                                                        } catch (e) {
+                                                                          Navigator.of(mainContext, rootNavigator: true)
+                                                                              .pop(); // Cierra el loader
+                                                                          print(
+                                                                              'DEBUG: Error al buscar tutores: $e');
+                                                                          ScaffoldMessenger.of(mainContext)
+                                                                              .showSnackBar(
+                                                                            SnackBar(
+                                                                              content: Text('Error al buscar tutores: $e'),
                                                                             ),
                                                                           );
                                                                         }
-                                                                      } catch (e) {
-                                                                        Navigator.of(mainContext,
-                                                                                rootNavigator: true)
-                                                                            .pop(); // Cierra el loader
-                                                                        print(
-                                                                            'DEBUG: Error al buscar tutores: $e');
-                                                                        ScaffoldMessenger.of(mainContext)
-                                                                            .showSnackBar(
-                                                                          SnackBar(
-                                                                            content:
-                                                                                Text('Error al buscar tutores: $e'),
-                                                                          ),
-                                                                        );
-                                                                      }
-                                                                    },
-                                                                  );
-                                                                },
-                                                              ),
-                                                  ),
-                                                ],
+                                                                      },
+                                                                    );
+                                                                  },
+                                                                ),
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
-                                            ),
-                                          );
-                                        },
-                                      );
-                                    },
+                                            );
+                                          },
+                                        );
+                                      },
+                                    );
+                                  },
+                                ),
+                              ),
+                              _buildMenuOption(
+                                context,
+                                icon: Icons.calendar_today,
+                                label: 'Agendar\nTutoría',
+                                imageAsset: 'assets/images/calendario.png',
+                                onTap: () {
+                                  if (!AuthHelper.requireAuth(context,
+                                      customTitle: 'Acceso a Agendar Tutoría',
+                                      customMessage:
+                                          'Para agendar una tutoría, necesitas iniciar sesión en tu cuenta.'))
+                                    return;
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => SearchTutorsScreen(
+                                          initialMode: 'agendar'),
+                                    ),
                                   );
                                 },
                               ),
-                            ),
-                            _buildMenuOption(
-                              context,
-                              icon: Icons.calendar_today,
-                              label: 'Agendar\nTutoría',
-                              onTap: () {
-                                if (!AuthHelper.requireAuth(context,
-                                    customTitle: 'Acceso a Agendar Tutoría',
-                                    customMessage:
-                                        'Para agendar una tutoría, necesitas iniciar sesión en tu cuenta.'))
-                                  return;
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => SearchTutorsScreen(
-                                        initialMode: 'agendar'),
-                                  ),
-                                );
-                              },
-                            ),
-                            _buildMenuOption(
-                              context,
-                              icon: Icons.explore,
-                              label: 'Explorar\nTutores',
-                              onTap: () {
-                                if (!AuthHelper.requireAuth(context,
-                                    customTitle: 'Acceso a Explorar Tutores',
-                                    customMessage:
-                                        'Para explorar tutores, necesitas iniciar sesión en tu cuenta.'))
-                                  return;
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => SearchTutorsScreen(),
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
+                              _buildMenuOption(
+                                context,
+                                icon: Icons.explore,
+                                label: 'Explorar\nTutores',
+                                imageAsset: 'assets/images/Buscar.png',
+                                onTap: () {
+                                  if (!AuthHelper.requireAuth(context,
+                                      customTitle: 'Acceso a Explorar Tutores',
+                                      customMessage:
+                                          'Para explorar tutores, necesitas iniciar sesión en tu cuenta.'))
+                                    return;
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          SearchTutorsScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -1832,17 +1953,9 @@ class _HomeScreenState extends State<HomeScreen>
                 minHeight: MediaQuery.of(context).size.height * 0.4,
               ),
               decoration: BoxDecoration(
-                color: Color(0xFF0B3C5D),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: AppColors.lightBlueColor, width: 2.0),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
-                    blurRadius: 10,
-                    spreadRadius: 2,
-                    offset: Offset(-5, 0),
-                  ),
-                ],
+                color: AppColors.darkBlue,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.lightBlueColor, width: 1.0),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -1859,81 +1972,69 @@ class _HomeScreenState extends State<HomeScreen>
                           highResTutorImages: highResTutorImages,
                         ),
                         Divider(
-                            color: Colors.white54,
-                            thickness: 0.5), // Add a divider after header
+                            color: Colors.white.withOpacity(0.1),
+                            thickness: 1), // Add a divider after header
                         // Menu Items
-                        ListTile(
-                          leading: Icon(Icons.dashboard, color: Colors.white),
-                          title: Text('Panel',
-                              style: TextStyle(color: Colors.white)),
+                        _buildMenuItem(
+                          icon: Icons.settings,
+                          title: 'Configuración del perfil',
                           onTap: () {
-                            // TODO: Implement navigation to Panel screen
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => SearchTutorsScreen(
+                                    initialMode: 'agendar', initialPage: 3),
+                              ),
+                            );
                             setState(() {
                               _isCustomDrawerOpen = false;
                             });
                           },
                         ),
-                        ListTile(
-                          leading: Icon(Icons.settings, color: Colors.white),
-                          title: Text('Configuración del perfil',
-                              style: TextStyle(color: Colors.white)),
+                        _buildMenuItem(
+                          icon: Icons.calendar_today,
+                          title: 'Mis tutorías',
                           onTap: () {
-                            // TODO: Implement navigation to Profile Settings screen
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => SearchTutorsScreen(
+                                    initialMode: 'agendar', initialPage: 1),
+                              ),
+                            );
                             setState(() {
                               _isCustomDrawerOpen = false;
                             });
                           },
                         ),
-                        ListTile(
-                          leading:
-                              Icon(Icons.calendar_today, color: Colors.white),
-                          title: Text('Mis reservas',
-                              style: TextStyle(color: Colors.white)),
+                        _buildMenuItem(
+                          icon: Icons.history,
+                          title: 'Historial de tutorías',
                           onTap: () {
-                            // TODO: Implement navigation to My Bookings screen
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => SearchTutorsScreen(
+                                    initialMode: 'agendar', initialPage: 2),
+                              ),
+                            );
                             setState(() {
                               _isCustomDrawerOpen = false;
                             });
                           },
                         ),
-                        ListTile(
-                          leading: Icon(Icons.receipt, color: Colors.white),
-                          title: Text('Facturas',
-                              style: TextStyle(color: Colors.white)),
-                          onTap: () {
-                            // TODO: Implement navigation to Invoices screen
-                            setState(() {
-                              _isCustomDrawerOpen = false;
-                            });
-                          },
-                        ),
-                        ListTile(
-                          leading: Icon(Icons.inbox, color: Colors.white),
-                          title: Text('Bandeja de entrada',
-                              style: TextStyle(color: Colors.white)),
-                          onTap: () {
-                            // TODO: Implement navigation to Inbox screen
-                            setState(() {
-                              _isCustomDrawerOpen = false;
-                            });
-                          },
-                        ),
+
                         Divider(
-                            color: Colors.white54,
-                            thickness: 0.5), // Add a divider
-                        ListTile(
-                          leading: Icon(Icons.logout, color: Colors.red),
-                          title: Text('Salir de la cuenta',
-                              style: TextStyle(color: Colors.red)),
+                            color: Colors.white.withOpacity(0.1),
+                            thickness: 1), // Add a divider
+                        _buildMenuItem(
+                          icon: Icons.logout,
+                          title: 'Salir de la cuenta',
                           onTap: () async {
-                            // Make the function async
-                            // TODO: Implement logout functionality
-                            // Call the logout method from AuthProvider
                             await Provider.of<AuthProvider>(context,
                                     listen: false)
                                 .clearToken();
 
-                            // Navigate to the LoginScreen and remove all previous routes
                             Navigator.of(context).pushAndRemoveUntil(
                               MaterialPageRoute(
                                   builder: (context) => LoginScreen()),
@@ -1941,7 +2042,7 @@ class _HomeScreenState extends State<HomeScreen>
                             );
                             setState(() {
                               _isCustomDrawerOpen = false;
-                            }); // Close the drawer
+                            });
                           },
                         ),
                       ],
@@ -2014,24 +2115,17 @@ class _HomeScreenState extends State<HomeScreen>
                       children: [
                         // Menu Items
                         ListTile(
-                          title: Text('Inicio',
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 16)),
-                          onTap: () {
-                            // TODO: Implement navigation for Inicio
-                            setState(() {
-                              _isLeftDrawerOpen = false;
-                            });
-                          },
-                        ),
-                        Divider(
-                            color: Colors.white54, thickness: 0.5), // Divider
-                        ListTile(
                           title: Text('Buscar Tutores',
                               style:
                                   TextStyle(color: Colors.white, fontSize: 16)),
                           onTap: () {
-                            // TODO: Implement navigation for Buscar Tutores
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    SearchTutorsScreen(initialMode: 'agendar'),
+                              ),
+                            );
                             setState(() {
                               _isLeftDrawerOpen = false;
                             });
@@ -2043,8 +2137,11 @@ class _HomeScreenState extends State<HomeScreen>
                           title: Text('Sobre Nosotros',
                               style:
                                   TextStyle(color: Colors.white, fontSize: 16)),
-                          onTap: () {
-                            // TODO: Implement navigation for Sobre Nosotros
+                          onTap: () async {
+                            final url = 'https://www.classgoapp.com/about-us';
+                            if (await canLaunchUrl(Uri.parse(url))) {
+                              await launchUrl(Uri.parse(url));
+                            }
                             setState(() {
                               _isLeftDrawerOpen = false;
                             });
@@ -2056,8 +2153,12 @@ class _HomeScreenState extends State<HomeScreen>
                           title: Text('Como Trabajamos',
                               style:
                                   TextStyle(color: Colors.white, fontSize: 16)),
-                          onTap: () {
-                            // TODO: Implement navigation for Como Trabajamos
+                          onTap: () async {
+                            final url =
+                                'https://www.classgoapp.com/how-it-works';
+                            if (await canLaunchUrl(Uri.parse(url))) {
+                              await launchUrl(Uri.parse(url));
+                            }
                             setState(() {
                               _isLeftDrawerOpen = false;
                             });
@@ -2069,8 +2170,11 @@ class _HomeScreenState extends State<HomeScreen>
                           title: Text('Preguntas',
                               style:
                                   TextStyle(color: Colors.white, fontSize: 16)),
-                          onTap: () {
-                            // TODO: Implement navigation for Preguntas
+                          onTap: () async {
+                            final url = 'https://www.classgoapp.com/faq';
+                            if (await canLaunchUrl(Uri.parse(url))) {
+                              await launchUrl(Uri.parse(url));
+                            }
                             setState(() {
                               _isLeftDrawerOpen = false;
                             });
@@ -2082,8 +2186,11 @@ class _HomeScreenState extends State<HomeScreen>
                           title: Text('Blogs',
                               style:
                                   TextStyle(color: Colors.white, fontSize: 16)),
-                          onTap: () {
-                            // TODO: Implement navigation for Blogs
+                          onTap: () async {
+                            final url = 'https://www.classgoapp.com/blogs';
+                            if (await canLaunchUrl(Uri.parse(url))) {
+                              await launchUrl(Uri.parse(url));
+                            }
                             setState(() {
                               _isLeftDrawerOpen = false;
                             });
@@ -2101,14 +2208,38 @@ class _HomeScreenState extends State<HomeScreen>
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        // TODO: Replace with actual social media icon widgets and onTap functionality
-                        Icon(Icons.tiktok,
-                            color: Colors.white, size: 30), // Placeholder icon
-                        Icon(Icons.facebook,
-                            color: Colors.white, size: 30), // Placeholder icon
-                        Icon(Icons.chat,
-                            color: Colors.white,
-                            size: 30), // Usar icono genérico para Whatsapp
+                        GestureDetector(
+                          onTap: () async {
+                            final url = 'https://www.tiktok.com/@classgoapp';
+                            if (await canLaunchUrl(Uri.parse(url))) {
+                              await launchUrl(Uri.parse(url));
+                            }
+                          },
+                          child: Icon(Icons.music_note,
+                              color: Colors.white, size: 30), // TikTok icon
+                        ),
+                        GestureDetector(
+                          onTap: () async {
+                            final url =
+                                'https://www.facebook.com/profile.php?id=61578383078347&locale=es_LA';
+                            if (await canLaunchUrl(Uri.parse(url))) {
+                              await launchUrl(Uri.parse(url));
+                            }
+                          },
+                          child: Icon(Icons.facebook,
+                              color: Colors.white, size: 30), // Facebook icon
+                        ),
+                        GestureDetector(
+                          onTap: () async {
+                            final url =
+                                'https://www.instagram.com/classgo_app/';
+                            if (await canLaunchUrl(Uri.parse(url))) {
+                              await launchUrl(Uri.parse(url));
+                            }
+                          },
+                          child: Icon(Icons.camera_alt,
+                              color: Colors.white, size: 30), // Instagram icon
+                        ),
                       ],
                     ),
                   ),
@@ -2344,13 +2475,14 @@ class _HomeScreenState extends State<HomeScreen>
   Widget _buildMenuOption(BuildContext context,
       {required IconData icon,
       required String label,
-      required VoidCallback onTap}) {
+      required VoidCallback onTap,
+      String? imageAsset}) {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 6),
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 8),
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.12),
             borderRadius: BorderRadius.circular(16),
@@ -2358,18 +2490,79 @@ class _HomeScreenState extends State<HomeScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: Colors.white, size: 32),
-              SizedBox(height: 8),
+              if (imageAsset != null)
+                Container(
+                  width: 80,
+                  height: 80,
+                  child: Image.asset(
+                    imageAsset,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      print('❌ Error cargando imagen $imageAsset: $error');
+                      return Icon(icon, color: Colors.white, size: 80);
+                    },
+                  ),
+                )
+              else
+                Icon(icon, color: Colors.white, size: 80),
+              SizedBox(height: 6),
               Text(
                 label,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 14,
+                  fontSize: 10,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -2568,8 +2761,11 @@ class _HomeScreenState extends State<HomeScreen>
                                 hintText: 'Busca tu materia...',
                                 hintStyle: TextStyle(
                                     color: Colors.white.withOpacity(0.6)),
-                                prefixIcon: Icon(Icons.search,
-                                    color: Colors.white.withOpacity(0.6)),
+                                prefixIcon: Image.asset(
+                                  'assets/images/cara.png',
+                                  width: 28,
+                                  height: 28,
+                                ),
                                 filled: true,
                                 fillColor: Colors.white.withOpacity(0.1),
                                 contentPadding:
@@ -2746,17 +2942,322 @@ class _HomeScreenState extends State<HomeScreen>
                                                               child:
                                                                   ElevatedButton
                                                                       .icon(
-                                                                onPressed: () {
+                                                                onPressed:
+                                                                    () async {
+                                                                  // Verificar autenticación primero
+                                                                  if (!AuthHelper.requireAuth(
+                                                                      context,
+                                                                      customTitle:
+                                                                          'Acceso a Tutor al Instante',
+                                                                      customMessage:
+                                                                          'Para acceder a tutorías instantáneas, necesitas iniciar sesión en tu cuenta.'))
+                                                                    return;
+
+                                                                  // Cerrar modales después de verificar autenticación
                                                                   Navigator.pop(
                                                                       context);
-                                                                  // Acción para Empezar tutoría
-                                                                  ScaffoldMessenger.of(
-                                                                          context)
-                                                                      .showSnackBar(
-                                                                    SnackBar(
-                                                                        content:
-                                                                            Text('Empezar tutoría para "${subject['name']}"')),
+                                                                  Navigator.pop(
+                                                                      context); // Cierra el modal de materias
+
+                                                                  // Usar el contexto raíz para las operaciones posteriores
+                                                                  final rootContext = Navigator.of(
+                                                                          context,
+                                                                          rootNavigator:
+                                                                              true)
+                                                                      .context;
+                                                                  final authProvider = Provider.of<
+                                                                          AuthProvider>(
+                                                                      rootContext,
+                                                                      listen:
+                                                                          false);
+                                                                  final subjectId =
+                                                                      subject[
+                                                                          'id'];
+                                                                  final subjectName =
+                                                                      subject[
+                                                                          'name'];
+
+                                                                  // Mostrar loader
+                                                                  showDialog(
+                                                                    context:
+                                                                        rootContext,
+                                                                    barrierDismissible:
+                                                                        false,
+                                                                    builder:
+                                                                        (context) =>
+                                                                            Center(
+                                                                      child:
+                                                                          Material(
+                                                                        color: Colors
+                                                                            .transparent,
+                                                                        child:
+                                                                            Container(
+                                                                          width:
+                                                                              MediaQuery.of(context).size.width * 0.82,
+                                                                          padding: EdgeInsets.symmetric(
+                                                                              horizontal: 28,
+                                                                              vertical: 36),
+                                                                          decoration:
+                                                                              BoxDecoration(
+                                                                            gradient:
+                                                                                LinearGradient(
+                                                                              colors: [
+                                                                                AppColors.darkBlue,
+                                                                                AppColors.blurprimary
+                                                                              ],
+                                                                              begin: Alignment.topLeft,
+                                                                              end: Alignment.bottomRight,
+                                                                            ),
+                                                                            borderRadius:
+                                                                                BorderRadius.circular(24),
+                                                                            boxShadow: [
+                                                                              BoxShadow(
+                                                                                color: Colors.black.withOpacity(0.18),
+                                                                                blurRadius: 32,
+                                                                                offset: Offset(0, 12),
+                                                                              ),
+                                                                            ],
+                                                                            border:
+                                                                                Border.all(color: Colors.white.withOpacity(0.10)),
+                                                                          ),
+                                                                          child:
+                                                                              Column(
+                                                                            mainAxisSize:
+                                                                                MainAxisSize.min,
+                                                                            children: [
+                                                                              // Icono de búsqueda
+                                                                              Image.asset(
+                                                                                'assets/images/busqueda.png',
+                                                                                width: 80,
+                                                                                height: 80,
+                                                                              ),
+                                                                              SizedBox(height: 24),
+                                                                              Text(
+                                                                                'Buscando el mejor tutor para ti',
+                                                                                style: TextStyle(
+                                                                                  color: Colors.white,
+                                                                                  fontWeight: FontWeight.bold,
+                                                                                  fontSize: 19,
+                                                                                ),
+                                                                                textAlign: TextAlign.center,
+                                                                              ),
+                                                                              SizedBox(height: 14),
+                                                                              Text(
+                                                                                'Estamos conectando con tutores verificados de la materia seleccionada. Esto puede tomar unos segundos.',
+                                                                                style: TextStyle(
+                                                                                  color: Colors.white.withOpacity(0.85),
+                                                                                  fontSize: 15,
+                                                                                ),
+                                                                                textAlign: TextAlign.center,
+                                                                              ),
+                                                                              SizedBox(height: 24),
+                                                                              _AnimatedDots(),
+                                                                            ],
+                                                                          ),
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                                    useRootNavigator:
+                                                                        true,
                                                                   );
+
+                                                                  try {
+                                                                    print(
+                                                                        'DEBUG: Llamando a getVerifiedTutors con subjectId: $subjectId');
+                                                                    final response =
+                                                                        await getVerifiedTutors(
+                                                                      authProvider
+                                                                          .token,
+                                                                      perPage:
+                                                                          50,
+                                                                      subjectId:
+                                                                          subjectId,
+                                                                    );
+                                                                    print(
+                                                                        'DEBUG: Respuesta de getVerifiedTutors: $response');
+                                                                    List<dynamic>
+                                                                        tutors =
+                                                                        [];
+                                                                    if (response
+                                                                        .containsKey(
+                                                                            'data')) {
+                                                                      final data =
+                                                                          response[
+                                                                              'data'];
+                                                                      if (data
+                                                                          is List) {
+                                                                        tutors =
+                                                                            data;
+                                                                      } else if (data
+                                                                              is Map &&
+                                                                          data.containsKey(
+                                                                              'data') &&
+                                                                          data['data']
+                                                                              is List) {
+                                                                        tutors =
+                                                                            data['data'];
+                                                                      } else if (data
+                                                                              is Map &&
+                                                                          data.containsKey(
+                                                                              'list') &&
+                                                                          data['list']
+                                                                              is List) {
+                                                                        tutors =
+                                                                            data['list'];
+                                                                      }
+                                                                    }
+                                                                    print(
+                                                                        'DEBUG: Tutores encontrados: ${tutors.length}');
+                                                                    Navigator.of(
+                                                                            rootContext,
+                                                                            rootNavigator:
+                                                                                true)
+                                                                        .pop(); // Cierra el loader
+                                                                    if (tutors
+                                                                        .isNotEmpty) {
+                                                                      final randomTutor = (tutors
+                                                                            ..shuffle())
+                                                                          .first;
+                                                                      final profile =
+                                                                          randomTutor['profile'] ??
+                                                                              {};
+                                                                      final tutorName =
+                                                                          profile['full_name'] ??
+                                                                              'Sin nombre';
+                                                                      final tutorImage = highResTutorImages != null &&
+                                                                              highResTutorImages[randomTutor['id']] !=
+                                                                                  null
+                                                                          ? highResTutorImages[randomTutor[
+                                                                              'id']]
+                                                                          : profile['image'] ??
+                                                                              '';
+                                                                      final validSubjects = (randomTutor['subjects']
+                                                                              as List)
+                                                                          .where((s) =>
+                                                                              s['status'] == 'active' &&
+                                                                              s['deleted_at'] ==
+                                                                                  null)
+                                                                          .map((s) =>
+                                                                              s['name'].toString())
+                                                                          .toList();
+                                                                      showModalBottomSheet(
+                                                                        context:
+                                                                            rootContext,
+                                                                        isScrollControlled:
+                                                                            true,
+                                                                        backgroundColor:
+                                                                            Colors.transparent,
+                                                                        builder:
+                                                                            (context) =>
+                                                                                InstantTutoringScreen(
+                                                                          tutorName:
+                                                                              tutorName,
+                                                                          tutorImage:
+                                                                              tutorImage,
+                                                                          subjects:
+                                                                              validSubjects,
+                                                                          selectedSubject:
+                                                                              subjectName,
+                                                                          tutorId:
+                                                                              randomTutor['id'],
+                                                                          subjectId:
+                                                                              subjectId,
+                                                                        ),
+                                                                      );
+                                                                    } else {
+                                                                      print(
+                                                                          'DEBUG: No hay tutores disponibles para esta materia.');
+                                                                      await showDialog(
+                                                                        context:
+                                                                            rootContext,
+                                                                        barrierDismissible:
+                                                                            true,
+                                                                        builder:
+                                                                            (context) =>
+                                                                                Center(
+                                                                          child:
+                                                                              Material(
+                                                                            color:
+                                                                                Colors.transparent,
+                                                                            child:
+                                                                                Container(
+                                                                              width: MediaQuery.of(context).size.width * 0.85,
+                                                                              padding: EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+                                                                              decoration: BoxDecoration(
+                                                                                color: AppColors.darkBlue,
+                                                                                borderRadius: BorderRadius.circular(24),
+                                                                                boxShadow: [
+                                                                                  BoxShadow(
+                                                                                    color: Colors.black.withOpacity(0.18),
+                                                                                    blurRadius: 32,
+                                                                                    offset: Offset(0, 12),
+                                                                                  ),
+                                                                                ],
+                                                                                border: Border.all(color: Colors.white.withOpacity(0.08)),
+                                                                              ),
+                                                                              child: Column(
+                                                                                mainAxisSize: MainAxisSize.min,
+                                                                                children: [
+                                                                                  Icon(Icons.sentiment_dissatisfied_rounded, color: AppColors.orangeprimary, size: 54),
+                                                                                  SizedBox(height: 18),
+                                                                                  Text(
+                                                                                    '¡Ups! No hay tutores disponibles',
+                                                                                    style: TextStyle(
+                                                                                      color: Colors.white,
+                                                                                      fontWeight: FontWeight.bold,
+                                                                                      fontSize: 20,
+                                                                                    ),
+                                                                                    textAlign: TextAlign.center,
+                                                                                  ),
+                                                                                  SizedBox(height: 12),
+                                                                                  Text(
+                                                                                    'Por el momento no hay tutores disponibles para la materia seleccionada. Puedes intentarlo más tarde o elegir otra materia.',
+                                                                                    style: TextStyle(
+                                                                                      color: Colors.white.withOpacity(0.85),
+                                                                                      fontSize: 15,
+                                                                                    ),
+                                                                                    textAlign: TextAlign.center,
+                                                                                  ),
+                                                                                  SizedBox(height: 28),
+                                                                                  SizedBox(
+                                                                                    width: double.infinity,
+                                                                                    child: ElevatedButton.icon(
+                                                                                      onPressed: () => Navigator.of(context).pop(),
+                                                                                      icon: Icon(Icons.close, color: Colors.white),
+                                                                                      label: Text('Cerrar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                                                                      style: ElevatedButton.styleFrom(
+                                                                                        backgroundColor: AppColors.orangeprimary,
+                                                                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                                                                        padding: EdgeInsets.symmetric(vertical: 16),
+                                                                                      ),
+                                                                                    ),
+                                                                                  ),
+                                                                                ],
+                                                                              ),
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                      );
+                                                                    }
+                                                                  } catch (e) {
+                                                                    print(
+                                                                        'ERROR: Error al buscar tutores: $e');
+                                                                    Navigator.of(
+                                                                            rootContext,
+                                                                            rootNavigator:
+                                                                                true)
+                                                                        .pop(); // Cierra el loader
+                                                                    ScaffoldMessenger.of(
+                                                                            rootContext)
+                                                                        .showSnackBar(
+                                                                      SnackBar(
+                                                                        content:
+                                                                            Text('Error al buscar tutores. Inténtalo de nuevo.'),
+                                                                        backgroundColor:
+                                                                            Colors.red,
+                                                                      ),
+                                                                    );
+                                                                  }
                                                                 },
                                                                 icon: Icon(
                                                                     Icons
@@ -3611,26 +4112,15 @@ class _CustomDrawerHeader extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF0B9ED9), Color(0xFF073B4C)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: AppColors.lightBlueColor,
         borderRadius: BorderRadius.only(
-          topRight: Radius.circular(0),
+          topRight: Radius.circular(20),
           topLeft: Radius.circular(0),
           bottomLeft: Radius.circular(16),
           bottomRight: Radius.circular(16),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 22),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -3639,37 +4129,30 @@ class _CustomDrawerHeader extends StatelessWidget {
               Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.18),
-                      blurRadius: 10,
-                      offset: Offset(0, 3),
-                    ),
-                  ],
-                  border: Border.all(color: Colors.white, width: 4),
+                  border: Border.all(color: Colors.white, width: 2),
                 ),
                 child: ClipOval(
                   child: CachedNetworkImage(
                     imageUrl: imageUrl ?? '',
-                    width: 72,
-                    height: 72,
+                    width: 60,
+                    height: 60,
                     fit: BoxFit.cover,
                     placeholder: (context, url) => CircleAvatar(
-                      radius: 36,
+                      radius: 30,
                       backgroundColor: Colors.white,
                       child: Icon(Icons.person,
-                          size: 36, color: Color(0xFF023E8A)),
+                          size: 30, color: AppColors.lightBlueColor),
                     ),
                     errorWidget: (context, url, error) => CircleAvatar(
-                      radius: 36,
+                      radius: 30,
                       backgroundColor: Colors.white,
                       child: Icon(Icons.person,
-                          size: 36, color: Color(0xFF023E8A)),
+                          size: 30, color: AppColors.lightBlueColor),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 18),
+              SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -3681,8 +4164,8 @@ class _CustomDrawerHeader extends StatelessWidget {
                             userData['user']?['email'] ??
                             'Usuario',
                         style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
                           color: Colors.white,
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -3699,20 +4182,20 @@ class _CustomDrawerHeader extends StatelessWidget {
                         child: Text(
                           'Iniciar sesión',
                           style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
                             color: Colors.white,
                             decoration: TextDecoration.underline,
                           ),
                         ),
                       ),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 4),
                     if (userData != null)
                       Text(
                         userData['user']?['email'] ?? '',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Colors.white70,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withOpacity(0.8),
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -3721,7 +4204,7 @@ class _CustomDrawerHeader extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 18),
+          SizedBox(height: 18),
           Divider(color: Colors.white24, thickness: 1),
         ],
       ),
@@ -3778,6 +4261,41 @@ class _UpcomingSessionBannerState extends State<UpcomingSessionBanner>
 
   @override
   bool get wantKeepAlive => true;
+
+  // Función para vibrar según el estado de la tutoría
+  Future<void> _vibrateForStatus(String status) async {
+    try {
+      final hasVibrator = await Vibration.hasVibrator();
+
+      if (hasVibrator ?? false) {
+        switch (status.toLowerCase()) {
+          case 'aceptada':
+          case 'aceptado':
+            // Vibración larga para aceptación
+            await Vibration.vibrate(duration: 800);
+            break;
+          case 'rechazada':
+          case 'rechazado':
+            // Vibración corta para rechazo
+            await Vibration.vibrate(duration: 300);
+            break;
+          case 'cursando':
+            // Patrón especial para inicio de tutoría
+            await Vibration.vibrate(pattern: [0, 400, 100, 400, 100, 400]);
+            break;
+          case 'pendiente':
+            // Vibración suave para actualización
+            await Vibration.vibrate(duration: 200);
+            break;
+          default:
+            // Vibración por defecto
+            await Vibration.vibrate(duration: 500);
+        }
+      }
+    } catch (e) {
+      print('Error al vibrar: $e');
+    }
+  }
 
   // Función para mapear estados numéricos a string
   // String _mapStatusToString(dynamic status) {
@@ -3927,6 +4445,19 @@ class _UpcomingSessionBannerState extends State<UpcomingSessionBanner>
     // Usar un key único basado en los datos para evitar rebuilds innecesarios
     final bookingKey =
         widget.bookings.map((b) => '${b['id']}_${b['status']}').join('_');
+
+    // Hacer vibrar cuando se reconstruye la tarjeta (solo si hay cambios reales)
+    if (_lastBookingKey != null && _lastBookingKey != bookingKey) {
+      // Encontrar el booking que cambió
+      final changedBooking = widget.bookings.firstWhere(
+        (b) => '${b['id']}_${b['status']}' != _lastBookingKey,
+        orElse: () => widget.bookings.first,
+      );
+
+      // Reproducir sonido y vibrar según el nuevo estado
+      _HomeScreenState._playStatusChangeSound(changedBooking['status']);
+      _vibrateForStatus(changedBooking['status'] ?? '');
+    }
 
     if (widget.bookings.isEmpty) return const SizedBox.shrink();
     final now = DateTime.now();

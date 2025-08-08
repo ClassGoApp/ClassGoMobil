@@ -78,24 +78,24 @@ class TutoringStatusCards {
         padding: EdgeInsets.all(16),
         child: Column(
           children: [
-            // Barra de progreso
+            // Barra de progreso elegante
             Row(
               children: [
                 Expanded(
                   child: Container(
-                    height: 4,
+                    height: 3,
                     decoration: BoxDecoration(
                       color: AppColors.lightBlueColor,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
-                SizedBox(width: 8),
+                SizedBox(width: 6),
                 Expanded(
                   child: Container(
-                    height: 4,
+                    height: 3,
                     decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.3),
+                      color: AppColors.lightBlueColor.withOpacity(0.3),
                       borderRadius: BorderRadius.circular(2),
                     ),
                     child: LinearProgressIndicator(
@@ -105,12 +105,12 @@ class TutoringStatusCards {
                     ),
                   ),
                 ),
-                SizedBox(width: 8),
+                SizedBox(width: 6),
                 Expanded(
                   child: Container(
-                    height: 4,
+                    height: 3,
                     decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.3),
+                      color: AppColors.lightBlueColor.withOpacity(0.3),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -122,7 +122,7 @@ class TutoringStatusCards {
             // Contenido principal
             Row(
               children: [
-                // Avatar del tutor
+                // Avatar del tutor con borde elegante
                 Container(
                   width: 50,
                   height: 50,
@@ -130,6 +130,13 @@ class TutoringStatusCards {
                     shape: BoxShape.circle,
                     border:
                         Border.all(color: AppColors.lightBlueColor, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.lightBlueColor.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: ClipOval(
                     child: tutorImage != null
@@ -182,17 +189,34 @@ class TutoringStatusCards {
                   ),
                 ),
 
-                // Icono de estado
+                // Imagen personalizada de estado
                 Container(
-                  padding: EdgeInsets.all(8),
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
+                    color: AppColors.lightBlueColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: AppColors.lightBlueColor.withOpacity(0.3),
+                      width: 1,
+                    ),
                   ),
-                  child: Icon(
-                    Icons.pending_actions,
-                    color: Colors.orange,
-                    size: 24,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.asset(
+                      'assets/images/pendienteA.png',
+                      fit: BoxFit.contain,
+                      width: 24,
+                      height: 24,
+                      errorBuilder: (context, error, stackTrace) {
+                        print('❌ Error cargando imagen pendienteA.png: $error');
+                        return Icon(
+                          Icons.pending_actions,
+                          color: AppColors.lightBlueColor,
+                          size: 24,
+                        );
+                      },
+                    ),
                   ),
                 ),
               ],
@@ -200,20 +224,23 @@ class TutoringStatusCards {
 
             SizedBox(height: 16),
 
-            // Mensaje de estado
+            // Mensaje de estado elegante
             Container(
               width: double.infinity,
               padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.1),
+                color: AppColors.lightBlueColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                border: Border.all(
+                  color: AppColors.lightBlueColor.withOpacity(0.3),
+                  width: 1,
+                ),
               ),
               child: Row(
                 children: [
                   Icon(
                     Icons.hourglass_empty,
-                    color: Colors.orange,
+                    color: AppColors.lightBlueColor,
                     size: 20,
                   ),
                   SizedBox(width: 8),
@@ -221,7 +248,7 @@ class TutoringStatusCards {
                     child: Text(
                       'Enseguida se validará tu pago',
                       style: TextStyle(
-                        color: Colors.orange,
+                        color: AppColors.lightBlueColor,
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
                       ),
@@ -271,34 +298,34 @@ class TutoringStatusCards {
         padding: EdgeInsets.all(16),
         child: Column(
           children: [
-            // Barra de progreso
+            // Barra de progreso elegante
             Row(
               children: [
                 Expanded(
                   child: Container(
-                    height: 4,
+                    height: 3,
                     decoration: BoxDecoration(
                       color: AppColors.lightBlueColor,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
-                SizedBox(width: 8),
+                SizedBox(width: 6),
                 Expanded(
                   child: Container(
-                    height: 4,
+                    height: 3,
                     decoration: BoxDecoration(
                       color: AppColors.lightBlueColor,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
-                SizedBox(width: 8),
+                SizedBox(width: 6),
                 Expanded(
                   child: Container(
-                    height: 4,
+                    height: 3,
                     decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.3),
+                      color: AppColors.lightBlueColor.withOpacity(0.3),
                       borderRadius: BorderRadius.circular(2),
                     ),
                     child: isInTime
@@ -317,7 +344,7 @@ class TutoringStatusCards {
             // Contenido principal
             Row(
               children: [
-                // Avatar del tutor
+                // Avatar del tutor con borde elegante
                 Container(
                   width: 50,
                   height: 50,
@@ -325,6 +352,13 @@ class TutoringStatusCards {
                     shape: BoxShape.circle,
                     border:
                         Border.all(color: AppColors.lightBlueColor, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.lightBlueColor.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: ClipOval(
                     child: tutorImage != null
@@ -377,81 +411,60 @@ class TutoringStatusCards {
                   ),
                 ),
 
-                // Icono animado de preparación
-                if (isInTime)
-                  TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0.8, end: 1.2),
-                    duration: Duration(seconds: 2),
-                    builder: (context, value, child) {
-                      return Transform.scale(
-                        scale: value,
-                        child: Container(
-                          padding: EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.green.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(
-                            Icons.school,
-                            color: Colors.green,
-                            size: 24,
-                          ),
-                        ),
-                      );
-                    },
-                    onEnd: () {},
-                  )
-                else
-                  Container(
-                    padding: EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      Icons.check_circle,
-                      color: Colors.green,
-                      size: 24,
+                // Imagen personalizada de estado
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.lightBlueColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: AppColors.lightBlueColor.withOpacity(0.3),
+                      width: 1,
                     ),
                   ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.asset(
+                      'assets/images/aceptadaA.png',
+                      fit: BoxFit.contain,
+                      width: 24,
+                      height: 24,
+                      errorBuilder: (context, error, stackTrace) {
+                        print('❌ Error cargando imagen aceptadaA.png: $error');
+                        return Icon(
+                          Icons.check_circle,
+                          color: AppColors.lightBlueColor,
+                          size: 24,
+                        );
+                      },
+                    ),
+                  ),
+                ),
               ],
             ),
 
             SizedBox(height: 16),
 
-            // Mensaje de estado
+            // Mensaje de estado elegante
             Container(
               width: double.infinity,
               padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
+                color: AppColors.lightBlueColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.green.withOpacity(0.3)),
+                border: Border.all(
+                  color: AppColors.lightBlueColor.withOpacity(0.3),
+                  width: 1,
+                ),
               ),
               child: Row(
                 children: [
-                  if (isInTime)
-                    TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 0.0, end: 1.0),
-                      duration: Duration(milliseconds: 1500),
-                      builder: (context, value, child) {
-                        return Transform.rotate(
-                          angle: value * 2 * 3.14159,
-                          child: Icon(
-                            Icons.sync,
-                            color: Colors.green,
-                            size: 20,
-                          ),
-                        );
-                      },
-                      onEnd: () {},
-                    )
-                  else
-                    Icon(
-                      Icons.schedule,
-                      color: Colors.green,
-                      size: 20,
-                    ),
+                  Icon(
+                    isInTime ? Icons.sync : Icons.schedule,
+                    color: AppColors.lightBlueColor,
+                    size: 20,
+                  ),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -461,7 +474,7 @@ class TutoringStatusCards {
                               ? 'Prepárate para tu tutoría, está muy pronto'
                               : 'Tutoría confirmada',
                       style: TextStyle(
-                        color: Colors.green,
+                        color: AppColors.lightBlueColor,
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
                       ),
@@ -505,32 +518,32 @@ class TutoringStatusCards {
         padding: EdgeInsets.all(16),
         child: Column(
           children: [
-            // Barra de progreso (todas grises)
+            // Barra de progreso elegante (todas en gris)
             Row(
               children: [
                 Expanded(
                   child: Container(
-                    height: 4,
+                    height: 3,
                     decoration: BoxDecoration(
                       color: Colors.grey.withOpacity(0.3),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
-                SizedBox(width: 8),
+                SizedBox(width: 6),
                 Expanded(
                   child: Container(
-                    height: 4,
+                    height: 3,
                     decoration: BoxDecoration(
                       color: Colors.grey.withOpacity(0.3),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
-                SizedBox(width: 8),
+                SizedBox(width: 6),
                 Expanded(
                   child: Container(
-                    height: 4,
+                    height: 3,
                     decoration: BoxDecoration(
                       color: Colors.grey.withOpacity(0.3),
                       borderRadius: BorderRadius.circular(2),
@@ -544,14 +557,21 @@ class TutoringStatusCards {
             // Contenido principal
             Row(
               children: [
-                // Avatar del tutor
+                // Avatar del tutor con borde elegante
                 Container(
                   width: 50,
                   height: 50,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(
-                        color: Colors.grey.withOpacity(0.5), width: 2),
+                    border:
+                        Border.all(color: AppColors.lightBlueColor, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.lightBlueColor.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: ClipOval(
                     child: tutorImage != null
@@ -576,7 +596,7 @@ class TutoringStatusCards {
                       Text(
                         tutorName,
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
+                          color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),
@@ -587,7 +607,7 @@ class TutoringStatusCards {
                       Text(
                         subject,
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.5),
+                          color: Colors.white.withOpacity(0.8),
                           fontSize: 14,
                         ),
                       ),
@@ -595,7 +615,7 @@ class TutoringStatusCards {
                       Text(
                         'Inicia a las ${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')}',
                         style: TextStyle(
-                          color: Colors.grey.withOpacity(0.6),
+                          color: AppColors.lightBlueColor,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
@@ -604,17 +624,34 @@ class TutoringStatusCards {
                   ),
                 ),
 
-                // Icono de estado
+                // Imagen personalizada de estado
                 Container(
-                  padding: EdgeInsets.all(8),
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
+                    color: AppColors.lightBlueColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: AppColors.lightBlueColor.withOpacity(0.3),
+                      width: 1,
+                    ),
                   ),
-                  child: Icon(
-                    Icons.cancel,
-                    color: Colors.red,
-                    size: 24,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.asset(
+                      'assets/images/rechazada.png',
+                      fit: BoxFit.contain,
+                      width: 24,
+                      height: 24,
+                      errorBuilder: (context, error, stackTrace) {
+                        print('❌ Error cargando imagen rechazada.png: $error');
+                        return Icon(
+                          Icons.cancel,
+                          color: AppColors.lightBlueColor,
+                          size: 24,
+                        );
+                      },
+                    ),
                   ),
                 ),
               ],
@@ -622,39 +659,32 @@ class TutoringStatusCards {
 
             SizedBox(height: 16),
 
-            // Mensaje de estado compacto y moderno
+            // Mensaje de estado elegante
             Container(
               width: double.infinity,
-              padding: EdgeInsets.all(12),
+              padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
               decoration: BoxDecoration(
-                color: Color(0xFF34495E).withOpacity(0.6),
+                color: AppColors.lightBlueColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Color(0xFF5DADE2).withOpacity(0.4),
+                  color: AppColors.lightBlueColor.withOpacity(0.3),
                   width: 1,
                 ),
               ),
               child: Row(
                 children: [
-                  Container(
-                    padding: EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Color(0xFF5DADE2).withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Icon(
-                      Icons.info_outline,
-                      color: Color(0xFF5DADE2),
-                      size: 16,
-                    ),
+                  Icon(
+                    Icons.info_outline,
+                    color: AppColors.lightBlueColor,
+                    size: 20,
                   ),
-                  SizedBox(width: 10),
+                  SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Necesitamos revisar tu tutoría',
+                      'Hubo un problema, contáctanos para solucionarlo',
                       style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500,
+                        color: AppColors.lightBlueColor,
+                        fontWeight: FontWeight.w600,
                         fontSize: 14,
                       ),
                     ),
@@ -676,7 +706,7 @@ class TutoringStatusCards {
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFF5DADE2),
+                      backgroundColor: AppColors.lightBlueColor,
                       foregroundColor: Colors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(

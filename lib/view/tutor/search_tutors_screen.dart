@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
-import 'package:flutter_projects/base_components/custom_dropdown.dart';
 import 'package:flutter_projects/helpers/slide_up_route.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/auth/login_screen.dart';
 import 'package:flutter_projects/view/components/login_required_alert.dart';
 import 'package:flutter_projects/view/components/skeleton/tutor_card_skeleton.dart';
 import 'package:flutter_projects/view/components/tutor_card.dart';
-import 'package:flutter_projects/view/detailPage/detail_screen.dart';
 import 'package:flutter_projects/view/profile/profile_screen.dart';
 import 'package:flutter_projects/view/tutor/component/filter_turtor_bottom_sheet.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -21,19 +19,20 @@ import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:flutter_projects/view/tutor/instant_tutoring_screen.dart';
 import 'package:flutter_projects/view/tutor/student_calendar_screen.dart';
 import 'package:flutter_projects/view/tutor/student_history_screen.dart';
-import 'package:flutter_projects/view/tutor/payment_qr_screen.dart';
-import 'package:flutter_projects/view/tutor/booking_success_screen.dart';
+// removed unused imports
 
 class SearchTutorsScreen extends StatefulWidget {
   final String? initialKeyword;
   final int? initialSubjectId;
   final String initialMode;
+  final int? initialPage;
 
   const SearchTutorsScreen({
     Key? key,
     this.initialKeyword,
     this.initialSubjectId,
     this.initialMode = 'agendar',
+    this.initialPage,
   }) : super(key: key);
 
   @override
@@ -52,8 +51,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   late ScrollController _scrollController;
 
   final GlobalKey _searchFilterContentKey = GlobalKey();
-  double _initialSearchFilterHeight = 0.0;
-  double _opacity = 1.0; // Añadido para controlar la opacidad
+  // double _initialSearchFilterHeight = 0.0; // unused
+  // double _opacity = 1.0; // unused
   double _lastScrollOffset = 0.0; // Para rastrear la dirección del scroll
 
   // Opacidades separadas para cada elemento
@@ -104,7 +103,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
 
   bool _showBottomBar =
       true; // Controla la visibilidad de la barra de navegación
-  double _bottomBarOffset = 0.0; // Para animación slide
+  // double _bottomBarOffset = 0.0; // unused
 
   late String selectedMode;
 
@@ -186,15 +185,14 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     fetchSubjectGroups();
     fetchCountries();
 
+    // Si se proporciona una página inicial, usarla
+    if (widget.initialPage != null) {
+      selectedIndex = widget.initialPage!;
+    }
     _pageController = PageController(initialPage: selectedIndex);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_searchFilterContentKey.currentContext != null) {
-        setState(() {
-          _initialSearchFilterHeight =
-              _searchFilterContentKey.currentContext!.size!.height;
-        });
-      }
+      // Medición de altura no utilizada actualmente
     });
   }
 
@@ -614,7 +612,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     }
 
     // Mantener la lógica para la animación de los filtros superiores
-    final maxScrollExtent = _scrollController.position.maxScrollExtent;
+    // final maxScrollExtent = _scrollController.position.maxScrollExtent; // unused
     final scrollDelta = (_lastScrollOffset - offset).abs();
     final animationSpeed = (scrollDelta * 0.1).clamp(0.05, 0.2);
 
@@ -1102,7 +1100,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                     context: context,
                                     isScrollControlled: true,
                                     backgroundColor: Colors.transparent,
-                                    builder: (context) => _BookingModal(
+                                    builder: (context) => BookingModal(
                                       tutorName: profile['full_name'] ??
                                           'No name available',
                                       tutorImage:
@@ -1193,38 +1191,10 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   Widget build(BuildContext context) {
     screenWidth = MediaQuery.of(context).size.width;
     screenHeight = MediaQuery.of(context).size.height;
-    final authProvider = Provider.of<AuthProvider>(context);
-    final token = authProvider.token;
+    // final authProvider = Provider.of<AuthProvider>(context);
+    // final token = authProvider.token; // unused
 
-    Widget buildProfileIcon() {
-      final isSelected = selectedIndex == 2;
-      return Container(
-        padding: EdgeInsets.all(2.0),
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: isSelected ? AppColors.greyColor : Colors.transparent,
-            width: isSelected ? 2.0 : 0.0,
-          ),
-          borderRadius: BorderRadius.circular(15.0),
-        ),
-        child: token == null || profileImageUrl.isEmpty
-            ? SvgPicture.asset(
-                AppImages.userIcon,
-                width: 20,
-                height: 20,
-                color: AppColors.greyColor,
-              )
-            : ClipRRect(
-                borderRadius: BorderRadius.circular(15.0),
-                child: Image.network(
-                  profileImageUrl,
-                  width: 25,
-                  height: 25,
-                  fit: BoxFit.cover,
-                ),
-              ),
-      );
-    }
+    // buildProfileIcon() eliminado por no ser usado
 
     return WillPopScope(
       onWillPop: () async {
@@ -1359,34 +1329,11 @@ class _ModernNavBar extends StatelessWidget {
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      navItems[index]['icon'] as IconData,
-                      color: isActive
-                          ? Colors.white
-                          : Colors.white.withOpacity(0.7),
-                      size: 24,
-                    ),
-                    if (isActive)
-                      const SizedBox(
-                        width: 8,
-                      ),
-                    if (isActive)
-                      Flexible(
-                        child: Text(
-                          navItems[index]['label'] as String,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                      ),
-                  ],
+                child: Icon(
+                  navItems[index]['icon'] as IconData,
+                  color:
+                      isActive ? Colors.white : Colors.white.withOpacity(0.7),
+                  size: 24,
                 ),
               ),
             ),
@@ -1397,14 +1344,14 @@ class _ModernNavBar extends StatelessWidget {
   }
 }
 
-class _BookingModal extends StatefulWidget {
+class BookingModal extends StatefulWidget {
   final String tutorName;
   final String tutorImage;
   final List<String> subjects;
   final int tutorId;
   final int subjectId;
 
-  const _BookingModal({
+  const BookingModal({
     required this.tutorName,
     required this.tutorImage,
     required this.subjects,
@@ -1413,24 +1360,18 @@ class _BookingModal extends StatefulWidget {
   });
 
   @override
-  State<_BookingModal> createState() => _BookingModalState();
+  State<BookingModal> createState() => BookingModalState();
 }
 
-class _BookingModalState extends State<_BookingModal> {
+class BookingModalState extends State<BookingModal> {
   String? selectedSubject;
   DateTime? selectedDay;
   String? selectedHour;
 
-  final Map<int, List<String>> availableDays = {
-    3: ['09:00', '11:00', '15:00'],
-    5: ['10:00-14:00'],
-    8: ['08:00', '12:00', '16:00'],
-    12: ['09:00', '13:00'],
-    15: ['10:00-14:00'],
-    18: ['09:00', '11:00', '18:00'],
-    22: ['08:00', '12:00'],
-    25: ['09:00', '15:00'],
-  };
+  // Reemplazar datos estáticos con datos dinámicos
+  Map<int, List<String>> availableDays = {};
+  bool isLoading = true;
+  String? errorMessage;
 
   DateTime currentMonth = DateTime.now();
   ScrollController? _sheetScrollController;
@@ -1444,6 +1385,138 @@ class _BookingModalState extends State<_BookingModal> {
   bool _highlightHour = false;
 
   OverlayEntry? _floatingMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.subjects.isNotEmpty) {
+      selectedSubject = widget.subjects.first;
+    }
+    print(
+        '[BookingModal] init tutorId=${widget.tutorId} subjectId=${widget.subjectId} subjectsCount=${widget.subjects.length}');
+
+    // Cargar los datos reales del tutor
+    _loadTutorAvailableSlots();
+  }
+
+  Future<void> _loadTutorAvailableSlots() async {
+    try {
+      setState(() {
+        isLoading = true;
+        errorMessage = null;
+      });
+
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final token = authProvider.token;
+
+      if (token == null) {
+        setState(() {
+          errorMessage = 'No se pudo autenticar';
+          isLoading = false;
+        });
+        return;
+      }
+
+      print(
+          '[BookingModal] Loading available slots for tutorId=${widget.tutorId}');
+      final response =
+          await getTutorAvailableSlots(token, widget.tutorId.toString());
+
+      print('[BookingModal] Response type: ${response.runtimeType}');
+      if (response is Map<String, dynamic>) {
+        print('[BookingModal] Response keys: ${response.keys.toList()}');
+      }
+
+      final Map<int, List<String>> newAvailableDays = {};
+
+      // Procesar la respuesta de la API
+      dynamic data;
+      if (response is Map<String, dynamic> && response.containsKey('data')) {
+        data = response['data'];
+      } else {
+        data = response;
+      }
+
+      if (data is Map) {
+        // Estructura agrupada por grupo/materia
+        data.forEach((groupName, subjects) {
+          if (subjects is Map) {
+            subjects.forEach((subjectName, subjectData) {
+              final List<dynamic> slots = subjectData['slots'] ?? [];
+
+              for (var slot in slots) {
+                try {
+                  final startTime =
+                      DateTime.parse(slot['start_time'].toString().trim());
+                  final endTime =
+                      DateTime.parse(slot['end_time'].toString().trim());
+
+                  // Solo incluir slots futuros
+                  if (startTime.isAfter(DateTime.now())) {
+                    final day = startTime.day;
+                    final timeRange =
+                        '${_formatTime(startTime)}-${_formatTime(endTime)}';
+
+                    if (!newAvailableDays.containsKey(day)) {
+                      newAvailableDays[day] = [];
+                    }
+
+                    // Evitar duplicados
+                    if (!newAvailableDays[day]!.contains(timeRange)) {
+                      newAvailableDays[day]!.add(timeRange);
+                    }
+                  }
+                } catch (e) {
+                  print('[BookingModal] Error parsing slot: $e');
+                }
+              }
+            });
+          }
+        });
+      } else if (data is List) {
+        // Estructura de lista plana
+        for (var slot in data) {
+          try {
+            final startTime =
+                DateTime.parse(slot['start_time'].toString().trim());
+            final endTime = DateTime.parse(slot['end_time'].toString().trim());
+
+            // Solo incluir slots futuros
+            if (startTime.isAfter(DateTime.now())) {
+              final day = startTime.day;
+              final timeRange =
+                  '${_formatTime(startTime)}-${_formatTime(endTime)}';
+
+              if (!newAvailableDays.containsKey(day)) {
+                newAvailableDays[day] = [];
+              }
+
+              // Evitar duplicados
+              if (!newAvailableDays[day]!.contains(timeRange)) {
+                newAvailableDays[day]!.add(timeRange);
+              }
+            }
+          } catch (e) {
+            print('[BookingModal] Error parsing slot: $e');
+          }
+        }
+      }
+
+      print(
+          '[BookingModal] Processed available days: ${newAvailableDays.keys.toList()}');
+
+      setState(() {
+        availableDays = newAvailableDays;
+        isLoading = false;
+      });
+    } catch (e) {
+      print('[BookingModal] Error loading available slots: $e');
+      setState(() {
+        errorMessage = 'Error al cargar los horarios disponibles: $e';
+        isLoading = false;
+      });
+    }
+  }
 
   void _showFloatingMessage(String text, GlobalKey key) {
     final ctx = key.currentContext;
@@ -1481,7 +1554,7 @@ class _BookingModalState extends State<_BookingModal> {
         ),
       ),
     );
-    Overlay.of(context)?.insert(_floatingMessage!);
+    Overlay.of(context).insert(_floatingMessage!);
     Future.delayed(Duration(milliseconds: 1200), () {
       _floatingMessage?.remove();
       _floatingMessage = null;
@@ -1513,14 +1586,6 @@ class _BookingModalState extends State<_BookingModal> {
         _highlightCalendar = false;
         _highlightHour = false;
       });
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.subjects.isNotEmpty) {
-      selectedSubject = widget.subjects.first;
     }
   }
 
@@ -1571,7 +1636,7 @@ class _BookingModalState extends State<_BookingModal> {
     final now = TimeOfDay.now();
     final parts = range.split('-');
     final start = _parseTime(parts[0]);
-    final end = _parseTime(parts[1]);
+    // final end = _parseTime(parts[1]); // not needed for initial time
     final initial =
         start != null ? TimeOfDay(hour: start.hour, minute: start.minute) : now;
     final picked = await showTimePicker(
@@ -1824,89 +1889,183 @@ class _BookingModalState extends State<_BookingModal> {
                                         .toList(),
                                   ),
                                   SizedBox(height: 2),
-                                  GridView.builder(
-                                    shrinkWrap: true,
-                                    physics: NeverScrollableScrollPhysics(),
-                                    gridDelegate:
-                                        SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 7,
-                                      mainAxisSpacing: 2,
-                                      crossAxisSpacing: 2,
-                                      childAspectRatio: 1.1,
-                                    ),
-                                    itemCount: daysInMonth + firstWeekday - 1,
-                                    itemBuilder: (context, i) {
-                                      if (i < firstWeekday - 1)
-                                        return SizedBox();
-                                      final day = i - firstWeekday + 2;
-                                      final isAvailable =
-                                          availableDays.containsKey(day);
-                                      final isSelected = selectedDay != null &&
-                                          selectedDay!.day == day &&
-                                          selectedDay!.month ==
-                                              currentMonth.month &&
-                                          selectedDay!.year ==
-                                              currentMonth.year;
-                                      return GestureDetector(
-                                        onTap: isAvailable
-                                            ? () {
-                                                setState(() {
-                                                  selectedDay = DateTime(
-                                                      currentMonth.year,
-                                                      currentMonth.month,
-                                                      day);
-                                                  selectedHour = null;
-                                                });
-                                                Future.delayed(
-                                                    Duration(milliseconds: 100),
-                                                    () {
-                                                  if (_sheetScrollController !=
-                                                      null) {
-                                                    _sheetScrollController!
-                                                        .animateTo(
-                                                      _sheetScrollController!
-                                                          .position
-                                                          .maxScrollExtent,
-                                                      duration: Duration(
-                                                          milliseconds: 400),
-                                                      curve: Curves.easeOut,
-                                                    );
-                                                  }
-                                                });
-                                              }
-                                            : null,
-                                        child: Container(
-                                          margin: EdgeInsets.all(2),
-                                          decoration: BoxDecoration(
-                                            color: isSelected
-                                                ? AppColors.lightBlueColor
-                                                : isAvailable
-                                                    ? AppColors.lightBlueColor
-                                                        .withOpacity(0.18)
-                                                    : Colors.transparent,
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                            border: isSelected
-                                                ? Border.all(
-                                                    color: Colors.white,
-                                                    width: 2)
-                                                : null,
-                                          ),
-                                          child: Center(
-                                            child: Text(
-                                              '$day',
+                                  if (isLoading) ...[
+                                    Container(
+                                      height: 200,
+                                      child: Center(
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            CircularProgressIndicator(
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<Color>(
+                                                AppColors.lightBlueColor,
+                                              ),
+                                            ),
+                                            SizedBox(height: 16),
+                                            Text(
+                                              'Cargando horarios disponibles...',
                                               style: TextStyle(
-                                                color: isAvailable
-                                                    ? Colors.white
-                                                    : Colors.white24,
-                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white70,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ] else if (errorMessage != null) ...[
+                                    Container(
+                                      height: 200,
+                                      child: Center(
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.error_outline,
+                                              color: Colors.red[300],
+                                              size: 48,
+                                            ),
+                                            SizedBox(height: 16),
+                                            Text(
+                                              errorMessage!,
+                                              style: TextStyle(
+                                                color: Colors.red[300],
+                                                fontSize: 14,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                            SizedBox(height: 16),
+                                            ElevatedButton(
+                                              onPressed:
+                                                  _loadTutorAvailableSlots,
+                                              child: Text('Reintentar'),
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor:
+                                                    AppColors.lightBlueColor,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ] else if (availableDays.isEmpty) ...[
+                                    Container(
+                                      height: 200,
+                                      child: Center(
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.schedule,
+                                              color: Colors.white54,
+                                              size: 48,
+                                            ),
+                                            SizedBox(height: 16),
+                                            Text(
+                                              'No hay horarios disponibles\npara este mes',
+                                              style: TextStyle(
+                                                color: Colors.white54,
+                                                fontSize: 14,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ] else ...[
+                                    GridView.builder(
+                                      shrinkWrap: true,
+                                      physics: NeverScrollableScrollPhysics(),
+                                      gridDelegate:
+                                          SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 7,
+                                        mainAxisSpacing: 2,
+                                        crossAxisSpacing: 2,
+                                        childAspectRatio: 1.1,
+                                      ),
+                                      itemCount: daysInMonth + firstWeekday - 1,
+                                      itemBuilder: (context, i) {
+                                        if (i < firstWeekday - 1)
+                                          return SizedBox();
+                                        final day = i - firstWeekday + 2;
+                                        final isAvailable =
+                                            availableDays.containsKey(day);
+                                        final isSelected =
+                                            selectedDay != null &&
+                                                selectedDay!.day == day &&
+                                                selectedDay!.month ==
+                                                    currentMonth.month &&
+                                                selectedDay!.year ==
+                                                    currentMonth.year;
+                                        return GestureDetector(
+                                          onTap: isAvailable
+                                              ? () {
+                                                  setState(() {
+                                                    selectedDay = DateTime(
+                                                        currentMonth.year,
+                                                        currentMonth.month,
+                                                        day);
+                                                    selectedHour = null;
+                                                  });
+                                                  print(
+                                                      '[BookingModal] selectedDay=$day/${currentMonth.month}/${currentMonth.year}');
+                                                  Future.delayed(
+                                                      Duration(
+                                                          milliseconds: 100),
+                                                      () {
+                                                    if (_sheetScrollController !=
+                                                        null) {
+                                                      _sheetScrollController!
+                                                          .animateTo(
+                                                        _sheetScrollController!
+                                                            .position
+                                                            .maxScrollExtent,
+                                                        duration: Duration(
+                                                            milliseconds: 400),
+                                                        curve: Curves.easeOut,
+                                                      );
+                                                    }
+                                                  });
+                                                }
+                                              : null,
+                                          child: Container(
+                                            margin: EdgeInsets.all(2),
+                                            decoration: BoxDecoration(
+                                              color: isSelected
+                                                  ? AppColors.lightBlueColor
+                                                  : isAvailable
+                                                      ? AppColors.lightBlueColor
+                                                          .withOpacity(0.18)
+                                                      : Colors.transparent,
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              border: isSelected
+                                                  ? Border.all(
+                                                      color: Colors.white,
+                                                      width: 2)
+                                                  : null,
+                                            ),
+                                            child: Center(
+                                              child: Text(
+                                                '$day',
+                                                style: TextStyle(
+                                                  color: isAvailable
+                                                      ? Colors.white
+                                                      : Colors.white24,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
                                               ),
                                             ),
                                           ),
-                                        ),
-                                      );
-                                    },
-                                  ),
+                                        );
+                                      },
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),
@@ -1968,6 +2127,8 @@ class _BookingModalState extends State<_BookingModal> {
                                                 .withOpacity(0.13),
                                             onSelected: (_) {
                                               setState(() => selectedHour = h);
+                                              print(
+                                                  '[BookingModal] selectedHour=$h');
                                               Future.delayed(
                                                   Duration(milliseconds: 100),
                                                   () {
@@ -2001,6 +2162,8 @@ class _BookingModalState extends State<_BookingModal> {
                                             .withOpacity(0.13),
                                         onSelected: (_) {
                                           setState(() => selectedHour = slot);
+                                          print(
+                                              '[BookingModal] selectedHour=$slot');
                                           Future.delayed(
                                               Duration(milliseconds: 100), () {
                                             if (_sheetScrollController !=
@@ -2188,6 +2351,8 @@ class _BookingModalState extends State<_BookingModal> {
                                   selectedHour != null)
                               ? () {
                                   // Cerrar el modal de agendar
+                                  print(
+                                      '[BookingModal] Reservar pressed with subject=$selectedSubject day=${selectedDay?.toIso8601String()} hour=$selectedHour');
                                   Navigator.pop(context);
 
                                   // Navegar a la vista instant tutoring
