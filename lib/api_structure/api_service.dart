@@ -1196,11 +1196,8 @@ Future<Map<String, dynamic>> getInvoices(String token) async {
 
 Future<Map<String, dynamic>> getTutorAvailableSlots(
     String token, String userId) async {
-  final Uri uri = Uri.parse('$baseUrl/subject-slots').replace(
-    queryParameters: {
-      'user_id': userId,
-    },
-  );
+  // ✅ CAMBIO: Usar el endpoint correcto para obtener slots del tutor
+  final Uri uri = Uri.parse('$baseUrl/tutor/$userId/available-slots');
   final headers = {
     'Authorization': 'Bearer $token',
     'Accept': 'application/json',

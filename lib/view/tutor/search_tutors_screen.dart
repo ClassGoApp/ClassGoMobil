@@ -1369,7 +1369,8 @@ class BookingModalState extends State<BookingModal> {
   String? selectedHour;
 
   // Reemplazar datos estáticos con datos dinámicos
-  Map<int, List<String>> availableDays = {};
+  Map<int, List<String>> availableDays =
+      {}; // Clave: millisecondsSinceEpoch, Valor: Lista de horarios
   bool isLoading = true;
   String? errorMessage;
 
@@ -1399,6 +1400,14 @@ class BookingModalState extends State<BookingModal> {
     _loadTutorAvailableSlots();
   }
 
+  /// Carga los horarios disponibles del tutor para el mes actual
+  ///
+  /// ✅ CAMBIO IMPORTANTE: Ahora usa el endpoint correcto:
+  /// /tutor/{tutorId}/available-slots en lugar de /subject-slots
+  ///
+  /// SOLUCIÓN AL PROBLEMA: Anteriormente se usaba solo el día del mes (startTime.day)
+  /// lo que causaba que se mostraran días incorrectos. Ahora se usa la fecha completa
+  /// como clave (millisecondsSinceEpoch) para evitar conflictos entre meses.
   Future<void> _loadTutorAvailableSlots() async {
     try {
       setState(() {
@@ -1418,7 +1427,9 @@ class BookingModalState extends State<BookingModal> {
       }
 
       print(
-          '[BookingModal] Loading available slots for tutorId=${widget.tutorId}');
+          '[BookingModal] 🆔 Enviando ID del tutor al endpoint: ${widget.tutorId}');
+      print(
+          '[BookingModal] 📅 Procesando mes: ${currentMonth.month}/${currentMonth.year}');
       final response =
           await getTutorAvailableSlots(token, widget.tutorId.toString());
 
@@ -1427,83 +1438,96 @@ class BookingModalState extends State<BookingModal> {
         print('[BookingModal] Response keys: ${response.keys.toList()}');
       }
 
+      // ✅ DEBUG: Mostrar respuesta completa de la API
+      print('[BookingModal] === RESPUESTA COMPLETA DE LA API ===');
+      print('[BookingModal] Response: $response');
+      print('[BookingModal] === FIN DE RESPUESTA ===');
+
       final Map<int, List<String>> newAvailableDays = {};
 
-      // Procesar la respuesta de la API
+      // ✅ CAMBIO: Procesar la respuesta del nuevo endpoint
+      // La API devuelve directamente una lista de slots
       dynamic data;
+      // ✅ DEBUG: Mostrar respuesta completa de la API
+      print('[BookingModal] === RESPUESTA COMPLETA DE LA API ===');
+      print('[BookingModal] Response: $response');
+      print('[BookingModal] ======================================');
+
       if (response is Map<String, dynamic> && response.containsKey('data')) {
         data = response['data'];
       } else {
         data = response;
       }
 
-      if (data is Map) {
-        // Estructura agrupada por grupo/materia
-        data.forEach((groupName, subjects) {
-          if (subjects is Map) {
-            subjects.forEach((subjectName, subjectData) {
-              final List<dynamic> slots = subjectData['slots'] ?? [];
+      // ✅ SIMPLIFICADO: Solo procesar la lista de slots
+      if (data is List) {
+        print('[BookingModal] 🔍 Total de slots recibidos: ${data.length}');
+        int slotsProcesados = 0;
+        int slotsIgnorados = 0;
 
-              for (var slot in slots) {
-                try {
-                  final startTime =
-                      DateTime.parse(slot['start_time'].toString().trim());
-                  final endTime =
-                      DateTime.parse(slot['end_time'].toString().trim());
-
-                  // Solo incluir slots futuros
-                  if (startTime.isAfter(DateTime.now())) {
-                    final day = startTime.day;
-                    final timeRange =
-                        '${_formatTime(startTime)}-${_formatTime(endTime)}';
-
-                    if (!newAvailableDays.containsKey(day)) {
-                      newAvailableDays[day] = [];
-                    }
-
-                    // Evitar duplicados
-                    if (!newAvailableDays[day]!.contains(timeRange)) {
-                      newAvailableDays[day]!.add(timeRange);
-                    }
-                  }
-                } catch (e) {
-                  print('[BookingModal] Error parsing slot: $e');
-                }
-              }
-            });
-          }
-        });
-      } else if (data is List) {
-        // Estructura de lista plana
         for (var slot in data) {
           try {
-            final startTime =
-                DateTime.parse(slot['start_time'].toString().trim());
-            final endTime = DateTime.parse(slot['end_time'].toString().trim());
+            // Verificar que el slot tenga los campos necesarios
+            if (slot['start_time'] == null ||
+                slot['end_time'] == null ||
+                slot['date'] == null) {
+              continue;
+            }
 
-            // Solo incluir slots futuros
-            if (startTime.isAfter(DateTime.now())) {
-              final day = startTime.day;
+            // ✅ CAMBIO: Usar el campo 'date' para determinar el día
+            final dateStr = slot['date'].toString().trim();
+            final slotDate = DateTime.parse(dateStr);
+
+            // ✅ CAMBIO: Solo filtrar por fecha futura, no por mes actual
+            if (slotDate.isAfter(DateTime.now().subtract(Duration(days: 1)))) {
+              // ✅ SOLUCIÓN: Usar fecha completa como clave
+              final dateKey =
+                  DateTime(slotDate.year, slotDate.month, slotDate.day);
+
+              // ✅ CAMBIO: Usar start_time y end_time para las horas
+              final startTime =
+                  DateTime.parse(slot['start_time'].toString().trim());
+              final endTime =
+                  DateTime.parse(slot['end_time'].toString().trim());
+
               final timeRange =
                   '${_formatTime(startTime)}-${_formatTime(endTime)}';
 
-              if (!newAvailableDays.containsKey(day)) {
-                newAvailableDays[day] = [];
+              if (!newAvailableDays
+                  .containsKey(dateKey.millisecondsSinceEpoch)) {
+                newAvailableDays[dateKey.millisecondsSinceEpoch] = [];
               }
 
               // Evitar duplicados
-              if (!newAvailableDays[day]!.contains(timeRange)) {
-                newAvailableDays[day]!.add(timeRange);
+              if (!newAvailableDays[dateKey.millisecondsSinceEpoch]!
+                  .contains(timeRange)) {
+                newAvailableDays[dateKey.millisecondsSinceEpoch]!
+                    .add(timeRange);
+                slotsProcesados++;
               }
+            } else {
+              slotsIgnorados++;
             }
           } catch (e) {
             print('[BookingModal] Error parsing slot: $e');
           }
         }
+
+        print(
+            '[BookingModal] 📊 RESUMEN: Slots procesados: $slotsProcesados, Ignorados: $slotsIgnorados');
       }
 
       print(
-          '[BookingModal] Processed available days: ${newAvailableDays.keys.toList()}');
+          '[BookingModal] Processed available days: ${newAvailableDays.keys.map((timestamp) => DateTime.fromMillisecondsSinceEpoch(timestamp)).toList()}');
+
+      // ✅ DEBUG: Mostrar todos los tiempos libres obtenidos del tutor
+      print('[BookingModal] === DETALLE COMPLETO DE TIEMPOS LIBRES ===');
+      newAvailableDays.forEach((timestamp, timeSlots) {
+        final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
+        print('[BookingModal] 📅 Día: ${date.day}/${date.month}/${date.year}');
+        print('[BookingModal]    ⏰ Horarios: $timeSlots');
+      });
+      print('[BookingModal] === FIN DEL DETALLE ===');
 
       setState(() {
         availableDays = newAvailableDays;
@@ -1850,6 +1874,8 @@ class BookingModalState extends State<BookingModal> {
                                             selectedDay = null;
                                             selectedHour = null;
                                           });
+                                          // Recargar slots para el nuevo mes
+                                          _loadTutorAvailableSlots();
                                         },
                                       ),
                                       Text(
@@ -1869,6 +1895,8 @@ class BookingModalState extends State<BookingModal> {
                                             selectedDay = null;
                                             selectedHour = null;
                                           });
+                                          // Recargar slots para el nuevo mes
+                                          _loadTutorAvailableSlots();
                                         },
                                       ),
                                     ],
@@ -1993,8 +2021,18 @@ class BookingModalState extends State<BookingModal> {
                                         if (i < firstWeekday - 1)
                                           return SizedBox();
                                         final day = i - firstWeekday + 2;
-                                        final isAvailable =
-                                            availableDays.containsKey(day);
+                                        final currentDate = DateTime(
+                                            currentMonth.year,
+                                            currentMonth.month,
+                                            day);
+                                        // Solo mostrar como disponible si es del mes actual y está en availableDays
+                                        final isAvailable = availableDays
+                                                .containsKey(currentDate
+                                                    .millisecondsSinceEpoch) &&
+                                            currentDate.month ==
+                                                currentMonth.month &&
+                                            currentDate.year ==
+                                                currentMonth.year;
                                         final isSelected =
                                             selectedDay != null &&
                                                 selectedDay!.day == day &&
@@ -2072,7 +2110,8 @@ class BookingModalState extends State<BookingModal> {
                           ),
                           SizedBox(height: 18),
                           if (selectedDay != null &&
-                              availableDays.containsKey(selectedDay!.day)) ...[
+                              availableDays.containsKey(
+                                  selectedDay!.millisecondsSinceEpoch)) ...[
                             Text('Selecciona una hora',
                                 style: TextStyle(
                                     color: Colors.white70,
@@ -2102,8 +2141,8 @@ class BookingModalState extends State<BookingModal> {
                               ),
                               child: Builder(
                                 builder: (context) {
-                                  final slotsOrRanges =
-                                      availableDays[selectedDay!.day]!;
+                                  final slotsOrRanges = availableDays[
+                                      selectedDay!.millisecondsSinceEpoch]!;
                                   final List<Widget> chips = [];
                                   bool hasRange = false;
                                   for (final slot in slotsOrRanges) {
