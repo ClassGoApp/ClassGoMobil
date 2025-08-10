@@ -13,6 +13,10 @@ class InstantTutoringScreen extends StatefulWidget {
   final String? selectedSubject;
   final int tutorId;
   final int subjectId;
+  // ✅ NUEVO: Parámetros para reserva programada
+  final DateTime? scheduledDate;
+  final String? scheduledTime;
+  final bool isScheduledBooking;
 
   const InstantTutoringScreen({
     Key? key,
@@ -22,6 +26,10 @@ class InstantTutoringScreen extends StatefulWidget {
     this.selectedSubject,
     required this.tutorId,
     required this.subjectId,
+    // ✅ NUEVO: Parámetros opcionales
+    this.scheduledDate,
+    this.scheduledTime,
+    this.isScheduledBooking = false,
   }) : super(key: key);
 
   @override
@@ -61,6 +69,14 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
       parent: _animationController,
       curve: Curves.easeInOut,
     ));
+
+    // ✅ DEBUG: Mostrar datos recibidos
+    print('[InstantTutoringScreen] 🔍 DEBUG - Datos recibidos:');
+    print(
+        '[InstantTutoringScreen] isScheduledBooking: ${widget.isScheduledBooking}');
+    print('[InstantTutoringScreen] scheduledDate: ${widget.scheduledDate}');
+    print('[InstantTutoringScreen] scheduledTime: ${widget.scheduledTime}');
+    print('[InstantTutoringScreen] selectedSubject: ${widget.selectedSubject}');
 
     // Selecciona la materia si viene preseleccionada
     if (widget.selectedSubject != null &&
@@ -392,6 +408,49 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                           ],
                         ),
                         SizedBox(height: 24),
+                        // ✅ NUEVO: Título dinámico según el tipo de tutoría
+                        if (widget.isScheduledBooking) ...[
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: AppColors.lightBlueColor.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                  color: AppColors.lightBlueColor
+                                      .withOpacity(0.5)),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.schedule,
+                                    color: AppColors.lightBlueColor, size: 20),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Reserva Programada',
+                                    style: TextStyle(
+                                      color: AppColors.lightBlueColor,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Fecha: ${widget.scheduledDate?.day}/${widget.scheduledDate?.month}/${widget.scheduledDate?.year}',
+                            style:
+                                TextStyle(color: Colors.white70, fontSize: 14),
+                          ),
+                          Text(
+                            'Hora: ${widget.scheduledTime}',
+                            style:
+                                TextStyle(color: Colors.white70, fontSize: 14),
+                          ),
+                          SizedBox(height: 24),
+                        ],
                         // 2. Selector de Materia
                         Text(
                           'Elige la materia',
@@ -803,6 +862,16 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                     barrierColor: Colors.black.withOpacity(0.5),
                                     pageBuilder: (context, animation,
                                         secondaryAnimation) {
+                                      // ✅ DEBUG: Mostrar datos que se van a pasar a PaymentQRScreen
+                                      print(
+                                          '[InstantTutoringScreen] 🔍 DEBUG - Datos a pasar a PaymentQRScreen:');
+                                      print(
+                                          '[InstantTutoringScreen] scheduledDate: ${widget.scheduledDate}');
+                                      print(
+                                          '[InstantTutoringScreen] scheduledTime: ${widget.scheduledTime}');
+                                      print(
+                                          '[InstantTutoringScreen] isScheduledBooking: ${widget.isScheduledBooking}');
+
                                       return PaymentQRScreen(
                                         tutorName: widget.tutorName,
                                         tutorImage: widget.tutorImage,
@@ -811,6 +880,11 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                         sessionDuration: "20 min",
                                         tutorId: widget.tutorId,
                                         subjectId: widget.subjectId,
+                                        // ✅ NUEVO: Pasar datos de reserva programada
+                                        scheduledDate: widget.scheduledDate,
+                                        scheduledTime: widget.scheduledTime,
+                                        isScheduledBooking:
+                                            widget.isScheduledBooking,
                                       );
                                     },
                                     transitionDuration:
@@ -852,7 +926,9 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                           minimumSize: Size(double.infinity, 50),
                         ),
                         child: Text(
-                          'Pagar e Iniciar en 2-5 min',
+                          widget.isScheduledBooking
+                              ? 'Confirmar Reserva'
+                              : 'Pagar e Iniciar en 2-5 min',
                           style: TextStyle(
                             color: AppColors.darkBlue,
                             fontWeight: FontWeight.bold,

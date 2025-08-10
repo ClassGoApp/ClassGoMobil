@@ -1393,8 +1393,6 @@ class BookingModalState extends State<BookingModal> {
     if (widget.subjects.isNotEmpty) {
       selectedSubject = widget.subjects.first;
     }
-    print(
-        '[BookingModal] init tutorId=${widget.tutorId} subjectId=${widget.subjectId} subjectsCount=${widget.subjects.length}');
 
     // Cargar los datos reales del tutor
     _loadTutorAvailableSlots();
@@ -1426,32 +1424,14 @@ class BookingModalState extends State<BookingModal> {
         return;
       }
 
-      print(
-          '[BookingModal] 🆔 Enviando ID del tutor al endpoint: ${widget.tutorId}');
-      print(
-          '[BookingModal] 📅 Procesando mes: ${currentMonth.month}/${currentMonth.year}');
       final response =
           await getTutorAvailableSlots(token, widget.tutorId.toString());
-
-      print('[BookingModal] Response type: ${response.runtimeType}');
-      if (response is Map<String, dynamic>) {
-        print('[BookingModal] Response keys: ${response.keys.toList()}');
-      }
-
-      // ✅ DEBUG: Mostrar respuesta completa de la API
-      print('[BookingModal] === RESPUESTA COMPLETA DE LA API ===');
-      print('[BookingModal] Response: $response');
-      print('[BookingModal] === FIN DE RESPUESTA ===');
 
       final Map<int, List<String>> newAvailableDays = {};
 
       // ✅ CAMBIO: Procesar la respuesta del nuevo endpoint
       // La API devuelve directamente una lista de slots
       dynamic data;
-      // ✅ DEBUG: Mostrar respuesta completa de la API
-      print('[BookingModal] === RESPUESTA COMPLETA DE LA API ===');
-      print('[BookingModal] Response: $response');
-      print('[BookingModal] ======================================');
 
       if (response is Map<String, dynamic> && response.containsKey('data')) {
         data = response['data'];
@@ -1461,10 +1441,6 @@ class BookingModalState extends State<BookingModal> {
 
       // ✅ SIMPLIFICADO: Solo procesar la lista de slots
       if (data is List) {
-        print('[BookingModal] 🔍 Total de slots recibidos: ${data.length}');
-        int slotsProcesados = 0;
-        int slotsIgnorados = 0;
-
         for (var slot in data) {
           try {
             // Verificar que el slot tenga los campos necesarios
@@ -1485,10 +1461,20 @@ class BookingModalState extends State<BookingModal> {
                   DateTime(slotDate.year, slotDate.month, slotDate.day);
 
               // ✅ CAMBIO: Usar start_time y end_time para las horas
-              final startTime =
+              // ✅ CORRECCIÓN: Ajustar zona horaria de UTC a Bolivia (UTC-4)
+              final startTimeUTC =
                   DateTime.parse(slot['start_time'].toString().trim());
-              final endTime =
+              final endTimeUTC =
                   DateTime.parse(slot['end_time'].toString().trim());
+
+              // Convertir a hora local de Bolivia (UTC-4)
+              // Los horarios de la base de datos están en UTC, restamos 4 horas para Bolivia
+              final startTime = startTimeUTC.subtract(Duration(hours: 4));
+              final endTime = endTimeUTC.subtract(Duration(hours: 4));
+
+              // ✅ DEBUG: Verificar conversión de zona horaria
+              print(
+                  '[BookingModal] 🔍 DEBUG - Zona horaria: UTC ${_formatTime(startTimeUTC)}-${_formatTime(endTimeUTC)} -> Bolivia ${_formatTime(startTime)}-${_formatTime(endTime)}');
 
               final timeRange =
                   '${_formatTime(startTime)}-${_formatTime(endTime)}';
@@ -1503,38 +1489,19 @@ class BookingModalState extends State<BookingModal> {
                   .contains(timeRange)) {
                 newAvailableDays[dateKey.millisecondsSinceEpoch]!
                     .add(timeRange);
-                slotsProcesados++;
               }
-            } else {
-              slotsIgnorados++;
             }
           } catch (e) {
-            print('[BookingModal] Error parsing slot: $e');
+            // Error parsing slot
           }
         }
-
-        print(
-            '[BookingModal] 📊 RESUMEN: Slots procesados: $slotsProcesados, Ignorados: $slotsIgnorados');
       }
-
-      print(
-          '[BookingModal] Processed available days: ${newAvailableDays.keys.map((timestamp) => DateTime.fromMillisecondsSinceEpoch(timestamp)).toList()}');
-
-      // ✅ DEBUG: Mostrar todos los tiempos libres obtenidos del tutor
-      print('[BookingModal] === DETALLE COMPLETO DE TIEMPOS LIBRES ===');
-      newAvailableDays.forEach((timestamp, timeSlots) {
-        final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
-        print('[BookingModal] 📅 Día: ${date.day}/${date.month}/${date.year}');
-        print('[BookingModal]    ⏰ Horarios: $timeSlots');
-      });
-      print('[BookingModal] === FIN DEL DETALLE ===');
 
       setState(() {
         availableDays = newAvailableDays;
         isLoading = false;
       });
     } catch (e) {
-      print('[BookingModal] Error loading available slots: $e');
       setState(() {
         errorMessage = 'Error al cargar los horarios disponibles: $e';
         isLoading = false;
@@ -1621,6 +1588,9 @@ class BookingModalState extends State<BookingModal> {
     if (start == null || end == null) return [];
     List<String> slots = [];
     DateTime slot = start;
+
+    // ✅ CORRECCIÓN: Generar intervalos de exactamente 20 minutos
+    // La última hora debe permitir una sesión completa de 20 minutos
     while (slot.isBefore(end.subtract(Duration(minutes: 20))) ||
         slot.isAtSameMomentAs(end.subtract(Duration(minutes: 20)))) {
       slots.add(_formatTime(slot));
@@ -1635,13 +1605,17 @@ class BookingModalState extends State<BookingModal> {
     final hour = int.tryParse(parts[0]);
     final min = int.tryParse(parts[1]);
     if (hour == null || min == null) return null;
-    return DateTime(0, 1, 1, hour, min);
+    final result = DateTime(0, 1, 1, hour, min);
+    print('[BookingModal] 🔍 DEBUG - _parseTime: $hhmm -> $result');
+    return result;
   }
 
   String _formatTime(DateTime t) {
-    return t.hour.toString().padLeft(2, '0') +
+    final result = t.hour.toString().padLeft(2, '0') +
         ':' +
         t.minute.toString().padLeft(2, '0');
+    print('[BookingModal] 🔍 DEBUG - _formatTime: $t -> $result');
+    return result;
   }
 
   bool _isTimeInRange(String range, String time) {
@@ -1651,16 +1625,25 @@ class BookingModalState extends State<BookingModal> {
     final end = _parseTime(parts[1]);
     final t = _parseTime(time);
     if (start == null || end == null || t == null) return false;
-    return (t.isAtSameMomentAs(start) || t.isAfter(start)) &&
-        t.isBefore(
-            end.subtract(Duration(minutes: 20)).add(Duration(minutes: 1)));
+
+    // ✅ DEBUG: Mostrar los tiempos para debugging
+    print('[BookingModal] 🔍 DEBUG - _isTimeInRange: range=$range, time=$time');
+    print('[BookingModal] 🔍 DEBUG - start=$start, end=$end, t=$t');
+
+    // ✅ CORRECCIÓN: Validar que la hora permita una sesión completa de 20 minutos
+    final result = (t.isAtSameMomentAs(start) || t.isAfter(start)) &&
+        t.isBefore(end.subtract(Duration(minutes: 20)));
+
+    print('[BookingModal] 🔍 DEBUG - _isTimeInRange result: $result');
+    return result;
   }
 
   Future<void> _pickTime(String range) async {
     final now = TimeOfDay.now();
     final parts = range.split('-');
     final start = _parseTime(parts[0]);
-    // final end = _parseTime(parts[1]); // not needed for initial time
+    final end = _parseTime(parts[1]); // ✅ CAMBIO: Necesitamos el end time
+
     final initial =
         start != null ? TimeOfDay(hour: start.hour, minute: start.minute) : now;
     final picked = await showTimePicker(
@@ -1684,7 +1667,16 @@ class BookingModalState extends State<BookingModal> {
           ':' +
           picked.minute.toString().padLeft(2, '0');
       if (_isTimeInRange(range, pickedStr)) {
-        setState(() => selectedHour = pickedStr);
+        // ✅ CORRECCIÓN: Calcular hora de fin exactamente 20 minutos después
+        final pickedDateTime = DateTime(0, 1, 1, picked.hour, picked.minute);
+        final endDateTime = pickedDateTime.add(Duration(minutes: 20));
+        final endTimeStr =
+            '${endDateTime.hour.toString().padLeft(2, '0')}:${endDateTime.minute.toString().padLeft(2, '0')}';
+
+        final fullRange = '$pickedStr-$endTimeStr';
+        print(
+            '[BookingModal] 🔍 DEBUG - _pickTime: range=$range, picked=$pickedStr, endTimeStr=$endTimeStr, fullRange=$fullRange');
+        setState(() => selectedHour = fullRange);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Hora fuera del rango permitido.')),
@@ -2165,9 +2157,31 @@ class BookingModalState extends State<BookingModal> {
                                                 .lightBlueColor
                                                 .withOpacity(0.13),
                                             onSelected: (_) {
-                                              setState(() => selectedHour = h);
+                                              // ✅ CORRECCIÓN: Guardar la hora en formato HH:MM-HH:MM
+                                              // La hora de fin debe ser 20 minutos después de la hora seleccionada
+                                              final selectedTime =
+                                                  _parseTime(h);
+                                              if (selectedTime != null) {
+                                                final endTime = selectedTime
+                                                    .add(Duration(minutes: 20));
+                                                final endTimeStr =
+                                                    _formatTime(endTime);
+                                                final fullRange =
+                                                    '$h-$endTimeStr';
+                                                setState(() =>
+                                                    selectedHour = fullRange);
+                                                print(
+                                                    '[BookingModal] selectedHour=$fullRange (hora + 20 min)');
+                                              } else {
+                                                setState(
+                                                    () => selectedHour = h);
+                                                print(
+                                                    '[BookingModal] selectedHour=$h (fallback)');
+                                              }
                                               print(
-                                                  '[BookingModal] selectedHour=$h');
+                                                  '[BookingModal] 🔍 DEBUG - Hora seleccionada: $h, rango original: $slot');
+                                              print(
+                                                  '[BookingModal] 🔍 DEBUG - selectedHour después del setState: $selectedHour');
                                               Future.delayed(
                                                   Duration(milliseconds: 100),
                                                   () {
@@ -2200,9 +2214,24 @@ class BookingModalState extends State<BookingModal> {
                                             .lightBlueColor
                                             .withOpacity(0.13),
                                         onSelected: (_) {
-                                          setState(() => selectedHour = slot);
-                                          print(
-                                              '[BookingModal] selectedHour=$slot');
+                                          // ✅ CORRECCIÓN: Para horas únicas, también calcular hora de fin
+                                          final selectedTime = _parseTime(slot);
+                                          if (selectedTime != null) {
+                                            final endTime = selectedTime
+                                                .add(Duration(minutes: 20));
+                                            final endTimeStr =
+                                                _formatTime(endTime);
+                                            final fullRange =
+                                                '$slot-$endTimeStr';
+                                            setState(
+                                                () => selectedHour = fullRange);
+                                            print(
+                                                '[BookingModal] selectedHour=$fullRange (hora única + 20 min)');
+                                          } else {
+                                            setState(() => selectedHour = slot);
+                                            print(
+                                                '[BookingModal] selectedHour=$slot (fallback)');
+                                          }
                                           Future.delayed(
                                               Duration(milliseconds: 100), () {
                                             if (_sheetScrollController !=
@@ -2394,7 +2423,19 @@ class BookingModalState extends State<BookingModal> {
                                       '[BookingModal] Reservar pressed with subject=$selectedSubject day=${selectedDay?.toIso8601String()} hour=$selectedHour');
                                   Navigator.pop(context);
 
-                                  // Navegar a la vista instant tutoring
+                                  // ✅ DEBUG: Mostrar datos que se van a pasar
+                                  print(
+                                      '[BookingModal] 🔍 DEBUG - Datos a pasar a InstantTutoringScreen:');
+                                  print(
+                                      '[BookingModal] selectedDay: $selectedDay');
+                                  print(
+                                      '[BookingModal] selectedHour: $selectedHour');
+                                  print(
+                                      '[BookingModal] selectedHour type: ${selectedHour.runtimeType}');
+                                  print(
+                                      '[BookingModal] selectedSubject: $selectedSubject');
+
+                                  // ✅ CAMBIO: Navegar a la vista instant tutoring con datos de reserva programada
                                   showModalBottomSheet(
                                     context: context,
                                     isScrollControlled: true,
@@ -2413,6 +2454,10 @@ class BookingModalState extends State<BookingModal> {
                                         selectedSubject: selectedSubject,
                                         tutorId: widget.tutorId,
                                         subjectId: widget.subjectId,
+                                        // ✅ NUEVO: Pasar datos de reserva programada
+                                        scheduledDate: selectedDay,
+                                        scheduledTime: selectedHour,
+                                        isScheduledBooking: true,
                                       ),
                                     ),
                                   );
@@ -2436,7 +2481,7 @@ class BookingModalState extends State<BookingModal> {
                                       selectedHour != null)
                                   ? Colors.white
                                   : Colors.white54),
-                          label: Text('Reservar',
+                          label: Text('Confirmar Reserva',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: (selectedSubject != null &&

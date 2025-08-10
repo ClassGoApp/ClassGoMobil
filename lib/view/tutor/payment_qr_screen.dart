@@ -22,6 +22,10 @@ class PaymentQRScreen extends StatefulWidget {
   final String sessionDuration;
   final int tutorId;
   final int subjectId;
+  // ✅ NUEVO: Parámetros para reserva programada
+  final DateTime? scheduledDate;
+  final String? scheduledTime;
+  final bool isScheduledBooking;
 
   const PaymentQRScreen({
     Key? key,
@@ -32,6 +36,10 @@ class PaymentQRScreen extends StatefulWidget {
     required this.sessionDuration,
     required this.tutorId,
     required this.subjectId,
+    // ✅ NUEVO: Parámetros opcionales
+    this.scheduledDate,
+    this.scheduledTime,
+    this.isScheduledBooking = false,
   }) : super(key: key);
 
   @override
@@ -57,6 +65,12 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
   @override
   void initState() {
     super.initState();
+
+    // ✅ DEBUG: Mostrar datos recibidos
+    print('[PaymentQRScreen] 🔍 DEBUG - Datos recibidos en initState:');
+    print('[PaymentQRScreen] isScheduledBooking: ${widget.isScheduledBooking}');
+    print('[PaymentQRScreen] scheduledDate: ${widget.scheduledDate}');
+    print('[PaymentQRScreen] scheduledTime: ${widget.scheduledTime}');
 
     _slideAnimationController = AnimationController(
       duration: Duration(milliseconds: 600),
@@ -260,8 +274,92 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
 
       // 1. Crear el slot booking
       final now = DateTime.now();
-      final startTime = now;
-      final endTime = now.add(Duration(minutes: 20));
+
+      // ✅ CAMBIO: Usar fecha y hora programada si es una reserva, sino usar tiempo actual
+      DateTime startTime, endTime;
+      String calendarEventId;
+      Map<String, dynamic> metaData;
+
+      if (widget.isScheduledBooking &&
+          widget.scheduledDate != null &&
+          widget.scheduledTime != null) {
+        // ✅ RESERVA PROGRAMADA: Usar fecha y hora seleccionada
+        final scheduledDateTime = widget.scheduledDate!;
+        final timeParts = widget.scheduledTime!.split('-');
+        print(
+            '[PaymentQRScreen] 🔍 DEBUG - Parsing time: ${widget.scheduledTime}');
+        print('[PaymentQRScreen] 🔍 DEBUG - Time parts: $timeParts');
+
+        if (timeParts.length == 2) {
+          final startTimeStr = timeParts[0].trim();
+          final endTimeStr = timeParts[1].trim();
+
+          print(
+              '[PaymentQRScreen] 🔍 DEBUG - Start time string: $startTimeStr');
+          print('[PaymentQRScreen] 🔍 DEBUG - End time string: $endTimeStr');
+
+          try {
+            // Parsear las horas (formato: "14:00", "15:30", etc.)
+            final startHour = int.parse(startTimeStr.split(':')[0]);
+            final startMinute = int.parse(startTimeStr.split(':')[1]);
+            final endHour = int.parse(endTimeStr.split(':')[0]);
+            final endMinute = int.parse(endTimeStr.split(':')[1]);
+
+            print(
+                '[PaymentQRScreen] 🔍 DEBUG - Parsed hours: $startHour:$startMinute - $endHour:$endMinute');
+
+            startTime = DateTime(
+                scheduledDateTime.year,
+                scheduledDateTime.month,
+                scheduledDateTime.day,
+                startHour,
+                startMinute);
+            endTime = DateTime(scheduledDateTime.year, scheduledDateTime.month,
+                scheduledDateTime.day, endHour, endMinute);
+
+            print(
+                '[PaymentQRScreen] 🔍 DEBUG - Final DateTime objects: $startTime - $endTime');
+
+            calendarEventId =
+                'scheduled_${scheduledDateTime.millisecondsSinceEpoch}';
+            metaData = {'comentario': 'Tutoría programada'};
+          } catch (e) {
+            print('[PaymentQRScreen] ❌ ERROR parsing time: $e');
+            // Fallback si hay error en el parsing
+            startTime = now;
+            endTime = now.add(Duration(minutes: 20));
+            calendarEventId = 'instant_${now.millisecondsSinceEpoch}';
+            metaData = {'comentario': 'Tutoría instantánea (error parsing)'};
+          }
+        } else {
+          print(
+              '[PaymentQRScreen] ❌ ERROR: Time format incorrect, expected HH:MM-HH:MM, got: ${widget.scheduledTime}');
+          // Fallback si el formato no es correcto
+          startTime = now;
+          endTime = now.add(Duration(minutes: 20));
+          calendarEventId = 'instant_${now.millisecondsSinceEpoch}';
+          metaData = {'comentario': 'Tutoría instantánea (formato incorrecto)'};
+        }
+      } else {
+        // ✅ TUTORÍA INSTANTÁNEA: Usar tiempo actual
+        startTime = now;
+        endTime = now.add(Duration(minutes: 20));
+        calendarEventId = 'instant_${now.millisecondsSinceEpoch}';
+        metaData = {'comentario': 'Tutoría instantánea'};
+      }
+
+      // ✅ DEBUG: Mostrar qué valores se están enviando
+      print('[PaymentQRScreen] 🔍 DEBUG - Valores a enviar a la API:');
+      print(
+          '[PaymentQRScreen] isScheduledBooking: ${widget.isScheduledBooking}');
+      print('[PaymentQRScreen] scheduledDate: ${widget.scheduledDate}');
+      print('[PaymentQRScreen] scheduledTime: ${widget.scheduledTime}');
+      print(
+          '[PaymentQRScreen] startTime: $startTime (${startTime.toIso8601String()})');
+      print(
+          '[PaymentQRScreen] endTime: $endTime (${endTime.toIso8601String()})');
+      print('[PaymentQRScreen] calendarEventId: $calendarEventId');
+      print('[PaymentQRScreen] metaData: $metaData');
 
       final slotBookingData = {
         'student_id': studentId,
@@ -271,16 +369,17 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
         'end_time': endTime.toIso8601String(),
         'session_fee': 15.0,
         'booked_at': now.toIso8601String(),
-        'calendar_event_id': 'instant_${DateTime.now().millisecondsSinceEpoch}',
+        'calendar_event_id': calendarEventId,
         'meeting_link': '',
         'status': 2,
-        'meta_data': {'comentario': 'Tutoría instantánea'},
+        'meta_data': metaData,
         'subject_id': widget.subjectId,
       };
 
       final slotBookingResponse =
           await createSlotBooking(token, slotBookingData);
-      print('Respuesta al crear tutoría (slot booking): $slotBookingResponse');
+      print('[PaymentQRScreen] 📤 Datos enviados a la API: $slotBookingData');
+      print('[PaymentQRScreen] 📥 Respuesta de la API: $slotBookingResponse');
 
       final slotBookingId =
           slotBookingResponse['data']?['id'] ?? slotBookingResponse['id'];
@@ -315,9 +414,12 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
         return;
       }
 
-      // Éxito - mostrar mensaje y navegar
-      showCustomToast(context,
-          '¡Pago procesado exitosamente! La tutoría ha sido creada.', true);
+      // ✅ CAMBIO: Mensaje dinámico según el tipo de tutoría
+      final successMessage = widget.isScheduledBooking
+          ? '¡Reserva confirmada exitosamente! Tu tutoría ha sido programada.'
+          : '¡Pago procesado exitosamente! La tutoría ha sido creada.';
+
+      showCustomToast(context, successMessage, true);
 
       // Esperar un momento y luego navegar
       await Future.delayed(Duration(seconds: 2));
@@ -331,7 +433,11 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
               subjectName: widget.selectedSubject,
               sessionDuration: widget.sessionDuration,
               amount: widget.amount,
-              sessionTime: DateTime.now(), // Para tutorías instantáneas
+              // ✅ CAMBIO: Usar hora programada si es reserva, sino hora actual
+              sessionTime:
+                  widget.isScheduledBooking && widget.scheduledDate != null
+                      ? widget.scheduledDate!
+                      : DateTime.now(),
             ),
           ),
         );
@@ -738,7 +844,9 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
                   ])
                 : Text(
                     _receiptImage != null
-                        ? 'Confirmar Pago'
+                        ? (widget.isScheduledBooking
+                            ? 'Confirmar Reserva'
+                            : 'Confirmar Pago')
                         : 'Sube el comprobante primero',
                     style: TextStyle(
                         color: Colors.white,
@@ -748,7 +856,9 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
           ),
           SizedBox(height: 16),
           Text(
-              'La sesión comenzará automáticamente una vez confirmado el pago.',
+              widget.isScheduledBooking
+                  ? 'Tu reserva será confirmada una vez verificado el pago.'
+                  : 'La sesión comenzará automáticamente una vez confirmado el pago.',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.white70, fontSize: 13)),
           Padding(
