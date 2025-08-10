@@ -12,6 +12,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/view/auth/login_screen.dart';
+import 'package:flutter_projects/view/auth/register_screen.dart';
 import 'package:flutter_projects/view/tutor/search_tutors_screen.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -1283,7 +1284,7 @@ class _HomeScreenState extends State<HomeScreen>
                           SizedBox(height: 12),
                           SizedBox(
                             height: MediaQuery.of(context).size.height *
-                                0.38, // Antes 0.44, ajusto para tarjetas más compactas
+                                0.45, // ✅ AUMENTADO: Para asegurar que todos los elementos sean visibles en todos los dispositivos
                             child: PageView.builder(
                               controller: PageController(
                                 viewportFraction:
@@ -1768,6 +1769,7 @@ class _HomeScreenState extends State<HomeScreen>
                                   buttonText: 'Empezar',
                                   imageUrl:
                                       'https://classgoapp.com/storage/optionbuilder/uploads/927102-18-2025_1202amPASO_1.jpg',
+                                  onButtonPressed: () => _handleRegister(),
                                 ),
                                 SizedBox(width: 18),
                                 _StepCard(
@@ -1778,6 +1780,7 @@ class _HomeScreenState extends State<HomeScreen>
                                   buttonText: 'Buscar Ahora',
                                   imageUrl:
                                       'https://classgoapp.com/storage/optionbuilder/uploads/776302-18-2025_1203amPASO_2.jpg',
+                                  onButtonPressed: () => _handleTutorSearch(),
                                 ),
                                 SizedBox(width: 18),
                                 _StepCard(
@@ -1788,9 +1791,12 @@ class _HomeScreenState extends State<HomeScreen>
                                   buttonText: 'Empecemos',
                                   imageUrl:
                                       'https://classgoapp.com/storage/optionbuilder/uploads/229502-18-2025_1204amPASO_3.jpg',
+                                  onButtonPressed: () => _handleTutorSearch(),
                                 ),
                                 SizedBox(width: 18),
-                                _StartJourneyCard(),
+                                _StartJourneyCard(
+                                  onButtonPressed: () => _handleTutorSearch(),
+                                ),
                                 SizedBox(
                                     width:
                                         8), // Added SizedBox for spacing at the end
@@ -3808,6 +3814,40 @@ class _HomeScreenState extends State<HomeScreen>
   //       return result;
   //   }
   // }
+
+  // ✅ MÉTODOS PARA MANEJAR LOS BOTONES DE LAS TARJETAS
+  void _handleRegister() {
+    // Navegar a la vista de registro
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => RegistrationScreen(),
+      ),
+    );
+  }
+
+  void _handleTutorSearch() {
+    // Verificar si el usuario está logueado
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.isLoggedIn) {
+      // Usuario logueado, navegar a search_tutors
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SearchTutorsScreen(),
+        ),
+      );
+    } else {
+      // Usuario no logueado, mostrar mensaje
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Debes iniciar sesión para acceder a esta función'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+  }
 }
 
 class _StepCard extends StatelessWidget {
@@ -3816,6 +3856,7 @@ class _StepCard extends StatelessWidget {
   final String description;
   final String buttonText;
   final String imageUrl;
+  final VoidCallback? onButtonPressed;
 
   const _StepCard({
     required this.step,
@@ -3823,6 +3864,7 @@ class _StepCard extends StatelessWidget {
     required this.description,
     required this.buttonText,
     required this.imageUrl,
+    this.onButtonPressed,
   });
 
   @override
@@ -3905,7 +3947,7 @@ class _StepCard extends StatelessWidget {
                           padding:
                               EdgeInsets.symmetric(horizontal: 18, vertical: 8),
                         ),
-                        onPressed: () {},
+                        onPressed: onButtonPressed,
                         child: Text(buttonText,
                             style: TextStyle(fontWeight: FontWeight.bold)),
                       ),
@@ -3976,6 +4018,10 @@ class _AllianceCard extends StatelessWidget {
 }
 
 class _StartJourneyCard extends StatelessWidget {
+  final VoidCallback? onButtonPressed;
+
+  const _StartJourneyCard({this.onButtonPressed});
+
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
@@ -4028,7 +4074,7 @@ class _StartJourneyCard extends StatelessWidget {
                 ),
                 padding: EdgeInsets.symmetric(horizontal: 22, vertical: 12),
               ),
-              onPressed: () {},
+              onPressed: onButtonPressed,
               icon: Icon(Icons.arrow_forward, color: Colors.white),
               label: Text('Empieza Ahora',
                   style: TextStyle(fontWeight: FontWeight.bold)),

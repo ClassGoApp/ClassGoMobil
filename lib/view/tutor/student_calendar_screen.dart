@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
 import 'package:flutter_projects/provider/booking_provider.dart';
+import 'package:flutter_projects/view/home/home_screen.dart';
 
 class StudentCalendarScreen extends StatefulWidget {
   const StudentCalendarScreen({Key? key}) : super(key: key);
@@ -134,6 +135,15 @@ class _StudentCalendarScreenState extends State<StudentCalendarScreen> {
           appBar: AppBar(
             backgroundColor: const Color(0xFF181F2A),
             elevation: 0,
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back_ios, color: Colors.white, size: 24),
+              onPressed: () {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => HomeScreen()),
+                  (route) => false,
+                );
+              },
+            ),
             title: const Text('Mi Calendario',
                 style: TextStyle(
                     color: Colors.white, fontWeight: FontWeight.bold)),

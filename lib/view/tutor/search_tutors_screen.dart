@@ -1216,6 +1216,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                 MainHeader(
                   showMenuButton: false,
                   showProfileButton: false,
+                  showBackButton: true,
                   onMenuPressed: () {
                     _scaffoldKey.currentState?.openDrawer();
                   },

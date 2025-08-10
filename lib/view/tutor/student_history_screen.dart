@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/booking_provider.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/view/home/home_screen.dart';
 
 class StudentHistoryScreen extends StatefulWidget {
   const StudentHistoryScreen({Key? key}) : super(key: key);
@@ -104,6 +105,15 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> {
           appBar: AppBar(
             backgroundColor: AppColors.darkBlue,
             elevation: 0,
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back_ios, color: Colors.white, size: 24),
+              onPressed: () {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => HomeScreen()),
+                  (route) => false,
+                );
+              },
+            ),
             title: const Text('Historial de Tutorías',
                 style: TextStyle(
                     color: Colors.white, fontWeight: FontWeight.bold)),
