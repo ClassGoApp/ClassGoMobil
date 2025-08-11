@@ -22,9 +22,9 @@ class TutorSubject {
       id: json['id'],
       userId: json['user_id'],
       subjectId: json['subject_id'],
-      description: json['description'],
+      description: json['description'] ?? '',
       image: json['image'],
-      status: json['status'],
+      status: json['status'] ?? 'active',
       subject: Subject.fromJson(json['subject']),
     );
   }

@@ -103,17 +103,23 @@ class TutorSubjectsProvider with ChangeNotifier {
     notifyListeners();
 
     try {
+      print('🔍 DEBUG - Eliminando materia con ID: $subjectId');
       final response = await deleteTutorSubject(
         authProvider.token!,
         subjectId,
       );
 
+      print('🔍 DEBUG - Respuesta de eliminación: $response');
+
       if (response['status'] == 200 || response['status'] == 204) {
+        print('🔍 DEBUG - Eliminación exitosa, recargando materias...');
         // Recargar las materias después de eliminar
         await loadTutorSubjects(authProvider);
+        print('🔍 DEBUG - Materias recargadas después de eliminar');
         return true;
       } else {
         _error = response['message'] ?? 'Error al eliminar la materia';
+        print('🔍 DEBUG - Error en eliminación: $_error');
         return false;
       }
     } catch (e) {

@@ -1908,3 +1908,44 @@ Future<Map<String, dynamic>> changeBookingToCursando(
     };
   }
 }
+
+// Obtener imagen de perfil del usuario
+Future<Map<String, dynamic>> getUserProfileImage(
+    String token, int userId) async {
+  try {
+    print('DEBUG - Obteniendo imagen de perfil para usuario: $userId');
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/user/$userId/profile-image'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
+    );
+
+    print(
+        'DEBUG - Respuesta del servidor: ${response.statusCode} - ${response.body}');
+
+    if (response.statusCode == 200) {
+      final responseData = jsonDecode(response.body);
+      return {
+        'success': true,
+        'data': responseData,
+      };
+    } else {
+      final errorData = jsonDecode(response.body);
+      return {
+        'success': false,
+        'message':
+            errorData['message'] ?? 'Error al obtener la imagen de perfil',
+        'status': response.statusCode,
+      };
+    }
+  } catch (e) {
+    print('Error getting user profile image: $e');
+    return {
+      'success': false,
+      'message': 'Error de conexión: $e',
+    };
+  }
+}

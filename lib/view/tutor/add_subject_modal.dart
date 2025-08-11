@@ -13,8 +13,7 @@ class AddSubjectModal extends StatefulWidget {
 
 class _AddSubjectModalState extends State<AddSubjectModal> {
   final _formKey = GlobalKey<FormState>();
-  final _descriptionController = TextEditingController();
-  int? _selectedSubjectId;
+  Set<int> _selectedSubjectIds = {}; // Cambiar a Set para múltiples selecciones
   String? _selectedImagePath;
   bool _isLoading = false;
   bool _isLoadingSubjects = true;
@@ -37,7 +36,6 @@ class _AddSubjectModalState extends State<AddSubjectModal> {
 
   @override
   void dispose() {
-    _descriptionController.dispose();
     _scrollController.dispose();
     _searchController.dispose();
     _debounceTimer?.cancel();
@@ -178,11 +176,11 @@ class _AddSubjectModalState extends State<AddSubjectModal> {
     }
   }
 
-  Future<void> _addSubject() async {
+  Future<void> _addSubjects() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedSubjectId == null) {
+    if (_selectedSubjectIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Por favor selecciona una materia')),
+        SnackBar(content: Text('Por favor selecciona al menos una materia')),
       );
       return;
     }
@@ -191,42 +189,56 @@ class _AddSubjectModalState extends State<AddSubjectModal> {
       _isLoading = true;
     });
 
-    // DEPURACIÓN: Mostrar el id y nombre de la materia seleccionada
-    final selectedSubject = _availableSubjects.firstWhere(
-      (s) => s['id'] == _selectedSubjectId,
-      orElse: () => {},
-    );
-    print(
-        'Materia seleccionada: id= [32m$_selectedSubjectId [0m, nombre=${selectedSubject['name']}');
-
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final subjectsProvider =
         Provider.of<TutorSubjectsProvider>(context, listen: false);
 
-    final success = await subjectsProvider.addTutorSubjectToApi(
-      authProvider,
-      _selectedSubjectId!,
-      _descriptionController.text.trim(),
-      _selectedImagePath,
-    );
+    int successCount = 0;
+    int totalCount = _selectedSubjectIds.length;
+
+    // Agregar materias una por una
+    for (int subjectId in _selectedSubjectIds) {
+      final success = await subjectsProvider.addTutorSubjectToApi(
+        authProvider,
+        subjectId,
+        '', // Sin descripción
+        _selectedImagePath,
+      );
+
+      if (success) {
+        successCount++;
+      }
+    }
 
     setState(() {
       _isLoading = false;
     });
 
-    if (success) {
-      Navigator.of(context).pop();
+    Navigator.of(context).pop();
+
+    // Refrescar la lista de materias del tutor después de agregar
+    await subjectsProvider.loadTutorSubjects(authProvider);
+
+    if (successCount == totalCount) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Materia agregada exitosamente'),
+          content: Text('$successCount materias agregadas exitosamente'),
           backgroundColor: AppColors.primaryGreen,
+        ),
+      );
+    } else if (successCount > 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              '$successCount de $totalCount materias agregadas. Algunas fallaron.'),
+          backgroundColor: Colors.orange,
         ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content:
-              Text(subjectsProvider.error ?? 'Error al agregar la materia'),
+              Text(subjectsProvider.error ?? 'Error al agregar las materias'),
           backgroundColor: AppColors.redColor,
         ),
       );
@@ -263,19 +275,87 @@ class _AddSubjectModalState extends State<AddSubjectModal> {
                 ),
               ),
             ),
-            Text(
-              'Agregar materia',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-              ),
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [AppColors.primaryGreen, AppColors.orangeprimary],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(
+                    Icons.school,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Agregar Materias',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                        ),
+                      ),
+                      Text(
+                        'Selecciona múltiples materias',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
             SizedBox(height: 24),
 
+            // Indicador de materias seleccionadas
+            if (_selectedSubjectIds.isNotEmpty)
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryGreen.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.primaryGreen.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.check_circle,
+                      color: AppColors.primaryGreen,
+                      size: 20,
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '${_selectedSubjectIds.length} materia${_selectedSubjectIds.length == 1 ? '' : 's'} seleccionada${_selectedSubjectIds.length == 1 ? '' : 's'}',
+                        style: TextStyle(
+                          color: AppColors.primaryGreen,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            SizedBox(height: 16),
+
             // Selector de materia
             Text(
-              'Materia',
+              'Materias Disponibles',
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
@@ -400,18 +480,26 @@ class _AddSubjectModalState extends State<AddSubjectModal> {
                               );
                             }
                             final subject = _availableSubjects[index];
-                            return RadioListTile<int>(
-                              value: subject['id'],
-                              groupValue: _selectedSubjectId,
+                            return CheckboxListTile(
+                              value:
+                                  _selectedSubjectIds.contains(subject['id']),
                               onChanged: _subjectsLoadError
                                   ? null
-                                  : (value) {
+                                  : (bool? value) {
                                       setState(() {
-                                        _selectedSubjectId = value;
+                                        if (value == true) {
+                                          _selectedSubjectIds
+                                              .add(subject['id']);
+                                        } else {
+                                          _selectedSubjectIds
+                                              .remove(subject['id']);
+                                        }
                                       });
                                     },
                               title: Text(subject['name'],
                                   style: TextStyle(color: Colors.white)),
+                              activeColor: AppColors.primaryGreen,
+                              checkColor: Colors.white,
                             );
                           },
                         ),
@@ -429,50 +517,6 @@ class _AddSubjectModalState extends State<AddSubjectModal> {
                   ],
                 ),
               ),
-            SizedBox(height: 20),
-
-            // Campo de descripción
-            Text(
-              'Descripción',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-              ),
-            ),
-            SizedBox(height: 8),
-            TextFormField(
-              controller: _descriptionController,
-              style: TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: 'Describe tu experiencia en esta materia...',
-                hintStyle: TextStyle(color: Colors.white70),
-                filled: true,
-                fillColor: Colors.white.withOpacity(0.1),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.primaryGreen),
-                ),
-              ),
-              maxLines: 3,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Por favor ingresa una descripción';
-                }
-                if (value.trim().length < 10) {
-                  return 'La descripción debe tener al menos 10 caracteres';
-                }
-                return null;
-              },
-            ),
             SizedBox(height: 24),
 
             // Botones
@@ -499,7 +543,7 @@ class _AddSubjectModalState extends State<AddSubjectModal> {
                 Expanded(
                   child: ElevatedButton(
                     onPressed:
-                        _isLoading || _subjectsLoadError ? null : _addSubject,
+                        _isLoading || _subjectsLoadError ? null : _addSubjects,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGreen,
                       shape: RoundedRectangleBorder(
@@ -518,7 +562,9 @@ class _AddSubjectModalState extends State<AddSubjectModal> {
                             ),
                           )
                         : Text(
-                            'Agregar',
+                            _selectedSubjectIds.isEmpty
+                                ? 'Agregar'
+                                : 'Agregar ${_selectedSubjectIds.length} materia${_selectedSubjectIds.length == 1 ? '' : 's'}',
                             style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
