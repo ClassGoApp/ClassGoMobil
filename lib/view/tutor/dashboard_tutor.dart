@@ -11,6 +11,7 @@ import 'package:flutter_projects/view/tutor/add_subject_modal.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
 import 'package:flutter_projects/view/auth/login_screen.dart';
 import 'package:flutter_projects/helpers/pusher_service.dart';
+import 'package:flutter_projects/models/tutor_subject.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -2076,39 +2077,64 @@ class _DashboardTutorState extends State<DashboardTutor> {
             color: AppColors.darkBlue.withOpacity(0.8),
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: AppColors.primaryGreen.withOpacity(0.3),
-              width: 1,
+              color: AppColors.lightBlueColor.withOpacity(0.6),
+              width: 1.5,
             ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Mis Materias (${subjectsProvider.subjects.length})',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
+                                Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Mis Materias',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                                                      Container(
+                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.lightBlueColor.withOpacity(0.3),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: AppColors.lightBlueColor.withOpacity(0.8),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Text(
+                                '${subjectsProvider.subjects.length} materia${subjectsProvider.subjects.length != 1 ? 's' : ''}',
+                                style: TextStyle(
+                                  color: AppColors.lightBlueColor,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: () => _showAddSubjectModal(),
+                        icon: Icon(Icons.add, color: Colors.white, size: 16),
+                        label: Text('Añadir',
+                            style: TextStyle(color: Colors.white, fontSize: 12)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryGreen,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
+                      ),
+                    ],
                   ),
-                  ElevatedButton.icon(
-                    onPressed: () => _showAddSubjectModal(),
-                    icon: Icon(Icons.add, color: Colors.white, size: 16),
-                    label: Text('Añadir',
-                        style: TextStyle(color: Colors.white, fontSize: 12)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryGreen,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    ),
-                  ),
-                ],
-              ),
               SizedBox(height: 16),
               if (subjectsProvider.isLoading)
                 Center(
@@ -2130,58 +2156,73 @@ class _DashboardTutorState extends State<DashboardTutor> {
                   ),
                 )
               else
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: subjectsProvider.subjects.map((subject) {
-                    return Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryGreen.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: AppColors.primaryGreen.withOpacity(0.5),
-                          width: 1,
+                Column(
+                  children: [
+                    // Grid de materias con scroll horizontal
+                    Container(
+                      height: 90, // Altura reducida para tarjetas más compactas
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: EdgeInsets.symmetric(horizontal: 4),
+                        itemCount: subjectsProvider.subjects.length,
+                        itemBuilder: (context, index) {
+                          final subject = subjectsProvider.subjects[index];
+                          return Container(
+                            margin: EdgeInsets.only(right: 12),
+                            child: _buildSubjectCard(subject),
+                          );
+                        },
+                      ),
+                    ),
+                    // Indicador de scroll y paginación
+                    if (subjectsProvider.subjects.length > 3)
+                      Container(
+                        margin: EdgeInsets.only(top: 16),
+                        child: Column(
+                          children: [
+                            // Indicador de paginación con puntos
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: List.generate(
+                                (subjectsProvider.subjects.length / 3).ceil(),
+                                (index) => Container(
+                                  width: 6, // Puntos más pequeños
+                                  height: 6,
+                                  margin: EdgeInsets.symmetric(horizontal: 3),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: index == 0 
+                                        ? AppColors.lightBlueColor.withOpacity(0.9) // Color celeste más visible
+                                        : AppColors.lightBlueColor.withOpacity(0.4), // Color celeste más tenue pero visible
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 12),
+                            // Texto de instrucción
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.swipe_left,
+                                  color: AppColors.lightBlueColor.withOpacity(0.9),
+                                  size: 16,
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Desliza para ver más materias',
+                                  style: TextStyle(
+                                    color: AppColors.lightBlueColor.withOpacity(0.9),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.school,
-                            color: AppColors.primaryGreen,
-                            size: 16,
-                          ),
-                          SizedBox(width: 6),
-                          Text(
-                            subject.subject.name,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 13,
-                            ),
-                          ),
-                          SizedBox(width: 6),
-                          GestureDetector(
-                            onTap: () => _deleteSubject(subject.id),
-                            child: Container(
-                              padding: EdgeInsets.all(2),
-                              decoration: BoxDecoration(
-                                color: AppColors.redColor.withOpacity(0.2),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.close,
-                                color: AppColors.redColor,
-                                size: 14,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
+                  ],
                 ),
             ],
           ),
@@ -2601,6 +2642,95 @@ class _DashboardTutorState extends State<DashboardTutor> {
         ],
       ),
     );
+  }
+
+  // Widget para construir las tarjetas de materias
+  Widget _buildSubjectCard(TutorSubject subject) {
+    return IntrinsicWidth( // Permite que la tarjeta se ajuste al contenido
+      child: Container(
+        constraints: BoxConstraints(
+          minWidth: 140, // Ancho mínimo
+          maxWidth: 200, // Ancho máximo para evitar tarjetas muy anchas
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.darkBlue.withOpacity(0.8), // Fondo más sólido y contrastado
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: AppColors.lightBlueColor.withOpacity(0.8), // Borde celeste más visible
+            width: 2, // Borde más grueso para mejor visibilidad
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2), // Sombra más definida
+            blurRadius: 8,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          // Contenido principal
+          Padding(
+            padding: EdgeInsets.all(12), // Padding reducido
+            child: Row(
+              children: [
+                // Icono de la materia
+                Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.lightBlueColor.withOpacity(0.3), // Icono con color celeste para mejor contraste
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.school,
+                    color: AppColors.lightBlueColor, // Icono celeste para mejor visibilidad
+                    size: 18,
+                  ),
+                ),
+                SizedBox(width: 10),
+                // Nombre de la materia
+                Flexible( // Cambio de Expanded a Flexible para mejor control
+                  child: Text(
+                    subject.subject.name,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Botón de eliminar en la esquina superior derecha
+          Positioned(
+            top: 6,
+            right: 6,
+            child: GestureDetector(
+              onTap: () => _deleteSubject(subject.id),
+              child: Container(
+                padding: EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  color: AppColors.redColor.withOpacity(0.8), // Rojo más sobrio
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.3), // Borde sutil
+                    width: 1,
+                  ),
+                ),
+                child: Icon(
+                  Icons.close,
+                  color: Colors.white,
+                  size: 12, // Icono más pequeño
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ));
   }
 
   Widget _buildFreeTimeCalendar() {

@@ -18,6 +18,7 @@ class TutorSubject {
   });
 
   factory TutorSubject.fromJson(Map<String, dynamic> json) {
+    print('🔍 DEBUG - Parseando TutorSubject: ID=${json['id']}, Subject ID=${json['subject_id']}, Nombre=${json['subject']?['name'] ?? 'N/A'}');
     return TutorSubject(
       id: json['id'],
       userId: json['user_id'],

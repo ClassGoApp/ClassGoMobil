@@ -1753,10 +1753,16 @@ Future<Map<String, dynamic>> addTutorSubject(String token, int userId,
 }
 
 Future<Map<String, dynamic>> deleteTutorSubject(
-    String token, int subjectId) async {
+    String token, int tutorId, int subjectId) async {
   try {
+    final url = '$baseUrl/tutor/$tutorId/subjects/$subjectId';
+    print('🔍 DEBUG - URL de eliminación: $url');
+    print('🔍 DEBUG - Token: ${token.substring(0, 20)}...');
+    print('🔍 DEBUG - Tutor ID: $tutorId');
+    print('🔍 DEBUG - Subject ID: $subjectId');
+    
     final response = await http.delete(
-      Uri.parse('$baseUrl/tutor-subjects/$subjectId'),
+      Uri.parse(url),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -1764,14 +1770,19 @@ Future<Map<String, dynamic>> deleteTutorSubject(
       },
     );
 
+    print('🔍 DEBUG - Status code de respuesta: ${response.statusCode}');
+    print('🔍 DEBUG - Cuerpo de respuesta: ${response.body}');
+    
     if (response.statusCode == 200 || response.statusCode == 204) {
       return {'success': true, 'message': 'Subject deleted successfully'};
     } else {
-      throw Exception('Failed to delete tutor subject: ${response.statusCode}');
+      final responseBody = response.body.isNotEmpty ? jsonDecode(response.body) : {};
+      final errorMessage = responseBody['message'] ?? 'Failed to delete tutor subject: ${response.statusCode}';
+      return {'success': false, 'message': errorMessage, 'status': response.statusCode};
     }
   } catch (e) {
     print('Error deleting tutor subject: $e');
-    throw e;
+    return {'success': false, 'message': 'Error de conexión: $e'};
   }
 }
 

@@ -31,6 +31,12 @@ class TutorSubjectsProvider with ChangeNotifier {
 
       if (response['status'] == 200 && response['data'] != null) {
         final List<dynamic> subjectsData = response['data'];
+        print('🔍 DEBUG - Datos crudos de materias recibidos:');
+        for (int i = 0; i < subjectsData.length; i++) {
+          final subject = subjectsData[i];
+          print('   Materia $i: ID=${subject['id']}, Subject ID=${subject['subject_id']}, Nombre=${subject['subject']?['name'] ?? 'N/A'}');
+        }
+        
         _subjects =
             subjectsData.map((json) => TutorSubject.fromJson(json)).toList();
       } else {
@@ -92,6 +98,8 @@ class TutorSubjectsProvider with ChangeNotifier {
     AuthProvider authProvider,
     int subjectId,
   ) async {
+    print('🚀 DEBUG - Iniciando proceso de eliminación de materia...');
+    
     if (authProvider.token == null) {
       _error = 'No hay token de autenticación';
       notifyListeners();
@@ -104,14 +112,37 @@ class TutorSubjectsProvider with ChangeNotifier {
 
     try {
       print('🔍 DEBUG - Eliminando materia con ID: $subjectId');
+      print('🔍 DEBUG - ID del tutor: ${authProvider.userId}');
+      
+      // Buscar la materia para mostrar su nombre
+      final subjectToDelete = _subjects.firstWhere(
+        (subject) => subject.id == subjectId,
+        orElse: () => TutorSubject(
+          id: 0,
+          userId: 0,
+          subjectId: 0,
+          description: '',
+          status: 'unknown',
+          subject: Subject(
+            id: 0,
+            name: 'Desconocida',
+            subjectGroupId: 0,
+          ),
+        ),
+      );
+      print('🔍 DEBUG - Materia a eliminar: "${subjectToDelete.subject.name}" (ID: $subjectId)');
+      print('🔍 DEBUG - ID de relación: $subjectId, ID de materia base: ${subjectToDelete.subjectId}');
+      
+      // Usar subjectId en lugar de id para la eliminación
       final response = await deleteTutorSubject(
         authProvider.token!,
-        subjectId,
+        authProvider.userId!,
+        subjectToDelete.subjectId, // ← Usar subjectId en lugar de id
       );
 
       print('🔍 DEBUG - Respuesta de eliminación: $response');
 
-      if (response['status'] == 200 || response['status'] == 204) {
+      if (response['success'] == true) {
         print('🔍 DEBUG - Eliminación exitosa, recargando materias...');
         // Recargar las materias después de eliminar
         await loadTutorSubjects(authProvider);
