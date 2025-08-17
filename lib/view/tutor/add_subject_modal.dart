@@ -69,6 +69,8 @@ class _AddSubjectModalState extends State<AddSubjectModal> {
     }
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final subjectsProvider = Provider.of<TutorSubjectsProvider>(context, listen: false);
+      
       if (authProvider.token == null) return;
 
       final response = await getAllSubjects(authProvider.token!,
@@ -78,8 +80,18 @@ class _AddSubjectModalState extends State<AddSubjectModal> {
           response['data'] != null &&
           response['data']['data'] != null) {
         final List<dynamic> subjectsData = response['data']['data'];
+        
+        // Obtener las materias que el tutor ya tiene
+        final currentTutorSubjects = subjectsProvider.subjects;
+        final currentSubjectIds = currentTutorSubjects.map((subject) => subject.subjectId).toSet();
+        
+        // Filtrar las materias que el tutor ya tiene
+        final filteredSubjects = subjectsData.where((subject) => 
+          !currentSubjectIds.contains(subject['id'])
+        ).toList();
+        
         setState(() {
-          _availableSubjects = subjectsData
+          _availableSubjects = filteredSubjects
               .map((subject) => {
                     'id': subject['id'],
                     'name': subject['name'],
@@ -90,6 +102,8 @@ class _AddSubjectModalState extends State<AddSubjectModal> {
           _currentPage = response['data']['current_page'] ?? 1;
           _lastPage = response['data']['last_page'] ?? 1;
         });
+        
+        print('🔍 DEBUG - Búsqueda: Materias disponibles después del filtro: ${_availableSubjects.length}');
       } else {
         setState(() {
           _isLoadingSubjects = false;
@@ -108,6 +122,8 @@ class _AddSubjectModalState extends State<AddSubjectModal> {
   Future<void> _loadAvailableSubjects() async {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final subjectsProvider = Provider.of<TutorSubjectsProvider>(context, listen: false);
+      
       if (authProvider.token == null) return;
 
       final response =
@@ -117,8 +133,18 @@ class _AddSubjectModalState extends State<AddSubjectModal> {
           response['data'] != null &&
           response['data']['data'] != null) {
         final List<dynamic> subjectsData = response['data']['data'];
+        
+        // Obtener las materias que el tutor ya tiene
+        final currentTutorSubjects = subjectsProvider.subjects;
+        final currentSubjectIds = currentTutorSubjects.map((subject) => subject.subjectId).toSet();
+        
+        // Filtrar las materias que el tutor ya tiene
+        final filteredSubjects = subjectsData.where((subject) => 
+          !currentSubjectIds.contains(subject['id'])
+        ).toList();
+        
         setState(() {
-          _availableSubjects = subjectsData
+          _availableSubjects = filteredSubjects
               .map((subject) => {
                     'id': subject['id'],
                     'name': subject['name'],
@@ -129,6 +155,9 @@ class _AddSubjectModalState extends State<AddSubjectModal> {
           _currentPage = response['data']['current_page'] ?? 1;
           _lastPage = response['data']['last_page'] ?? 1;
         });
+        
+        print('🔍 DEBUG - Materias disponibles después del filtro: ${_availableSubjects.length}');
+        print('🔍 DEBUG - Materias del tutor actuales: ${currentTutorSubjects.length}');
       } else {
         setState(() {
           _isLoadingSubjects = false;
@@ -151,6 +180,8 @@ class _AddSubjectModalState extends State<AddSubjectModal> {
     });
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final subjectsProvider = Provider.of<TutorSubjectsProvider>(context, listen: false);
+      
       final nextPage = _currentPage + 1;
       final response = await getAllSubjects(authProvider.token!,
           page: nextPage, perPage: 20);
@@ -158,14 +189,26 @@ class _AddSubjectModalState extends State<AddSubjectModal> {
           response['data'] != null &&
           response['data']['data'] != null) {
         final List<dynamic> subjectsData = response['data']['data'];
+        
+        // Obtener las materias que el tutor ya tiene
+        final currentTutorSubjects = subjectsProvider.subjects;
+        final currentSubjectIds = currentTutorSubjects.map((subject) => subject.subjectId).toSet();
+        
+        // Filtrar las materias que el tutor ya tiene
+        final filteredSubjects = subjectsData.where((subject) => 
+          !currentSubjectIds.contains(subject['id'])
+        ).toList();
+        
         setState(() {
-          _availableSubjects.addAll(subjectsData.map((subject) => {
+          _availableSubjects.addAll(filteredSubjects.map((subject) => {
                 'id': subject['id'],
                 'name': subject['name'],
               }));
           _currentPage = response['data']['current_page'] ?? _currentPage;
           _lastPage = response['data']['last_page'] ?? _lastPage;
         });
+        
+        print('🔍 DEBUG - Cargar más: Materias filtradas añadidas: ${filteredSubjects.length}');
       }
     } catch (e) {
       print('Error loading more subjects: $e');
@@ -463,47 +506,79 @@ class _AddSubjectModalState extends State<AddSubjectModal> {
                     ),
                     SizedBox(
                       height: 250,
-                      child: Scrollbar(
-                        controller: _scrollController,
-                        thumbVisibility: true,
-                        child: ListView.builder(
-                          controller: _scrollController,
-                          itemCount: _availableSubjects.length +
-                              (_isLoadingMore ? 1 : 0),
-                          itemBuilder: (context, index) {
-                            if (index >= _availableSubjects.length) {
-                              return Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: CircularProgressIndicator(),
-                                ),
-                              );
-                            }
-                            final subject = _availableSubjects[index];
-                            return CheckboxListTile(
-                              value:
-                                  _selectedSubjectIds.contains(subject['id']),
-                              onChanged: _subjectsLoadError
-                                  ? null
-                                  : (bool? value) {
-                                      setState(() {
-                                        if (value == true) {
-                                          _selectedSubjectIds
-                                              .add(subject['id']);
-                                        } else {
-                                          _selectedSubjectIds
-                                              .remove(subject['id']);
-                                        }
-                                      });
-                                    },
-                              title: Text(subject['name'],
-                                  style: TextStyle(color: Colors.white)),
-                              activeColor: AppColors.primaryGreen,
-                              checkColor: Colors.white,
-                            );
-                          },
-                        ),
-                      ),
+                      child: _availableSubjects.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.check_circle_outline,
+                                    color: AppColors.primaryGreen.withOpacity(0.7),
+                                    size: 48,
+                                  ),
+                                  SizedBox(height: 16),
+                                  Text(
+                                    '¡Ya tienes todas las materias disponibles!',
+                                    style: TextStyle(
+                                      color: AppColors.primaryGreen.withOpacity(0.8),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Has agregado todas las materias que están disponibles en el sistema.',
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 14,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            )
+                          : Scrollbar(
+                              controller: _scrollController,
+                              thumbVisibility: true,
+                              child: ListView.builder(
+                                controller: _scrollController,
+                                itemCount: _availableSubjects.length +
+                                    (_isLoadingMore ? 1 : 0),
+                                itemBuilder: (context, index) {
+                                  if (index >= _availableSubjects.length) {
+                                    return Center(
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                    );
+                                  }
+                                  final subject = _availableSubjects[index];
+                                  return CheckboxListTile(
+                                    value:
+                                        _selectedSubjectIds.contains(subject['id']),
+                                    onChanged: _subjectsLoadError
+                                        ? null
+                                        : (bool? value) {
+                                            setState(() {
+                                              if (value == true) {
+                                                _selectedSubjectIds
+                                                    .add(subject['id']);
+                                              } else {
+                                                _selectedSubjectIds
+                                                    .remove(subject['id']);
+                                              }
+                                            });
+                                          },
+                                    title: Text(subject['name'],
+                                        style: TextStyle(color: Colors.white)),
+                                    activeColor: AppColors.primaryGreen,
+                                    checkColor: Colors.white,
+                                  );
+                                },
+                              ),
+                            ),
                     ),
                     if (_currentPage < _lastPage &&
                         !_isLoadingMore &&
