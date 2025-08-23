@@ -21,6 +21,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:audioplayers/audioplayers.dart';
 
+
 // --- Widget reutilizable para tarjetas de tiempo libre ---
 class FreeTimeSlotCard extends StatelessWidget {
   final String startTime;
@@ -620,9 +621,13 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
   }
 
   Future<void> _loadAvailableSlots() async {
-    setState(() {
-      _isLoadingSlots = true;
-    });
+    if (!mounted) return;
+    
+    if (mounted) {
+      setState(() {
+        _isLoadingSlots = true;
+      });
+    }
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -634,28 +639,36 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
 
         if (response['status'] == 200 && response['data'] != null) {
           final List<dynamic> slotsData = response['data'] as List<dynamic>;
-          setState(() {
-            _availableSlots = slotsData.cast<Map<String, dynamic>>();
-            _updateFreeTimesByDay();
-          });
+          if (mounted) {
+            setState(() {
+              _availableSlots = slotsData.cast<Map<String, dynamic>>();
+              _updateFreeTimesByDay();
+            });
+          }
         } else {
-          setState(() {
-            _availableSlots = [];
-            _updateFreeTimesByDay();
-          });
+          if (mounted) {
+            setState(() {
+              _availableSlots = [];
+              _updateFreeTimesByDay();
+            });
+          }
         }
       }
     } catch (e) {
       print('Error loading available slots: $e');
     } finally {
-      setState(() {
-        _isLoadingSlots = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoadingSlots = false;
+        });
+      }
     }
   }
 
   // Método para cargar las tutorías del tutor
   Future<void> _fetchTutorBookings() async {
+    if (!mounted) return;
+    
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final token = authProvider.token;
@@ -723,9 +736,11 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
       _tutorBookings = [];
     }
 
-    setState(() {
-      _isLoadingBookings = false;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoadingBookings = false;
+      });
+    }
   }
 
   // Método para limpiar URLs de imagen duplicadas
@@ -745,6 +760,8 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
 
   // Método para sincronizar la imagen del AuthProvider
   void _syncProfileImageFromAuthProvider() {
+    if (!mounted) return;
+    
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final authImageUrl = authProvider.userData?['user']?['profile']?['image'] ?? 
                          authProvider.userData?['user']?['profile']?['profile_image'];
@@ -752,18 +769,22 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
     if (authImageUrl != null && authImageUrl.isNotEmpty && authImageUrl != _profileImageUrl) {
       // Limpiar URL si está duplicada
       final cleanUrl = _cleanImageUrl(authImageUrl);
-      setState(() {
-        _profileImageUrl = cleanUrl;
-      });
+      if (mounted) {
+        setState(() {
+          _profileImageUrl = cleanUrl;
+        });
+      }
     }
   }
 
   // Método para cargar la imagen de perfil del tutor
   Future<void> _loadProfileImage() async {
     try {
-      setState(() {
-        _isLoadingProfileImage = true;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoadingProfileImage = true;
+        });
+      }
 
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final token = authProvider.token;
@@ -775,9 +796,11 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
       if (cachedImageUrl != null && cachedImageUrl.isNotEmpty) {
         // Limpiar URL si está duplicada
         final cleanUrl = _cleanImageUrl(cachedImageUrl);
-        setState(() {
-          _profileImageUrl = cleanUrl;
-        });
+        if (mounted) {
+          setState(() {
+            _profileImageUrl = cleanUrl;
+          });
+        }
       }
 
       if (token != null && userId != null) {
@@ -790,9 +813,11 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
           if (profileImageUrl != null && profileImageUrl.isNotEmpty) {
             // Limpiar URL si está duplicada
             final cleanUrl = _cleanImageUrl(profileImageUrl);
-            setState(() {
-              _profileImageUrl = cleanUrl;
-            });
+            if (mounted) {
+              setState(() {
+                _profileImageUrl = cleanUrl;
+              });
+            }
             
             // Actualizar también en el AuthProvider para mantener sincronización
             authProvider.updateProfileImage(cleanUrl);
@@ -802,9 +827,11 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
     } catch (e) {
       // Error silencioso para no interrumpir la experiencia del usuario
     } finally {
-      setState(() {
-        _isLoadingProfileImage = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoadingProfileImage = false;
+        });
+      }
     }
   }
 
@@ -964,18 +991,24 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
   /// Valida si hay conflictos de horarios para un nuevo slot
   /// Retorna true si hay conflicto, false si no hay conflicto
   bool _validateTimeConflict(DateTime day, TimeOfDay start, TimeOfDay end) {
+    if (!mounted) return false;
+    
     // Limpiar error anterior
-    setState(() {
-      _timeConflictError = null;
-      _hasTimeConflict = false;
-    });
+    if (mounted) {
+      setState(() {
+        _timeConflictError = null;
+        _hasTimeConflict = false;
+      });
+    }
 
     // Validar que la hora de inicio sea menor que la de fin
     if (start.hour > end.hour || (start.hour == end.hour && start.minute >= end.minute)) {
-      setState(() {
-        _timeConflictError = 'La hora de inicio debe ser menor que la hora de fin';
-        _hasTimeConflict = true;
-      });
+      if (mounted) {
+        setState(() {
+          _timeConflictError = 'La hora de inicio debe ser menor que la hora de fin';
+          _hasTimeConflict = true;
+        });
+      }
       return true;
     }
 
@@ -1015,10 +1048,12 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
           (newEndMinutes > existingStartMinutes && newEndMinutes <= existingEndMinutes) ||
           (newStartMinutes <= existingStartMinutes && newEndMinutes >= existingEndMinutes)) {
         
-        setState(() {
-          _timeConflictError = 'Este horario se solapa con el horario existente de ${existingStartStr} a ${existingEndStr}';
-          _hasTimeConflict = true;
-        });
+        if (mounted) {
+          setState(() {
+            _timeConflictError = 'Este horario se solapa con el horario existente de ${existingStartStr} a ${existingEndStr}';
+            _hasTimeConflict = true;
+          });
+        }
         return true;
       }
     }
@@ -1028,10 +1063,12 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
 
   /// Limpia los errores de validación
   void _clearValidationErrors() {
-    setState(() {
-      _timeConflictError = null;
-      _hasTimeConflict = false;
-    });
+    if (mounted) {
+      setState(() {
+        _timeConflictError = null;
+        _hasTimeConflict = false;
+      });
+    }
   }
 
   void _updateFreeTimesByDay() {
@@ -1161,9 +1198,11 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
                           padding: EdgeInsets.symmetric(vertical: 14),
                         ),
                         onPressed: () {
-                          setState(() {
-                            isAvailable = newValue;
-                          });
+                          if (mounted) {
+                            setState(() {
+                              isAvailable = newValue;
+                            });
+                          }
                           Navigator.of(context).pop();
                         },
                         child: Text('Confirmar',
@@ -1826,9 +1865,11 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
             bottom: 0,
             child: GestureDetector(
               onPanStart: (details) {
-                setState(() {
-                  _isSliderDragging = true;
-                });
+                if (mounted) {
+                  setState(() {
+                    _isSliderDragging = true;
+                  });
+                }
                 HapticFeedback.lightImpact();
               },
               onPanUpdate: (details) {
@@ -1842,9 +1883,11 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
                     .clamp(0.0, containerWidth - 60);
 
                 if ((newOffset - _sliderDragOffset).abs() > 5.0) {
-                  setState(() {
-                    _sliderDragOffset = newOffset;
-                  });
+                  if (mounted) {
+                    setState(() {
+                      _sliderDragOffset = newOffset;
+                    });
+                  }
                 }
               },
               onPanEnd: (details) {
@@ -1857,10 +1900,12 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
                 if (localPosition.dx > containerWidth * 0.5 &&
                     !isAvailable) {
                   HapticFeedback.heavyImpact();
-                  setState(() {
-                    isAvailable = true;
-                    _isSliderDragging = false;
-                  });
+                  if (mounted) {
+                    setState(() {
+                      isAvailable = true;
+                      _isSliderDragging = false;
+                    });
+                  }
                   _sliderDragOffset = 0.0;
                   
                   // Reproducir sonido de éxito cuando se activa el tutor
@@ -1868,15 +1913,19 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
                 } else if (localPosition.dx < containerWidth * 0.5 &&
                     isAvailable) {
                   HapticFeedback.heavyImpact();
-                  setState(() {
-                    isAvailable = false;
-                    _isSliderDragging = false;
-                  });
+                  if (mounted) {
+                    setState(() {
+                      isAvailable = false;
+                      _isSliderDragging = false;
+                    });
+                  }
                   _sliderDragOffset = 0.0;
                 } else {
-                  setState(() {
-                    _isSliderDragging = false;
-                  });
+                  if (mounted) {
+                    setState(() {
+                      _isSliderDragging = false;
+                    });
+                  }
                   _sliderDragOffset = 0.0;
                 }
               },
@@ -2065,53 +2114,106 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
             ),
             child: IconButton(
                       onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            SlideUpRoute(page: EditProfileScreen()),
-          );
-          
-          // Si se actualizó la imagen, recargar la imagen del perfil
-          if (result == true) {
-            // Obtener la imagen actualizada del AuthProvider primero
-            final authProvider = Provider.of<AuthProvider>(context, listen: false);
-            
-            final updatedImageUrl = authProvider.userData?['user']?['profile']?['image'] ?? 
-                                   authProvider.userData?['user']?['profile']?['profile_image'];
-            
-            if (updatedImageUrl != null && updatedImageUrl.isNotEmpty) {
-              // Limpiar URL si está duplicada
-              final cleanUrl = _cleanImageUrl(updatedImageUrl);
-              
-              setState(() {
-                _profileImageUrl = cleanUrl;
-              });
-              
-              // Forzar actualización de la UI
-              Future.delayed(Duration(milliseconds: 100), () {
-                if (mounted) {
-                  setState(() {});
-                }
-              });
-            }
-            
-            // Sincronizar imagen del AuthProvider
-            _syncProfileImageFromAuthProvider();
-            
-            // También recargar desde la API para asegurar sincronización
-            _loadProfileImage();
-            
-            // Limpiar cache de CachedNetworkImage para forzar recarga
-            if (_profileImageUrl != null) {
-              CachedNetworkImage.evictFromCache(_profileImageUrl!);
-            }
-            
-            // Limpiar todo el cache de imágenes para asegurar actualización
-            CachedNetworkImage.evictFromCache('');
-            
-            // Forzar reconstrucción del widget
-            setState(() {});
-          }
-        },
+                        // Verificar que el contexto sea válido antes de navegar
+                        if (!context.mounted) return;
+                        
+                        try {
+                          // Usar una navegación simple y directa
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => EditProfileScreen(),
+                              fullscreenDialog: false,
+                            ),
+                          );
+                          
+                          // Verificar que el contexto siga siendo válido después de la navegación
+                          if (!context.mounted) return;
+                          
+                          // Verificar que la navegación fue exitosa
+                          if (result == null) {
+                            print('Navegación cancelada o fallida');
+                            return;
+                          }
+                          
+                          // Si se actualizó la imagen, recargar la imagen del perfil
+                          if (result == true) {
+                            // Obtener la imagen actualizada del AuthProvider primero
+                            final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                            
+                            final updatedImageUrl = authProvider.userData?['user']?['profile']?['image'] ?? 
+                                                   authProvider.userData?['user']?['profile']?['profile_image'];
+                            
+                            if (updatedImageUrl != null && updatedImageUrl.isNotEmpty) {
+                              // Limpiar URL si está duplicada
+                              final cleanUrl = _cleanImageUrl(updatedImageUrl);
+                              
+                              if (mounted) {
+                                setState(() {
+                                  _profileImageUrl = cleanUrl;
+                                });
+                              }
+                              
+                              // Forzar actualización de la UI
+                              Future.delayed(Duration(milliseconds: 100), () {
+                                if (mounted) {
+                                  setState(() {});
+                                }
+                              });
+                            }
+                            
+                            // Verificar que el contexto siga siendo válido antes de operaciones asíncronas
+                            if (!context.mounted) return;
+                            
+                            // Sincronizar imagen del AuthProvider
+                            _syncProfileImageFromAuthProvider();
+                            
+                            // También recargar desde la API para asegurar sincronización
+                            _loadProfileImage();
+                            
+                            // Verificar que el contexto siga siendo válido antes de operaciones finales
+                            if (!context.mounted) return;
+                            
+                            // Limpiar cache de CachedNetworkImage para forzar recarga
+                            if (_profileImageUrl != null) {
+                              CachedNetworkImage.evictFromCache(_profileImageUrl!);
+                            }
+                            
+                            // Limpiar todo el cache de imágenes para asegurar actualización
+                            CachedNetworkImage.evictFromCache('');
+                            
+                            // Forzar reconstrucción del widget
+                            if (mounted) {
+                              setState(() {});
+                            }
+                          }
+                        } catch (e) {
+                          // Manejar errores de navegación específicamente
+                          if (e.toString().contains('_history.isNotEmpty')) {
+                            print('Error del Navigator: Historial vacío - intentando recuperar...');
+                            // Intentar recuperar la navegación de manera más segura
+                            try {
+                              if (context.mounted && Navigator.canPop(context)) {
+                                Navigator.pop(context);
+                              }
+                            } catch (recoveryError) {
+                              print('Error al intentar recuperar navegación: $recoveryError');
+                              // Si no se puede recuperar, intentar reiniciar la navegación
+                              if (context.mounted) {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => EditProfileScreen(),
+                                    fullscreenDialog: false,
+                                  ),
+                                );
+                              }
+                            }
+                          } else {
+                            print('Error en navegación: $e');
+                          }
+                        }
+                      },
               icon: Icon(
                 Icons.edit_outlined,
                 color: Colors.white,
@@ -2551,10 +2653,12 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
             IconButton(
               icon: Icon(Icons.chevron_left, color: Colors.white),
               onPressed: () {
-                setState(() {
-                  _focusedDay =
-                      DateTime(_focusedDay.year, _focusedDay.month - 1, 1);
-                });
+                if (mounted) {
+                  setState(() {
+                    _focusedDay =
+                        DateTime(_focusedDay.year, _focusedDay.month - 1, 1);
+                  });
+                }
               },
             ),
             Text(
@@ -2568,10 +2672,12 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
             IconButton(
               icon: Icon(Icons.chevron_right, color: Colors.white),
               onPressed: () {
-                setState(() {
-                  _focusedDay =
-                      DateTime(_focusedDay.year, _focusedDay.month + 1, 1);
-                });
+                if (mounted) {
+                  setState(() {
+                    _focusedDay =
+                        DateTime(_focusedDay.year, _focusedDay.month + 1, 1);
+                  });
+                }
               },
             ),
           ],
@@ -2610,9 +2716,11 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
 
             return GestureDetector(
               onTap: () {
-                setState(() {
-                  _selectedDay = day;
-                });
+                if (mounted) {
+                  setState(() {
+                    _selectedDay = day;
+                  });
+                }
                 if (hasFreeTime) {
                   _showFreeTimesForDay(day);
                 } else {
@@ -3013,10 +3121,12 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
                 IconButton(
                   icon: Icon(Icons.chevron_left, color: Colors.white),
                   onPressed: () {
-                    setState(() {
-                      _focusedDay =
-                          DateTime(_focusedDay.year, _focusedDay.month - 1, 1);
-                    });
+                    if (mounted) {
+                      setState(() {
+                        _focusedDay =
+                            DateTime(_focusedDay.year, _focusedDay.month - 1, 1);
+                      });
+                    }
                   },
                 ),
                 Text(
@@ -3030,10 +3140,12 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
                 IconButton(
                   icon: Icon(Icons.chevron_right, color: Colors.white),
                   onPressed: () {
-                    setState(() {
-                      _focusedDay =
-                          DateTime(_focusedDay.year, _focusedDay.month + 1, 1);
-                    });
+                    if (mounted) {
+                      setState(() {
+                        _focusedDay =
+                            DateTime(_focusedDay.year, _focusedDay.month + 1, 1);
+                      });
+                    }
                   },
                 ),
               ],
@@ -3066,9 +3178,11 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
                 return GestureDetector(
                   onTap: hasFreeTime
                       ? () {
-                          setState(() {
-                            _selectedDay = day;
-                          });
+                          if (mounted) {
+                            setState(() {
+                              _selectedDay = day;
+                            });
+                          }
                           _showFreeTimesForDay(day);
                         }
                       : null,
