@@ -562,7 +562,20 @@ class AuthProvider with ChangeNotifier {
 
   void updateProfileImage(String newImageUrl) {
     if (_userData != null && _userData!['user'] != null) {
-      _userData!['user']['profile']['image'] = _cleanUrl(newImageUrl);
+      // Asegurar que la estructura profile existe
+      if (_userData!['user']['profile'] == null) {
+        _userData!['user']['profile'] = {};
+      }
+      
+      // Limpiar y normalizar la URL
+      final cleanedUrl = _cleanUrl(newImageUrl);
+      
+      // Actualizar la imagen de perfil
+      _userData!['user']['profile']['image'] = cleanedUrl;
+      
+      // También actualizar profile_image si existe
+      _userData!['user']['profile']['profile_image'] = cleanedUrl;
+      
       SharedPreferences.getInstance().then((prefs) {
         prefs.setString('userData', jsonEncode(_userData));
         notifyListeners();
@@ -571,8 +584,18 @@ class AuthProvider with ChangeNotifier {
   }
 
   String _cleanUrl(String url) {
-    String cleanedUrl = url.replaceAll(AppConfig.mediaBaseUrl, '');
-    return '${AppConfig.mediaBaseUrl}$cleanedUrl';
+    // Si la URL ya es completa (comienza con http), devolverla tal como está
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    
+    // Si la URL es relativa, construir la URL completa
+    if (url.startsWith('/')) {
+      return '${AppConfig.mediaBaseUrl}${url.substring(1)}';
+    }
+    
+    // Si la URL no tiene slash inicial, agregarlo
+    return '${AppConfig.mediaBaseUrl}$url';
   }
 
   Future<void> updateUserProfile(Map<String, dynamic> newProfileData) async {

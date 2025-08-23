@@ -13,11 +13,13 @@ import 'package:flutter_projects/view/profile/edit_profile_screen.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
 import 'package:flutter_projects/view/auth/login_screen.dart';
 import 'package:flutter_projects/helpers/pusher_service.dart';
+import 'package:flutter_projects/helpers/slide_up_route.dart';
 import 'package:flutter_projects/models/tutor_subject.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 // --- Widget reutilizable para tarjetas de tiempo libre ---
 class FreeTimeSlotCard extends StatelessWidget {
@@ -566,15 +568,18 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
 
   // Método para calcular la posición del slider cuando está en modo online
   double _calculateSliderPosition() {
-    // Usar un valor fijo que funcione bien en la mayoría de dispositivos
-    // En lugar de calcular dinámicamente para evitar errores de layout
-    // Este valor debe ser consistente para evitar conflictos de layout
-    return 300.0; // Posición fija a la derecha, ajustada para posicionar correctamente
+    // Calcular la posición correcta para que el botón esté pegado a la derecha
+    // Considerando el ancho del botón (60px) y el padding del contenedor
+    final screenWidth = MediaQuery.of(context).size.width;
+    final containerPadding = 36.0; // 18px padding horizontal * 2
+    final buttonWidth = 60.0;
+    return screenWidth - containerPadding - buttonWidth;
   }
 
   @override
   void initState() {
     super.initState();
+    
     // Agregar observer para el lifecycle de la app
     WidgetsBinding.instance.addObserver(this);
     
@@ -592,6 +597,13 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
     // Cargar materias del tutor
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _loadInitialData();
+      
+      // Sincronizar imagen del AuthProvider después de cargar datos iniciales
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _syncProfileImageFromAuthProvider();
+        }
+      });
     });
   }
 
@@ -600,9 +612,7 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
     final subjectsProvider =
         Provider.of<TutorSubjectsProvider>(context, listen: false);
 
-    print('🔍 DEBUG - Cargando datos iniciales...');
     await subjectsProvider.loadTutorSubjects(authProvider);
-    print('🔍 DEBUG - Materias cargadas inicialmente');
 
     _loadAvailableSlots();
     _fetchTutorBookings();
@@ -718,6 +728,36 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
     });
   }
 
+  // Método para limpiar URLs de imagen duplicadas
+  String _cleanImageUrl(String url) {
+    // Si la URL contiene duplicación de dominio, limpiarla
+    if (url.contains('https://classgoapp.com/storagehttps://classgoapp.com')) {
+      return url.replaceFirst('https://classgoapp.com/storagehttps://classgoapp.com', 'https://classgoapp.com');
+    }
+    
+    // Si la URL contiene duplicación de storage, limpiarla
+    if (url.contains('/storage/storage/')) {
+      return url.replaceFirst('/storage/storage/', '/storage/');
+    }
+    
+    return url;
+  }
+
+  // Método para sincronizar la imagen del AuthProvider
+  void _syncProfileImageFromAuthProvider() {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final authImageUrl = authProvider.userData?['user']?['profile']?['image'] ?? 
+                         authProvider.userData?['user']?['profile']?['profile_image'];
+    
+    if (authImageUrl != null && authImageUrl.isNotEmpty && authImageUrl != _profileImageUrl) {
+      // Limpiar URL si está duplicada
+      final cleanUrl = _cleanImageUrl(authImageUrl);
+      setState(() {
+        _profileImageUrl = cleanUrl;
+      });
+    }
+  }
+
   // Método para cargar la imagen de perfil del tutor
   Future<void> _loadProfileImage() async {
     try {
@@ -729,6 +769,17 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
       final token = authProvider.token;
       final userId = authProvider.userId;
 
+      // Primero verificar si ya tenemos una imagen en el AuthProvider
+      final cachedImageUrl = authProvider.userData?['user']?['profile']?['image'] ?? 
+                             authProvider.userData?['user']?['profile']?['profile_image'];
+      if (cachedImageUrl != null && cachedImageUrl.isNotEmpty) {
+        // Limpiar URL si está duplicada
+        final cleanUrl = _cleanImageUrl(cachedImageUrl);
+        setState(() {
+          _profileImageUrl = cleanUrl;
+        });
+      }
+
       if (token != null && userId != null) {
         final response = await getUserProfileImage(token, userId);
 
@@ -737,14 +788,19 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
           final profileImageUrl = profileData['profile_image'];
 
           if (profileImageUrl != null && profileImageUrl.isNotEmpty) {
+            // Limpiar URL si está duplicada
+            final cleanUrl = _cleanImageUrl(profileImageUrl);
             setState(() {
-              _profileImageUrl = profileImageUrl;
+              _profileImageUrl = cleanUrl;
             });
+            
+            // Actualizar también en el AuthProvider para mantener sincronización
+            authProvider.updateProfileImage(cleanUrl);
           }
         }
       }
     } catch (e) {
-      print('Error al cargar la imagen de perfil: $e');
+      // Error silencioso para no interrumpir la experiencia del usuario
     } finally {
       setState(() {
         _isLoadingProfileImage = false;
@@ -756,11 +812,19 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
   void didChangeDependencies() {
     super.didChangeDependencies();
     final authProvider = Provider.of<AuthProvider>(context);
+    
     if (_authProvider != authProvider) {
       _authProvider = authProvider;
       _checkAndFetchBookings();
       _authProvider!.addListener(_checkAndFetchBookings);
     }
+    
+    // Sincronizar imagen del AuthProvider después de verificar cambios
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _syncProfileImageFromAuthProvider();
+      }
+    });
 
     // Configurar eventos de Pusher para el tutor
     final pusherService = Provider.of<PusherService>(context, listen: false);
@@ -847,8 +911,17 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
       // Recargar la imagen del perfil cuando la app se reanuda
-      print('🔄 App reanudada, recargando imagen del perfil...');
-      _loadProfileImage();
+      
+      // Usar addPostFrameCallback para evitar problemas de setState
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          // Sincronizar imagen del AuthProvider
+          _syncProfileImageFromAuthProvider();
+          
+          // También recargar desde la API
+          _loadProfileImage();
+        }
+      });
     }
   }
 
@@ -1660,11 +1733,24 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Encabezado mejorado con toggle de visibilidad
-                  _buildHeader(tutorName, rating, completedSessions),
+                  _buildHeader(authProvider, tutorName, rating, completedSessions),
                   SizedBox(height: 24),
 
                   // Botón deslizante de disponibilidad
                   _buildAvailabilitySlider(),
+                  SizedBox(height: 12),
+                  // Texto instructivo
+                  Center(
+                    child: Text(
+                      isAvailable ? 'Desliza hacia la izquierda para desactivar' : 'Desliza hacia la derecha para activar',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
                   SizedBox(height: 24),
 
                   // Tarjeta de acciones rápidas
@@ -1692,231 +1778,163 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
 
   // --- Widgets auxiliares ---
 
-  // Botón deslizante de disponibilidad
+  // Barra deslizante con diseño consistente
   Widget _buildAvailabilitySlider() {
     return Container(
-      padding: EdgeInsets.all(20),
+      height: 60,
+      width: double.infinity,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.darkBlue.withOpacity(0.9),
-            AppColors.darkBlue.withOpacity(0.7),
-          ],
+        color: Color(0xFF2a2a3e),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(
+          color: isAvailable 
+              ? AppColors.primaryGreen
+              : AppColors.orangeprimary,
+          width: 2,
         ),
-        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 15,
-            offset: Offset(0, 8),
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 8,
+            offset: Offset(0, 4),
           ),
         ],
       ),
-      child: Column(
+      child: Stack(
         children: [
-          // Título y estado
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                isAvailable ? Icons.visibility : Icons.visibility_off,
-                color: isAvailable
-                    ? AppColors.primaryGreen
-                    : AppColors.orangeprimary,
-                size: 20,
-              ),
-              SizedBox(width: 8),
-              Text(
-                isAvailable ? 'Disponible para tutorías' : 'Modo offline',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 20),
-
-          // Barra deslizante tipo toggle
-          Container(
-            height: 50,
-            width: double.infinity,
+          // Fondo de progreso
+          AnimatedContainer(
+            duration: Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            width: isAvailable ? double.infinity : 0,
             decoration: BoxDecoration(
-              color: isAvailable
+              color: isAvailable 
                   ? AppColors.primaryGreen.withOpacity(0.2)
-                  : Colors.grey.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(25),
-              border: Border.all(
-                color: isAvailable
-                    ? AppColors.primaryGreen.withOpacity(0.4)
-                    : Colors.grey.withOpacity(0.4),
-                width: 1.5,
-              ),
-            ),
-            child: Stack(
-              children: [
-                // Fondo de progreso
-                AnimatedContainer(
-                  duration: Duration(milliseconds: 300),
-                  width: isAvailable ? double.infinity : 0,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryGreen.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                ),
-
-                // Botón deslizante
-                AnimatedPositioned(
-                  duration: Duration(milliseconds: 50),
-                  curve: Curves.easeOut,
-                  left: _isSliderDragging
-                      ? _sliderDragOffset
-                      : (isAvailable ? _calculateSliderPosition() : 0),
-                  right: null, // Nunca usar right para evitar conflictos
-                  top: 0,
-                  bottom: 0,
-                  child: GestureDetector(
-                    onPanStart: (details) {
-                      setState(() {
-                        _isSliderDragging = true;
-                      });
-                    },
-                    onPanUpdate: (details) {
-                      // Actualizar posición en tiempo real con setState optimizado
-                      final RenderBox renderBox =
-                          context.findRenderObject() as RenderBox;
-                      final localPosition =
-                          renderBox.globalToLocal(details.globalPosition);
-                      final containerWidth = renderBox.size.width;
-
-                      // Calcular posición del drag (0 a containerWidth - 50)
-                      double newOffset = (localPosition.dx - 25)
-                          .clamp(0.0, containerWidth - 50);
-
-                      // Solo actualizar si la posición cambió significativamente
-                      // Aumentar el umbral para reducir setState calls
-                      if ((newOffset - _sliderDragOffset).abs() > 8.0) {
-                        setState(() {
-                          _sliderDragOffset = newOffset;
-                        });
-                      }
-                    },
-                    onPanEnd: (details) {
-                      // Cambiar estado al final del deslizamiento
-                      final RenderBox renderBox =
-                          context.findRenderObject() as RenderBox;
-                      final localPosition =
-                          renderBox.globalToLocal(details.globalPosition);
-                      final containerWidth = renderBox.size.width;
-
-                      if (localPosition.dx > containerWidth * 0.5 &&
-                          !isAvailable) {
-                        // Vibración de feedback
-                        HapticFeedback.lightImpact();
-                        setState(() {
-                          isAvailable = true;
-                          _isSliderDragging = false;
-                        });
-                        _sliderDragOffset = 0.0; // Resetear offset
-                      } else if (localPosition.dx < containerWidth * 0.5 &&
-                          isAvailable) {
-                        // Vibración de feedback
-                        HapticFeedback.lightImpact();
-                        setState(() {
-                          isAvailable = false;
-                          _isSliderDragging = false;
-                        });
-                        _sliderDragOffset = 0.0; // Resetear offset
-                      } else {
-                        // Si no se completó el deslizamiento, volver a la posición original
-                        setState(() {
-                          _isSliderDragging = false;
-                        });
-                        _sliderDragOffset = 0.0; // Resetear offset
-                      }
-                    },
-                    child: Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color:
-                            isAvailable ? AppColors.primaryGreen : Colors.grey,
-                        borderRadius: BorderRadius.circular(25),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.3),
-                            blurRadius: 6,
-                            offset: Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        isAvailable ? Icons.check : Icons.close,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    ),
-                  ),
-                ),
-
-                // Texto de instrucción
-                Positioned.fill(
-                  child: Center(
-                    child: Text(
-                      isAvailable ? 'Disponible' : 'Offline',
-                      style: TextStyle(
-                        color:
-                            isAvailable ? AppColors.primaryGreen : Colors.grey,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+                  : AppColors.orangeprimary.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(30),
             ),
           ),
 
-          // Animación de flechas
-          SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (!isAvailable) ...[
-                Icon(
-                  Icons.arrow_forward,
-                  color: AppColors.primaryGreen,
-                  size: 14,
+          // Botón deslizante
+          AnimatedPositioned(
+            duration: Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+            left: _isSliderDragging
+                ? _sliderDragOffset
+                : (isAvailable ? _calculateSliderPosition() : 0),
+            top: 0,
+            bottom: 0,
+            child: GestureDetector(
+              onPanStart: (details) {
+                setState(() {
+                  _isSliderDragging = true;
+                });
+                HapticFeedback.lightImpact();
+              },
+              onPanUpdate: (details) {
+                final RenderBox renderBox =
+                    context.findRenderObject() as RenderBox;
+                final localPosition =
+                    renderBox.globalToLocal(details.globalPosition);
+                final containerWidth = renderBox.size.width;
+
+                double newOffset = (localPosition.dx - 30)
+                    .clamp(0.0, containerWidth - 60);
+
+                if ((newOffset - _sliderDragOffset).abs() > 5.0) {
+                  setState(() {
+                    _sliderDragOffset = newOffset;
+                  });
+                }
+              },
+              onPanEnd: (details) {
+                final RenderBox renderBox =
+                    context.findRenderObject() as RenderBox;
+                final localPosition =
+                    renderBox.globalToLocal(details.globalPosition);
+                final containerWidth = renderBox.size.width;
+
+                if (localPosition.dx > containerWidth * 0.5 &&
+                    !isAvailable) {
+                  HapticFeedback.heavyImpact();
+                  setState(() {
+                    isAvailable = true;
+                    _isSliderDragging = false;
+                  });
+                  _sliderDragOffset = 0.0;
+                  
+                  // Reproducir sonido de éxito cuando se activa el tutor
+                  _playSuccessSound();
+                } else if (localPosition.dx < containerWidth * 0.5 &&
+                    isAvailable) {
+                  HapticFeedback.heavyImpact();
+                  setState(() {
+                    isAvailable = false;
+                    _isSliderDragging = false;
+                  });
+                  _sliderDragOffset = 0.0;
+                } else {
+                  setState(() {
+                    _isSliderDragging = false;
+                  });
+                  _sliderDragOffset = 0.0;
+                }
+              },
+              child: Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: isAvailable 
+                      ? AppColors.primaryGreen
+                      : AppColors.orangeprimary,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 6,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
                 ),
-                SizedBox(width: 4),
-                Text(
-                  'Desliza para activar',
-                  style: TextStyle(
-                    color: AppColors.primaryGreen,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
+                child: AnimatedSwitcher(
+                  duration: Duration(milliseconds: 300),
+                  child: Icon(
+                    isAvailable ? Icons.check : Icons.close,
+                    key: ValueKey(isAvailable),
+                    color: Colors.white,
+                    size: 28,
                   ),
                 ),
-              ] else ...[
-                Text(
-                  'Desliza para desactivar',
+              ),
+            ),
+          ),
+
+          // Texto de estado con mejor contraste
+          Positioned.fill(
+            child: Center(
+              child: AnimatedSwitcher(
+                duration: Duration(milliseconds: 300),
+                child: Text(
+                  isAvailable ? 'DISPONIBLE' : 'OFFLINE',
+                  key: ValueKey(isAvailable),
                   style: TextStyle(
-                    color: AppColors.orangeprimary,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
+                    color: isAvailable 
+                        ? Colors.white.withOpacity(0.9)
+                        : Colors.white.withOpacity(0.9),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.5,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black.withOpacity(0.5),
+                        blurRadius: 2,
+                        offset: Offset(0, 1),
+                      ),
+                    ],
                   ),
                 ),
-                SizedBox(width: 4),
-                Icon(
-                  Icons.arrow_back,
-                  color: AppColors.orangeprimary,
-                  size: 14,
-                ),
-              ],
-            ],
+              ),
+            ),
           ),
         ],
       ),
@@ -1924,7 +1942,7 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
   }
 
   // Encabezado mejorado con toggle de visibilidad
-  Widget _buildHeader(String tutorName, double rating, int completedSessions) {
+  Widget _buildHeader(AuthProvider authProvider, String tutorName, double rating, int completedSessions) {
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -1945,28 +1963,32 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
       child: Row(
         children: [
           _profileImageUrl != null && !_isLoadingProfileImage
-              ? CircleAvatar(
-                  radius: 28,
-                  backgroundColor: Colors.white.withOpacity(0.2),
-                  child: ClipOval(
-                    child: CachedNetworkImage(
-                      imageUrl: _profileImageUrl!,
-                      width: 56,
-                      height: 56,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
+              ? Hero(
+                  tag: 'profile-image-${authProvider.userId ?? 'default'}',
+                  child: CircleAvatar(
+                    key: ValueKey(_profileImageUrl),
+                    radius: 28,
+                    backgroundColor: Colors.white.withOpacity(0.2),
+                    child: ClipOval(
+                      child: CachedNetworkImage(
+                        imageUrl: _profileImageUrl!,
                         width: 56,
                         height: 56,
-                        color: Colors.white.withOpacity(0.2),
-                        child:
-                            Icon(Icons.person, color: Colors.white, size: 32),
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        width: 56,
-                        height: 56,
-                        color: Colors.white.withOpacity(0.2),
-                        child:
-                            Icon(Icons.person, color: Colors.white, size: 32),
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          width: 56,
+                          height: 56,
+                          color: Colors.white.withOpacity(0.2),
+                          child:
+                              Icon(Icons.person, color: Colors.white, size: 32),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          width: 56,
+                          height: 56,
+                          color: Colors.white.withOpacity(0.2),
+                          child:
+                              Icon(Icons.person, color: Colors.white, size: 32),
+                        ),
                       ),
                     ),
                   ),
@@ -2045,15 +2067,49 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
                       onPressed: () async {
           final result = await Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => EditProfileScreen(),
-            ),
+            SlideUpRoute(page: EditProfileScreen()),
           );
           
           // Si se actualizó la imagen, recargar la imagen del perfil
           if (result == true) {
-            print('🔄 Regresando del EditProfileScreen, recargando imagen...');
+            // Obtener la imagen actualizada del AuthProvider primero
+            final authProvider = Provider.of<AuthProvider>(context, listen: false);
+            
+            final updatedImageUrl = authProvider.userData?['user']?['profile']?['image'] ?? 
+                                   authProvider.userData?['user']?['profile']?['profile_image'];
+            
+            if (updatedImageUrl != null && updatedImageUrl.isNotEmpty) {
+              // Limpiar URL si está duplicada
+              final cleanUrl = _cleanImageUrl(updatedImageUrl);
+              
+              setState(() {
+                _profileImageUrl = cleanUrl;
+              });
+              
+              // Forzar actualización de la UI
+              Future.delayed(Duration(milliseconds: 100), () {
+                if (mounted) {
+                  setState(() {});
+                }
+              });
+            }
+            
+            // Sincronizar imagen del AuthProvider
+            _syncProfileImageFromAuthProvider();
+            
+            // También recargar desde la API para asegurar sincronización
             _loadProfileImage();
+            
+            // Limpiar cache de CachedNetworkImage para forzar recarga
+            if (_profileImageUrl != null) {
+              CachedNetworkImage.evictFromCache(_profileImageUrl!);
+            }
+            
+            // Limpiar todo el cache de imágenes para asegurar actualización
+            CachedNetworkImage.evictFromCache('');
+            
+            // Forzar reconstrucción del widget
+            setState(() {});
           }
         },
               icon: Icon(
@@ -4808,6 +4864,17 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
           backgroundColor: Colors.red,
         ),
       );
+    }
+  }
+
+  // Método para reproducir sonido de éxito
+  void _playSuccessSound() async {
+    try {
+      final player = AudioPlayer();
+      await player.play(AssetSource('sounds/success.mp3'));
+    } catch (e) {
+      // Error silencioso para no interrumpir la experiencia del usuario
+      print('Error reproduciendo sonido: $e');
     }
   }
 }
