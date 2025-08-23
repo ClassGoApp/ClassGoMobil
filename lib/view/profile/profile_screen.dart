@@ -10,6 +10,7 @@ import 'package:flutter_projects/view/insights/insights_screen.dart';
 import 'package:flutter_projects/view/invoice/invoice_screen.dart';
 import 'package:flutter_projects/view/payouts/payout_history.dart';
 import 'package:flutter_projects/view/profile/profile_setting_screen.dart';
+import 'package:flutter_projects/view/profile/edit_profile_screen.dart';
 import 'package:flutter_projects/view/profile/skeleton/profile_image_skeleton.dart';
 import 'package:flutter_projects/view/settings/account_settings.dart';
 import 'package:flutter_projects/view/tutor/certificate/certificate_detail.dart';
@@ -152,7 +153,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final userData = authProvider.userData;
     final int? userId = authProvider.userId;
     final String? fullName = userData != null && userData['user'] != null
-        ? userData['user']['profile']['full_name']
+        ? (userData['user']['profile']['full_name'] ?? 
+           (userData['user']['profile']['first_name'] != null && userData['user']['profile']['last_name'] != null
+            ? '${userData['user']['profile']['first_name']} ${userData['user']['profile']['last_name']}'
+            : userData['user']['profile']['first_name'] ?? userData['user']['profile']['last_name']))
         : null;
     final String? role = userData != null && userData['user'] != null
         ? userData['user']['email']
@@ -415,7 +419,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => ProfileSettingsScreen(),
+                                  builder: (context) => EditProfileScreen(),
                                 ),
                               );
                             },

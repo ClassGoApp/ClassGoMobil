@@ -7,6 +7,7 @@ import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/auth/login_screen.dart';
 import 'package:flutter_projects/view/tutor/search_tutors_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_projects/helpers/back_button_handler.dart';
 import 'register_screen.dart';
 
 class ResetPassword extends StatefulWidget {
@@ -124,13 +125,10 @@ class _LoginScreenState extends State<ResetPassword>
 
 
     return WillPopScope(
-      onWillPop: () async {
-        if (_isLoading) {
-          return false;
-        } else {
-          return true;
-        }
-      },
+      onWillPop: () => BackButtonHandler.handleBackButton(
+        context,
+        isLoading: _isLoading,
+      ),
       child: Scaffold(
         backgroundColor: AppColors.primaryGreen,
         body: SafeArea(

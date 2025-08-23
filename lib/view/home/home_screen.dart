@@ -98,6 +98,77 @@ class _HomeScreenState extends State<HomeScreen>
   late final PageController _featuredTutorsPageController = PageController(
       viewportFraction: 1.0); // Aumentado para más a la izquierda
 
+  // Función helper para abrir enlaces de redes sociales
+  Future<void> _openSocialMediaLink(String url, String platform) async {
+    try {
+      // Primero intentamos abrir con LaunchMode.externalApplication
+      if (await canLaunchUrl(Uri.parse(url))) {
+        await launchUrl(
+          Uri.parse(url),
+          mode: LaunchMode.externalApplication,
+        );
+        
+        // Mostrar confirmación al usuario
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Abriendo $platform...'),
+              backgroundColor: AppColors.primaryGreen,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        // Si falla, intentamos con el navegador
+        final webUrl = url;
+        if (await canLaunchUrl(Uri.parse(webUrl))) {
+          await launchUrl(Uri.parse(webUrl));
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Abriendo $platform en el navegador...'),
+                backgroundColor: AppColors.lightBlueColor,
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      print('Error al abrir $platform: $e');
+      // Último recurso: intentar abrir en el navegador
+      try {
+        if (await canLaunchUrl(Uri.parse(url))) {
+          await launchUrl(Uri.parse(url));
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Abriendo $platform...'),
+                backgroundColor: AppColors.primaryGreen,
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+        }
+      } catch (e2) {
+        print('Error final al abrir $platform: $e2');
+        
+        // Mostrar error al usuario
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error al abrir $platform. Intenta de nuevo.'),
+              backgroundColor: AppColors.redColor,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    }
+  }
+
   // En el estado:
   final double tutorCardWidth = 280.0;
   final double tutorCardImageHeight = 150.0;
@@ -1395,7 +1466,7 @@ class _HomeScreenState extends State<HomeScreen>
                                       'Crea tu cuenta rápidamente para comenzar a utilizar nuestra plataforma.',
                                   buttonText: 'Empezar',
                                   imageUrl:
-                                      'https://classgoapp.com/storage/optionbuilder/uploads/927102-18-2025_1202amPASO_1.jpg',
+                                      'https://www.classgoapp.com/images/home/img1.webp',
                                   onButtonPressed: () => _handleRegister(),
                                 ),
                                 SizedBox(width: 18),
@@ -1406,7 +1477,7 @@ class _HomeScreenState extends State<HomeScreen>
                                       'Busca y selecciona entre tutores calificados según tus necesidades.',
                                   buttonText: 'Buscar Ahora',
                                   imageUrl:
-                                      'https://classgoapp.com/storage/optionbuilder/uploads/776302-18-2025_1203amPASO_2.jpg',
+                                      'https://www.classgoapp.com/images/home/img22.webp',
                                   onButtonPressed: () => _handleTutorSearch(),
                                 ),
                                 SizedBox(width: 18),
@@ -1417,7 +1488,7 @@ class _HomeScreenState extends State<HomeScreen>
                                       'Reserva fácilmente un horario conveniente para tu sesión.',
                                   buttonText: 'Empecemos',
                                   imageUrl:
-                                      'https://classgoapp.com/storage/optionbuilder/uploads/229502-18-2025_1204amPASO_3.jpg',
+                                      'https://www.classgoapp.com/images/home/img3.webp',
                                   onButtonPressed: () => _handleTutorSearch(),
                                 ),
                                 SizedBox(width: 18),
@@ -1500,7 +1571,7 @@ class _HomeScreenState extends State<HomeScreen>
                           ClipRRect(
                             borderRadius: BorderRadius.circular(12),
                             child: Image.network(
-                              'https://classgoapp.com/storage/optionbuilder/uploads/229502-18-2025_1204amPASO_3.jpg',
+                              'https://www.classgoapp.com/images/home/img3.webp',
                               height: 220,
                               width: double.infinity,
                               fit: BoxFit.cover,
@@ -1847,33 +1918,31 @@ class _HomeScreenState extends State<HomeScreen>
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         GestureDetector(
-                          onTap: () async {
-                            final url = 'https://www.tiktok.com/@classgoapp';
-                            if (await canLaunchUrl(Uri.parse(url))) {
-                              await launchUrl(Uri.parse(url));
-                            }
+                          onTap: () {
+                            _openSocialMediaLink(
+                              'https://www.tiktok.com/@classgoapp?_t=ZM-8yxTxzdclEu&_r=1',
+                              'TikTok',
+                            );
                           },
                           child: Icon(Icons.music_note,
                               color: Colors.white, size: 30), // TikTok icon
                         ),
                         GestureDetector(
-                          onTap: () async {
-                            final url =
-                                'https://www.facebook.com/profile.php?id=61578383078347&locale=es_LA';
-                            if (await canLaunchUrl(Uri.parse(url))) {
-                              await launchUrl(Uri.parse(url));
-                            }
+                          onTap: () {
+                            _openSocialMediaLink(
+                              'https://www.facebook.com/share/1GeC6R8gM8/?mibextid=wwXIfr',
+                              'Facebook',
+                            );
                           },
                           child: Icon(Icons.facebook,
                               color: Colors.white, size: 30), // Facebook icon
                         ),
                         GestureDetector(
-                          onTap: () async {
-                            final url =
-                                'https://www.instagram.com/classgo_app/';
-                            if (await canLaunchUrl(Uri.parse(url))) {
-                              await launchUrl(Uri.parse(url));
-                            }
+                          onTap: () {
+                            _openSocialMediaLink(
+                              'https://www.instagram.com/classgo_app?igsh=MXJxNzJ0aXk3NjJkYQ==',
+                              'Instagram',
+                            );
                           },
                           child: Icon(Icons.camera_alt,
                               color: Colors.white, size: 30), // Instagram icon

@@ -1872,6 +1872,51 @@ Future<Map<String, dynamic>> createUserSubjectSlot(
   }
 }
 
+// Delete user subject slot
+Future<Map<String, dynamic>> deleteUserSubjectSlot(
+    String token, int slotId, int userId) async {
+  try {
+    print('DEBUG - deleteUserSubjectSlot request: slot_id = $slotId, user_id = $userId');
+
+    final response = await http.delete(
+      Uri.parse('$baseUrl/tutor/slots'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: jsonEncode({
+        'slot_id': slotId,
+        'user_id': userId,
+      }),
+    );
+
+    print('DEBUG - deleteUserSubjectSlot response: ${response.statusCode} - ${response.body}');
+
+    if (response.statusCode == 200 || response.statusCode == 204) {
+      final responseData = response.body.isNotEmpty ? jsonDecode(response.body) : {};
+      return {
+        'success': true,
+        'message': responseData['message'] ?? 'Slot eliminado exitosamente',
+        'data': responseData['data'],
+      };
+    } else {
+      final errorData = response.body.isNotEmpty ? jsonDecode(response.body) : {};
+      return {
+        'success': false,
+        'message': errorData['message'] ?? 'Error al eliminar el slot',
+        'status': response.statusCode,
+      };
+    }
+  } catch (e) {
+    print('Error deleting user subject slot: $e');
+    return {
+      'success': false,
+      'message': 'Error de conexión: $e',
+    };
+  }
+}
+
 // Cambiar estado de tutoría a "Cursando"
 Future<Map<String, dynamic>> changeBookingToCursando(
     String token, int bookingId) async {

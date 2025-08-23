@@ -4,10 +4,12 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 import 'package:flutter_projects/view/components/tutor_card.dart';
+import 'package:flutter_projects/view/components/success_animation_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/tutor_subjects_provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/view/tutor/add_subject_modal.dart';
+import 'package:flutter_projects/view/profile/edit_profile_screen.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
 import 'package:flutter_projects/view/auth/login_screen.dart';
 import 'package:flutter_projects/helpers/pusher_service.dart';
@@ -531,7 +533,7 @@ class DashboardTutor extends StatefulWidget {
   _DashboardTutorState createState() => _DashboardTutorState();
 }
 
-class _DashboardTutorState extends State<DashboardTutor> {
+class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObserver {
   bool isAvailable = false;
   List<Map<String, String>> freeTimes = [
     {'day': 'Lunes', 'start': '14:00', 'end': '16:00'},
@@ -558,6 +560,10 @@ class _DashboardTutorState extends State<DashboardTutor> {
   double _sliderDragOffset = 0.0;
   bool _isSliderDragging = false;
 
+  // Variables para validación de conflictos de horarios
+  String? _timeConflictError;
+  bool _hasTimeConflict = false;
+
   // Método para calcular la posición del slider cuando está en modo online
   double _calculateSliderPosition() {
     // Usar un valor fijo que funcione bien en la mayoría de dispositivos
@@ -569,6 +575,9 @@ class _DashboardTutorState extends State<DashboardTutor> {
   @override
   void initState() {
     super.initState();
+    // Agregar observer para el lifecycle de la app
+    WidgetsBinding.instance.addObserver(this);
+    
     // Simular tiempos libres agrupados por día
     for (var ft in freeTimes) {
       final now = DateTime.now();
@@ -829,7 +838,18 @@ class _DashboardTutorState extends State<DashboardTutor> {
   @override
   void dispose() {
     _authProvider?.removeListener(_checkAndFetchBookings);
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      // Recargar la imagen del perfil cuando la app se reanuda
+      print('🔄 App reanudada, recargando imagen del perfil...');
+      _loadProfileImage();
+    }
   }
 
   String _formatTimeString(String timeStr) {
@@ -844,17 +864,20 @@ class _DashboardTutorState extends State<DashboardTutor> {
         return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
       }
 
-      // Si es formato ISO datetime completo
-      if (timeStr.contains('T') && timeStr.contains('Z')) {
+      // Si es formato ISO datetime completo (con Z o +00:00 al final)
+      if (timeStr.contains('T') && (timeStr.contains('Z') || timeStr.contains('+') || timeStr.contains('-'))) {
         final dateTime = DateTime.tryParse(timeStr);
         if (dateTime != null) {
-          return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+          // Convertir de UTC a zona horaria local
+          final localDateTime = dateTime.toLocal();
+          return '${localDateTime.hour.toString().padLeft(2, '0')}:${localDateTime.minute.toString().padLeft(2, '0')}';
         }
       }
 
-      // Si es solo fecha con hora
+      // Si es solo fecha con hora (sin zona horaria)
       final dateTime = DateTime.tryParse(timeStr);
       if (dateTime != null) {
+        // Si no tiene zona horaria, asumir que ya está en hora local
         return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
       }
 
@@ -863,6 +886,79 @@ class _DashboardTutorState extends State<DashboardTutor> {
       print('Error formatting time: $e for string: $timeStr');
       return timeStr;
     }
+  }
+
+  /// Valida si hay conflictos de horarios para un nuevo slot
+  /// Retorna true si hay conflicto, false si no hay conflicto
+  bool _validateTimeConflict(DateTime day, TimeOfDay start, TimeOfDay end) {
+    // Limpiar error anterior
+    setState(() {
+      _timeConflictError = null;
+      _hasTimeConflict = false;
+    });
+
+    // Validar que la hora de inicio sea menor que la de fin
+    if (start.hour > end.hour || (start.hour == end.hour && start.minute >= end.minute)) {
+      setState(() {
+        _timeConflictError = 'La hora de inicio debe ser menor que la hora de fin';
+        _hasTimeConflict = true;
+      });
+      return true;
+    }
+
+    // Obtener horarios existentes para ese día
+    final existingSlots = freeTimesByDay[DateTime(day.year, day.month, day.day)] ?? [];
+    
+    if (existingSlots.isEmpty) {
+      return false; // No hay conflictos si no hay horarios existentes
+    }
+
+    // Convertir el nuevo horario a minutos para facilitar comparaciones
+    final newStartMinutes = start.hour * 60 + start.minute;
+    final newEndMinutes = end.hour * 60 + end.minute;
+
+    // Verificar conflictos con cada horario existente
+    for (var existingSlot in existingSlots) {
+      final existingStartStr = existingSlot['start'] as String;
+      final existingEndStr = existingSlot['end'] as String;
+      
+      if (existingStartStr.isEmpty || existingEndStr.isEmpty) continue;
+
+      // Convertir horarios existentes a minutos
+      final existingStartParts = existingStartStr.split(':');
+      final existingEndParts = existingEndStr.split(':');
+      
+      if (existingStartParts.length != 2 || existingEndParts.length != 2) continue;
+      
+      final existingStartMinutes = int.parse(existingStartParts[0]) * 60 + int.parse(existingStartParts[1]);
+      final existingEndMinutes = int.parse(existingEndParts[0]) * 60 + int.parse(existingEndParts[1]);
+
+      // Verificar si hay solapamiento
+      // Un horario se solapa si:
+      // 1. El nuevo inicio está dentro del horario existente
+      // 2. El nuevo fin está dentro del horario existente  
+      // 3. El nuevo horario contiene completamente al existente
+      if ((newStartMinutes >= existingStartMinutes && newStartMinutes < existingEndMinutes) ||
+          (newEndMinutes > existingStartMinutes && newEndMinutes <= existingEndMinutes) ||
+          (newStartMinutes <= existingStartMinutes && newEndMinutes >= existingEndMinutes)) {
+        
+        setState(() {
+          _timeConflictError = 'Este horario se solapa con el horario existente de ${existingStartStr} a ${existingEndStr}';
+          _hasTimeConflict = true;
+        });
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /// Limpia los errores de validación
+  void _clearValidationErrors() {
+    setState(() {
+      _timeConflictError = null;
+      _hasTimeConflict = false;
+    });
   }
 
   void _updateFreeTimesByDay() {
@@ -878,9 +974,11 @@ class _DashboardTutorState extends State<DashboardTutor> {
           final formattedStart = _formatTimeString(slot['start_time'] ?? '');
           final formattedEnd = _formatTimeString(slot['end_time'] ?? '');
 
-          print(
-              'DEBUG - Original times: ${slot['start_time']} - ${slot['end_time']}');
-          print('DEBUG - Formatted times: $formattedStart - $formattedEnd');
+          print('DEBUG - Slot data: ${slot.toString()}');
+          print('DEBUG - Original start_time: ${slot['start_time']}');
+          print('DEBUG - Original end_time: ${slot['end_time']}');
+          print('DEBUG - Formatted start: $formattedStart');
+          print('DEBUG - Formatted end: $formattedEnd');
 
           freeTimesByDay.putIfAbsent(day, () => []).add({
             'start': formattedStart,
@@ -1214,6 +1312,10 @@ class _DashboardTutorState extends State<DashboardTutor> {
                       setModalState(() {
                         startTime = time;
                       });
+                      // Validar conflictos cuando se selecciona la hora de inicio
+                      if (time != null && endTime != null) {
+                        _validateTimeConflict(selectedDay, time, endTime!);
+                      }
                     },
                     setModalState: setModalState,
                   ),
@@ -1229,32 +1331,79 @@ class _DashboardTutorState extends State<DashboardTutor> {
                       setModalState(() {
                         endTime = time;
                       });
+                      // Validar conflictos cuando se selecciona la hora de fin
+                      if (startTime != null && time != null) {
+                        _validateTimeConflict(selectedDay, startTime!, time);
+                      }
                     },
                     setModalState: setModalState,
                     initialTime: startTime,
                   ),
+                  
+                  // Mostrar mensaje de error de conflicto si existe
+                  if (_timeConflictError != null)
+                    Container(
+                      width: double.infinity,
+                      margin: EdgeInsets.only(top: 16),
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.redColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.redColor.withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            color: AppColors.redColor,
+                            size: 20,
+                          ),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _timeConflictError!,
+                              style: TextStyle(
+                                color: AppColors.redColor,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  
                   SizedBox(height: 24),
                   Container(
                     width: double.infinity,
                     height: 48,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [
-                          AppColors.primaryGreen,
-                          AppColors.primaryGreen.withOpacity(0.8),
-                        ],
+                        colors: _hasTimeConflict 
+                          ? [
+                              Colors.grey.withOpacity(0.3),
+                              Colors.grey.withOpacity(0.2),
+                            ]
+                          : [
+                              AppColors.primaryGreen,
+                              AppColors.primaryGreen.withOpacity(0.8),
+                            ],
                       ),
                       borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primaryGreen.withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
+                      boxShadow: _hasTimeConflict 
+                        ? []
+                        : [
+                            BoxShadow(
+                              color: AppColors.primaryGreen.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: Offset(0, 3),
+                            ),
+                          ],
                     ),
                     child: ElevatedButton.icon(
-                      onPressed: (startTime != null && endTime != null)
+                      onPressed: (startTime != null && endTime != null && !_hasTimeConflict)
                           ? () {
                               setModalState(() {
                                 tempFreeTimes.add({
@@ -1264,15 +1413,17 @@ class _DashboardTutorState extends State<DashboardTutor> {
                                 });
                                 startTime = null;
                                 endTime = null;
+                                // Limpiar errores al agregar exitosamente
+                                _clearValidationErrors();
                               });
                             }
                           : null,
                       icon: Icon(Icons.add_circle_outline,
-                          color: Colors.white, size: 18),
+                          color: _hasTimeConflict ? Colors.grey : Colors.white, size: 18),
                       label: Text(
                         'Agregar a la Lista',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: _hasTimeConflict ? Colors.grey : Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
                         ),
@@ -1345,19 +1496,26 @@ class _DashboardTutorState extends State<DashboardTutor> {
                     height: 56,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [
-                          AppColors.orangeprimary,
-                          AppColors.orangeprimary.withOpacity(0.8),
-                        ],
+                        colors: tempFreeTimes.isEmpty
+                          ? [
+                              Colors.grey.withOpacity(0.3),
+                              Colors.grey.withOpacity(0.2),
+                            ]
+                          : [
+                              AppColors.orangeprimary,
+                              AppColors.orangeprimary.withOpacity(0.8),
+                            ],
                       ),
                       borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.orangeprimary.withOpacity(0.4),
-                          blurRadius: 12,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
+                      boxShadow: tempFreeTimes.isEmpty
+                        ? []
+                        : [
+                            BoxShadow(
+                              color: AppColors.orangeprimary.withOpacity(0.4),
+                              blurRadius: 12,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
                     ),
                     child: ElevatedButton(
                       onPressed: tempFreeTimes.isNotEmpty
@@ -1378,14 +1536,14 @@ class _DashboardTutorState extends State<DashboardTutor> {
                         children: [
                           Icon(
                             Icons.save_alt,
-                            color: Colors.white,
+                            color: tempFreeTimes.isEmpty ? Colors.grey : Colors.white,
                             size: 20,
                           ),
                           SizedBox(width: 8),
                           Text(
                             'Guardar Horarios',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: tempFreeTimes.isEmpty ? Colors.grey : Colors.white,
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
                             ),
@@ -1449,12 +1607,14 @@ class _DashboardTutorState extends State<DashboardTutor> {
 
       // Mostrar mensaje apropiado
       if (successCount > 0 && errorCount == 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                '$successCount tiempo(s) libre(s) agregado(s) exitosamente'),
-            backgroundColor: AppColors.primaryGreen,
-          ),
+        showSuccessDialog(
+          context: context,
+          title: '¡Horarios Agregados!',
+          message: '$successCount tiempo(s) libre(s) agregado(s) exitosamente',
+          buttonText: 'Continuar',
+          onContinue: () {
+            // El diálogo se cierra automáticamente
+          },
         );
       } else if (successCount > 0 && errorCount > 0) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1870,7 +2030,45 @@ class _DashboardTutorState extends State<DashboardTutor> {
               ],
             ),
           ),
-          // Botón de cerrar sesión
+          // Botón de editar perfil
+          SizedBox(width: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+            child: IconButton(
+                      onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => EditProfileScreen(),
+            ),
+          );
+          
+          // Si se actualizó la imagen, recargar la imagen del perfil
+          if (result == true) {
+            print('🔄 Regresando del EditProfileScreen, recargando imagen...');
+            _loadProfileImage();
+          }
+        },
+              icon: Icon(
+                Icons.edit_outlined,
+                color: Colors.white,
+                size: 18,
+              ),
+              tooltip: 'Editar perfil',
+              padding: EdgeInsets.all(6),
+              constraints: BoxConstraints(
+                minWidth: 32,
+                minHeight: 32,
+              ),
+            ),
+          ),
           // Botón de cerrar sesión
           SizedBox(width: 8),
           Container(
@@ -3196,6 +3394,10 @@ class _DashboardTutorState extends State<DashboardTutor> {
                       setModalState(() {
                         startTime = time;
                       });
+                      // Validar conflictos cuando se selecciona la hora de inicio
+                      if (time != null && endTime != null) {
+                        _validateTimeConflict(day, time, endTime!);
+                      }
                     },
                     setModalState: setModalState,
                   ),
@@ -3211,10 +3413,50 @@ class _DashboardTutorState extends State<DashboardTutor> {
                       setModalState(() {
                         endTime = time;
                       });
+                      // Validar conflictos cuando se selecciona la hora de fin
+                      if (startTime != null && time != null) {
+                        _validateTimeConflict(day, startTime!, time);
+                      }
                     },
                     setModalState: setModalState,
                     initialTime: startTime,
                   ),
+                  
+                  // Mostrar mensaje de error de conflicto si existe
+                  if (_timeConflictError != null)
+                    Container(
+                      width: double.infinity,
+                      margin: EdgeInsets.only(top: 16),
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.redColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.redColor.withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            color: AppColors.redColor,
+                            size: 20,
+                          ),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _timeConflictError!,
+                              style: TextStyle(
+                                color: AppColors.redColor,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  
                   SizedBox(height: 32),
 
                   // Botón de guardar mejorado
@@ -3223,26 +3465,35 @@ class _DashboardTutorState extends State<DashboardTutor> {
                     height: 56,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [
-                          AppColors.primaryGreen,
-                          AppColors.primaryGreen.withOpacity(0.8),
-                        ],
+                        colors: (startTime == null || endTime == null || _hasTimeConflict)
+                          ? [
+                              Colors.grey.withOpacity(0.3),
+                              Colors.grey.withOpacity(0.2),
+                            ]
+                          : [
+                              AppColors.primaryGreen,
+                              AppColors.primaryGreen.withOpacity(0.8),
+                            ],
                       ),
                       borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primaryGreen.withOpacity(0.4),
-                          blurRadius: 12,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
+                      boxShadow: (startTime == null || endTime == null || _hasTimeConflict)
+                        ? []
+                        : [
+                            BoxShadow(
+                              color: AppColors.primaryGreen.withOpacity(0.4),
+                              blurRadius: 12,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
                     ),
                     child: ElevatedButton(
-                      onPressed: (startTime != null && endTime != null)
+                      onPressed: (startTime != null && endTime != null && !_hasTimeConflict)
                           ? () async {
                               Navigator.of(context).pop();
                               await _createSingleSlot(
                                   day, startTime!, endTime!);
+                              // Limpiar errores al guardar exitosamente
+                              _clearValidationErrors();
                             }
                           : null,
                       style: ElevatedButton.styleFrom(
@@ -3257,14 +3508,14 @@ class _DashboardTutorState extends State<DashboardTutor> {
                         children: [
                           Icon(
                             Icons.save_alt,
-                            color: Colors.white,
+                            color: (startTime == null || endTime == null || _hasTimeConflict) ? Colors.grey : Colors.white,
                             size: 20,
                           ),
                           SizedBox(width: 8),
                           Text(
                             'Guardar Horario',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: (startTime == null || endTime == null || _hasTimeConflict) ? Colors.grey : Colors.white,
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
                             ),
@@ -3455,11 +3706,14 @@ class _DashboardTutorState extends State<DashboardTutor> {
 
       if (response['success'] == true) {
         await _loadAvailableSlots();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Horario agregado exitosamente'),
-            backgroundColor: AppColors.primaryGreen,
-          ),
+        showSuccessDialog(
+          context: context,
+          title: '¡Horario Agregado!',
+          message: 'Tu horario disponible ha sido registrado exitosamente',
+          buttonText: 'Continuar',
+          onContinue: () {
+            // El diálogo se cierra automáticamente
+          },
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -3502,13 +3756,7 @@ class _DashboardTutorState extends State<DashboardTutor> {
           ElevatedButton(
             onPressed: () async {
               Navigator.of(context).pop();
-              // TODO: Implementar eliminación de slot
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Horario eliminado'),
-                  backgroundColor: AppColors.primaryGreen,
-                ),
-              );
+              await _performDeleteSlot(slot);
             },
             style:
                 ElevatedButton.styleFrom(backgroundColor: AppColors.redColor),
@@ -3517,6 +3765,70 @@ class _DashboardTutorState extends State<DashboardTutor> {
         ],
       ),
     );
+  }
+
+  // Método para ejecutar la eliminación del slot
+  Future<void> _performDeleteSlot(Map<String, String> slot) async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.token == null || authProvider.userId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error de autenticación'),
+            backgroundColor: AppColors.redColor,
+          ),
+        );
+        return;
+      }
+
+      // Obtener el ID del slot del mapa
+      final slotId = int.tryParse(slot['id'] ?? '');
+      if (slotId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ID de slot inválido'),
+            backgroundColor: AppColors.redColor,
+          ),
+        );
+        return;
+      }
+
+      final response = await deleteUserSubjectSlot(
+        authProvider.token!,
+        slotId,
+        authProvider.userId!,
+      );
+
+      if (response['success'] == true) {
+        // Recargar los slots después de eliminar
+        await _loadAvailableSlots();
+        
+        showSuccessDialog(
+          context: context,
+          title: '¡Horario Eliminado!',
+          message: 'El horario ha sido eliminado exitosamente',
+          buttonText: 'Continuar',
+          onContinue: () {
+            // El diálogo se cierra automáticamente
+          },
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Error al eliminar el horario'),
+            backgroundColor: AppColors.redColor,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error deleting slot: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error de conexión al eliminar el horario'),
+          backgroundColor: AppColors.redColor,
+        ),
+      );
+    }
   }
 
   // Método para mostrar diálogo de cerrar sesión

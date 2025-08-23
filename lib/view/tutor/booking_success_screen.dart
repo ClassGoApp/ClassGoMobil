@@ -33,14 +33,10 @@ class BookingSuccessScreen extends StatefulWidget {
 
 class _BookingSuccessScreenState extends State<BookingSuccessScreen>
     with TickerProviderStateMixin {
-  late AnimationController _slideController;
   late AnimationController _fadeController;
-  late AnimationController _pulseController;
   late AnimationController _checkmarkController;
 
-  late Animation<Offset> _slideAnimation;
   late Animation<double> _fadeAnimation;
-  late Animation<double> _pulseAnimation;
   late Animation<double> _checkmarkScale;
 
   final AudioPlayer _audioPlayer = AudioPlayer();
@@ -56,21 +52,9 @@ class _BookingSuccessScreenState extends State<BookingSuccessScreen>
   }
 
   void _initializeAnimations() {
-    // Controlador para el slide
-    _slideController = AnimationController(
-      duration: Duration(milliseconds: 800),
-      vsync: this,
-    );
-
     // Controlador para el fade
     _fadeController = AnimationController(
       duration: Duration(milliseconds: 1000),
-      vsync: this,
-    );
-
-    // Controlador para el pulso del logo
-    _pulseController = AnimationController(
-      duration: Duration(milliseconds: 2000),
       vsync: this,
     );
 
@@ -81,28 +65,12 @@ class _BookingSuccessScreenState extends State<BookingSuccessScreen>
     );
 
     // Animaciones
-    _slideAnimation = Tween<Offset>(
-      begin: Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _slideController,
-      curve: Curves.easeOutCubic,
-    ));
-
     _fadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
     ).animate(CurvedAnimation(
       parent: _fadeController,
       curve: Curves.easeIn,
-    ));
-
-    _pulseAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.1,
-    ).animate(CurvedAnimation(
-      parent: _pulseController,
-      curve: Curves.easeInOut,
     ));
 
     _checkmarkScale = Tween<double>(
@@ -117,12 +85,8 @@ class _BookingSuccessScreenState extends State<BookingSuccessScreen>
   void _startAnimations() {
     _checkmarkController.forward();
     Future.delayed(Duration(milliseconds: 300), () {
-      _slideController.forward();
-    });
-    Future.delayed(Duration(milliseconds: 600), () {
       _fadeController.forward();
     });
-    _pulseController.repeat(reverse: true);
   }
 
   void _startAutoCloseTimer() {
@@ -163,9 +127,7 @@ class _BookingSuccessScreenState extends State<BookingSuccessScreen>
 
   @override
   void dispose() {
-    _slideController.dispose();
     _fadeController.dispose();
-    _pulseController.dispose();
     _checkmarkController.dispose();
     _audioPlayer.dispose();
     super.dispose();
@@ -205,25 +167,20 @@ class _BookingSuccessScreenState extends State<BookingSuccessScreen>
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Checkmark animado con Lottie
+                          // Checkmark animado con Lottie (más grande y centrado)
                           _buildAnimatedCheckmark(),
 
-                          SizedBox(height: 30),
-
-                          // Logo de la app
-                          _buildAppLogo(),
-
-                          SizedBox(height: 25),
+                          SizedBox(height: 50),
 
                           // Mensaje de éxito
                           _buildSuccessMessage(),
 
-                          SizedBox(height: 30),
+                          SizedBox(height: 50),
 
                           // Información de la tutoría
                           _buildTutoringInfo(),
 
-                          SizedBox(height: 40),
+                          SizedBox(height: 50),
 
                           // Botón de acción
                           _buildActionButton(),
@@ -312,50 +269,17 @@ class _BookingSuccessScreenState extends State<BookingSuccessScreen>
         return Transform.scale(
           scale: _checkmarkScale.value,
           child: Container(
-            width: 150,
-            height: 150,
+            width: 300,
+            height: 300,
             child: Lottie.asset(
-              'assets/lottie/success.json',
+              'assets/animations/Success.json', // ← Nueva animación de éxito
               fit: BoxFit.contain,
               repeat: false,
+              animate: true,
             ),
           ),
         );
       },
-    );
-  }
-
-  Widget _buildAppLogo() {
-    return SlideTransition(
-      position: _slideAnimation,
-      child: AnimatedBuilder(
-        animation: _pulseAnimation,
-        builder: (context, child) {
-          return Transform.scale(
-            scale: _pulseAnimation.value,
-            child: Container(
-              width: 70,
-              height: 70,
-              decoration: BoxDecoration(
-                color: AppColors.lightBlueColor,
-                borderRadius: BorderRadius.circular(18),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.lightBlueColor.withOpacity(0.3),
-                    blurRadius: 15,
-                    offset: Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Icon(
-                Icons.school,
-                color: Colors.white,
-                size: 35,
-              ),
-            ),
-          );
-        },
-      ),
     );
   }
 

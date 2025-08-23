@@ -524,9 +524,38 @@ class AuthProvider with ChangeNotifier {
 
   Future<void> updateUserProfiles(Map<String, dynamic>? updatedProfile) async {
     if (updatedProfile != null && _userData != null) {
+      // Construir full_name si tenemos first_name y last_name
+      if (updatedProfile['first_name'] != null && updatedProfile['last_name'] != null) {
+        updatedProfile['full_name'] = '${updatedProfile['first_name']} ${updatedProfile['last_name']}';
+      }
+      
+      // Actualizar _userData['user']['profile']
       _userData!['user']['profile'] = updatedProfile;
+      
+      // Actualizar los campos individuales para mantener sincronizados los datos
+      if (updatedProfile['first_name'] != null) {
+        _firstName = updatedProfile['first_name'];
+      }
+      if (updatedProfile['last_name'] != null) {
+        _lastName = updatedProfile['last_name'];
+      }
+      if (updatedProfile['phone_number'] != null) {
+        _phone = updatedProfile['phone_number'];
+      }
+      if (updatedProfile['description'] != null) {
+        _description = updatedProfile['description'];
+      }
+      
+      // Guardar en SharedPreferences
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setString('userData', jsonEncode(_userData));
+      
+      // Guardar los campos individuales también
+      await prefs.setString('firstName', _firstName ?? '');
+      await prefs.setString('lastName', _lastName ?? '');
+      await prefs.setString('phone', _phone ?? '');
+      await prefs.setString('description', _description ?? '');
+      
       notifyListeners();
     } else {}
   }

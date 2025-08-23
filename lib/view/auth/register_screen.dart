@@ -8,6 +8,7 @@ import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/tutor/search_tutors_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_projects/helpers/back_button_handler.dart';
 
 import 'login_screen.dart';
 import 'verification_pending_screen.dart';
@@ -252,13 +253,10 @@ class _RegistrationScreenState extends State<RegistrationScreen>
     final h = MediaQuery.of(context).size.height;
 
     return WillPopScope(
-      onWillPop: () async {
-        if (_isLoading) {
-          return false;
-        } else {
-          return true;
-        }
-      },
+      onWillPop: () => BackButtonHandler.handleBackButton(
+        context,
+        isLoading: _isLoading,
+      ),
       child: Scaffold(
         backgroundColor: AppColors.primaryGreen,
         body: SafeArea(
