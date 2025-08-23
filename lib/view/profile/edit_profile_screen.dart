@@ -5,9 +5,12 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:video_player/video_player.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import '../../provider/auth_provider.dart';
 import '../../styles/app_styles.dart';
 import '../../base_components/custom_snack_bar.dart';
+import '../../api_structure/config/app_config.dart';
 
 class EditProfileScreen extends StatefulWidget {
   @override
@@ -26,12 +29,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   String? _profileImageUrl;
   bool _isImageLoading = false;
   
+  // Variables para el video
+  String? _profileVideoUrl;
+  bool _isVideoLoading = false;
+  bool _isVideoInitialized = false;
+  late VideoPlayerController _videoController;
+  final DefaultCacheManager _cacheManager = DefaultCacheManager();
+  
   @override
   void initState() {
     super.initState();
     
     // Cargar perfil inmediatamente
     _loadCurrentProfile();
+    
+    // Inicializar video después de cargar el perfil
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeVideo();
+    });
   }
   
   @override
@@ -40,6 +55,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _lastNameController.dispose();
     _phoneController.dispose();
     _descriptionController.dispose();
+    
+    // Dispose del video controller
+    if (_isVideoInitialized) {
+      try {
+        _videoController.removeListener(() {});
+        _videoController.dispose();
+      } catch (e) {
+        print('Error al dispose del video controller: $e');
+      }
+    }
+    
     super.dispose();
   }
   
@@ -105,6 +131,548 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     } catch (e) {
       // Error silencioso para no interrumpir la experiencia del usuario
     }
+  }
+
+  // Método para inicializar el video del perfil
+  Future<void> _initializeVideo() async {
+    try {
+      // Verificar que el widget esté montado antes de continuar
+      if (!mounted) {
+        print('Widget no está montado, cancelando inicialización del video');
+        return;
+      }
+      
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final profile = authProvider.userData?['user']?['profile'];
+      
+      if (profile != null && profile['intro_video'] != null && profile['intro_video'].isNotEmpty) {
+        final videoUrl = profile['intro_video'];
+        print('URL del video desde el perfil: $videoUrl');
+        
+        // Construir la URL completa del video
+        final fullVideoUrl = _buildFullVideoUrl(videoUrl);
+        print('URL completa del video: $fullVideoUrl');
+        
+        // Verificar que la URL sea válida
+        if (!_isValidVideoUrl(fullVideoUrl)) {
+          print('URL del video no es válida: $fullVideoUrl');
+          if (mounted) {
+            _showCustomToast('URL del video no es válida', false);
+          }
+          return;
+        }
+        
+        if (mounted) {
+          setState(() {
+            _profileVideoUrl = fullVideoUrl;
+          });
+        }
+        
+        // Inicializar el video player
+        await _initializeVideoPlayer(fullVideoUrl);
+      } else {
+        print('No hay video de introducción en el perfil');
+      }
+    } catch (e) {
+      print('Error al inicializar video: $e');
+    }
+  }
+
+  // Método para construir la URL completa del video
+  String _buildFullVideoUrl(String videoPath) {
+    print('Construyendo URL para video: $videoPath');
+    
+    // Si ya es una URL completa, retornarla tal como está
+    if (videoPath.startsWith('http://') || videoPath.startsWith('https://')) {
+      print('URL ya es completa: $videoPath');
+      return videoPath;
+    }
+    
+    // Si es un path relativo, combinarlo con la URL base
+    final baseUrl = AppConfig.mediaBaseUrl;
+    
+    // Asegurar que la URL base termine con '/' y el path no empiece con '/'
+    String cleanBaseUrl = baseUrl;
+    if (!cleanBaseUrl.endsWith('/')) {
+      cleanBaseUrl = '$cleanBaseUrl/';
+    }
+    
+    String cleanVideoPath = videoPath;
+    if (cleanVideoPath.startsWith('/')) {
+      cleanVideoPath = cleanVideoPath.substring(1);
+    }
+    
+    final fullUrl = '$cleanBaseUrl$cleanVideoPath';
+    print('URL base: $cleanBaseUrl');
+    print('Path del video: $cleanVideoPath');
+    print('URL construida: $fullUrl');
+    
+    return fullUrl;
+  }
+  
+  // Método para validar si la URL del video es válida
+  bool _isValidVideoUrl(String url) {
+    try {
+      final uri = Uri.parse(url);
+      return uri.hasScheme && uri.hasAuthority && uri.path.isNotEmpty;
+    } catch (e) {
+      print('Error al validar URL: $e');
+      return false;
+    }
+  }
+  
+  // Método para limpiar caché y reintentar
+  Future<void> _clearCacheAndRetry() async {
+    try {
+      if (mounted) {
+        setState(() {
+          _isVideoInitialized = false;
+        });
+      }
+      
+      // Limpiar caché del video
+      if (_profileVideoUrl != null) {
+        await _cacheManager.removeFile(_profileVideoUrl!);
+        print('Caché del video limpiado');
+      }
+      
+      // Reintentar inicialización
+      if (_profileVideoUrl != null && mounted) {
+        await _initializeVideoPlayer(_profileVideoUrl!);
+      }
+    } catch (e) {
+      print('Error al limpiar caché: $e');
+    }
+  }
+
+  // Método para inicializar el video player
+  Future<void> _initializeVideoPlayer(String videoUrl) async {
+    try {
+      // Verificar que la URL sea válida
+      if (videoUrl.isEmpty) {
+        print('URL del video está vacía');
+        return;
+      }
+      
+      // Verificar que el widget esté montado antes de continuar
+      if (!mounted) {
+        print('Widget no está montado, cancelando inicialización del video');
+        return;
+      }
+      
+      print('Inicializando video player con URL: $videoUrl');
+      
+      // Verificar que la URL sea accesible antes de inicializar
+      try {
+        final response = await http.head(Uri.parse(videoUrl));
+        if (response.statusCode != 200) {
+          throw Exception('Video no accesible: ${response.statusCode}');
+        }
+        print('Video accesible, continuando con inicialización...');
+      } catch (e) {
+        print('Error al verificar accesibilidad del video: $e');
+        // Continuar intentando inicializar el video player
+      }
+      
+      // Resetear el estado antes de inicializar
+      if (mounted) {
+        setState(() {
+          _isVideoInitialized = false;
+        });
+      }
+      
+      // Crear un nuevo controller
+      _videoController = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
+      
+      // Agregar listener para detectar cuando se inicializa
+      _videoController.addListener(() {
+        if (_videoController.value.isInitialized && mounted) {
+          setState(() {
+            _isVideoInitialized = true;
+          });
+          print('Video player inicializado correctamente');
+        }
+      });
+      
+      // Inicializar el controller con timeout
+      await _videoController.initialize().timeout(
+        Duration(seconds: 15),
+        onTimeout: () {
+          throw Exception('Timeout al inicializar el video');
+        },
+      );
+      
+      print('Video player inicializado correctamente');
+      
+    } catch (e) {
+      print('Error al inicializar video player: $e');
+      // Resetear el estado del video
+      if (mounted) {
+        setState(() {
+          _isVideoInitialized = false;
+        });
+      }
+      
+      // Mostrar mensaje de error al usuario
+      if (mounted) {
+        String errorMessage = 'Error al cargar el video';
+        
+        if (e.toString().contains('404')) {
+          errorMessage = 'Video no encontrado en el servidor';
+        } else if (e.toString().contains('timeout')) {
+          errorMessage = 'Tiempo de espera agotado al cargar el video';
+        } else if (e.toString().contains('network')) {
+          errorMessage = 'Error de conexión al cargar el video';
+        }
+        
+        _showCustomToast(errorMessage, false);
+      }
+    }
+  }
+
+  // Método para seleccionar video
+  Future<void> _selectVideo() async {
+    try {
+      // Verificar que el widget esté montado antes de continuar
+      if (!mounted) {
+        print('Widget no está montado, cancelando selección de video');
+        return;
+      }
+      
+      final ImagePicker picker = ImagePicker();
+      final XFile? video = await picker.pickVideo(
+        source: ImageSource.gallery,
+        maxDuration: Duration(seconds: 60), // Máximo 60 segundos
+      );
+      
+      if (video != null && mounted) {
+        await _updateVideo(video.path);
+      }
+    } catch (e) {
+      if (mounted) {
+        _showCustomToast('Error al seleccionar video: $e', false);
+      }
+    }
+  }
+
+  // Método para actualizar el video
+  Future<void> _updateVideo(String videoPath) async {
+    try {
+      if (mounted) {
+        setState(() {
+          _isVideoLoading = true;
+        });
+      }
+
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final userId = authProvider.userData?['user']['id'];
+      final token = authProvider.token;
+
+      if (userId == null || token == null) {
+        throw Exception('Usuario no autenticado');
+      }
+
+      // Crear request multipart
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('https://classgoapp.com/api/user/$userId/profile-files'),
+      );
+
+      request.headers['Authorization'] = 'Bearer $token';
+      request.headers['Accept'] = 'application/json';
+
+      // Agregar el video
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'intro_video',
+          videoPath,
+        ),
+      );
+
+      final response = await request.send();
+      final responseData = await response.stream.bytesToString();
+      final jsonData = json.decode(responseData);
+
+      if (response.statusCode == 200 && jsonData['success'] == true) {
+        // Actualizar la URL del video localmente
+        final newVideoUrl = jsonData['data']['profile']['intro_video'];
+        
+        // Construir la URL completa del video
+        final fullVideoUrl = _buildFullVideoUrl(newVideoUrl);
+        
+        // Actualizar en el AuthProvider (guardar solo el path relativo)
+        if (authProvider.userData != null) {
+          authProvider.userData!['user']['profile']['intro_video'] = newVideoUrl;
+        }
+
+        // Limpiar el video anterior
+        if (_isVideoInitialized && mounted) {
+          _videoController.removeListener(() {});
+          _videoController.dispose();
+        }
+        
+        // Actualizar la URL local
+        if (mounted) {
+          setState(() {
+            _profileVideoUrl = fullVideoUrl;
+            _isVideoInitialized = false;
+          });
+        }
+
+        // Reinicializar el video después de un pequeño delay
+        Future.delayed(Duration(milliseconds: 500), () async {
+          if (mounted) {
+            await _initializeVideoPlayer(fullVideoUrl);
+          }
+        });
+
+        _showCustomToast('Video actualizado exitosamente', true);
+      } else {
+        throw Exception(jsonData['message'] ?? 'Error al actualizar el video');
+      }
+    } catch (e) {
+      _showCustomToast('Error al actualizar video: $e', false);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isVideoLoading = false;
+        });
+      }
+    }
+  }
+
+  // Método para construir el widget del video player
+  Widget _buildVideoPlayer() {
+    return Container(
+      width: double.infinity,
+      height: 200,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.lightBlueColor.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            if (_isVideoInitialized && _videoController.value.isInitialized)
+              AspectRatio(
+                aspectRatio: _videoController.value.aspectRatio,
+                child: VideoPlayer(_videoController),
+              )
+            else
+              Container(
+                color: AppColors.darkBlue.withOpacity(0.5),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 3,
+                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.lightBlueColor),
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        'Cargando video...',
+                        style: TextStyle(
+                          color: AppColors.lightBlueColor,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Esto puede tomar unos segundos',
+                        style: TextStyle(
+                          color: AppColors.lightBlueColor.withOpacity(0.7),
+                          fontSize: 12,
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                                             // Botón para reintentar si falla la carga
+                       if (_profileVideoUrl != null && _profileVideoUrl!.isNotEmpty)
+                         Column(
+                           children: [
+                             GestureDetector(
+                               onTap: () {
+                                 if (mounted) {
+                                   print('Reintentando cargar video: ${_profileVideoUrl!}');
+                                   _initializeVideoPlayer(_profileVideoUrl!);
+                                 }
+                               },
+                               child: Container(
+                                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                 decoration: BoxDecoration(
+                                   color: AppColors.lightBlueColor.withOpacity(0.2),
+                                   borderRadius: BorderRadius.circular(20),
+                                   border: Border.all(
+                                     color: AppColors.lightBlueColor.withOpacity(0.4),
+                                     width: 1,
+                                   ),
+                                 ),
+                                 child: Row(
+                                   mainAxisSize: MainAxisSize.min,
+                                   children: [
+                                     Icon(
+                                       Icons.refresh,
+                                       color: AppColors.lightBlueColor,
+                                       size: 16,
+                                     ),
+                                     SizedBox(width: 6),
+                                     Text(
+                                       'Reintentar',
+                                       style: TextStyle(
+                                         color: AppColors.lightBlueColor,
+                                         fontSize: 12,
+                                         fontWeight: FontWeight.w500,
+                                       ),
+                                     ),
+                                   ],
+                                 ),
+                               ),
+                             ),
+                             SizedBox(height: 8),
+                             Text(
+                               'URL: ${_profileVideoUrl!.length > 50 ? '${_profileVideoUrl!.substring(0, 50)}...' : _profileVideoUrl!}',
+                               style: TextStyle(
+                                 color: AppColors.lightBlueColor.withOpacity(0.6),
+                                 fontSize: 10,
+                               ),
+                               textAlign: TextAlign.center,
+                             ),
+                             SizedBox(height: 8),
+                             GestureDetector(
+                               onTap: () {
+                                 if (mounted) {
+                                   _clearCacheAndRetry();
+                                 }
+                               },
+                               child: Container(
+                                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                 decoration: BoxDecoration(
+                                   color: AppColors.primaryGreen.withOpacity(0.2),
+                                   borderRadius: BorderRadius.circular(16),
+                                   border: Border.all(
+                                     color: AppColors.primaryGreen.withOpacity(0.4),
+                                     width: 1,
+                                   ),
+                                 ),
+                                 child: Row(
+                                   mainAxisSize: MainAxisSize.min,
+                                   children: [
+                                     Icon(
+                                       Icons.clear_all,
+                                       color: AppColors.primaryGreen,
+                                       size: 14,
+                                     ),
+                                     SizedBox(width: 4),
+                                     Text(
+                                       'Limpiar Caché',
+                                       style: TextStyle(
+                                         color: AppColors.primaryGreen,
+                                         fontSize: 10,
+                                         fontWeight: FontWeight.w500,
+                                       ),
+                                     ),
+                                   ],
+                                 ),
+                               ),
+                             ),
+                           ],
+                         ),
+                    ],
+                  ),
+                ),
+              ),
+            // Botón de play/pause
+            if (_isVideoInitialized && _videoController.value.isInitialized)
+              GestureDetector(
+                onTap: () {
+                  if (mounted) {
+                    setState(() {
+                      if (_videoController.value.isPlaying) {
+                        _videoController.pause();
+                      } else {
+                        _videoController.play();
+                      }
+                    });
+                  }
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.6),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  padding: EdgeInsets.all(16),
+                  child: Icon(
+                    _videoController.value.isPlaying ? Icons.pause : Icons.play_arrow,
+                    color: Colors.white,
+                    size: 32,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Método para construir el placeholder cuando no hay video
+  Widget _buildVideoPlaceholder() {
+    return Container(
+      width: double.infinity,
+      height: 200,
+      decoration: BoxDecoration(
+        color: AppColors.darkBlue.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.lightBlueColor.withOpacity(0.3),
+          width: 1,
+          style: BorderStyle.solid,
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.videocam_off,
+            color: AppColors.lightBlueColor.withOpacity(0.6),
+            size: 48,
+          ),
+          SizedBox(height: 12),
+          Text(
+            'No hay video de introducción',
+            style: TextStyle(
+              color: AppColors.lightBlueColor.withOpacity(0.8),
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          SizedBox(height: 4),
+          Text(
+            'Toca "Cambiar Video" para agregar uno',
+            style: TextStyle(
+              color: AppColors.lightBlueColor.withOpacity(0.6),
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
   }
   
   bool _validatePhone(String phone) {
@@ -176,6 +744,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
   
   void _showCustomToast(String message, bool isSuccess) {
+    // Verificar que el contexto esté montado antes de mostrar el toast
+    if (!mounted) return;
+    
     final overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
         top: 100.0,
@@ -188,10 +759,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       ),
     );
 
-    Overlay.of(context).insert(overlayEntry);
-    Future.delayed(const Duration(seconds: 3), () {
-      overlayEntry.remove();
-    });
+    try {
+      Overlay.of(context).insert(overlayEntry);
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted && overlayEntry.mounted) {
+          overlayEntry.remove();
+        }
+      });
+    } catch (e) {
+      // Si hay un error al insertar el overlay, limpiarlo
+      if (overlayEntry.mounted) {
+        overlayEntry.remove();
+      }
+    }
   }
 
   // Método para cerrar la vista de editar perfil
@@ -445,6 +1025,134 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     ),
                                   ],
                                 ),
+                            ],
+                          ),
+                        ),
+                        
+                        SizedBox(height: 32),
+                        
+                        // Sección del Video de Introducción
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [AppColors.darkBlue.withOpacity(0.9), AppColors.darkBlue.withOpacity(0.7)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: AppColors.lightBlueColor.withOpacity(0.4),
+                              width: 1.5,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 15,
+                                offset: Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [AppColors.lightBlueColor, AppColors.primaryGreen],
+                                      ),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Icon(
+                                      Icons.videocam,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Video de Introducción',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        Text(
+                                          'Muestra tu personalidad a los estudiantes',
+                                          style: TextStyle(
+                                            color: Colors.white.withOpacity(0.8),
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 20),
+                              
+                              // Widget del Video
+                              if (_profileVideoUrl != null && _profileVideoUrl!.isNotEmpty)
+                                _buildVideoPlayer()
+                              else
+                                _buildVideoPlaceholder(),
+                              
+                              SizedBox(height: 20),
+                              
+                              // Botón para cambiar video
+                              GestureDetector(
+                                onTap: _isVideoLoading ? null : _selectVideo,
+                                child: Container(
+                                  width: double.infinity,
+                                  padding: EdgeInsets.symmetric(vertical: 16),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.lightBlueColor.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: AppColors.lightBlueColor.withOpacity(0.4),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      if (_isVideoLoading)
+                                        SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                          ),
+                                        )
+                                      else
+                                        Icon(
+                                          Icons.video_library,
+                                          color: AppColors.lightBlueColor,
+                                          size: 20,
+                                        ),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        _isVideoLoading ? 'Actualizando...' : 'Cambiar Video',
+                                        style: TextStyle(
+                                          color: AppColors.lightBlueColor,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                         ),
