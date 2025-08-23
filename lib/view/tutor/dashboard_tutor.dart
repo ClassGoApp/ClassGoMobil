@@ -566,6 +566,84 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
   // Variables para validación de conflictos de horarios
   String? _timeConflictError;
   bool _hasTimeConflict = false;
+  
+  // Método para validar conflictos en la lista temporal de horarios
+  bool _validateTempListConflict(DateTime day, TimeOfDay start, TimeOfDay end, List<Map<String, dynamic>> tempList) {
+    if (tempList.isEmpty) return false;
+    
+    // Convertir el nuevo horario a minutos para facilitar comparaciones
+    final newStartMinutes = start.hour * 60 + start.minute;
+    final newEndMinutes = end.hour * 60 + end.minute;
+    
+    // Verificar conflictos con cada horario en la lista temporal
+    for (var tempSlot in tempList) {
+      final tempDay = tempSlot['day'] as DateTime;
+      final tempStart = tempSlot['start'] as TimeOfDay;
+      final tempEnd = tempSlot['end'] as TimeOfDay;
+      
+      // Solo validar si es el mismo día
+      if (DateUtils.isSameDay(day, tempDay)) {
+        final tempStartMinutes = tempStart.hour * 60 + tempStart.minute;
+        final tempEndMinutes = tempEnd.hour * 60 + tempEnd.minute;
+        
+        // Verificar si hay solapamiento
+        if ((newStartMinutes < tempEndMinutes && newEndMinutes > tempStartMinutes)) {
+          return true; // Hay conflicto
+        }
+      }
+    }
+    
+    return false; // No hay conflictos
+  }
+  
+  // Método para verificar si hay conflictos en la lista temporal completa
+  bool _hasConflictsInTempList(List<Map<String, dynamic>> tempList) {
+    if (tempList.length < 2) return false; // No puede haber conflictos con menos de 2 horarios
+    
+    // Agrupar horarios por día
+    Map<DateTime, List<Map<String, dynamic>>> horariosPorDia = {};
+    
+    for (var slot in tempList) {
+      final day = slot['day'] as DateTime;
+      final normalizedDay = DateTime(day.year, day.month, day.day);
+      
+      if (!horariosPorDia.containsKey(normalizedDay)) {
+        horariosPorDia[normalizedDay] = [];
+      }
+      horariosPorDia[normalizedDay]!.add(slot);
+    }
+    
+    // Verificar conflictos en cada día
+    for (var day in horariosPorDia.keys) {
+      var horariosDelDia = horariosPorDia[day]!;
+      
+      // Ordenar horarios por hora de inicio
+      horariosDelDia.sort((a, b) {
+        final aStart = a['start'] as TimeOfDay;
+        final bStart = b['start'] as TimeOfDay;
+        return (aStart.hour * 60 + aStart.minute).compareTo(bStart.hour * 60 + bStart.minute);
+      });
+      
+      // Verificar conflictos entre horarios consecutivos
+      for (int i = 0; i < horariosDelDia.length - 1; i++) {
+        final current = horariosDelDia[i];
+        final next = horariosDelDia[i + 1];
+        
+        final currentEnd = current['end'] as TimeOfDay;
+        final nextStart = next['start'] as TimeOfDay;
+        
+        final currentEndMinutes = currentEnd.hour * 60 + currentEnd.minute;
+        final nextStartMinutes = nextStart.hour * 60 + nextStart.minute;
+        
+        // Si el horario actual termina después de que empiece el siguiente, hay conflicto
+        if (currentEndMinutes > nextStartMinutes) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  }
 
   // Método para calcular la posición del slider cuando está en modo online
   double _calculateSliderPosition() {
@@ -1300,6 +1378,10 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
     TimeOfDay? startTime;
     TimeOfDay? endTime;
     List<Map<String, dynamic>> tempFreeTimes = [];
+    
+    // Limpiar errores de validación al abrir el modal
+    _timeConflictError = null;
+    _hasTimeConflict = false;
 
     await showModalBottomSheet(
       context: context,
@@ -1409,6 +1491,9 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
                     onDateSelected: (date) {
                       setModalState(() {
                         selectedDay = date;
+                        // Limpiar errores de validación al cambiar la fecha
+                        _timeConflictError = null;
+                        _hasTimeConflict = false;
                       });
                     },
                   ),
@@ -1427,6 +1512,16 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
                       // Validar conflictos cuando se selecciona la hora de inicio
                       if (time != null && endTime != null) {
                         _validateTimeConflict(selectedDay, time, endTime!);
+                        // También validar contra la lista temporal
+                        if (!_hasTimeConflict) {
+                          final hasTempConflict = _validateTempListConflict(selectedDay, time, endTime!, tempFreeTimes);
+                          if (hasTempConflict) {
+                            setModalState(() {
+                              _timeConflictError = 'Este horario choca con uno ya agregado a la lista';
+                              _hasTimeConflict = true;
+                            });
+                          }
+                        }
                       }
                     },
                     setModalState: setModalState,
@@ -1446,6 +1541,16 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
                       // Validar conflictos cuando se selecciona la hora de fin
                       if (startTime != null && time != null) {
                         _validateTimeConflict(selectedDay, startTime!, time);
+                        // También validar contra la lista temporal
+                        if (!_hasTimeConflict) {
+                          final hasTempConflict = _validateTempListConflict(selectedDay, startTime!, time, tempFreeTimes);
+                          if (hasTempConflict) {
+                            setModalState(() {
+                              _timeConflictError = 'Este horario choca con uno ya agregado a la lista';
+                              _hasTimeConflict = true;
+                            });
+                          }
+                        }
                       }
                     },
                     setModalState: setModalState,
@@ -1526,7 +1631,8 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
                                 startTime = null;
                                 endTime = null;
                                 // Limpiar errores al agregar exitosamente
-                                _clearValidationErrors();
+                                _timeConflictError = null;
+                                _hasTimeConflict = false;
                               });
                             }
                           : null,
@@ -1559,22 +1665,44 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
                             Container(
                               padding: EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: AppColors.primaryGreen.withOpacity(0.2),
+                                color: _hasConflictsInTempList(tempFreeTimes) 
+                                  ? AppColors.redColor.withOpacity(0.2)
+                                  : AppColors.primaryGreen.withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Icon(
-                                Icons.list_alt,
-                                color: AppColors.primaryGreen,
+                                _hasConflictsInTempList(tempFreeTimes) 
+                                  ? Icons.warning
+                                  : Icons.list_alt,
+                                color: _hasConflictsInTempList(tempFreeTimes) 
+                                  ? AppColors.redColor
+                                  : AppColors.primaryGreen,
                                 size: 18,
                               ),
                             ),
                             SizedBox(width: 12),
-                            Text(
-                              'Tiempos Libres a Agregar:',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Tiempos Libres a Agregar:',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  if (_hasConflictsInTempList(tempFreeTimes))
+                                    Text(
+                                      '⚠️ Hay conflictos de horarios',
+                                      style: TextStyle(
+                                        color: AppColors.redColor,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
                           ],
@@ -1596,6 +1724,20 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
                             onDelete: () {
                               setModalState(() {
                                 tempFreeTimes.removeAt(i);
+                                // Revalidar conflictos después de eliminar
+                                if (startTime != null && endTime != null) {
+                                  _validateTimeConflict(selectedDay, startTime!, endTime!);
+                                  if (!_hasTimeConflict) {
+                                    final hasTempConflict = _validateTempListConflict(selectedDay, startTime!, endTime!, tempFreeTimes);
+                                    if (hasTempConflict) {
+                                      _timeConflictError = 'Este horario choca con uno ya agregado a la lista';
+                                      _hasTimeConflict = true;
+                                    } else {
+                                      _timeConflictError = null;
+                                      _hasTimeConflict = false;
+                                    }
+                                  }
+                                }
                               });
                             },
                           );
@@ -1603,12 +1745,49 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
                       ],
                     ),
                   SizedBox(height: 24),
+                  
+                  // Mensaje de advertencia si hay conflictos
+                  if (_hasConflictsInTempList(tempFreeTimes))
+                    Container(
+                      width: double.infinity,
+                      margin: EdgeInsets.only(bottom: 16),
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.redColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.redColor.withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.warning_amber_rounded,
+                            color: AppColors.redColor,
+                            size: 20,
+                          ),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Hay conflictos de horarios en la lista. Elimina o ajusta los horarios conflictivos antes de guardar.',
+                              style: TextStyle(
+                                color: AppColors.redColor,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  
                   Container(
                     width: double.infinity,
                     height: 56,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: tempFreeTimes.isEmpty
+                        colors: (tempFreeTimes.isEmpty || _hasConflictsInTempList(tempFreeTimes))
                           ? [
                               Colors.grey.withOpacity(0.3),
                               Colors.grey.withOpacity(0.2),
@@ -1619,7 +1798,7 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
                             ],
                       ),
                       borderRadius: BorderRadius.circular(16),
-                      boxShadow: tempFreeTimes.isEmpty
+                      boxShadow: (tempFreeTimes.isEmpty || _hasConflictsInTempList(tempFreeTimes))
                         ? []
                         : [
                             BoxShadow(
@@ -1630,7 +1809,7 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
                           ],
                     ),
                     child: ElevatedButton(
-                      onPressed: tempFreeTimes.isNotEmpty
+                      onPressed: (tempFreeTimes.isNotEmpty && !_hasConflictsInTempList(tempFreeTimes))
                           ? () async {
                               Navigator.of(context).pop();
                               await _createSlots(tempFreeTimes);
@@ -1675,6 +1854,17 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
 
   Future<void> _createSlots(List<Map<String, dynamic>> tempFreeTimes) async {
     try {
+      // Validar que no haya conflictos en la lista temporal antes de guardar
+      if (_hasConflictsInTempList(tempFreeTimes)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Hay conflictos de horarios en la lista. Revisa y corrige antes de guardar.'),
+            backgroundColor: AppColors.redColor,
+          ),
+        );
+        return;
+      }
+      
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       if (authProvider.token == null || authProvider.userId == null) return;
 

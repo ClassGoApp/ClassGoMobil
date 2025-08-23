@@ -116,15 +116,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           // La respuesta viene directamente con los datos, no en {success: true, data: {...}}
           final profileImageUrl = responseData['profile_image'];
           
-          if (profileImageUrl != null && profileImageUrl.isNotEmpty) {
-            if (mounted) {
-              setState(() {
-                _profileImageUrl = profileImageUrl;
-              });
-            }
-            
-            // También actualizar en el AuthProvider para mantener sincronización
-            authProvider.updateProfileImage(profileImageUrl);
+                     if (profileImageUrl != null && profileImageUrl.isNotEmpty) {
+             if (mounted) {
+               setState(() {
+                 _profileImageUrl = profileImageUrl;
+               });
+             }
+             
+             // También actualizar en el AuthProvider para mantener sincronización
+             authProvider.updateProfileImage(profileImageUrl);
           }
         }
       }
@@ -170,7 +170,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         
         // Inicializar el video player
         await _initializeVideoPlayer(fullVideoUrl);
-      } else {
+        } else {
         print('No hay video de introducción en el perfil');
       }
     } catch (e) {
@@ -495,15 +495,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           fontSize: 12,
                         ),
                       ),
-                      SizedBox(height: 16),
-                                             // Botón para reintentar si falla la carga
+                                             SizedBox(height: 12),
+                       // Botón para reintentar si falla la carga
                        if (_profileVideoUrl != null && _profileVideoUrl!.isNotEmpty)
-                         Column(
+                         Row(
+                           mainAxisAlignment: MainAxisAlignment.center,
                            children: [
                              GestureDetector(
                                onTap: () {
                                  if (mounted) {
-                                   print('Reintentando cargar video: ${_profileVideoUrl!}');
                                    _initializeVideoPlayer(_profileVideoUrl!);
                                  }
                                },
@@ -538,16 +538,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                  ),
                                ),
                              ),
-                             SizedBox(height: 8),
-                             Text(
-                               'URL: ${_profileVideoUrl!.length > 50 ? '${_profileVideoUrl!.substring(0, 50)}...' : _profileVideoUrl!}',
-                               style: TextStyle(
-                                 color: AppColors.lightBlueColor.withOpacity(0.6),
-                                 fontSize: 10,
-                               ),
-                               textAlign: TextAlign.center,
-                             ),
-                             SizedBox(height: 8),
+                             SizedBox(width: 12),
                              GestureDetector(
                                onTap: () {
                                  if (mounted) {
@@ -555,10 +546,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                  }
                                },
                                child: Container(
-                                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                  decoration: BoxDecoration(
                                    color: AppColors.primaryGreen.withOpacity(0.2),
-                                   borderRadius: BorderRadius.circular(16),
+                                   borderRadius: BorderRadius.circular(20),
                                    border: Border.all(
                                      color: AppColors.primaryGreen.withOpacity(0.4),
                                      width: 1,
@@ -577,7 +568,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                        'Limpiar Caché',
                                        style: TextStyle(
                                          color: AppColors.primaryGreen,
-                                         fontSize: 10,
+                                         fontSize: 12,
                                          fontWeight: FontWeight.w500,
                                        ),
                                      ),
@@ -760,10 +751,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
 
     try {
-      Overlay.of(context).insert(overlayEntry);
-      Future.delayed(const Duration(seconds: 3), () {
+    Overlay.of(context).insert(overlayEntry);
+    Future.delayed(const Duration(seconds: 3), () {
         if (mounted && overlayEntry.mounted) {
-          overlayEntry.remove();
+      overlayEntry.remove();
         }
       });
     } catch (e) {
@@ -774,35 +765,97 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  // Método para cerrar la vista de editar perfil
-  void _closeEditProfile() {
-    // Forzar actualización antes de regresar
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    authProvider.notifyListeners();
-    
-    // Verificar si se actualizó la imagen para pasar el resultado correcto
-    bool imageWasUpdated = _profileImageUrl != null && _profileImageUrl!.isNotEmpty;
-    Navigator.pop(context, imageWasUpdated);
-  }
+     // Método para cerrar la vista de editar perfil
+   void _closeEditProfile() {
+     try {
+       // Verificar que el contexto esté montado
+       if (!mounted) return;
+       
+       // Agregar un pequeño delay para evitar problemas de timing
+       Future.delayed(Duration(milliseconds: 100), () {
+         if (!mounted) return;
+         
+         try {
+           // Forzar actualización antes de regresar
+           final authProvider = Provider.of<AuthProvider>(context, listen: false);
+           authProvider.notifyListeners();
+           
+           // Verificar si se actualizó la imagen para pasar el resultado correcto
+           bool imageWasUpdated = _profileImageUrl != null && _profileImageUrl!.isNotEmpty;
+           
+           // Verificar que el Navigator esté disponible y tenga historial
+           if (Navigator.canPop(context)) {
+             Navigator.pop(context, imageWasUpdated);
+           } else {
+             // Si no se puede hacer pop, intentar navegar de vuelta al dashboard
+             Navigator.pushReplacementNamed(context, '/dashboard');
+           }
+         } catch (e) {
+           print('Error al cerrar vista de editar perfil: $e');
+           // En caso de error, intentar navegar de vuelta al dashboard
+           try {
+             if (mounted) {
+               Navigator.pushReplacementNamed(context, '/dashboard');
+             }
+           } catch (navigationError) {
+             print('Error de navegación: $navigationError');
+           }
+         }
+       });
+       
+       // Timeout de seguridad: si después de 2 segundos no se cerró, forzar cierre
+       Future.delayed(Duration(seconds: 2), () {
+         if (mounted) {
+           print('Timeout de cierre alcanzado, forzando cierre...');
+           _emergencyClose();
+         }
+       });
+     } catch (e) {
+       print('Error inicial al cerrar vista: $e');
+       // En caso de error crítico, intentar cierre de emergencia
+       _emergencyClose();
+     }
+   }
+   
+   // Método de cierre de emergencia
+   void _emergencyClose() {
+     try {
+       if (!mounted) return;
+       
+       // Intentar múltiples estrategias de cierre
+       if (Navigator.canPop(context)) {
+         Navigator.pop(context);
+       } else {
+         // Forzar navegación al dashboard
+         Navigator.pushNamedAndRemoveUntil(
+           context, 
+           '/dashboard', 
+           (route) => false
+         );
+       }
+     } catch (e) {
+       print('Error en cierre de emergencia: $e');
+     }
+   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: GestureDetector(
-        onPanUpdate: (details) {
-          // Detectar deslizamiento hacia abajo
-          if (details.delta.dy > 0 && details.delta.dy > 10) {
-            // Si se desliza hacia abajo más de 10 píxeles, cerrar la vista
-            _closeEditProfile();
-          }
-        },
-        onPanEnd: (details) {
-          // Si se desliza hacia abajo con velocidad suficiente, cerrar la vista
-          if (details.velocity.pixelsPerSecond.dy > 500) {
-            _closeEditProfile();
-          }
-        },
+             body: GestureDetector(
+         onPanUpdate: (details) {
+           // Detectar deslizamiento hacia abajo
+           if (details.delta.dy > 0 && details.delta.dy > 15) {
+             // Si se desliza hacia abajo más de 15 píxeles, cerrar la vista
+             _closeEditProfile();
+           }
+         },
+         onPanEnd: (details) {
+           // Si se desliza hacia abajo con velocidad suficiente, cerrar la vista
+           if (details.velocity.pixelsPerSecond.dy > 800) {
+             _closeEditProfile();
+           }
+         },
         child: Container(
           margin: EdgeInsets.only(top: 60),
           decoration: BoxDecoration(
@@ -826,26 +879,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 child: Row(
                   children: [
-                    IconButton(
-                      icon: Icon(Icons.close, color: AppColors.whiteColor),
-                      onPressed: () {
-                        // Forzar actualización antes de regresar
-                        final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                        authProvider.notifyListeners();
-                        
-                        // Verificar si se actualizó la imagen para pasar el resultado correcto
-                        bool imageWasUpdated = _profileImageUrl != null && _profileImageUrl!.isNotEmpty;
-                        Navigator.pop(context, imageWasUpdated);
-                      },
-                    ),
+                                         IconButton(
+                       icon: Icon(Icons.close, color: AppColors.whiteColor),
+                       onPressed: () {
+                         _closeEditProfile();
+                       },
+                     ),
                     Expanded(
                       child: Text(
-                        'Editar Perfil',
-                        style: TextStyle(
-                          color: AppColors.whiteColor,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                        ),
+          'Editar Perfil',
+          style: TextStyle(
+            color: AppColors.whiteColor,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -853,463 +900,432 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ],
                 ),
               ),
-              // Contenido principal
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.all(20),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Header con icono
-                        Container(
-                          width: double.infinity,
-                          padding: EdgeInsets.all(24),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [AppColors.navbar, AppColors.primaryGreen],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Column(
-                            children: [
-                              GestureDetector(
-                                onTap: () => _showImageOptions(),
-                                child: Container(
-                                  width: 80,
-                                  height: 80,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: AppColors.whiteColor.withOpacity(0.3),
-                                      width: 3,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.2),
-                                        blurRadius: 8,
-                                        offset: Offset(0, 4),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Stack(
-                                    children: [
-                                      ClipOval(
+                             // Contenido principal
+               Expanded(
+                 child: SingleChildScrollView(
+                   padding: EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header con icono
+              Container(
+                width: double.infinity,
+                          padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppColors.navbar, AppColors.primaryGreen],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  children: [
+                                         GestureDetector(
+                       onTap: () => _showImageOptions(),
+                       child: Container(
+                                  width: 70,
+                                  height: 70,
+                         decoration: BoxDecoration(
+                           shape: BoxShape.circle,
+                           border: Border.all(
+                             color: AppColors.whiteColor.withOpacity(0.3),
+                             width: 3,
+                           ),
+                           boxShadow: [
+                             BoxShadow(
+                               color: Colors.black.withOpacity(0.2),
+                               blurRadius: 8,
+                               offset: Offset(0, 4),
+                             ),
+                           ],
+                         ),
+                         child: Stack(
+                           children: [
+                             ClipOval(
                                         child: Hero(
-                                          tag: 'profile-image-${Provider.of<AuthProvider>(context, listen: false).userId ?? 'default'}',
-                                          child: AnimatedSwitcher(
-                                            key: ValueKey(_profileImageUrl ?? 'no-image'),
-                                            duration: Duration(milliseconds: 300),
-                                            transitionBuilder: (Widget child, Animation<double> animation) {
-                                              return FadeTransition(
-                                                opacity: animation,
-                                                child: child,
-                                              );
-                                            },
-                                            child: _buildProfileImage(),
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        bottom: 0,
-                                        right: 0,
-                                        child: Container(
-                                          padding: EdgeInsets.all(4),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.navbar,
-                                            shape: BoxShape.circle,
-                                            border: Border.all(
-                                              color: AppColors.whiteColor,
-                                              width: 2,
-                                            ),
-                                          ),
-                                          child: Icon(
-                                            Icons.camera_alt,
-                                            color: AppColors.whiteColor,
-                                            size: 16,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              SizedBox(height: 16),
-                              Text(
-                                'Actualiza tu información personal',
-                                style: TextStyle(
-                                  color: AppColors.whiteColor,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              // Mostrar mensaje de éxito si la imagen se actualizó
-                              if (_profileImageUrl != null && _profileImageUrl!.isNotEmpty)
-                                Column(
-                                  children: [
-                                    Container(
-                                      margin: EdgeInsets.only(top: 8),
-                                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.navbar.withOpacity(0.2),
-                                        borderRadius: BorderRadius.circular(20),
-                                        border: Border.all(
-                                          color: AppColors.navbar.withOpacity(0.5),
-                                          width: 1,
-                                        ),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            Icons.check_circle,
-                                            color: AppColors.navbar,
-                                            size: 16,
-                                          ),
-                                          SizedBox(width: 6),
-                                          Text(
-                                            'Imagen actualizada y mostrada',
-                                            style: TextStyle(
-                                              color: AppColors.navbar,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
+                                           tag: 'profile-image-${Provider.of<AuthProvider>(context, listen: false).userId ?? 'default'}',
+                               child: AnimatedSwitcher(
+                                 key: ValueKey(_profileImageUrl ?? 'no-image'),
+                                 duration: Duration(milliseconds: 300),
+                                 transitionBuilder: (Widget child, Animation<double> animation) {
+                                   return FadeTransition(
+                                     opacity: animation,
+                                     child: child,
+                                   );
+                                 },
+                                 child: _buildProfileImage(),
+                                           ),
+                               ),
+                             ),
+                             Positioned(
+                               bottom: 0,
+                               right: 0,
+                               child: Container(
+                                 padding: EdgeInsets.all(4),
+                                 decoration: BoxDecoration(
+                                   color: AppColors.navbar,
+                                   shape: BoxShape.circle,
+                                   border: Border.all(
+                                     color: AppColors.whiteColor,
+                                     width: 2,
+                                   ),
+                                 ),
+                                 child: Icon(
+                                   Icons.camera_alt,
+                                   color: AppColors.whiteColor,
+                                             size: 14,
+                                 ),
+                               ),
+                             ),
+                           ],
+                         ),
+                       ),
+                     ),
+                               SizedBox(height: 12),
+                      Text(
+                        'Actualiza tu información personal',
+                        style: TextStyle(
+                          color: AppColors.whiteColor,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                                             // Mostrar mensaje de éxito si la imagen se actualizó
+                       if (_profileImageUrl != null && _profileImageUrl!.isNotEmpty)
+                         Column(
+                           children: [
+                             Container(
+                               margin: EdgeInsets.only(top: 8),
+                               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                               decoration: BoxDecoration(
+                                 color: AppColors.navbar.withOpacity(0.2),
+                                 borderRadius: BorderRadius.circular(20),
+                                 border: Border.all(
+                                   color: AppColors.navbar.withOpacity(0.5),
+                                   width: 1,
+                                 ),
+                               ),
+                               child: Row(
+                                 mainAxisSize: MainAxisSize.min,
+                                 children: [
+                                   Icon(
+                                     Icons.check_circle,
+                                     color: AppColors.navbar,
+                                     size: 16,
+                                   ),
+                                   SizedBox(width: 6),
+                                   Text(
+                                     'Imagen actualizada y mostrada',
+                                     style: TextStyle(
+                                       color: AppColors.navbar,
+                                       fontSize: 12,
+                                       fontWeight: FontWeight.w500,
+                                     ),
+                                   ),
+                                 ],
+                               ),
+                             ),
+                                     SizedBox(height: 8),
+                            // Botón para regresar al dashboard
+                            GestureDetector(
+                              onTap: () {
+                                // Regresar indicando que se actualizó la imagen
+                                Navigator.pop(context, true);
+                              },
+                              child: Container(
+                                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.navbar,
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.2),
+                                      blurRadius: 4,
+                                      offset: Offset(0, 2),
                                     ),
-                                    SizedBox(height: 12),
-                                    // Botón para regresar al dashboard
-                                    GestureDetector(
-                                      onTap: () {
-                                        // Regresar indicando que se actualizó la imagen
-                                        Navigator.pop(context, true);
-                                      },
-                                      child: Container(
-                                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.navbar,
-                                          borderRadius: BorderRadius.circular(20),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black.withOpacity(0.2),
-                                              blurRadius: 4,
-                                              offset: Offset(0, 2),
-                                            ),
-                                          ],
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(
-                                              Icons.arrow_back,
-                                              color: AppColors.whiteColor,
-                                              size: 16,
-                                            ),
-                                            SizedBox(width: 6),
-                                            Text(
-                                              'Regresar al Dashboard',
-                                              style: TextStyle(
-                                                color: AppColors.whiteColor,
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.arrow_back,
+                                      color: AppColors.whiteColor,
+                                      size: 16,
+                                    ),
+                                             SizedBox(width: 8),
+                                    Text(
+                                      'Regresar al Dashboard',
+                                      style: TextStyle(
+                                        color: AppColors.whiteColor,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                   ],
                                 ),
-                            ],
-                          ),
-                        ),
-                        
-                        SizedBox(height: 32),
-                        
-                        // Sección del Video de Introducción
-                        Container(
-                          width: double.infinity,
-                          padding: EdgeInsets.all(24),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [AppColors.darkBlue.withOpacity(0.9), AppColors.darkBlue.withOpacity(0.7)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: AppColors.lightBlueColor.withOpacity(0.4),
-                              width: 1.5,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
-                                blurRadius: 15,
-                                offset: Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [AppColors.lightBlueColor, AppColors.primaryGreen],
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Icon(
-                                      Icons.videocam,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                                  ),
-                                  SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Video de Introducción',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                        Text(
-                                          'Muestra tu personalidad a los estudiantes',
-                                          style: TextStyle(
-                                            color: Colors.white.withOpacity(0.8),
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 20),
-                              
-                              // Widget del Video
-                              if (_profileVideoUrl != null && _profileVideoUrl!.isNotEmpty)
-                                _buildVideoPlayer()
-                              else
-                                _buildVideoPlaceholder(),
-                              
-                              SizedBox(height: 20),
-                              
-                              // Botón para cambiar video
-                              GestureDetector(
-                                onTap: _isVideoLoading ? null : _selectVideo,
-                                child: Container(
-                                  width: double.infinity,
-                                  padding: EdgeInsets.symmetric(vertical: 16),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.lightBlueColor.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: AppColors.lightBlueColor.withOpacity(0.4),
-                                      width: 1,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      if (_isVideoLoading)
-                                        SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                          ),
-                                        )
-                                      else
-                                        Icon(
-                                          Icons.video_library,
-                                          color: AppColors.lightBlueColor,
-                                          size: 20,
-                                        ),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        _isVideoLoading ? 'Actualizando...' : 'Cambiar Video',
-                                        style: TextStyle(
-                                          color: AppColors.lightBlueColor,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        
-                        SizedBox(height: 32),
-                        
-                        // Campo Nombre
-                        _buildTextField(
-                          controller: _firstNameController,
-                          label: 'Nombre',
-                          hint: 'Ingresa tu nombre',
-                          icon: Icons.person_outline,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'El nombre es requerido';
-                            }
-                            return null;
-                          },
-                        ),
-                        
-                        SizedBox(height: 20),
-                        
-                        // Campo Apellido
-                        _buildTextField(
-                          controller: _lastNameController,
-                          label: 'Apellido',
-                          hint: 'Ingresa tu apellido',
-                          icon: Icons.person_outline,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'El apellido es requerido';
-                            }
-                            return null;
-                          },
-                        ),
-                        
-                        SizedBox(height: 20),
-                        
-                        // Campo Número de Teléfono
-                        _buildTextField(
-                          controller: _phoneController,
-                          label: 'Número de Celular',
-                          hint: 'Ingresa tu número de celular',
-                          icon: Icons.phone_outlined,
-                          keyboardType: TextInputType.phone,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'El número de celular es requerido';
-                            }
-                            if (!_validatePhone(value.trim())) {
-                              return 'Ingresa un número de celular válido';
-                            }
-                            return null;
-                          },
-                          onChanged: (value) {
-                            setState(() {
-                              _isPhoneValid = _validatePhone(value);
-                            });
-                          },
-                        ),
-                        
-                        SizedBox(height: 20),
-                        
-                        // Campo Descripción
-                        _buildTextField(
-                          controller: _descriptionController,
-                          label: 'Descripción (opcional)',
-                          hint: 'Cuéntanos sobre ti...',
-                          icon: Icons.description_outlined,
-                          maxLines: 4,
-                          validator: (value) {
-                            // La descripción es opcional, no hay validación obligatoria
-                            return null;
-                          },
-                        ),
-                        
-                        SizedBox(height: 40),
-                        
-                        // Botón de Actualizar
-                        SizedBox(
-                          width: double.infinity,
-                          height: 56,
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : _updateProfile,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.navbar,
-                              foregroundColor: AppColors.whiteColor,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
                               ),
                             ),
-                            child: _isLoading
-                                ? SizedBox(
-                                    height: 24,
-                                    width: 24,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        AppColors.navbar,
-                                      ),
-                                    ),
-                                  )
-                                : Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.save_outlined, size: 20),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        'Actualizar Perfil',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                          ),
+                          ],
                         ),
-                        
-                        SizedBox(height: 20),
-                        
-                        // Información adicional
-                        Container(
-                          padding: EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: AppColors.darkBlue.withOpacity(0.8),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: AppColors.navbar.withOpacity(0.5),
+                  ],
+                ),
+              ),
+              
+                                                 SizedBox(height: 20),
+                         
+                         // Sección del Video de Introducción
+                         Container(
+                           width: double.infinity,
+                           padding: EdgeInsets.all(20),
+                           decoration: BoxDecoration(
+                             gradient: LinearGradient(
+                               colors: [AppColors.darkBlue.withOpacity(0.9), AppColors.darkBlue.withOpacity(0.7)],
+                               begin: Alignment.topLeft,
+                               end: Alignment.bottomRight,
+                             ),
+                             borderRadius: BorderRadius.circular(16),
+                             border: Border.all(
+                               color: AppColors.lightBlueColor.withOpacity(0.4),
+                               width: 1.5,
+                             ),
+                             boxShadow: [
+                               BoxShadow(
+                                 color: Colors.black.withOpacity(0.2),
+                                 blurRadius: 15,
+                                 offset: Offset(0, 8),
+                               ),
+                             ],
+                           ),
+                           child: Column(
+                             crossAxisAlignment: CrossAxisAlignment.start,
+                             children: [
+                               Row(
+                                 children: [
+                                   Container(
+                                     padding: EdgeInsets.all(8),
+                                     decoration: BoxDecoration(
+                                       gradient: LinearGradient(
+                                         colors: [AppColors.lightBlueColor, AppColors.primaryGreen],
+                                       ),
+                                       borderRadius: BorderRadius.circular(12),
+                                     ),
+                                     child: Icon(
+                                       Icons.videocam,
+                                       color: Colors.white,
+                                       size: 20,
+                                     ),
+                                   ),
+                                   SizedBox(width: 12),
+                                   Expanded(
+                                     child: Column(
+                                       crossAxisAlignment: CrossAxisAlignment.start,
+                                       children: [
+                                         Text(
+                                           'Video de Introducción',
+                                           style: TextStyle(
+                                             color: Colors.white,
+                                             fontSize: 18,
+                                             fontWeight: FontWeight.w600,
+                                           ),
+                                         ),
+                                         Text(
+                                           'Muestra tu personalidad a los estudiantes',
+                                           style: TextStyle(
+                                             color: Colors.white.withOpacity(0.8),
+                                             fontSize: 14,
+                                           ),
+                                         ),
+                                       ],
+                                     ),
+                                   ),
+                                 ],
+                               ),
+                               SizedBox(height: 16),
+                               
+                               // Widget del Video
+                               if (_profileVideoUrl != null && _profileVideoUrl!.isNotEmpty)
+                                 _buildVideoPlayer()
+                               else
+                                 _buildVideoPlaceholder(),
+                               
+                               SizedBox(height: 16),
+                               
+                               // Botón para cambiar video
+                               GestureDetector(
+                                 onTap: _isVideoLoading ? null : _selectVideo,
+                                 child: Container(
+                                   width: double.infinity,
+                                   padding: EdgeInsets.symmetric(vertical: 14),
+                                   decoration: BoxDecoration(
+                                     color: AppColors.lightBlueColor.withOpacity(0.2),
+                                     borderRadius: BorderRadius.circular(12),
+                                     border: Border.all(
+                                       color: AppColors.lightBlueColor.withOpacity(0.4),
+                                       width: 1,
+                                     ),
+                                   ),
+                                   child: Row(
+                                     mainAxisAlignment: MainAxisAlignment.center,
+                                     children: [
+                                       if (_isVideoLoading)
+                                         SizedBox(
+                                           width: 20,
+                                           height: 20,
+                                           child: CircularProgressIndicator(
+                                             strokeWidth: 2,
+                                             valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                           ),
+                                         )
+                                       else
+                                         Icon(
+                                           Icons.video_library,
+                                           color: AppColors.lightBlueColor,
+                                           size: 20,
+                                         ),
+                                       SizedBox(width: 8),
+                                       Text(
+                                         _isVideoLoading ? 'Actualizando...' : 'Cambiar Video',
+                                         style: TextStyle(
+                                           color: AppColors.lightBlueColor,
+                                           fontSize: 16,
+                                           fontWeight: FontWeight.w600,
+                                         ),
+                                       ),
+                                     ],
+                                   ),
+                                 ),
+                               ),
+                             ],
+                           ),
+                         ),
+                         
+                         SizedBox(height: 20),
+              
+              // Campo Nombre
+              _buildTextField(
+                controller: _firstNameController,
+                label: 'Nombre',
+                hint: 'Ingresa tu nombre',
+                icon: Icons.person_outline,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'El nombre es requerido';
+                  }
+                  return null;
+                },
+              ),
+              
+                         SizedBox(height: 16),
+              
+              // Campo Apellido
+              _buildTextField(
+                controller: _lastNameController,
+                label: 'Apellido',
+                hint: 'Ingresa tu apellido',
+                icon: Icons.person_outline,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'El apellido es requerido';
+                  }
+                  return null;
+                },
+              ),
+              
+                         SizedBox(height: 16),
+              
+              // Campo Número de Teléfono
+              _buildTextField(
+                controller: _phoneController,
+                label: 'Número de Celular',
+                hint: 'Ingresa tu número de celular',
+                icon: Icons.phone_outlined,
+                keyboardType: TextInputType.phone,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'El número de celular es requerido';
+                  }
+                  if (!_validatePhone(value.trim())) {
+                    return 'Ingresa un número de celular válido';
+                  }
+                  return null;
+                },
+                onChanged: (value) {
+                  setState(() {
+                    _isPhoneValid = _validatePhone(value);
+                  });
+                },
+              ),
+              
+                         SizedBox(height: 16),
+              
+                             // Campo Descripción
+               _buildTextField(
+                 controller: _descriptionController,
+                 label: 'Descripción (opcional)',
+                 hint: 'Cuéntanos sobre ti...',
+                 icon: Icons.description_outlined,
+                           maxLines: 3,
+                 validator: (value) {
+                   // La descripción es opcional, no hay validación obligatoria
+                   return null;
+                 },
+               ),
+              
+                         SizedBox(height: 24),
+              
+              // Botón de Actualizar
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _updateProfile,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.navbar,
+                    foregroundColor: AppColors.whiteColor,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: _isLoading
+                                             ? SizedBox(
+                           height: 24,
+                           width: 24,
+                           child: CircularProgressIndicator(
+                             strokeWidth: 2,
+                             valueColor: AlwaysStoppedAnimation<Color>(
+                               AppColors.navbar,
+                             ),
+                           ),
+                         )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.save_outlined, size: 20),
+                            SizedBox(width: 8),
+                            Text(
+                              'Actualizar Perfil',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.info_outline,
-                                color: AppColors.navbar,
-                                size: 20,
-                              ),
-                              SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  'Los cambios se guardarán automáticamente en tu perfil',
-                                  style: TextStyle(
-                                    color: AppColors.whiteColor,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                          ],
                         ),
+                ),
+              ),
+              
+                                                 SizedBox(height: 16),
                       ],
                     ),
                   ),
-                ),
-              ),
+                 ),
+               ),
             ],
           ),
         ),
@@ -1320,8 +1336,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Widget _buildProfileImage() {
     if (_isImageLoading) {
       return Container(
-        width: 80,
-        height: 80,
+         width: 70,
+         height: 70,
         decoration: BoxDecoration(
           color: AppColors.darkBlue,
           shape: BoxShape.circle,
@@ -1354,12 +1370,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       // Usar CachedNetworkImage directamente (como en el dashboard)
       return CachedNetworkImage(
         imageUrl: _profileImageUrl!,
-        width: 80,
-        height: 80,
+         width: 70,
+         height: 70,
         fit: BoxFit.cover,
         placeholder: (context, url) => Container(
-          width: 80,
-          height: 80,
+           width: 70,
+           height: 70,
           decoration: BoxDecoration(
             color: AppColors.darkBlue,
             shape: BoxShape.circle,
@@ -1367,13 +1383,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           child: Icon(
             Icons.person_outline,
             color: AppColors.whiteColor,
-            size: 32,
+             size: 28,
           ),
         ),
         errorWidget: (context, url, error) {
           return Container(
-            width: 80,
-            height: 80,
+             width: 70,
+             height: 70,
             decoration: BoxDecoration(
               color: AppColors.darkBlue,
               shape: BoxShape.circle,
@@ -1381,7 +1397,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             child: Icon(
               Icons.person_outline,
               color: AppColors.whiteColor,
-              size: 32,
+               size: 28,
             ),
           );
         },
@@ -1389,8 +1405,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
     
     return Container(
-      width: 80,
-      height: 80,
+       width: 70,
+       height: 70,
       decoration: BoxDecoration(
         color: AppColors.darkBlue,
         shape: BoxShape.circle,
@@ -1398,7 +1414,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       child: Icon(
         Icons.person_outline,
         color: AppColors.whiteColor,
-        size: 32,
+         size: 28,
       ),
     );
   }
@@ -1526,96 +1542,96 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         throw Exception('Usuario no autenticado');
       }
       
-      // Crear la petición multipart con el endpoint correcto
-      final request = http.MultipartRequest(
-        'POST',
-        Uri.parse('https://classgoapp.com/api/user/$userId/profile-files'),
-      );
+                    // Crear la petición multipart con el endpoint correcto
+       final request = http.MultipartRequest(
+         'POST',
+         Uri.parse('https://classgoapp.com/api/user/$userId/profile-files'),
+       );
+       
+       // Agregar headers
+       request.headers['Authorization'] = 'Bearer $token';
       
-      // Agregar headers
-      request.headers['Authorization'] = 'Bearer $token';
-      
-      // Agregar la imagen
-      final imageBytes = await imageFile.readAsBytes();
-      
-      final imageField = http.MultipartFile.fromBytes(
-        'image',
-        imageBytes,
-        filename: imageFile.name,
-      );
-      request.files.add(imageField);
+             // Agregar la imagen
+       final imageBytes = await imageFile.readAsBytes();
+       
+       final imageField = http.MultipartFile.fromBytes(
+         'image',
+         imageBytes,
+         filename: imageFile.name,
+       );
+       request.files.add(imageField);
       
       // Enviar la petición
       final response = await request.send();
       final responseData = await response.stream.bytesToString();
       
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        try {
-          final jsonResponse = json.decode(responseData);
-          
-          if (jsonResponse['success'] == true || jsonResponse['status'] == 'success') {
-            // Actualizar la imagen localmente
-            String? newImageUrl;
-            
-            // Intentar diferentes estructuras de respuesta
-            if (jsonResponse['data'] != null) {
-              newImageUrl = jsonResponse['data']['image'] ?? 
-                           jsonResponse['data']['profile']?['image'] ??
-                           jsonResponse['data']['url'];
-            } else if (jsonResponse['image'] != null) {
-              newImageUrl = jsonResponse['image'];
-            } else if (jsonResponse['url'] != null) {
-              newImageUrl = jsonResponse['url'];
-            }
-            
-            if (newImageUrl != null) {
-              // Actualizar en el provider PRIMERO para que se sincronice en toda la app
-              authProvider.updateProfileImage(newImageUrl);
-              
-              // Luego actualizar localmente
-              setState(() {
-                _profileImageUrl = newImageUrl;
-              });
-              
-              // Forzar actualización inmediata del provider
-              authProvider.notifyListeners();
-              
-              _showCustomToast('Imagen actualizada exitosamente', true);
-              
-              // Recargar la imagen desde la API para mostrar la nueva imagen
-              await _loadProfileImageFromDashboard();
-            } else {
-              throw Exception('No se pudo obtener la URL de la imagen actualizada');
-            }
-          } else {
-            throw Exception(jsonResponse['message'] ?? 'Error al actualizar la imagen');
-          }
-        } catch (jsonError) {
-          // Si no es JSON válido, verificar si es una respuesta de éxito simple
-          if (responseData.contains('success') || responseData.contains('Success')) {
-            _showCustomToast('Imagen actualizada exitosamente', true);
-          } else {
-            throw Exception('Respuesta del servidor no válida: $responseData');
-          }
-        }
-      } else {
-        // Manejar diferentes tipos de errores
-        String errorMessage = 'Error al actualizar la imagen (${response.statusCode})';
-        
-        try {
-          if (responseData.isNotEmpty) {
-            final errorData = json.decode(responseData);
-            errorMessage = errorData['message'] ?? errorMessage;
-          }
-        } catch (e) {
-          // Si no es JSON, usar la respuesta como está
-          if (responseData.isNotEmpty && responseData.length < 200) {
-            errorMessage = responseData;
-          }
-        }
-        
-        throw Exception(errorMessage);
-      }
+             if (response.statusCode == 200 || response.statusCode == 201) {
+         try {
+           final jsonResponse = json.decode(responseData);
+           
+           if (jsonResponse['success'] == true || jsonResponse['status'] == 'success') {
+             // Actualizar la imagen localmente
+             String? newImageUrl;
+             
+             // Intentar diferentes estructuras de respuesta
+             if (jsonResponse['data'] != null) {
+               newImageUrl = jsonResponse['data']['image'] ?? 
+                            jsonResponse['data']['profile']?['image'] ??
+                            jsonResponse['data']['url'];
+             } else if (jsonResponse['image'] != null) {
+               newImageUrl = jsonResponse['image'];
+             } else if (jsonResponse['url'] != null) {
+               newImageUrl = jsonResponse['url'];
+             }
+             
+             if (newImageUrl != null) {
+               // Actualizar en el provider PRIMERO para que se sincronice en toda la app
+               authProvider.updateProfileImage(newImageUrl);
+               
+               // Luego actualizar localmente
+               setState(() {
+                 _profileImageUrl = newImageUrl;
+               });
+               
+               // Forzar actualización inmediata del provider
+               authProvider.notifyListeners();
+               
+                               _showCustomToast('Imagen actualizada exitosamente', true);
+                
+                // Recargar la imagen desde la API para mostrar la nueva imagen
+                await _loadProfileImageFromDashboard();
+             } else {
+               throw Exception('No se pudo obtener la URL de la imagen actualizada');
+             }
+           } else {
+             throw Exception(jsonResponse['message'] ?? 'Error al actualizar la imagen');
+           }
+         } catch (jsonError) {
+           // Si no es JSON válido, verificar si es una respuesta de éxito simple
+           if (responseData.contains('success') || responseData.contains('Success')) {
+             _showCustomToast('Imagen actualizada exitosamente', true);
+           } else {
+             throw Exception('Respuesta del servidor no válida: $responseData');
+           }
+         }
+       } else {
+         // Manejar diferentes tipos de errores
+         String errorMessage = 'Error al actualizar la imagen (${response.statusCode})';
+         
+         try {
+           if (responseData.isNotEmpty) {
+             final errorData = json.decode(responseData);
+             errorMessage = errorData['message'] ?? errorMessage;
+           }
+         } catch (e) {
+           // Si no es JSON, usar la respuesta como está
+           if (responseData.isNotEmpty && responseData.length < 200) {
+             errorMessage = responseData;
+           }
+         }
+         
+         throw Exception(errorMessage);
+       }
     } catch (e) {
       _showCustomToast('Error: ${e.toString()}', false);
     } finally {
@@ -1646,7 +1662,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             fontWeight: FontWeight.w600,
           ),
         ),
-        SizedBox(height: 8),
+         SizedBox(height: 6),
         Container(
           decoration: BoxDecoration(
             color: AppColors.darkBlue,
@@ -1658,7 +1674,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.2),
-                blurRadius: 10,
+                 blurRadius: 8,
                 offset: Offset(0, 2),
               ),
             ],
@@ -1683,7 +1699,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               border: InputBorder.none,
               contentPadding: EdgeInsets.symmetric(
                 horizontal: 16,
-                vertical: 16,
+                 vertical: 14,
               ),
             ),
             style: TextStyle(
