@@ -1963,7 +1963,11 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
                 children: [
                   // Encabezado mejorado con toggle de visibilidad
                   _buildHeader(authProvider, tutorName, rating, completedSessions),
-                  SizedBox(height: 24),
+                  SizedBox(height: 0),
+
+                  // Logo de Classgo en espacio dedicado
+                  _buildClassgoLogoSection(),
+                  SizedBox(height: 0),
 
                   // Botón deslizante de disponibilidad
                   _buildAvailabilitySlider(),
@@ -3640,6 +3644,119 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
           ),
         );
       },
+    );
+  }
+
+  // Sección del logo de Classgo en espacio dedicado
+  Widget _buildClassgoLogoSection() {
+    return Center(
+      child: GestureDetector(
+        onTap: () => _showClassgoInfo(),
+        child: Image.asset(
+          'assets/images/logo_classgo.png',
+          width: 60,
+          height: 60,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) {
+            return Icon(
+              Icons.school,
+              color: Colors.white,
+              size: 60,
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  // Método para mostrar información de Classgo
+  void _showClassgoInfo() {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: AppColors.darkBlue,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Container(
+          padding: EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Logo de Classgo
+              Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Image.asset(
+                  'assets/images/logo_classgo.png',
+                  width: 48,
+                  height: 48,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Icon(
+                      Icons.school,
+                      color: Colors.white,
+                      size: 48,
+                    );
+                  },
+                ),
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Classgo',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Plataforma de Tutorías Online',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.8),
+                  fontSize: 16,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Conectando estudiantes con tutores expertos para un aprendizaje personalizado y efectivo.',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 14,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryGreen,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: Text(
+                    'Cerrar',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
