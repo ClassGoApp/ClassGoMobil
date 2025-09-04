@@ -272,6 +272,75 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
         return;
       }
 
+      // ✅ NUEVO: Verificar disponibilidad del tutor SOLO para tutorías instantáneas
+      print('[PaymentQRScreen] 🔍 DEBUG - Iniciando validación de disponibilidad...');
+      print('[PaymentQRScreen] 🔍 DEBUG - isScheduledBooking: ${widget.isScheduledBooking}');
+      print('[PaymentQRScreen] 🔍 DEBUG - tutorId: ${widget.tutorId}');
+      
+      if (!widget.isScheduledBooking) {
+        print('[PaymentQRScreen] 🔍 DEBUG - Es tutoría instantánea, aplicando validación...');
+        
+        // Verificar disponibilidad general del tutor
+        print('[PaymentQRScreen] 🔍 DEBUG - Llamando a checkTutorAvailabilityBeforeBooking...');
+        final availabilityResponse = await checkTutorAvailabilityBeforeBooking(token, widget.tutorId);
+        print('[PaymentQRScreen] 🔍 DEBUG - Respuesta de disponibilidad: $availabilityResponse');
+        
+        if (availabilityResponse['success'] == true) {
+          final isAvailable = availabilityResponse['available_for_tutoring'] ?? false;
+          final tutorName = availabilityResponse['tutor_name'] ?? 'Tutor';
+          
+          print('[PaymentQRScreen] 🔍 DEBUG - isAvailable: $isAvailable');
+          print('[PaymentQRScreen] 🔍 DEBUG - tutorName: $tutorName');
+          
+          if (!isAvailable) {
+            print('[PaymentQRScreen] 🔍 DEBUG - Tutor NO disponible, verificando slot bookings...');
+            
+            // Si no está disponible, verificar si tiene slot bookings para la hora actual
+            print('[PaymentQRScreen] 🔍 DEBUG - Llamando a checkTutorCurrentSlotBookings...');
+            final slotBookingsResponse = await checkTutorCurrentSlotBookings(token, widget.tutorId);
+            print('[PaymentQRScreen] 🔍 DEBUG - Respuesta de slot bookings: $slotBookingsResponse');
+            
+            if (slotBookingsResponse['success'] == true) {
+              final hasCurrentSlot = slotBookingsResponse['has_current_slot'] ?? false;
+              
+              print('[PaymentQRScreen] 🔍 DEBUG - hasCurrentSlot: $hasCurrentSlot');
+              
+              if (!hasCurrentSlot) {
+                // ✅ AMBAS CONDICIONES CUMPLIDAS: No está disponible Y no tiene slot para la hora actual
+                print('[PaymentQRScreen] 🔍 DEBUG - AMBAS CONDICIONES CUMPLIDAS: No disponible Y sin slot');
+                print('[PaymentQRScreen] 🔍 DEBUG - Mostrando modal de error...');
+                
+                setState(() {
+                  _isPaymentCompleted = false;
+                });
+                
+                _showTutorUnavailableDialog(tutorName);
+                return;
+              } else {
+                // ✅ TIENE SLOT PARA HORA ACTUAL: Continuar con la tutoría
+                print('[PaymentQRScreen] 🔍 DEBUG - Tutor no disponible pero TIENE slot para hora actual, continuando...');
+              }
+            } else {
+              // Error al verificar slot bookings, continuar por seguridad
+              print('[PaymentQRScreen] 🔍 DEBUG - Error al verificar slot bookings: ${slotBookingsResponse['message']}');
+              print('[PaymentQRScreen] 🔍 DEBUG - Continuando por seguridad...');
+            }
+          } else {
+            // ✅ ESTÁ DISPONIBLE: Continuar normalmente
+            print('[PaymentQRScreen] 🔍 DEBUG - Tutor DISPONIBLE, continuando normalmente...');
+          }
+        } else {
+          print('[PaymentQRScreen] 🔍 DEBUG - Error al verificar disponibilidad: ${availabilityResponse['message']}');
+          print('[PaymentQRScreen] 🔍 DEBUG - Continuando por seguridad...');
+          // Continuar con el proceso si no se puede verificar la disponibilidad
+        }
+      } else {
+        // ✅ TUTORÍA AGENDADA: No aplicar validación de disponibilidad
+        print('[PaymentQRScreen] 🔍 DEBUG - Es tutoría AGENDADA, OMITIENDO validación de disponibilidad...');
+      }
+      
+      print('[PaymentQRScreen] 🔍 DEBUG - Validación completada, continuando con el proceso...');
+
       // 1. Crear el slot booking
       final now = DateTime.now();
 
@@ -883,6 +952,97 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
       behavior: HitTestBehavior.opaque,
       onTap: () => Navigator.of(context).pop(),
       child: GestureDetector(onTap: () {}, child: child),
+    );
+  }
+
+  // ✅ NUEVO: Método para mostrar modal de tutor no disponible
+  void _showTutorUnavailableDialog(String tutorName) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.darkBlue.withOpacity(0.98),
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.4),
+                  blurRadius: 24,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.redColor.withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  padding: EdgeInsets.all(18),
+                  child: Icon(
+                    Icons.cancel_outlined,
+                    color: AppColors.redColor,
+                    size: 48,
+                  ),
+                ),
+                SizedBox(height: 18),
+                Text(
+                  'Tutor No Disponible',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 22,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+                SizedBox(height: 14),
+                Text(
+                  '$tutorName ya no está disponible en este momento. Por favor, intenta con otro tutor o vuelve a intentar más tarde.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: Colors.white70, fontSize: 16, height: 1.5),
+                ),
+                SizedBox(height: 28),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop(); // Cerrar modal
+                          Navigator.of(context).pop(); // Volver a la pantalla anterior
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.redColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        child: Text(
+                          'Entendido',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -56,6 +56,9 @@ import 'package:audioplayers/audioplayers.dart';
 // 1. Agrega RouteObserver para detectar cuando se vuelve a la pantalla principal
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
+// 2. GlobalKey para el Navigator - SOLUCIÓN DEFINITIVA
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 class HomeScreen extends StatefulWidget {
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -1106,144 +1109,124 @@ class _HomeScreenState extends State<HomeScreen>
                                                                               true,
                                                                         );
                                                                         try {
-                                                                          print(
-                                                                              'DEBUG: Llamando a getVerifiedTutors con subjectId: $subjectId');
-                                                                          final response =
-                                                                              await getVerifiedTutors(
-                                                                            token,
-                                                                            perPage:
-                                                                                50,
-                                                                            subjectId:
-                                                                                subjectId,
-                                                                          );
-                                                                          print(
-                                                                              'DEBUG: Respuesta de getVerifiedTutors: $response');
-                                                                          List<dynamic>
-                                                                              tutors =
-                                                                              [];
-                                                                          if (response
-                                                                              .containsKey('data')) {
-                                                                            final data =
-                                                                                response['data'];
-                                                                            if (data
-                                                                                is List) {
-                                                                              tutors = data;
-                                                                            } else if (data is Map &&
-                                                                                data.containsKey('data') &&
-                                                                                data['data'] is List) {
-                                                                              tutors = data['data'];
-                                                                            } else if (data is Map && data.containsKey('list') && data['list'] is List) {
-                                                                              tutors = data['list'];
-                                                                            }
-                                                                          }
-                                                                          print(
-                                                                              'DEBUG: Tutores encontrados: ${tutors.length}');
-                                                                          Navigator.of(context, rootNavigator: true)
-                                                                              .pop(); // Cierra el loader
-                                                                          if (tutors
-                                                                              .isNotEmpty) {
-                                                                            final randomTutor =
-                                                                                (tutors..shuffle()).first;
-                                                                            final profile =
-                                                                                randomTutor['profile'] ?? {};
-                                                                            final tutorName =
-                                                                                profile['full_name'] ?? 'Sin nombre';
-                                                                            final tutorImage = highResTutorImages != null && highResTutorImages[randomTutor['id']] != null
-                                                                                ? highResTutorImages[randomTutor['id']]
-                                                                                : profile['image'] ?? '';
-                                                                            final validSubjects =
-                                                                                (randomTutor['subjects'] as List).where((s) => s['status'] == 'active' && s['deleted_at'] == null).map((s) => s['name'].toString()).toList();
-                                                                            showModalBottomSheet(
-                                                                              context: context,
-                                                                              isScrollControlled: true,
-                                                                              backgroundColor: Colors.transparent,
-                                                                              builder: (context) => InstantTutoringScreen(
-                                                                                tutorName: tutorName,
-                                                                                tutorImage: tutorImage,
-                                                                                subjects: validSubjects,
-                                                                                selectedSubject: subjectName, // <-- Pasar la materia seleccionada
-                                                                                tutorId: randomTutor['id'],
-                                                                                subjectId: subjectId,
-                                                                              ),
-                                                                            );
-                                                                          } else {
-                                                                            print('DEBUG: No hay tutores disponibles para esta materia.');
-                                                                            await showDialog(
-                                                                              context: context,
-                                                                              barrierDismissible: true,
-                                                                              builder: (context) => Center(
-                                                                                child: Material(
-                                                                                  color: Colors.transparent,
-                                                                                  child: Container(
-                                                                                    width: MediaQuery.of(context).size.width * 0.85,
-                                                                                    padding: EdgeInsets.symmetric(horizontal: 28, vertical: 32),
-                                                                                    decoration: BoxDecoration(
-                                                                                      color: AppColors.darkBlue,
-                                                                                      borderRadius: BorderRadius.circular(24),
-                                                                                      boxShadow: [
-                                                                                        BoxShadow(
-                                                                                          color: Colors.black.withOpacity(0.18),
-                                                                                          blurRadius: 32,
-                                                                                          offset: Offset(0, 12),
+                                                                          print('DEBUG: Llamando a getTutorForSubject con subjectId: $subjectId');
+                                                                          final response = await getTutorForSubject(token, subjectId);
+                                                                          print('DEBUG: Respuesta de getTutorForSubject: $response');
+                                                                          
+                                                                          // Procesar la respuesta
+                                                                          if (response['success'] == true) {
+                                                                            final tutor = response['data']['tutor'];
+                                                                            final subject = response['data']['subject'];
+                                                                            final tutorName = tutor['full_name'] ?? 'Sin nombre';
+                                                                            final tutorImage = tutor['image'] ?? '';
+                                                                            final tutorId = tutor['id'];
+                                                                            final subjectName = subject['name'] ?? '';
+                                                                            
+                                                                            print('DEBUG: ✅ Tutor encontrado: $tutorName (ID: $tutorId)');
+                                                                            print('DEBUG: ✅ Materia: $subjectName');
+                                                                            print('DEBUG: 🔄 Cerrando loader y navegando...');
+                                                                            
+                                                                            // Crear lista de materias del tutor (solo la materia encontrada)
+                                                                            final validSubjects = <String>[subjectName];
+                                                                            
+                                                                            try {
+                                                                              // 1. Cerrar el loader usando Navigator.of(context, rootNavigator: true)
+                                                                              if (mounted) {
+                                                                                Navigator.of(context, rootNavigator: true).pop();
+                                                                                print('DEBUG: ✅ Loader cerrado exitosamente');
+                                                                                
+                                                                                // 2. Navegar usando GlobalKey después de un pequeño delay
+                                                                                Future.delayed(Duration(milliseconds: 300), () {
+                                                                                  print('DEBUG: 🚀 Navegando a InstantTutoringScreen...');
+                                                                                  
+                                                                                  try {
+                                                                                    // Navegar usando GlobalKey
+                                                                                    navigatorKey.currentState?.push(
+                                                                                      MaterialPageRoute(
+                                                                                        builder: (context) => InstantTutoringScreen(
+                                                                                          tutorId: tutorId,
+                                                                                          tutorName: tutorName,
+                                                                                          tutorImage: tutorImage,
+                                                                                          subjects: validSubjects,
+                                                                                          selectedSubject: subjectName,
+                                                                                          subjectId: subjectId,
                                                                                         ),
-                                                                                      ],
-                                                                                      border: Border.all(color: Colors.white.withOpacity(0.08)),
-                                                                                    ),
-                                                                                    child: Column(
-                                                                                      mainAxisSize: MainAxisSize.min,
-                                                                                      children: [
-                                                                                        Icon(Icons.sentiment_dissatisfied_rounded, color: AppColors.orangeprimary, size: 54),
-                                                                                        SizedBox(height: 18),
-                                                                                        Text(
-                                                                                          '¡Ups! No hay tutores disponibles',
-                                                                                          style: TextStyle(
-                                                                                            color: Colors.white,
-                                                                                            fontWeight: FontWeight.bold,
-                                                                                            fontSize: 20,
-                                                                                          ),
-                                                                                          textAlign: TextAlign.center,
-                                                                                        ),
-                                                                                        SizedBox(height: 12),
-                                                                                        Text(
-                                                                                          'Por el momento no hay tutores disponibles para la materia seleccionada. Puedes intentarlo más tarde o elegir otra materia.',
-                                                                                          style: TextStyle(
-                                                                                            color: Colors.white.withOpacity(0.85),
-                                                                                            fontSize: 15,
-                                                                                          ),
-                                                                                          textAlign: TextAlign.center,
-                                                                                        ),
-                                                                                        SizedBox(height: 28),
-                                                                                        SizedBox(
-                                                                                          width: double.infinity,
-                                                                                          child: ElevatedButton.icon(
-                                                                                            onPressed: () => Navigator.of(context).pop(),
-                                                                                            icon: Icon(Icons.close, color: Colors.white),
-                                                                                            label: Text('Cerrar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                                                                            style: ElevatedButton.styleFrom(
-                                                                                              backgroundColor: AppColors.orangeprimary,
-                                                                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                                                                              padding: EdgeInsets.symmetric(vertical: 14),
-                                                                                            ),
+                                                                                      ),
+                                                                                    );
+                                                                                    print('DEBUG: ✅ Navegación exitosa a InstantTutoringScreen');
+                                                                                  } catch (e) {
+                                                                                    print('DEBUG: ❌ Error en navegación: $e');
+                                                                                    
+                                                                                    // Fallback: Intentar navegación alternativa
+                                                                                    try {
+                                                                                      print('DEBUG: 🔄 Intentando navegación alternativa...');
+                                                                                      navigatorKey.currentState?.push(
+                                                                                        MaterialPageRoute(
+                                                                                          builder: (context) => TutorProfileScreen(
+                                                                                            tutorId: tutorId,
+                                                                                            tutorName: tutorName,
+                                                                                            tutorImage: tutorImage,
+                                                                                            tutorVideo: '',
+                                                                                            description: 'Tutor disponible para tutoría instantánea',
+                                                                                            rating: 5.0,
+                                                                                            subjects: validSubjects,
+                                                                                            completedCourses: 0,
+                                                                                            languages: ['Español'],
                                                                                           ),
                                                                                         ),
-                                                                                      ],
+                                                                                      );
+                                                                                      print('DEBUG: ✅ Navegación alternativa exitosa');
+                                                                                    } catch (e2) {
+                                                                                      print('DEBUG: ❌ Error en navegación alternativa: $e2');
+                                                                                    }
+                                                                                  }
+                                                                                });
+                                                                              } else {
+                                                                                print('DEBUG: ⚠️ Widget no montado, usando navegación directa');
+                                                                                // Navegación directa sin contexto
+                                                                                navigatorKey.currentState?.push(
+                                                                                  MaterialPageRoute(
+                                                                                    builder: (context) => InstantTutoringScreen(
+                                                                                      tutorId: tutorId,
+                                                                                      tutorName: tutorName,
+                                                                                      tutorImage: tutorImage,
+                                                                                      subjects: validSubjects,
+                                                                                      selectedSubject: subjectName,
+                                                                                      subjectId: subjectId,
                                                                                     ),
                                                                                   ),
+                                                                                );
+                                                                              }
+                                                                              
+                                                                            } catch (e) {
+                                                                              print('DEBUG: ❌ Error en navegación: $e');
+                                                                              // Fallback final: mostrar mensaje de éxito
+                                                                              print('DEBUG: ✅ Tutor encontrado pero error en navegación');
+                                                                            }
+                                                                          } else {
+                                                                            print('DEBUG: No se encontró tutor disponible para esta materia.');
+                                                                            // Cerrar el loader y mostrar mensaje de error
+                                                                            if (mounted) {
+                                                                              Navigator.of(context, rootNavigator: true).pop(); // Cierra el loader
+                                                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                                                SnackBar(
+                                                                                  content: Text('No se encontró ningún tutor disponible para esta materia en este momento'),
+                                                                                  backgroundColor: Colors.red,
                                                                                 ),
-                                                                              ),
-                                                                            );
+                                                                              );
+                                                                            }
                                                                           }
                                                                         } catch (e) {
-                                                                          Navigator.of(context, rootNavigator: true)
-                                                                              .pop(); // Cierra el loader
-                                                                          print(
-                                                                              'DEBUG: Error al buscar tutores: $e');
-                                                                          ScaffoldMessenger.of(context)
-                                                                              .showSnackBar(
+                                                                          // Cerrar el loader y mostrar error
+                                                                          if (mounted) {
+                                                                            Navigator.of(context, rootNavigator: true).pop(); // Cierra el loader
+                                                                            print('DEBUG: Error al buscar tutor: $e');
+                                                                            ScaffoldMessenger.of(context).showSnackBar(
                                                                             SnackBar(
-                                                                              content: Text('Error al buscar tutores: $e'),
+                                                                                content: Text('Error al buscar tutor: $e'),
                                                                             ),
                                                                           );
+                                                                          }
                                                                         }
                                                                       },
                                                                     );

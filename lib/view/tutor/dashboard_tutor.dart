@@ -696,6 +696,7 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
     _loadAvailableSlots();
     _fetchTutorBookings();
     _loadProfileImage();
+    _loadTutoringAvailability();
   }
 
   Future<void> _loadAvailableSlots() async {
@@ -2104,6 +2105,9 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
                   
                   // Reproducir sonido de éxito cuando se activa el tutor
                   _playSuccessSound();
+                  
+                  // Actualizar disponibilidad en la API
+                  _updateTutoringAvailability(true);
                 } else if (localPosition.dx < containerWidth * 0.5 &&
                     isAvailable) {
                   HapticFeedback.heavyImpact();
@@ -2114,6 +2118,9 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
                     });
                   }
                   _sliderDragOffset = 0.0;
+                  
+                  // Actualizar disponibilidad en la API
+                  _updateTutoringAvailability(false);
                 } else {
                   if (mounted) {
                     setState(() {
@@ -5296,6 +5303,108 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
     } catch (e) {
       // Error silencioso para no interrumpir la experiencia del usuario
       print('Error reproduciendo sonido: $e');
+    }
+  }
+
+  // Método para cargar el estado inicial de disponibilidad del tutor
+  Future<void> _loadTutoringAvailability() async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.token == null || authProvider.userId == null) {
+        print('Error: Token o userId no disponibles para cargar disponibilidad');
+        return;
+      }
+
+      print('Cargando estado inicial de disponibilidad del tutor...');
+      
+      final response = await getTutorTutoringAvailability(
+        authProvider.token,
+        authProvider.userId!,
+      );
+
+      if (response['success'] == true) {
+        final availableForTutoring = response['available_for_tutoring'] ?? false;
+        print('Estado de disponibilidad cargado: ${availableForTutoring ? "Activada" : "Desactivada"}');
+        
+        if (mounted) {
+          setState(() {
+            isAvailable = availableForTutoring;
+          });
+        }
+      } else {
+        print('Error al cargar disponibilidad: ${response['message']}');
+        // Mantener el estado por defecto (false)
+      }
+    } catch (e) {
+      print('Error al cargar disponibilidad del tutor: $e');
+      // Mantener el estado por defecto (false)
+    }
+  }
+
+  // Método para actualizar la disponibilidad de tutoría
+  Future<void> _updateTutoringAvailability(bool newAvailability) async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.token == null || authProvider.userId == null) {
+        print('Error: Token o userId no disponibles');
+        return;
+      }
+
+      print('Actualizando disponibilidad de tutoría a: ${newAvailability ? "Activada" : "Desactivada"}');
+      
+      final response = await updateTutoringAvailability(
+        authProvider.token!,
+        authProvider.userId!,
+        newAvailability,
+      );
+
+      if (response['success'] == true) {
+        print('Disponibilidad actualizada exitosamente: ${response['message']}');
+        // Mostrar mensaje de éxito
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              newAvailability 
+                ? '¡Disponibilidad activada! Los estudiantes pueden encontrarte ahora.'
+                : 'Disponibilidad desactivada. No recibirás nuevas solicitudes.',
+            ),
+            backgroundColor: newAvailability ? AppColors.primaryGreen : AppColors.orangeprimary,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      } else {
+        print('Error al actualizar disponibilidad: ${response['message']}');
+        // Revertir el cambio en la UI si falla la API
+        if (mounted) {
+          setState(() {
+            isAvailable = !newAvailability;
+          });
+        }
+        // Mostrar mensaje de error
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${response['message']}'),
+            backgroundColor: AppColors.redColor,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error al actualizar disponibilidad: $e');
+      // Revertir el cambio en la UI si falla
+      if (mounted) {
+        setState(() {
+          isAvailable = !newAvailability;
+        });
+      }
+      // Mostrar mensaje de error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error de conexión. Intenta nuevamente.'),
+          backgroundColor: AppColors.redColor,
+          duration: Duration(seconds: 3),
+        ),
+      );
     }
   }
 }

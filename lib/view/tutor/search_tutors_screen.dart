@@ -338,22 +338,39 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final token = authProvider.token;
 
-      print('DEBUG - Llamando a la API verifiedTutors para la página inicial');
+      print('DEBUG - Llamando a la API ${selectedMode == 'instantanea' ? 'availableTutors' : 'verifiedTutors'} para la página inicial');
       print('DEBUG - keyword (materia): $keyword');
-      final response = await getVerifiedTutors(
-        token,
-        page: currentPage,
-        keyword: keyword, // Usar keyword para buscar por materia
-        tutorName: tutorName, // Usar tutorName para buscar por nombre del tutor
-        maxPrice: maxPrice,
-        country: country,
-        groupId: groupId,
-        sessionType: sessionType,
-        subjectId: subjectId,
-        languageIds: languageIds,
-        minCourses: minCourses ?? _minCourses,
-        minRating: minRating ?? _minRating,
-      );
+      print('DEBUG - Modo seleccionado: $selectedMode');
+      
+            final response = selectedMode == 'instantanea' 
+          ? await getAvailableTutors(
+              token,
+              page: currentPage,
+              keyword: keyword, // Usar keyword para buscar por materia
+              tutorName: tutorName, // Usar tutorName para buscar por nombre del tutor
+              maxPrice: maxPrice,
+              country: country,
+              groupId: groupId,
+              sessionType: sessionType,
+              subjectId: subjectId,
+              languageIds: languageIds,
+              minCourses: minCourses ?? _minCourses,
+              minRating: minRating ?? _minRating,
+            )
+          : await getVerifiedTutors(
+              token,
+              page: currentPage,
+              keyword: keyword, // Usar keyword para buscar por materia
+              tutorName: tutorName, // Usar tutorName para buscar por nombre del tutor
+              maxPrice: maxPrice,
+              country: country,
+              groupId: groupId,
+              sessionType: sessionType,
+              subjectId: subjectId,
+              languageIds: languageIds,
+              minCourses: minCourses ?? _minCourses,
+              minRating: minRating ?? _minRating,
+            );
 
       print('DEBUG - Response completa: $response');
 
@@ -462,23 +479,40 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
         final token = authProvider.token;
 
         print(
-            'DEBUG - Llamando a la API verifiedTutors para la página ${currentPage + 1}');
-        final response = await getVerifiedTutors(
-          token,
-          page: currentPage + 1,
-          perPage: 10,
-          keyword: keyword, // Usar keyword para buscar por materia
-          tutorName:
-              tutorName, // Usar tutorName para buscar por nombre del tutor
-          maxPrice: maxPrice,
-          country: selectedCountryId,
-          groupId: selectedGroupId,
-          sessionType: sessionType,
-          subjectId: selectedSubjectId,
-          languageIds: selectedLanguageIds,
-          minCourses: _minCourses,
-          minRating: _minRating,
-        );
+            'DEBUG - Llamando a la API ${selectedMode == 'instantanea' ? 'availableTutors' : 'verifiedTutors'} para la página ${currentPage + 1}');
+                final response = selectedMode == 'instantanea'
+            ? await getAvailableTutors(
+                token,
+                page: currentPage + 1,
+                perPage: 10,
+                keyword: keyword, // Usar keyword para buscar por materia
+                tutorName:
+                    tutorName, // Usar tutorName para buscar por nombre del tutor
+                maxPrice: maxPrice,
+                country: selectedCountryId,
+                groupId: selectedGroupId,
+                sessionType: sessionType,
+                subjectId: selectedSubjectId,
+                languageIds: selectedLanguageIds,
+                minCourses: _minCourses,
+                minRating: _minRating,
+              )
+            : await getVerifiedTutors(
+                token,
+                page: currentPage + 1,
+                perPage: 10,
+                keyword: keyword, // Usar keyword para buscar por materia
+                tutorName:
+                    tutorName, // Usar tutorName para buscar por nombre del tutor
+                maxPrice: maxPrice,
+                country: selectedCountryId,
+                groupId: selectedGroupId,
+                sessionType: sessionType,
+                subjectId: selectedSubjectId,
+                languageIds: selectedLanguageIds,
+                minCourses: _minCourses,
+                minRating: _minRating,
+              );
 
         if (response.containsKey('data') && response['data'] is Map) {
           final data = response['data'];
@@ -879,7 +913,23 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
       onTap: () {
         setState(() {
           selectedMode = mode;
+          // Recargar tutores cuando se cambie el modo
+          currentPage = 1;
+          tutors.clear();
+          isInitialLoading = true;
         });
+        // Llamar a la API con el nuevo modo
+        fetchInitialTutors(
+          maxPrice: maxPrice,
+          country: selectedCountryId,
+          groupId: selectedGroupId,
+          sessionType: sessionType,
+          subjectId: selectedSubjectId,
+          languageIds: selectedLanguageIds,
+          tutorName: tutorName,
+          minCourses: _minCourses,
+          minRating: _minRating,
+        );
       },
       child: AnimatedContainer(
         duration: Duration(milliseconds: 200),
