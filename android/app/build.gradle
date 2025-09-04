@@ -1,6 +1,6 @@
 plugins {
     id "com.android.application"
-    id "kotlin-android"
+    id "org.jetbrains.kotlin.android"
     id "dev.flutter.flutter-gradle-plugin"
 }
 
@@ -41,7 +41,7 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = '11'
     }
 
     sourceSets {
@@ -71,9 +71,6 @@ android {
                  println 'WARNING: signingConfig release not fully configured in key.properties'
             }
         }
-        debug {
-            // Remove or comment out the problematic line:
-        }
     }
 
     buildTypes {
@@ -85,10 +82,6 @@ android {
             shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
-        debug {
-            // Remove or comment out the problematic line:
-            // signingConfig signingConfigs.debug
-        }
     }
 }
 
@@ -97,9 +90,8 @@ flutter {
 }
 
 dependencies {
-    
     implementation 'androidx.multidex:multidex:2.0.1'
-    implementation "androidx.appcompat:appcompat:1.2.0"
+    implementation "androidx.appcompat:appcompat:1.6.1"
     implementation 'com.google.firebase:firebase-messaging:23.4.1'
 }
 

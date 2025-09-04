@@ -8,6 +8,7 @@ class MainHeader extends StatelessWidget {
   final VoidCallback? onProfilePressed;
   final bool showMenuButton;
   final bool showProfileButton;
+  final bool showBackButton;
 
   const MainHeader({
     Key? key,
@@ -15,6 +16,7 @@ class MainHeader extends StatelessWidget {
     this.onProfilePressed,
     this.showMenuButton = true,
     this.showProfileButton = true,
+    this.showBackButton = false,
   }) : super(key: key);
 
   @override
@@ -26,17 +28,31 @@ class MainHeader extends StatelessWidget {
       elevation: 0, // Sin sombra
       titleSpacing: 0, // Sin espacio adicional para el título
       centerTitle: true, // Centrar el título/logo
-      leading: showMenuButton
+      leading: showBackButton
           ? Padding(
               padding: const EdgeInsets.only(left: 10.0),
               child: IconButton(
-                icon: Icon(Icons.menu,
-                    color:
-                        AppColors.whiteColor), // Icono de menú de hamburguesa
-                onPressed: onMenuPressed,
+                icon: Icon(Icons.arrow_back_ios,
+                    color: AppColors.whiteColor, size: 24),
+                onPressed: () {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (context) => HomeScreen()),
+                    (route) => false,
+                  );
+                },
               ),
             )
-          : null,
+          : showMenuButton
+              ? Padding(
+                  padding: const EdgeInsets.only(left: 10.0),
+                  child: IconButton(
+                    icon: Icon(Icons.menu,
+                        color: AppColors
+                            .whiteColor), // Icono de menú de hamburguesa
+                    onPressed: onMenuPressed,
+                  ),
+                )
+              : null,
       title: GestureDetector(
         onTap: () {
           Navigator.of(context).pushAndRemoveUntil(

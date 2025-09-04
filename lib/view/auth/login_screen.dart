@@ -10,9 +10,8 @@ import 'package:flutter_projects/base_components/textfield.dart';
 import 'package:flutter_projects/view/auth/register_screen.dart';
 import 'package:flutter_projects/view/auth/reset_password_screen.dart';
 import 'package:flutter_projects/view/home/home_screen.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:flutter_projects/view/tutor/dashboard_tutor.dart';
+import 'package:flutter_projects/helpers/back_button_handler.dart';
 
 class LoginScreen extends StatefulWidget {
   final Map<String, dynamic>? registrationResponse;
@@ -104,10 +103,19 @@ class _LoginScreenState extends State<LoginScreen>
           _isLoading = false;
         });
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => HomeScreen()),
-        );
+        // Redirigir según el rol
+        final String? role = userData['user']?['role'];
+        if (role == 'tutor') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => DashboardTutor()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => HomeScreen()),
+          );
+        }
 
         _emailController.clear();
         _passwordController.clear();
@@ -417,13 +425,10 @@ class _LoginScreenState extends State<LoginScreen>
     final height = MediaQuery.of(context).size.height;
 
     return WillPopScope(
-      onWillPop: () async {
-        if (_isLoading) {
-          return false;
-        } else {
-          return true;
-        }
-      },
+      onWillPop: () => BackButtonHandler.handleBackButton(
+        context,
+        isLoading: _isLoading,
+      ),
       child: Scaffold(
           backgroundColor: AppColors.primaryGreen,
           body: Container(

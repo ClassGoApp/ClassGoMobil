@@ -13,6 +13,10 @@ class InstantTutoringScreen extends StatefulWidget {
   final String? selectedSubject;
   final int tutorId;
   final int subjectId;
+  // ✅ NUEVO: Parámetros para reserva programada
+  final DateTime? scheduledDate;
+  final String? scheduledTime;
+  final bool isScheduledBooking;
 
   const InstantTutoringScreen({
     Key? key,
@@ -22,6 +26,10 @@ class InstantTutoringScreen extends StatefulWidget {
     this.selectedSubject,
     required this.tutorId,
     required this.subjectId,
+    // ✅ NUEVO: Parámetros opcionales
+    this.scheduledDate,
+    this.scheduledTime,
+    this.isScheduledBooking = false,
   }) : super(key: key);
 
   @override
@@ -61,6 +69,14 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
       parent: _animationController,
       curve: Curves.easeInOut,
     ));
+
+    // ✅ DEBUG: Mostrar datos recibidos
+    print('[InstantTutoringScreen] 🔍 DEBUG - Datos recibidos:');
+    print(
+        '[InstantTutoringScreen] isScheduledBooking: ${widget.isScheduledBooking}');
+    print('[InstantTutoringScreen] scheduledDate: ${widget.scheduledDate}');
+    print('[InstantTutoringScreen] scheduledTime: ${widget.scheduledTime}');
+    print('[InstantTutoringScreen] selectedSubject: ${widget.selectedSubject}');
 
     // Selecciona la materia si viene preseleccionada
     if (widget.selectedSubject != null &&
@@ -391,14 +407,57 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                             ),
                           ],
                         ),
-                        SizedBox(height: 40),
+                        SizedBox(height: 24),
+                        // ✅ NUEVO: Título dinámico según el tipo de tutoría
+                        if (widget.isScheduledBooking) ...[
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: AppColors.lightBlueColor.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                  color: AppColors.lightBlueColor
+                                      .withOpacity(0.5)),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.schedule,
+                                    color: AppColors.lightBlueColor, size: 20),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Reserva Programada',
+                                    style: TextStyle(
+                                      color: AppColors.lightBlueColor,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Fecha: ${widget.scheduledDate?.day}/${widget.scheduledDate?.month}/${widget.scheduledDate?.year}',
+                            style:
+                                TextStyle(color: Colors.white70, fontSize: 14),
+                          ),
+                          Text(
+                            'Hora: ${widget.scheduledTime}',
+                            style:
+                                TextStyle(color: Colors.white70, fontSize: 14),
+                          ),
+                          SizedBox(height: 24),
+                        ],
                         // 2. Selector de Materia
                         Text(
                           'Elige la materia',
                           style: AppTextStyles.heading2
                               .copyWith(color: Colors.white, fontSize: 18),
                         ),
-                        SizedBox(height: 12),
+                        SizedBox(height: 8),
                         GestureDetector(
                           key: _subjectSelectorKey,
                           onTap: _toggleDropdown,
@@ -434,11 +493,11 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                             ),
                           ),
                         ),
-                        SizedBox(height: 40),
+                        SizedBox(height: 24),
 
                         // 3. Scroll Horizontal para Imagen y Notas
                         Container(
-                          height: 320, // Reducida de 400 a 320
+                          height: 280, // Reducida de 320 a 280
                           child: Column(
                             children: [
                               // PageView para el contenido
@@ -475,8 +534,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                         );
                                       },
                                       child: Container(
-                                        padding: EdgeInsets.all(
-                                            16), // Reducido de 20 a 16
+                                        padding: EdgeInsets.all(12),
                                         decoration: BoxDecoration(
                                           color: Colors.white.withOpacity(0.05),
                                           borderRadius:
@@ -494,11 +552,8 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                                 Icon(Icons.lightbulb_outline,
                                                     color: AppColors
                                                         .lightBlueColor,
-                                                    size:
-                                                        20), // Reducido de 24 a 20
-                                                SizedBox(
-                                                    width:
-                                                        8), // Reducido de 12 a 8
+                                                    size: 18),
+                                                SizedBox(width: 6),
                                                 Expanded(
                                                   child: Text(
                                                     '📸 ¡Acelera tu aprendizaje!',
@@ -506,8 +561,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                                         .heading2
                                                         .copyWith(
                                                             color: Colors.white,
-                                                            fontSize:
-                                                                15, // Reducido de 16 a 15
+                                                            fontSize: 14,
                                                             fontWeight:
                                                                 FontWeight
                                                                     .bold),
@@ -515,24 +569,18 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                                 ),
                                               ],
                                             ),
-                                            SizedBox(
-                                                height:
-                                                    8), // Reducido de 12 a 8
+                                            SizedBox(height: 6),
                                             Text(
                                               'Sube una foto de tu ejercicio. Ayuda al tutor a:\n'
                                               '• Preparar la sesión con anticipación\n'
                                               '• Entender exactamente qué necesitas',
                                               style: TextStyle(
                                                 color: Colors.white70,
-                                                fontSize:
-                                                    13, // Reducido de 14 a 13
-                                                height:
-                                                    1.3, // Reducido de 1.4 a 1.3
+                                                fontSize: 12,
+                                                height: 1.2,
                                               ),
                                             ),
-                                            SizedBox(
-                                                height:
-                                                    16), // Reducido de 20 a 16
+                                            SizedBox(height: 12),
 
                                             // Vista previa de imagen o botón para subir
                                             if (_selectedImage != null) ...[
@@ -540,8 +588,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                                 children: [
                                                   Container(
                                                     width: double.infinity,
-                                                    height:
-                                                        160, // Reducido de 200 a 160
+                                                    height: 120,
                                                     decoration: BoxDecoration(
                                                       borderRadius:
                                                           BorderRadius.circular(
@@ -554,8 +601,8 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                                     ),
                                                   ),
                                                   Positioned(
-                                                    top: 8,
-                                                    right: 8,
+                                                    top: 6,
+                                                    right: 6,
                                                     child: GestureDetector(
                                                       onTap: () {
                                                         setState(() {
@@ -563,8 +610,8 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                                         });
                                                       },
                                                       child: Container(
-                                                        padding: EdgeInsets.all(
-                                                            6), // Reducido de 8 a 6
+                                                        padding:
+                                                            EdgeInsets.all(4),
                                                         decoration:
                                                             BoxDecoration(
                                                           color: Colors.black
@@ -574,23 +621,19 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                                         ),
                                                         child: Icon(Icons.close,
                                                             color: Colors.white,
-                                                            size:
-                                                                16), // Reducido de 20 a 16
+                                                            size: 14),
                                                       ),
                                                     ),
                                                   ),
                                                 ],
                                               ),
-                                              SizedBox(
-                                                  height:
-                                                      8), // Reducido de 12 a 8
+                                              SizedBox(height: 6),
                                               Text(
                                                 '✅ Imagen añadida correctamente',
                                                 style: TextStyle(
                                                   color:
                                                       AppColors.lightBlueColor,
-                                                  fontSize:
-                                                      13, // Reducido de 14 a 13
+                                                  fontSize: 12,
                                                   fontWeight: FontWeight.w500,
                                                 ),
                                               ),
@@ -599,8 +642,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                                 onTap: _showImageSourceDialog,
                                                 child: Container(
                                                   width: double.infinity,
-                                                  height:
-                                                      100, // Reducido de 120 a 100
+                                                  height: 80,
                                                   decoration: BoxDecoration(
                                                     color: Colors.white
                                                         .withOpacity(0.1),
@@ -622,29 +664,22 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                                         Icons.add_a_photo,
                                                         color: AppColors
                                                             .lightBlueColor,
-                                                        size:
-                                                            28, // Reducido de 32 a 28
+                                                        size: 24,
                                                       ),
-                                                      SizedBox(
-                                                          height:
-                                                              6), // Reducido de 8 a 6
+                                                      SizedBox(height: 4),
                                                       Text(
                                                         'Toca para añadir foto',
                                                         style: TextStyle(
                                                           color: Colors.white70,
-                                                          fontSize:
-                                                              13, // Reducido de 14 a 13
+                                                          fontSize: 12,
                                                         ),
                                                       ),
-                                                      SizedBox(
-                                                          height:
-                                                              2), // Reducido de 4 a 2
+                                                      SizedBox(height: 2),
                                                       Text(
                                                         'Cámara o Galería',
                                                         style: TextStyle(
                                                           color: Colors.white54,
-                                                          fontSize:
-                                                              11, // Reducido de 12 a 11
+                                                          fontSize: 10,
                                                         ),
                                                       ),
                                                     ],
@@ -678,8 +713,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                         );
                                       },
                                       child: Container(
-                                        padding: EdgeInsets.all(
-                                            16), // Reducido de 20 a 16
+                                        padding: EdgeInsets.all(12),
                                         decoration: BoxDecoration(
                                           color: Colors.white.withOpacity(0.05),
                                           borderRadius:
@@ -697,11 +731,8 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                                 Icon(Icons.edit_note,
                                                     color: AppColors
                                                         .lightBlueColor,
-                                                    size:
-                                                        20), // Reducido de 24 a 20
-                                                SizedBox(
-                                                    width:
-                                                        8), // Reducido de 12 a 8
+                                                    size: 18),
+                                                SizedBox(width: 6),
                                                 Expanded(
                                                   child: Text(
                                                     '✍️ Cuéntale al tutor',
@@ -709,8 +740,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                                         .heading2
                                                         .copyWith(
                                                             color: Colors.white,
-                                                            fontSize:
-                                                                15, // Reducido de 16 a 15
+                                                            fontSize: 14,
                                                             fontWeight:
                                                                 FontWeight
                                                                     .bold),
@@ -718,42 +748,33 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                                 ),
                                               ],
                                             ),
-                                            SizedBox(
-                                                height:
-                                                    8), // Reducido de 12 a 8
+                                            SizedBox(height: 6),
                                             Text(
                                               'Describe qué necesitas ayuda:\n'
                                               '• ¿Qué tema quieres repasar?\n'
                                               '• ¿Qué esperas de esta sesión?',
                                               style: TextStyle(
                                                 color: Colors.white70,
-                                                fontSize:
-                                                    13, // Reducido de 14 a 13
-                                                height:
-                                                    1.3, // Reducido de 1.4 a 1.3
+                                                fontSize: 12,
+                                                height: 1.2,
                                               ),
                                             ),
-                                            SizedBox(
-                                                height:
-                                                    16), // Reducido de 20 a 16
+                                            SizedBox(height: 12),
 
                                             // Campo de texto para notas
                                             TextField(
-                                              maxLines: 6, // Reducido de 8 a 6
+                                              maxLines: 4,
                                               style: TextStyle(
                                                   color: Colors.white,
-                                                  fontSize:
-                                                      13), // Reducido de 14 a 13
+                                                  fontSize: 12),
                                               decoration: InputDecoration(
                                                 hintText:
                                                     'Ej: "Necesito repasar las leyes de Newton, especialmente la tercera ley..."',
                                                 hintStyle: TextStyle(
                                                   color: Colors.white
                                                       .withOpacity(0.5),
-                                                  fontSize:
-                                                      13, // Reducido de 14 a 13
-                                                  height:
-                                                      1.3, // Reducido de 1.4 a 1.3
+                                                  fontSize: 12,
+                                                  height: 1.2,
                                                 ),
                                                 filled: true,
                                                 fillColor: Colors.white
@@ -765,9 +786,8 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                                 ),
                                                 contentPadding:
                                                     EdgeInsets.symmetric(
-                                                        horizontal: 16,
-                                                        vertical:
-                                                            12), // Reducido de 16 a 12
+                                                        horizontal: 12,
+                                                        vertical: 8),
                                               ),
                                             ),
                                           ],
@@ -842,6 +862,16 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                     barrierColor: Colors.black.withOpacity(0.5),
                                     pageBuilder: (context, animation,
                                         secondaryAnimation) {
+                                      // ✅ DEBUG: Mostrar datos que se van a pasar a PaymentQRScreen
+                                      print(
+                                          '[InstantTutoringScreen] 🔍 DEBUG - Datos a pasar a PaymentQRScreen:');
+                                      print(
+                                          '[InstantTutoringScreen] scheduledDate: ${widget.scheduledDate}');
+                                      print(
+                                          '[InstantTutoringScreen] scheduledTime: ${widget.scheduledTime}');
+                                      print(
+                                          '[InstantTutoringScreen] isScheduledBooking: ${widget.isScheduledBooking}');
+
                                       return PaymentQRScreen(
                                         tutorName: widget.tutorName,
                                         tutorImage: widget.tutorImage,
@@ -850,6 +880,11 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                         sessionDuration: "20 min",
                                         tutorId: widget.tutorId,
                                         subjectId: widget.subjectId,
+                                        // ✅ NUEVO: Pasar datos de reserva programada
+                                        scheduledDate: widget.scheduledDate,
+                                        scheduledTime: widget.scheduledTime,
+                                        isScheduledBooking:
+                                            widget.isScheduledBooking,
                                       );
                                     },
                                     transitionDuration:
@@ -891,7 +926,9 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                           minimumSize: Size(double.infinity, 50),
                         ),
                         child: Text(
-                          'Pagar e Iniciar en 2-5 min',
+                          widget.isScheduledBooking
+                              ? 'Confirmar Reserva'
+                              : 'Pagar e Iniciar en 2-5 min',
                           style: TextStyle(
                             color: AppColors.darkBlue,
                             fontWeight: FontWeight.bold,

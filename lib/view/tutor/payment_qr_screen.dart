@@ -6,13 +6,13 @@ import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
 import 'package:flutter_projects/base_components/custom_snack_bar.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:qr_flutter/qr_flutter.dart';
+
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:overlay_support/overlay_support.dart';
 import 'package:provider/provider.dart';
 import '../../provider/auth_provider.dart';
-import 'package:flutter_projects/animated_screen/animated_thank_you.dart';
+import 'booking_success_screen.dart';
 
 class PaymentQRScreen extends StatefulWidget {
   final String tutorName;
@@ -22,8 +22,10 @@ class PaymentQRScreen extends StatefulWidget {
   final String sessionDuration;
   final int tutorId;
   final int subjectId;
-  final DateTime? startTime;
-  final DateTime? endTime;
+  // ✅ NUEVO: Parámetros para reserva programada
+  final DateTime? scheduledDate;
+  final String? scheduledTime;
+  final bool isScheduledBooking;
 
   const PaymentQRScreen({
     Key? key,
@@ -34,8 +36,10 @@ class PaymentQRScreen extends StatefulWidget {
     required this.sessionDuration,
     required this.tutorId,
     required this.subjectId,
-    this.startTime,
-    this.endTime,
+    // ✅ NUEVO: Parámetros opcionales
+    this.scheduledDate,
+    this.scheduledTime,
+    this.isScheduledBooking = false,
   }) : super(key: key);
 
   @override
@@ -56,12 +60,17 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
   int _currentPage = 0;
 
   // Datos del pago (actualizados)
-  final String _qrData = "https://classgo.com/pay/session_12345";
   bool _isPaymentCompleted = false;
 
   @override
   void initState() {
     super.initState();
+
+    // ✅ DEBUG: Mostrar datos recibidos
+    print('[PaymentQRScreen] 🔍 DEBUG - Datos recibidos en initState:');
+    print('[PaymentQRScreen] isScheduledBooking: ${widget.isScheduledBooking}');
+    print('[PaymentQRScreen] scheduledDate: ${widget.scheduledDate}');
+    print('[PaymentQRScreen] scheduledTime: ${widget.scheduledTime}');
 
     _slideAnimationController = AnimationController(
       duration: Duration(milliseconds: 600),
@@ -187,7 +196,8 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
         if (!status.isGranted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-                content: Text('Se necesitan permisos para descargar el QR')),
+                content:
+                    Text('Se necesitan permisos para descargar la imagen')),
           );
           return;
         }
@@ -202,17 +212,12 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
         return;
       }
 
-      // Crear nombre de archivo único
-      final fileName =
-          'classgo_payment_qr_${DateTime.now().millisecondsSinceEpoch}.png';
-      final filePath = '${directory.path}/$fileName';
-
-      // Aquí normalmente generarías y guardarías el QR
+      // Aquí normalmente guardarías la imagen de cobro
       await Future.delayed(Duration(seconds: 1)); // Simulación
 
       // Notificación moderna que ahora usa el CONTEXTO LOCAL
       showSimpleNotification(
-        Text("¡QR guardado en tu galería!",
+        Text("¡Imagen guardada en tu galería!",
             style: TextStyle(color: Colors.white)),
         leading: Icon(Icons.download_done, color: Colors.white),
         background: AppColors.lightBlueColor,
@@ -267,10 +272,163 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
         return;
       }
 
+      // ✅ NUEVO: Verificar disponibilidad del tutor SOLO para tutorías instantáneas
+      print('[PaymentQRScreen] 🔍 DEBUG - Iniciando validación de disponibilidad...');
+      print('[PaymentQRScreen] 🔍 DEBUG - isScheduledBooking: ${widget.isScheduledBooking}');
+      print('[PaymentQRScreen] 🔍 DEBUG - tutorId: ${widget.tutorId}');
+      
+      if (!widget.isScheduledBooking) {
+        print('[PaymentQRScreen] 🔍 DEBUG - Es tutoría instantánea, aplicando validación...');
+        
+        // Verificar disponibilidad general del tutor
+        print('[PaymentQRScreen] 🔍 DEBUG - Llamando a checkTutorAvailabilityBeforeBooking...');
+        final availabilityResponse = await checkTutorAvailabilityBeforeBooking(token, widget.tutorId);
+        print('[PaymentQRScreen] 🔍 DEBUG - Respuesta de disponibilidad: $availabilityResponse');
+        
+        if (availabilityResponse['success'] == true) {
+          final isAvailable = availabilityResponse['available_for_tutoring'] ?? false;
+          final tutorName = availabilityResponse['tutor_name'] ?? 'Tutor';
+          
+          print('[PaymentQRScreen] 🔍 DEBUG - isAvailable: $isAvailable');
+          print('[PaymentQRScreen] 🔍 DEBUG - tutorName: $tutorName');
+          
+          if (!isAvailable) {
+            print('[PaymentQRScreen] 🔍 DEBUG - Tutor NO disponible, verificando slot bookings...');
+            
+            // Si no está disponible, verificar si tiene slot bookings para la hora actual
+            print('[PaymentQRScreen] 🔍 DEBUG - Llamando a checkTutorCurrentSlotBookings...');
+            final slotBookingsResponse = await checkTutorCurrentSlotBookings(token, widget.tutorId);
+            print('[PaymentQRScreen] 🔍 DEBUG - Respuesta de slot bookings: $slotBookingsResponse');
+            
+            if (slotBookingsResponse['success'] == true) {
+              final hasCurrentSlot = slotBookingsResponse['has_current_slot'] ?? false;
+              
+              print('[PaymentQRScreen] 🔍 DEBUG - hasCurrentSlot: $hasCurrentSlot');
+              
+              if (!hasCurrentSlot) {
+                // ✅ AMBAS CONDICIONES CUMPLIDAS: No está disponible Y no tiene slot para la hora actual
+                print('[PaymentQRScreen] 🔍 DEBUG - AMBAS CONDICIONES CUMPLIDAS: No disponible Y sin slot');
+                print('[PaymentQRScreen] 🔍 DEBUG - Mostrando modal de error...');
+                
+                setState(() {
+                  _isPaymentCompleted = false;
+                });
+                
+                _showTutorUnavailableDialog(tutorName);
+                return;
+              } else {
+                // ✅ TIENE SLOT PARA HORA ACTUAL: Continuar con la tutoría
+                print('[PaymentQRScreen] 🔍 DEBUG - Tutor no disponible pero TIENE slot para hora actual, continuando...');
+              }
+            } else {
+              // Error al verificar slot bookings, continuar por seguridad
+              print('[PaymentQRScreen] 🔍 DEBUG - Error al verificar slot bookings: ${slotBookingsResponse['message']}');
+              print('[PaymentQRScreen] 🔍 DEBUG - Continuando por seguridad...');
+            }
+          } else {
+            // ✅ ESTÁ DISPONIBLE: Continuar normalmente
+            print('[PaymentQRScreen] 🔍 DEBUG - Tutor DISPONIBLE, continuando normalmente...');
+          }
+        } else {
+          print('[PaymentQRScreen] 🔍 DEBUG - Error al verificar disponibilidad: ${availabilityResponse['message']}');
+          print('[PaymentQRScreen] 🔍 DEBUG - Continuando por seguridad...');
+          // Continuar con el proceso si no se puede verificar la disponibilidad
+        }
+      } else {
+        // ✅ TUTORÍA AGENDADA: No aplicar validación de disponibilidad
+        print('[PaymentQRScreen] 🔍 DEBUG - Es tutoría AGENDADA, OMITIENDO validación de disponibilidad...');
+      }
+      
+      print('[PaymentQRScreen] 🔍 DEBUG - Validación completada, continuando con el proceso...');
+
       // 1. Crear el slot booking
       final now = DateTime.now();
-      final startTime = widget.startTime ?? now;
-      final endTime = widget.endTime ?? now.add(Duration(minutes: 20));
+
+      // ✅ CAMBIO: Usar fecha y hora programada si es una reserva, sino usar tiempo actual
+      DateTime startTime, endTime;
+      String calendarEventId;
+      Map<String, dynamic> metaData;
+
+      if (widget.isScheduledBooking &&
+          widget.scheduledDate != null &&
+          widget.scheduledTime != null) {
+        // ✅ RESERVA PROGRAMADA: Usar fecha y hora seleccionada
+        final scheduledDateTime = widget.scheduledDate!;
+        final timeParts = widget.scheduledTime!.split('-');
+        print(
+            '[PaymentQRScreen] 🔍 DEBUG - Parsing time: ${widget.scheduledTime}');
+        print('[PaymentQRScreen] 🔍 DEBUG - Time parts: $timeParts');
+
+        if (timeParts.length == 2) {
+          final startTimeStr = timeParts[0].trim();
+          final endTimeStr = timeParts[1].trim();
+
+          print(
+              '[PaymentQRScreen] 🔍 DEBUG - Start time string: $startTimeStr');
+          print('[PaymentQRScreen] 🔍 DEBUG - End time string: $endTimeStr');
+
+          try {
+            // Parsear las horas (formato: "14:00", "15:30", etc.)
+            final startHour = int.parse(startTimeStr.split(':')[0]);
+            final startMinute = int.parse(startTimeStr.split(':')[1]);
+            final endHour = int.parse(endTimeStr.split(':')[0]);
+            final endMinute = int.parse(endTimeStr.split(':')[1]);
+
+            print(
+                '[PaymentQRScreen] 🔍 DEBUG - Parsed hours: $startHour:$startMinute - $endHour:$endMinute');
+
+            startTime = DateTime(
+                scheduledDateTime.year,
+                scheduledDateTime.month,
+                scheduledDateTime.day,
+                startHour,
+                startMinute);
+            endTime = DateTime(scheduledDateTime.year, scheduledDateTime.month,
+                scheduledDateTime.day, endHour, endMinute);
+
+            print(
+                '[PaymentQRScreen] 🔍 DEBUG - Final DateTime objects: $startTime - $endTime');
+
+            calendarEventId =
+                'scheduled_${scheduledDateTime.millisecondsSinceEpoch}';
+            metaData = {'comentario': 'Tutoría programada'};
+          } catch (e) {
+            print('[PaymentQRScreen] ❌ ERROR parsing time: $e');
+            // Fallback si hay error en el parsing
+            startTime = now;
+            endTime = now.add(Duration(minutes: 20));
+            calendarEventId = 'instant_${now.millisecondsSinceEpoch}';
+            metaData = {'comentario': 'Tutoría instantánea (error parsing)'};
+          }
+        } else {
+          print(
+              '[PaymentQRScreen] ❌ ERROR: Time format incorrect, expected HH:MM-HH:MM, got: ${widget.scheduledTime}');
+          // Fallback si el formato no es correcto
+          startTime = now;
+          endTime = now.add(Duration(minutes: 20));
+          calendarEventId = 'instant_${now.millisecondsSinceEpoch}';
+          metaData = {'comentario': 'Tutoría instantánea (formato incorrecto)'};
+        }
+      } else {
+        // ✅ TUTORÍA INSTANTÁNEA: Usar tiempo actual
+        startTime = now;
+        endTime = now.add(Duration(minutes: 20));
+        calendarEventId = 'instant_${now.millisecondsSinceEpoch}';
+        metaData = {'comentario': 'Tutoría instantánea'};
+      }
+
+      // ✅ DEBUG: Mostrar qué valores se están enviando
+      print('[PaymentQRScreen] 🔍 DEBUG - Valores a enviar a la API:');
+      print(
+          '[PaymentQRScreen] isScheduledBooking: ${widget.isScheduledBooking}');
+      print('[PaymentQRScreen] scheduledDate: ${widget.scheduledDate}');
+      print('[PaymentQRScreen] scheduledTime: ${widget.scheduledTime}');
+      print(
+          '[PaymentQRScreen] startTime: $startTime (${startTime.toIso8601String()})');
+      print(
+          '[PaymentQRScreen] endTime: $endTime (${endTime.toIso8601String()})');
+      print('[PaymentQRScreen] calendarEventId: $calendarEventId');
+      print('[PaymentQRScreen] metaData: $metaData');
 
       final slotBookingData = {
         'student_id': studentId,
@@ -280,20 +438,17 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
         'end_time': endTime.toIso8601String(),
         'session_fee': 15.0,
         'booked_at': now.toIso8601String(),
-        'calendar_event_id': 'instant_${DateTime.now().millisecondsSinceEpoch}',
+        'calendar_event_id': calendarEventId,
         'meeting_link': '',
         'status': 2,
-        'meta_data': {
-          'comentario': widget.startTime != null
-              ? 'Reserva agendada'
-              : 'Tutoría instantánea'
-        },
+        'meta_data': metaData,
         'subject_id': widget.subjectId,
       };
 
       final slotBookingResponse =
           await createSlotBooking(token, slotBookingData);
-      print('Respuesta al crear tutoría (slot booking): $slotBookingResponse');
+      print('[PaymentQRScreen] 📤 Datos enviados a la API: $slotBookingData');
+      print('[PaymentQRScreen] 📥 Respuesta de la API: $slotBookingResponse');
 
       final slotBookingId =
           slotBookingResponse['data']?['id'] ?? slotBookingResponse['id'];
@@ -328,20 +483,33 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
         return;
       }
 
-      // Éxito - mostrar mensaje y navegar
-      await Future.delayed(Duration(milliseconds: 300));
+      // ✅ CAMBIO: Mensaje dinámico según el tipo de tutoría
+      final successMessage = widget.isScheduledBooking
+          ? '¡Reserva confirmada exitosamente! Tu tutoría ha sido programada.'
+          : '¡Pago procesado exitosamente! La tutoría ha sido creada.';
+
+      showCustomToast(context, successMessage, true);
+
+      // Esperar un momento y luego navegar
+      await Future.delayed(Duration(seconds: 2));
+
       if (mounted) {
-        Navigator.of(context).pop(); // Cierra el modal de pago
-        await Future.delayed(Duration(milliseconds: 300));
-        final result = await Navigator.of(context).push(
+        Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (_) => ThankYouPage(),
+            builder: (context) => BookingSuccessScreen(
+              tutorName: widget.tutorName,
+              tutorImage: widget.tutorImage,
+              subjectName: widget.selectedSubject,
+              sessionDuration: widget.sessionDuration,
+              amount: widget.amount,
+              // ✅ CAMBIO: Usar hora programada si es reserva, sino hora actual
+              sessionTime:
+                  widget.isScheduledBooking && widget.scheduledDate != null
+                      ? widget.scheduledDate!
+                      : DateTime.now(),
+            ),
           ),
         );
-        if (result == true && mounted) {
-          Navigator.of(context)
-              .pop(true); // Devuelve true a la home para refrescar
-        }
       }
     } catch (e) {
       print('Error inesperado en _submitPayment: $e');
@@ -564,7 +732,7 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text('💳 Escanea para pagar',
+          Text('💳 Información de pago',
               style: TextStyle(
                   color: AppColors.darkBlue,
                   fontSize: 16,
@@ -573,19 +741,22 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
           Expanded(
             child: ScaleTransition(
               scale: _qrScaleAnimation,
-              child: QrImageView(
-                  data: _qrData,
-                  version: QrVersions.auto,
-                  size: 200.0,
-                  backgroundColor: Colors.white,
-                  foregroundColor: AppColors.darkBlue),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.asset(
+                  'assets/images/cobro.jpeg',
+                  width: 200.0,
+                  height: 200.0,
+                  fit: BoxFit.contain,
+                ),
+              ),
             ),
           ),
           SizedBox(height: 16),
           ElevatedButton.icon(
             onPressed: _downloadQR,
             icon: Icon(Icons.download, color: AppColors.darkBlue),
-            label: Text('Descargar QR',
+            label: Text('Descargar imagen',
                 style: TextStyle(color: AppColors.darkBlue)),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,
@@ -742,7 +913,9 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
                   ])
                 : Text(
                     _receiptImage != null
-                        ? 'Confirmar Pago'
+                        ? (widget.isScheduledBooking
+                            ? 'Confirmar Reserva'
+                            : 'Confirmar Pago')
                         : 'Sube el comprobante primero',
                     style: TextStyle(
                         color: Colors.white,
@@ -752,7 +925,9 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
           ),
           SizedBox(height: 16),
           Text(
-              'La sesión comenzará automáticamente una vez confirmado el pago.',
+              widget.isScheduledBooking
+                  ? 'Tu reserva será confirmada una vez verificado el pago.'
+                  : 'La sesión comenzará automáticamente una vez confirmado el pago.',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.white70, fontSize: 13)),
           Padding(
@@ -777,6 +952,97 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
       behavior: HitTestBehavior.opaque,
       onTap: () => Navigator.of(context).pop(),
       child: GestureDetector(onTap: () {}, child: child),
+    );
+  }
+
+  // ✅ NUEVO: Método para mostrar modal de tutor no disponible
+  void _showTutorUnavailableDialog(String tutorName) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.darkBlue.withOpacity(0.98),
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.4),
+                  blurRadius: 24,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.redColor.withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  padding: EdgeInsets.all(18),
+                  child: Icon(
+                    Icons.cancel_outlined,
+                    color: AppColors.redColor,
+                    size: 48,
+                  ),
+                ),
+                SizedBox(height: 18),
+                Text(
+                  'Tutor No Disponible',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 22,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+                SizedBox(height: 14),
+                Text(
+                  '$tutorName ya no está disponible en este momento. Por favor, intenta con otro tutor o vuelve a intentar más tarde.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: Colors.white70, fontSize: 16, height: 1.5),
+                ),
+                SizedBox(height: 28),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop(); // Cerrar modal
+                          Navigator.of(context).pop(); // Volver a la pantalla anterior
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.redColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        child: Text(
+                          'Entendido',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -8,10 +8,10 @@ import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/tutor/search_tutors_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_projects/helpers/back_button_handler.dart';
 
 import 'login_screen.dart';
-import 'verify_email_screen.dart';
-import 'dart:io' as http;
+import 'verification_pending_screen.dart';
 
 class RegistrationScreen extends StatefulWidget {
   @override
@@ -190,8 +190,9 @@ class _RegistrationScreenState extends State<RegistrationScreen>
       };
 
       try {
+        print('Iniciando proceso de registro...');
         final responseData = await registerUser(userData);
-
+        print('Respuesta del registro: $responseData');
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         if (responseData.containsKey('data') &&
             responseData['data'].containsKey('token')) {
@@ -202,21 +203,42 @@ class _RegistrationScreenState extends State<RegistrationScreen>
         showCustomToast(context,
             responseData['message'] ?? 'Registration successful', true);
 
-        // Redirigir a la pantalla de verificación de correo
-        Navigator.of(context).pushReplacement(
+        // Redirigir a la pantalla de verificación pendiente en lugar del login
+        Navigator.pushReplacement(
+          context,
           MaterialPageRoute(
-            builder: (context) => VerifyEmailScreen(email: email),
-          ),
+              builder: (context) => VerificationPendingScreen(
+                    userData: {
+                      'email': email,
+                      'first_name': firstName,
+                      'last_name': lastName,
+                      'response': responseData,
+                    },
+                  )),
         );
       } catch (error) {
-        print('Error recibido en registro: $error');
+        print('Error capturado en registro: $error');
+        print('Tipo de error: ${error.runtimeType}');
+
+        String errorMessage = 'Registration failed: ';
+
         if (error is Map<String, dynamic> && error.containsKey('message')) {
-          showCustomToast(
-              context, 'Registration failed: ${error['message']}', false);
+          errorMessage += error['message'];
+          print('Error estructurado: ${error['message']}');
+        } else if (error.toString().contains('HandshakeException')) {
+          errorMessage +=
+              'Error de conexión segura. Verifica tu conexión a internet.';
+          print('Error de SSL detectado en pantalla');
+        } else if (error.toString().contains('SocketException')) {
+          errorMessage +=
+              'No se pudo conectar al servidor. Verifica tu conexión a internet.';
+          print('Error de conexión detectado en pantalla');
         } else {
-          showCustomToast(
-              context, 'Registration failed: An unknown error occurred', false);
+          errorMessage += 'An unknown error occurred: ${error.toString()}';
+          print('Error inesperado en pantalla: $error');
         }
+
+        showCustomToast(context, errorMessage, false);
       } finally {
         setState(() {
           _isLoading = false;
@@ -231,13 +253,10 @@ class _RegistrationScreenState extends State<RegistrationScreen>
     final h = MediaQuery.of(context).size.height;
 
     return WillPopScope(
-      onWillPop: () async {
-        if (_isLoading) {
-          return false;
-        } else {
-          return true;
-        }
-      },
+      onWillPop: () => BackButtonHandler.handleBackButton(
+        context,
+        isLoading: _isLoading,
+      ),
       child: Scaffold(
         backgroundColor: AppColors.primaryGreen,
         body: SafeArea(
