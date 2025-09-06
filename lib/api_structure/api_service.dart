@@ -370,38 +370,15 @@ Future<Map<String, dynamic>> getAvailableTutors(
   double? minRating,
 }) async {
   try {
-    final Map<String, dynamic> queryParams = {
-      'page': page.toString(),
-      'per_page': perPage.toString(),
-      'keyword': keyword,
-      'tutor_name': tutorName,
-      'subject_id': subjectId?.toString(),
-      'group_id': groupId?.toString(),
-      'max_price': maxPrice?.toString(),
-      'country': country?.toString(),
-      'session_type': sessionType,
-      'language_id': languageIds != null ? languageIds.join(',') : null,
-      'min_courses': minCourses?.toString(),
-      'min_rating': minRating?.toString(),
-    };
-
-    queryParams.removeWhere((key, value) => value == null);
-
-    final Uri uri = Uri.parse('$baseUrl/available-tutors')
-        .replace(queryParameters: queryParams);
+    // SIMPLIFICADO: Usar solo la URL base sin parámetros (como en Postman)
+    final Uri uri = Uri.parse('$baseUrl/available-tutors');
 
     // Log de depuración
     print('DEBUG - Available Tutors API URL: $uri');
-    print('DEBUG - Available Tutors Query params: $queryParams');
+    print('DEBUG - Sin parámetros ni headers (como Postman)');
 
-    final headers = <String, String>{
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-    };
-
-    if (token != null && token.isNotEmpty) {
-      headers['Authorization'] = 'Bearer $token';
-    }
+    // SIN HEADERS (como en Postman)
+    final headers = <String, String>{};
 
     final response = await http.get(uri, headers: headers);
 

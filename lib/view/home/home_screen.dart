@@ -1392,10 +1392,8 @@ class _HomeScreenState extends State<HomeScreen>
                                         tutorName: profile['full_name'] ??
                                                             'Sin nombre',
                                         tutorImage:
-                                            highResTutorImages[tutor['id']] ??
-                                                            getFullUrl(
-                                                    profile['image'] ?? '',
-                                                                baseImageUrl),
+                                            highResTutorImages[tutor['id']] ?? 
+                                            'assets/images/default_avatar.png',
                                         subjects: validSubjects.cast<String>(),
                                                         tutorId: tutor['id'],
                                         subjectId: subjectId,
@@ -2156,7 +2154,12 @@ class _HomeScreenState extends State<HomeScreen>
 
   // Función para obtener la URL completa de imagen o video
   String getFullUrl(String path, String base) {
-    if (path.startsWith('http')) {
+    if (path.isEmpty) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return path;
+    }
+    // Si el path ya contiene la URL base, no duplicar
+    if (path.startsWith('https://classgoapp.com/storage/')) {
       return path;
     }
     return base + path;
@@ -2780,47 +2783,21 @@ class _HomeScreenState extends State<HomeScreen>
 
                                                                   try {
                                                                     print(
-                                                                        'DEBUG: Llamando a getVerifiedTutors con subjectId: $subjectId');
+                                                                        'DEBUG: Llamando a getAvailableTutors con subjectId: $subjectId');
+                                                                    // PRUEBA: Llamar exactamente como en Postman
                                                                     final response =
-                                                                        await getVerifiedTutors(
-                                                                      authProvider
-                                                                          .token,
-                                                                      perPage:
-                                                                          50,
-                                                                      subjectId:
-                                                                          subjectId,
-                                                                    );
+                                                                        await getAvailableTutors(null);
                                                                     print(
-                                                                        'DEBUG: Respuesta de getVerifiedTutors: $response');
-                                                                    List<dynamic>
-                                                                        tutors =
-                                                                        [];
-                                                                    if (response
-                                                                        .containsKey(
-                                                                            'data')) {
-                                                                      final data =
-                                                                          response[
-                                                                              'data'];
-                                                                      if (data
-                                                                          is List) {
-                                                                        tutors =
-                                                                            data;
-                                                                      } else if (data
-                                                                              is Map &&
-                                                                          data.containsKey(
-                                                                              'data') &&
-                                                                          data['data']
-                                                                              is List) {
-                                                                        tutors =
-                                                                            data['data'];
-                                                                      } else if (data
-                                                                              is Map &&
-                                                                          data.containsKey(
-                                                                              'list') &&
-                                                                          data['list']
-                                                                              is List) {
-                                                                        tutors =
-                                                                            data['list'];
+                                                                        'DEBUG: Respuesta de getAvailableTutors: $response');
+                                                                    List<dynamic> tutors = [];
+                                                                    if (response.containsKey('data')) {
+                                                                      final data = response['data'];
+                                                                      if (data.containsKey('list') && data['list'] is List) {
+                                                                        tutors = data['list'];
+                                                                      } else if (data.containsKey('data') && data['data'] is List) {
+                                                                        tutors = data['data'];
+                                                                      } else if (data is List) {
+                                                                        tutors = data;
                                                                       }
                                                                     }
                                                                     print(
@@ -3246,8 +3223,9 @@ class _HomeScreenState extends State<HomeScreen>
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final token = authProvider.token;
-      // Obtiene destacados
-      final response = await findTutors(token, perPage: 1000);
+      // PRUEBA: Llamar exactamente como en Postman (sin token, sin parámetros)
+      print('DEBUG: Probando exactamente como Postman...');
+      final response = await getAvailableTutors(null);
       List<dynamic> tutors = [];
       if (response.containsKey('data')) {
         final data = response['data'];
@@ -3259,30 +3237,11 @@ class _HomeScreenState extends State<HomeScreen>
           tutors = data;
         }
       }
-      // Obtiene verificados
-      final verifiedResponse = await getVerifiedTutors(token, perPage: 1000);
-      List<dynamic> verifiedTutors = [];
-      if (verifiedResponse.containsKey('data')) {
-        final data = verifiedResponse['data'];
-        if (data.containsKey('list') && data['list'] is List) {
-          verifiedTutors = data['list'];
-        } else if (data.containsKey('data') && data['data'] is List) {
-          verifiedTutors = data['data'];
-        } else if (data is List) {
-          verifiedTutors = data;
-        }
-      }
-      // Unir ambos sin duplicados por id
-      final allTutors = <int, dynamic>{};
-      for (var t in tutors) {
-        if (t['id'] != null) allTutors[t['id']] = t;
-      }
-      for (var t in verifiedTutors) {
-        if (t['id'] != null) allTutors[t['id']] = t;
-      }
+      
       setState(() {
-        featuredTutors = allTutors.values
+        featuredTutors = tutors
             .where((t) =>
+                t['profile'] != null &&
                 t['subjects'] != null && (t['subjects'] as List).isNotEmpty)
             .toList();
       });
@@ -3400,6 +3359,7 @@ class _HomeScreenState extends State<HomeScreen>
                 item['id'] as int: item['profile_image'] as String
           };
         });
+        print('DEBUG: Cargadas ${highResTutorImages.length} imágenes HD de tutores');
       }
     } catch (e) {
       print('Error fetching high-res tutor images: $e');
@@ -3860,11 +3820,12 @@ class _CustomDrawerHeader extends StatelessWidget {
     if (hdImageUrl != null && hdImageUrl.isNotEmpty) {
       imageUrl = hdImageUrl;
     } else if (imageUrl != null &&
-        imageUrl.contains(
-            'https://classgoapp.com/storage/thumbnails/https://classgoapp.com/storage/thumbnails/')) {
-      imageUrl = imageUrl.replaceFirst(
-          'https://classgoapp.com/storage/thumbnails/https://classgoapp.com/storage/thumbnails/',
-          'https://classgoapp.com/storage/thumbnails/');
+        imageUrl.contains('https://classgoapp.com/storage/thumbnails/https://classgoapp.com/storage/')) {
+      // Arreglar URLs duplicadas - extraer solo la URL completa
+      final match = RegExp(r'https://classgoapp\.com/storage/thumbnails/(https://classgoapp\.com/storage/.*)').firstMatch(imageUrl);
+      if (match != null) {
+        imageUrl = match.group(1)!;
+      }
     }
 
     return Container(
@@ -5288,6 +5249,8 @@ class _TutorCardState extends State<_TutorCard>
   String _getFullUrl(String path, String base) {
     if (path.isEmpty) return '';
     if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    // Si el path ya contiene la URL base, no duplicar
+    if (path.startsWith('https://classgoapp.com/storage/')) return path;
     return base + path;
   }
 
@@ -5307,8 +5270,8 @@ class _TutorCardState extends State<_TutorCard>
         double.tryParse(tutor['avg_rating']?.toString() ?? '0.0') ?? 0.0;
     final imagePath = profile['image'] ?? '';
     final videoPath = profile['intro_video'] ?? '';
-    final imageUrl = widget.highResTutorImages[tutor['id']] ??
-        _getFullUrl(imagePath, widget.baseImageUrl);
+    final imageUrl = widget.highResTutorImages[tutor['id']] ?? 
+        'assets/images/default_avatar.png';
     final videoUrl = _getFullUrl(videoPath, widget.baseVideoUrl);
     final completed = tutor['completed_courses_count'] ?? 0;
     final total = 18;
@@ -5408,9 +5371,8 @@ class _TutorCardState extends State<_TutorCard>
                             widget.onTutorTap(
                               tutor['id'].toString(),
                               profile['full_name'] ?? 'Sin nombre',
-                              widget.highResTutorImages[tutor['id']] ??
-                                  _getFullUrl(profile['image'] ?? '',
-                                      widget.baseImageUrl),
+                              widget.highResTutorImages[tutor['id']] ?? 
+                                  'assets/images/default_avatar.png',
                               profile['intro_video'] ?? '',
                               profile['description'] ?? 'Sin descripción',
                               rating,
