@@ -302,6 +302,38 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  // Función para cargar información completa del usuario
+  Future<void> loadCompleteUserProfile() async {
+    if (_userData != null && _userData!['user'] != null) {
+      final userId = _userData!['user']['id'];
+      if (userId != null) {
+        try {
+          print('DEBUG - Loading complete user profile for ID: $userId');
+          final profileData = await getUserProfile(userId);
+          
+          // Actualizar los datos del usuario con la información completa
+          if (_userData != null) {
+            _userData!['user']['name'] = profileData['name'];
+            _userData!['user']['email'] = profileData['email'];
+            _userData!['user']['profile_image'] = profileData['profile_image'];
+            _userData!['user']['profile_image_db_path'] = profileData['profile_image_db_path'];
+            _userData!['user']['calendar_connected'] = profileData['calendar_connected'];
+            _userData!['user']['calendar_info'] = profileData['calendar_info'];
+            
+            print('DEBUG - User profile updated with complete data');
+            print('DEBUG - Updated name: ${profileData['name']}');
+            print('DEBUG - Updated email: ${profileData['email']}');
+            print('DEBUG - Calendar connected: ${profileData['calendar_connected']}');
+            
+            notifyListeners();
+          }
+        } catch (e) {
+          print('DEBUG - Error loading complete user profile: $e');
+        }
+      }
+    }
+  }
+
   Future<void> setToken(String token) async {
     print('setToken llamado con token: $token');
     _token = token;
@@ -329,13 +361,13 @@ class AuthProvider with ChangeNotifier {
     if (fcmToken != null && userIdValue != null) {
       try {
         print('Enviando token FCM al backend...');
-        print('URL: https://classgoapp.com/api/update-fcm-token');
+        print('URL: http://classgoapp.com/api/update-fcm-token');
         print(
             'Headers: Content-Type: application/json, Accept: application/json');
         print('Body: {"user_id": $userIdValue, "fcm_token": "$fcmToken"}');
 
         final response = await http.post(
-          Uri.parse('https://classgoapp.com/api/update-fcm-token'),
+          Uri.parse('http://classgoapp.com/api/update-fcm-token'),
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
@@ -368,7 +400,7 @@ class AuthProvider with ChangeNotifier {
         try {
           print('Enviando token FCM actualizado al backend...');
           final response = await http.post(
-            Uri.parse('https://classgoapp.com/api/update-fcm-token'),
+            Uri.parse('http://classgoapp.com/api/update-fcm-token'),
             headers: {
               'Content-Type': 'application/json',
               'Accept': 'application/json',
@@ -403,6 +435,10 @@ class AuthProvider with ChangeNotifier {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('userData', jsonEncode(userData));
     print('Datos de usuario guardados en SharedPreferences');
+    
+    // Cargar información completa del usuario después de establecer los datos básicos
+    await loadCompleteUserProfile();
+    
     notifyListeners();
     print('setUserData completado y notificados los listeners');
   }

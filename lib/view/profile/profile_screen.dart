@@ -1,26 +1,21 @@
-import 'dart:math';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
 import 'package:flutter_projects/base_components/custom_snack_bar.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/auth/login_screen.dart';
-import 'package:flutter_projects/view/billing/billing_information.dart';
 import 'package:flutter_projects/view/insights/insights_screen.dart';
-import 'package:flutter_projects/view/invoice/invoice_screen.dart';
 import 'package:flutter_projects/view/payouts/payout_history.dart';
-import 'package:flutter_projects/view/profile/profile_setting_screen.dart';
 import 'package:flutter_projects/view/profile/edit_profile_screen.dart';
 import 'package:flutter_projects/view/profile/skeleton/profile_image_skeleton.dart';
 import 'package:flutter_projects/view/settings/account_settings.dart';
+import 'package:flutter_projects/view/settings/google_integrations_screen.dart';
 import 'package:flutter_projects/view/tutor/certificate/certificate_detail.dart';
 import 'package:flutter_projects/view/tutor/education/education_details.dart';
 import 'package:flutter_projects/view/tutor/experience/experience_detail.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'dart:ui';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 
 import '../../provider/auth_provider.dart';
 import 'package:flutter_projects/provider/booking_provider.dart';
@@ -114,24 +109,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
+      print('DEBUG - ProfileScreen initState - userData: ${authProvider.userData}');
+      print('DEBUG - ProfileScreen initState - isLoggedIn: ${authProvider.isLoggedIn}');
+      print('DEBUG - ProfileScreen initState - token: ${authProvider.token != null ? "SÍ" : "NO"}');
+
       if (authProvider.userData != null) {
         final newBalance = authProvider.userData?['user']?['balance'] ?? 0.00;
         authProvider.updateBalance(double.parse(newBalance.toString()));
         setState(() {});
       }
-      // Obtener imagen de perfil desde la API
-      final int? userId = authProvider.userId;
-      if (userId != null) {
-        try {
-          final response = await http.get(Uri.parse(
-              'https://classgoapp.com/api/user/$userId/profile-image'));
-          if (response.statusCode == 200) {
-            final data = json.decode(response.body);
-            setState(() {
-              profileImageUrl = data['profile_image'] as String?;
-            });
-          }
-        } catch (_) {}
+      
+      // Cargar información completa del usuario
+      await authProvider.loadCompleteUserProfile();
+      
+      // Forzar actualización de la UI
+      if (mounted) {
+        setState(() {});
       }
     });
   }
@@ -150,17 +143,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
     screenHeight = MediaQuery.of(context).size.height;
     final authProvider = Provider.of<AuthProvider>(context);
     final bookingProvider = Provider.of<BookingProvider>(context);
-    final userData = authProvider.userData;
-    final int? userId = authProvider.userId;
-    final String? fullName = userData != null && userData['user'] != null
-        ? (userData['user']['profile']['full_name'] ?? 
-           (userData['user']['profile']['first_name'] != null && userData['user']['profile']['last_name'] != null
-            ? '${userData['user']['profile']['first_name']} ${userData['user']['profile']['last_name']}'
-            : userData['user']['profile']['first_name'] ?? userData['user']['profile']['last_name']))
-        : null;
-    final String? role = userData != null && userData['user'] != null
-        ? userData['user']['email']
-        : null;
+    
+    // Obtener datos del usuario con fallbacks
+    String fullName = authProvider.userName;
+    String? email = authProvider.email;
+    
+    // Fallback: si no hay datos en userData, intentar desde las variables individuales
+    if (fullName.isEmpty || fullName == 'Usuario') {
+      final firstName = authProvider.firstName ?? '';
+      final lastName = authProvider.lastName ?? '';
+      if (firstName.isNotEmpty || lastName.isNotEmpty) {
+        fullName = '$firstName $lastName'.trim();
+      }
+    }
+    
+    if (email == null || email.isEmpty) {
+      // Intentar obtener email desde userData directamente
+      if (authProvider.userData != null && authProvider.userData!['user'] != null) {
+        email = authProvider.userData!['user']['email'];
+      }
+    }
+    
+    // Debug logging mejorado
+    print('DEBUG - ProfileScreen - fullName: $fullName');
+    print('DEBUG - ProfileScreen - email: $email');
+    print('DEBUG - ProfileScreen - firstName: ${authProvider.firstName}');
+    print('DEBUG - ProfileScreen - lastName: ${authProvider.lastName}');
+    print('DEBUG - ProfileScreen - userData: ${authProvider.userData}');
+    print('DEBUG - ProfileScreen - isLoggedIn: ${authProvider.isLoggedIn}');
+    print('DEBUG - ProfileScreen - token: ${authProvider.token != null ? "SÍ" : "NO"}');
 
     // --- Cálculos de perfil tipo Duolingo ---
     final List<Map<String, dynamic>> tutorias = bookingProvider.bookings;
@@ -263,10 +274,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         radius: 54,
                         backgroundColor: Colors.transparent,
                         child: ClipOval(
-                          child: profileImageUrl != null &&
-                                  profileImageUrl!.isNotEmpty
+                          child: authProvider.userData?['user']?['profile_image'] != null &&
+                                  authProvider.userData!['user']['profile_image'].isNotEmpty
                               ? CachedNetworkImage(
-                                  imageUrl: profileImageUrl!,
+                                  imageUrl: authProvider.userData!['user']['profile_image'],
                                   width: 108,
                                   height: 108,
                                   fit: BoxFit.cover,
@@ -291,7 +302,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: Column(
                       children: [
                         Text(
-                          fullName ?? '',
+                          fullName,
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 22,
@@ -303,7 +314,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         SizedBox(height: 4),
                         Text(
-                          role ?? '',
+                          email ?? '',
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.7),
                             fontSize: 15,
@@ -393,38 +404,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         padding: EdgeInsets.only(top: 18, bottom: 90),
                         children: [
                           // Botón de configuración de perfil
-                          ListTile(
-                            splashColor: Colors.transparent,
-                            leading: SvgPicture.asset(
-                              AppImages.personOutline,
-                              color: AppColors.whiteColor,
-                              width: 20,
-                              height: 20,
-                            ),
-                            title: Transform.translate(
-                              offset: const Offset(-10, 0.0),
-                              child: Text(
-                                'Configuración de Perfil',
-                                textScaler: TextScaler.noScaling,
-                                style: TextStyle(
-                                  color: AppColors.whiteColor,
-                                  fontSize: FontSize.scale(context, 16),
-                                  fontFamily: 'SF-Pro-Text',
-                                  fontWeight: FontWeight.w400,
-                                  fontStyle: FontStyle.normal,
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryGreen.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: AppColors.primaryGreen.withOpacity(0.3),
+                                  width: 1,
                                 ),
                               ),
-                            ),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => EditProfileScreen(),
+                              child: ListTile(
+                                leading: Container(
+                                  padding: EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.whiteColor.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: SvgPicture.asset(
+                                    AppImages.personOutline,
+                                    color: AppColors.whiteColor,
+                                    width: 20,
+                                    height: 20,
+                                  ),
                                 ),
-                              );
-                            },
+                                title: Text(
+                                  'Configuración de Perfil',
+                                  style: TextStyle(
+                                    fontSize: FontSize.scale(context, 16),
+                                    color: AppColors.whiteColor,
+                                    fontFamily: 'SF-Pro-Text',
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                trailing: Icon(
+                                  Icons.arrow_forward_ios,
+                                  color: AppColors.whiteColor.withOpacity(0.8),
+                                  size: 16,
+                                ),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => EditProfileScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
                           ),
-                          if (role == "tutor")
+                          if (authProvider.userRole == "tutor")
                             ListTile(
                               splashColor: Colors.transparent,
                               leading: SvgPicture.asset(
@@ -455,7 +485,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 );
                               },
                             ),
-                          if (role == "tutor")
+                          if (authProvider.userRole == "tutor")
                             ListTile(
                               splashColor: Colors.transparent,
                               leading: SvgPicture.asset(
@@ -487,7 +517,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 );
                               },
                             ),
-                          if (role == "tutor")
+                          if (authProvider.userRole == "tutor")
                             ListTile(
                               splashColor: Colors.transparent,
                               leading: SvgPicture.asset(
@@ -519,7 +549,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 );
                               },
                             ),
-                          if (role == "tutor")
+                          if (authProvider.userRole == "tutor")
                             ListTile(
                               splashColor: Colors.transparent,
                               leading: SvgPicture.asset(
@@ -551,7 +581,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 );
                               },
                             ),
-                          if (role == "tutor")
+                          if (authProvider.userRole == "tutor")
                             Divider(
                               color: AppColors.dividerColor,
                               height: 0,
@@ -559,91 +589,159 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               indent: 15.0,
                               endIndent: 15.0,
                             ),
-                          ListTile(
-                            splashColor: Colors.transparent,
-                            leading: SvgPicture.asset(
-                              AppImages.settingIcon,
-                              width: 20,
-                              height: 20,
-                              color: AppColors.whiteColor,
-                            ),
-                            title: Transform.translate(
-                              offset: const Offset(-10, 0.0),
-                              child: Text(
-                                'Cambiar Contraseña',
-                                textScaler: TextScaler.noScaling,
-                                style: TextStyle(
-                                  color: AppColors.whiteColor,
-                                  fontSize: FontSize.scale(context, 16),
-                                  fontFamily: 'SF-Pro-Text',
-                                  fontWeight: FontWeight.w400,
-                                  fontStyle: FontStyle.normal,
-                                ),
-                              ),
-                            ),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => AccountSettings()),
-                              );
-                            },
-                          ),
-                          // Botón de cerrar sesión debajo de cambiar contraseña
+                          // Botón de cambiar contraseña
                           Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 8),
-                            child: OutlinedButton.icon(
-                              onPressed: isLoading ? null : _logout,
-                              icon: Icon(
-                                Icons.power_settings_new,
-                                color: AppColors.redColor,
-                                size: 20.0,
+                            padding: EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryGreen.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: AppColors.primaryGreen.withOpacity(0.3),
+                                  width: 1,
+                                ),
                               ),
-                              label: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    'Cerrar sesión',
-                                    style: TextStyle(
-                                      color: Colors
-                                          .white, // Cambiado a blanco para contraste
-                                      fontFamily: 'SF-Pro-Text',
-                                      fontSize: FontSize.scale(context, 16),
-                                      fontWeight: FontWeight.w500,
-                                      fontStyle: FontStyle.normal,
-                                    ),
+                              child: ListTile(
+                                leading: Container(
+                                  padding: EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.whiteColor.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
-                                  if (isLoading) ...[
-                                    SizedBox(width: 10),
-                                    SizedBox(
-                                      height: 16,
-                                      width: 16,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: AppColors.primaryGreen,
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                              style: OutlinedButton.styleFrom(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8.0),
+                                  child: SvgPicture.asset(
+                                    AppImages.settingIcon,
+                                    color: AppColors.whiteColor,
+                                    width: 20,
+                                    height: 20,
+                                  ),
                                 ),
-                                side: BorderSide(
-                                    color: AppColors.redBorderColor,
-                                    width: 0.7),
-                                backgroundColor: AppColors
-                                    .redColor, // Cambiado a rojo sólido
-                                minimumSize: Size(double.infinity, 50),
-                                textStyle: TextStyle(
-                                  fontSize: FontSize.scale(context, 16),
+                                title: Text(
+                                  'Cambiar Contraseña',
+                                  style: TextStyle(
+                                    fontSize: FontSize.scale(context, 16),
+                                    color: AppColors.whiteColor,
+                                    fontFamily: 'SF-Pro-Text',
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
+                                trailing: Icon(
+                                  Icons.arrow_forward_ios,
+                                  color: AppColors.whiteColor.withOpacity(0.8),
+                                  size: 16,
+                                ),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => AccountSettings()),
+                                  );
+                                },
                               ),
                             ),
                           ),
-                          if (role == "tutor")
+                          // Integraciones de Google
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryGreen.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: AppColors.primaryGreen.withOpacity(0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: ListTile(
+                                leading: Container(
+                                  padding: EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.whiteColor.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    Icons.integration_instructions,
+                                    color: AppColors.whiteColor,
+                                    size: 20,
+                                  ),
+                                ),
+                                title: Text(
+                                  'Integraciones de Google',
+                                  style: TextStyle(
+                                    fontSize: FontSize.scale(context, 16),
+                                    color: AppColors.whiteColor,
+                                    fontFamily: 'SF-Pro-Text',
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  'Conectar Google Calendar',
+                                  style: TextStyle(
+                                    fontSize: FontSize.scale(context, 12),
+                                    color: AppColors.whiteColor.withOpacity(0.7),
+                                    fontFamily: 'SF-Pro-Text',
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                                trailing: Icon(
+                                  Icons.arrow_forward_ios,
+                                  color: AppColors.whiteColor.withOpacity(0.8),
+                                  size: 16,
+                                ),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => GoogleIntegrationsScreen()),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 16),
+                          // Botón de cerrar sesión
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: AppColors.redColor,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: ListTile(
+                                leading: Container(
+                                  padding: EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: isLoading 
+                                    ? SizedBox(
+                                        height: 16,
+                                        width: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : Icon(
+                                        Icons.power_settings_new,
+                                        color: Colors.white,
+                                        size: 20,
+                                      ),
+                                ),
+                                title: Text(
+                                  'Cerrar sesión',
+                                  style: TextStyle(
+                                    fontSize: FontSize.scale(context, 16),
+                                    color: Colors.white,
+                                    fontFamily: 'SF-Pro-Text',
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                onTap: isLoading ? null : _logout,
+                              ),
+                            ),
+                          ),
+                          if (authProvider.userRole == "tutor")
                             ListTile(
                               splashColor: Colors.transparent,
                               leading: SvgPicture.asset(
@@ -674,38 +772,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 );
                               },
                             ),
-                          if (role == "student")
-                            ListTile(
-                              splashColor: Colors.transparent,
-                              leading: SvgPicture.asset(
-                                AppImages.invoicesIcon,
-                                width: 20,
-                                height: 22,
-                                color: AppColors.whiteColor,
-                              ),
-                              title: Transform.translate(
-                                offset: const Offset(-10, 0.0),
-                                child: Text(
-                                  'Mis facturas',
-                                  textScaler: TextScaler.noScaling,
-                                  style: TextStyle(
-                                    color: AppColors.whiteColor,
-                                    fontSize: FontSize.scale(context, 16),
-                                    fontFamily: 'SF-Pro-Text',
-                                    fontWeight: FontWeight.w400,
-                                    fontStyle: FontStyle.normal,
-                                  ),
-                                ),
-                              ),
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => InvoicesScreen()),
-                                );
-                              },
-                            ),
-                          // if (role == "student")
+                          // if (authProvider.userRole == "student")
                           // ListTile(
                           //   splashColor: Colors.transparent,
                           //   leading: SvgPicture.asset(

@@ -2,7 +2,6 @@ import 'package:flutter_projects/api_structure/api_service.dart';
 import 'package:flutter_projects/base_components/custom_snack_bar.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
-import 'package:flutter_projects/view/tutor/search_tutors_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +11,8 @@ import 'package:flutter_projects/view/auth/reset_password_screen.dart';
 import 'package:flutter_projects/view/home/home_screen.dart';
 import 'package:flutter_projects/view/tutor/dashboard_tutor.dart';
 import 'package:flutter_projects/helpers/back_button_handler.dart';
+import 'package:flutter_projects/view/components/google_sign_in_button.dart';
+import 'package:flutter_projects/services/google_auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   final Map<String, dynamic>? registrationResponse;
@@ -38,6 +39,85 @@ class _LoginScreenState extends State<LoginScreen>
   String _passwordErrorMessage = '';
   bool _isPasswordValid = true;
   bool _isLoading = false;
+  
+  // Google Auth
+  final GoogleAuthService _googleAuthService = GoogleAuthService();
+
+  Future<void> _handleGoogleSignInSuccess(Map<String, dynamic> result) async {
+    print('DEBUG - Google Sign-In Success: $result');
+    
+    if (result['success']) {
+      try {
+        // Actualizar el AuthProvider con los datos del usuario
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        
+        // Obtener los datos del usuario del resultado
+        final userData = result['data'];
+        print('DEBUG - userData recibido: $userData');
+        
+        if (userData != null) {
+          // Guardar los datos del usuario en el AuthProvider
+          await authProvider.setUserData(userData);
+          print('DEBUG - Usuario guardado en AuthProvider');
+          
+          // Guardar el token en el AuthProvider también
+          final token = userData['access_token'];
+          print('DEBUG - Token encontrado en userData: ${token != null ? "${token.substring(0, 20)}..." : "null"}');
+          
+          if (token != null) {
+            await authProvider.setToken(token);
+            print('DEBUG - Token guardado en AuthProvider');
+            
+            // Configurar autenticación completa (incluye FCM token)
+            try {
+              await authProvider.setAuthToken(token);
+              print('DEBUG - Autenticación completa configurada (incluye FCM)');
+            } catch (e) {
+              print('DEBUG - Error en setAuthToken (probablemente FCM): $e');
+              print('DEBUG - Continuando sin FCM...');
+              // No propagamos el error para no bloquear el login
+            }
+            
+            // Verificar que se guardó correctamente
+            final savedToken = authProvider.token;
+            print('DEBUG - Token verificado en AuthProvider: ${savedToken != null ? "${savedToken.substring(0, 20)}..." : "null"}');
+          } else {
+            print('DEBUG - ERROR: No se encontró access_token en userData');
+          }
+        } else {
+          print('DEBUG - ERROR: userData es null');
+        }
+        
+        // Navegar según el rol del usuario
+        final String? role = userData['user']?['role'];
+        if (role == 'tutor') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => DashboardTutor()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => HomeScreen()),
+          );
+        }
+      } catch (e) {
+        print('DEBUG - Error al procesar login exitoso: $e');
+        _handleGoogleSignInError('Error al procesar el login: $e');
+      }
+    } else {
+      _handleGoogleSignInError(result['message'] ?? 'Error desconocido en el login');
+    }
+  }
+
+  void _handleGoogleSignInError(String error) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error en Google Sign-In: $error'),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
 
   static bool isValidEmail(String email) {
     bool emailValid = RegExp(
@@ -397,7 +477,11 @@ class _LoginScreenState extends State<LoginScreen>
                         child: Padding(
                           padding: const EdgeInsets.only(top: 10, right: 20),
                           child: TextButton(
-                            onPressed: () {
+                            onPressed: () async {
+                              // Limpiar cualquier sesión previa antes de navegar
+                              final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                              await authProvider.logout();
+                              
                               Navigator.pushAndRemoveUntil(
                                 context,
                                 MaterialPageRoute(
@@ -579,6 +663,44 @@ class _LoginScreenState extends State<LoginScreen>
                                     ),
                                   ),
                                 ),
+                                SizedBox(height: 16),
+                                
+                                // Divider con "o"
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Divider(
+                                        color: AppColors.whiteColor.withOpacity(0.3),
+                                        thickness: 1,
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: EdgeInsets.symmetric(horizontal: 16),
+                                      child: Text(
+                                        'o',
+                                        style: TextStyle(
+                                          color: AppColors.whiteColor,
+                                          fontSize: FontSize.scale(context, 14),
+                                          fontFamily: 'SF-Pro-Text',
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Divider(
+                                        color: AppColors.whiteColor.withOpacity(0.3),
+                                        thickness: 1,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 16),
+                                
+                                // Botón de Google Sign-In
+                                GoogleSignInButton(
+                                  onSuccess: _handleGoogleSignInSuccess,
+                                  onError: _handleGoogleSignInError,
+                                ),
+                                
                                 SizedBox(height: 16),
                                 TextButton(
                                   onPressed: () {

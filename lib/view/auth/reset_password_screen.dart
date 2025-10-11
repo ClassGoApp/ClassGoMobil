@@ -5,9 +5,11 @@ import 'package:flutter_projects/base_components/custom_snack_bar.dart';
 import 'package:flutter_projects/base_components/textfield.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/auth/login_screen.dart';
-import 'package:flutter_projects/view/tutor/search_tutors_screen.dart';
+import 'package:flutter_projects/view/home/home_screen.dart';
+import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_projects/helpers/back_button_handler.dart';
+import 'package:provider/provider.dart';
 import 'register_screen.dart';
 
 class ResetPassword extends StatefulWidget {
@@ -139,11 +141,15 @@ class _LoginScreenState extends State<ResetPassword>
                 child: Padding(
                   padding: const EdgeInsets.only(top: 2, right: 20),
                   child: TextButton(
-                    onPressed: () {
+                    onPressed: () async {
+                      // Limpiar cualquier sesión previa antes de navegar
+                      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                      await authProvider.logout();
+                      
                       Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => SearchTutorsScreen()),
+                            builder: (context) => HomeScreen()),
                             (Route<dynamic> route) => false,
                       );
                     },

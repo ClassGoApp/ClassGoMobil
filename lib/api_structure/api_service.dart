@@ -3,11 +3,38 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
-import 'dart:io';
 import 'dart:io' show File;
 import 'package:path/path.dart' as path;
+import 'package:http/io_client.dart';
 
-final String baseUrl = 'https://classgoapp.com/api';
+final String baseUrl = 'http://classgoapp.com/api'; // Usar HTTP directamente
+final String baseUrlHttps = 'https://classgoapp.com/api'; // HTTPS como fallback
+
+// HttpClient personalizado para manejar redirecciones y TLS
+HttpClient _createHttpClient() {
+  final HttpClient client = HttpClient();
+  
+  // Configurar timeouts
+  client.connectionTimeout = Duration(seconds: 30);
+  client.idleTimeout = Duration(seconds: 30);
+  
+  // Configurar para manejar certificados SSL
+  client.badCertificateCallback = (X509Certificate cert, String host, int port) {
+    print('Warning: Certificate validation failed for $host:$port');
+    print('Certificate subject: ${cert.subject}');
+    print('Certificate issuer: ${cert.issuer}');
+    
+    // Solo para desarrollo - NO usar en producción
+    return true;
+  };
+  
+  return client;
+}
+
+// Cliente HTTP personalizado
+http.Client _httpClient = IOClient(_createHttpClient());
+
+
 
 Future<Map<String, dynamic>> registerUser(Map<String, dynamic> userData) async {
   try {
@@ -107,28 +134,75 @@ Future<Map<String, dynamic>> registerUser(Map<String, dynamic> userData) async {
 }
 
 Future<Map<String, dynamic>> loginUser(String email, String password) async {
-  final uri = Uri.parse('$baseUrl/login');
-  final headers = <String, String>{
-    'Accept': 'application/json',
-    'Content-Type': 'application/json',
-  };
+  try {
+    final headers = <String, String>{
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
 
-  final body = json.encode({
-    'email': email,
-    'password': password,
-  });
+    final body = json.encode({
+      'email': email,
+      'password': password,
+    });
 
-  final response = await http.post(
-    uri,
-    headers: headers,
-    body: body,
-  );
+    print('Intentando login con HTTP directo...');
+    print('URL: $baseUrl/login');
+    print('Headers: $headers');
+    print('Body: $body');
 
-  if (response.statusCode == 200) {
-    return json.decode(response.body);
-  } else {
-    final error = json.decode(response.body);
-    throw Exception(error['message'] ?? 'Failed to login');
+    // Usar cliente personalizado para manejar redirecciones y TLS
+    final response = await _httpClient.post(
+      Uri.parse('$baseUrl/login'),
+      headers: headers,
+      body: body,
+    );
+
+    print('Respuesta del servidor - Status: ${response.statusCode}');
+    print('Respuesta del servidor - Body: ${response.body}');
+
+    // Manejar redirección 302
+    if (response.statusCode == 302) {
+      print('Servidor redirigiendo (302), intentando con HTTPS...');
+      
+      // Intentar con HTTPS después de la redirección
+      final httpsResponse = await _httpClient.post(
+        Uri.parse('$baseUrlHttps/login'),
+        headers: headers,
+        body: body,
+      );
+      
+      print('Respuesta HTTPS - Status: ${httpsResponse.statusCode}');
+      print('Respuesta HTTPS - Body: ${httpsResponse.body}');
+      
+      if (httpsResponse.statusCode == 200) {
+        return json.decode(httpsResponse.body);
+      } else if (httpsResponse.statusCode == 302) {
+        // Si sigue redirigiendo, el servidor no acepta HTTP
+        throw Exception('El servidor requiere HTTPS. Por favor, contacta al administrador.');
+      } else {
+        final error = json.decode(httpsResponse.body);
+        throw Exception(error['message'] ?? 'Failed to login');
+      }
+    }
+    
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      // Manejar respuesta vacía o inválida
+      if (response.body.isEmpty) {
+        throw Exception('El servidor respondió con un cuerpo vacío. Verifica la configuración del servidor.');
+      }
+      
+      try {
+        final error = json.decode(response.body);
+        throw Exception(error['message'] ?? 'Failed to login');
+      } catch (formatError) {
+        throw Exception('Error de formato en la respuesta del servidor: ${response.statusCode}');
+      }
+    }
+  } catch (e) {
+    print('Error en login: $e');
+    rethrow;
   }
 }
 
@@ -401,6 +475,33 @@ Future<Map<String, dynamic>> getAvailableTutors(
     }
   } catch (e) {
     throw 'Error al obtener tutores disponibles: $e';
+  }
+}
+
+// Función para obtener información completa del usuario
+Future<Map<String, dynamic>> getUserProfile(int userId) async {
+  try {
+    final uri = Uri.parse('$baseUrl/user/$userId/profile-image');
+    
+    print('DEBUG - Getting user profile for ID: $userId');
+    
+    final response = await http.get(uri);
+    
+    print('DEBUG - User Profile Response status: ${response.statusCode}');
+    if (response.statusCode != 200) {
+      print('DEBUG - User Profile Error response body: ${response.body}');
+    }
+
+    if (response.statusCode == 200) {
+      final responseData = json.decode(response.body);
+      print('DEBUG - User Profile Response data: $responseData');
+      return responseData;
+    } else {
+      final error = json.decode(response.body);
+      throw Exception(error['message'] ?? 'Error al obtener perfil del usuario');
+    }
+  } catch (e) {
+    throw 'Error al obtener perfil del usuario: $e';
   }
 }
 
@@ -2095,7 +2196,7 @@ Future<Map<String, dynamic>> checkTutorCurrentSlotBookings(
       
       // El responseData ya es la lista directamente, no tiene 'data' key
       if (responseData is List) {
-        final slots = responseData as List;
+        final slots = responseData;
         print('DEBUG - Número de slots encontrados: ${slots.length}');
         
         for (var slot in slots) {

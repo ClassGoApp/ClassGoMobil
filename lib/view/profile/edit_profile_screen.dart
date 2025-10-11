@@ -11,6 +11,7 @@ import '../../provider/auth_provider.dart';
 import '../../styles/app_styles.dart';
 import '../../base_components/custom_snack_bar.dart';
 import '../../api_structure/config/app_config.dart';
+import '../../services/google_calendar_service.dart';
 
 class EditProfileScreen extends StatefulWidget {
   @override
@@ -36,6 +37,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late VideoPlayerController _videoController;
   final DefaultCacheManager _cacheManager = DefaultCacheManager();
   
+  // Para Google Calendar
+  final GoogleCalendarService _calendarService = GoogleCalendarService();
+  
   @override
   void initState() {
     super.initState();
@@ -46,6 +50,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     // Inicializar video después de cargar el perfil
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeVideo();
+      // Verificar estado del calendario cuando la pantalla se carga
+      _checkCalendarStatusOnResume();
     });
   }
   
@@ -103,7 +109,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (token != null && userId != null) {
         // Usar EXACTAMENTE la misma API que el dashboard
         final response = await http.get(
-          Uri.parse('https://classgoapp.com/api/user/$userId/profile-image'),
+          Uri.parse('http://classgoapp.com/api/user/$userId/profile-image'),
           headers: {
             'Authorization': 'Bearer $token',
             'Accept': 'application/json',
@@ -375,7 +381,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       // Crear request multipart
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('https://classgoapp.com/api/user/$userId/profile-files'),
+        Uri.parse('http://classgoapp.com/api/user/$userId/profile-files'),
       );
 
       request.headers['Authorization'] = 'Bearer $token';
@@ -697,7 +703,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       };
       
       final response = await http.put(
-        Uri.parse('https://classgoapp.com/api/user/$userId/profile'),
+        Uri.parse('http://classgoapp.com/api/user/$userId/profile'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -1278,6 +1284,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               
                          SizedBox(height: 24),
               
+              // Sección de Google Calendar (solo para tutores)
+              Consumer<AuthProvider>(
+                builder: (context, authProvider, child) {
+                  if (authProvider.userRole != "tutor") {
+                    return SizedBox.shrink();
+                  }
+                  
+                  final isCalendarConnected = authProvider.userData?['user']?['calendar_connected'] ?? false;
+                  
+                  return _buildGoogleCalendarSection(isCalendarConnected, authProvider);
+                },
+              ),
+              
+              SizedBox(height: 24),
+              
               // Botón de Actualizar
               SizedBox(
                 width: double.infinity,
@@ -1545,7 +1566,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     // Crear la petición multipart con el endpoint correcto
        final request = http.MultipartRequest(
          'POST',
-         Uri.parse('https://classgoapp.com/api/user/$userId/profile-files'),
+         Uri.parse('http://classgoapp.com/api/user/$userId/profile-files'),
        );
        
        // Agregar headers
@@ -1710,5 +1731,469 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
       ],
     );
+  }
+
+  Widget _buildGoogleCalendarSection(bool isCalendarConnected, AuthProvider authProvider) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFF4285F4).withOpacity(0.1),
+            Color(0xFF34A853).withOpacity(0.1),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Color(0xFF4285F4).withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Color(0xFF4285F4).withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.calendar_today,
+                  color: Color(0xFF4285F4),
+                  size: 24,
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Google Calendar',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      isCalendarConnected 
+                        ? 'Conectado y sincronizado'
+                        : 'No conectado',
+                      style: TextStyle(
+                        color: isCalendarConnected 
+                          ? Colors.green[300]
+                          : Colors.orange[300],
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                isCalendarConnected 
+                  ? Icons.check_circle
+                  : Icons.warning_amber_rounded,
+                color: isCalendarConnected 
+                  ? Colors.green
+                  : Colors.orange,
+                size: 24,
+              ),
+            ],
+          ),
+          SizedBox(height: 16),
+          if (isCalendarConnected) ...[
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Colors.green.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: Colors.green[300],
+                    size: 20,
+                  ),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Tu calendario está sincronizado. Las tutorías se agregarán automáticamente.',
+                      style: TextStyle(
+                        color: Colors.green[300],
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _refreshCalendarStatus,
+                    icon: Icon(Icons.refresh, size: 18),
+                    label: Text('Verificar Estado'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFF4285F4),
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: null, // Deshabilitado temporalmente
+                    icon: Icon(Icons.link_off, size: 18),
+                    label: Text('Desconectar'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey[600],
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ] else ...[
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Colors.orange.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        color: Colors.orange[300],
+                        size: 20,
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'Calendar requerido para tutores',
+                        style: TextStyle(
+                          color: Colors.orange[300],
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    '• Sincronizar horarios de tutorías\n'
+                    '• Evitar conflictos de horarios\n'
+                    '• Notificaciones automáticas',
+                    style: TextStyle(
+                      color: Colors.orange[300],
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _connectCalendar,
+                icon: Icon(Icons.link, size: 18),
+                label: Text('Conectar Google Calendar'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFF4285F4),
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _connectCalendar() async {
+    try {
+      // Verificar primero si ya está conectado
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.loadCompleteUserProfile();
+      
+      final isCalendarConnected = authProvider.userData?['user']?['calendar_connected'] ?? false;
+      
+      if (isCalendarConnected) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.white, size: 20),
+                  SizedBox(width: 12),
+                  Text('¡Ya tienes Google Calendar conectado!'),
+                ],
+              ),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+        return;
+      }
+      
+      await _calendarService.connectCalendar();
+      // Recargar el perfil del usuario para obtener el estado actualizado
+      await authProvider.loadCompleteUserProfile();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Se abrió el navegador para conectar Google Calendar'),
+            backgroundColor: Color(0xFF4285F4),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al conectar: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _checkCalendarStatusOnResume() async {
+    try {
+      // Verificar si el usuario es tutor
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.userRole != "tutor") {
+        return;
+      }
+
+      // Recargar el perfil del usuario para obtener el estado actualizado
+      await authProvider.loadCompleteUserProfile();
+      
+      if (mounted) {
+        final isCalendarConnected = authProvider.userData?['user']?['calendar_connected'] ?? false;
+        
+        // Solo mostrar mensaje si el estado cambió a conectado
+        if (isCalendarConnected) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(
+                    Icons.check_circle,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                  SizedBox(width: 12),
+                  Text('¡Google Calendar conectado exitosamente!'),
+                ],
+              ),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 4),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('Error al verificar estado del calendario: $e');
+    }
+  }
+
+  Future<void> _refreshCalendarStatus() async {
+    try {
+      // Mostrar indicador de carga
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Text('Verificando estado del calendario...'),
+              ],
+            ),
+            backgroundColor: Color(0xFF4285F4),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+
+      // Recargar el perfil del usuario para obtener el estado actualizado
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.loadCompleteUserProfile();
+      
+      if (mounted) {
+        // Ocultar el snackbar de carga
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        
+        // Mostrar resultado
+        final isCalendarConnected = authProvider.userData?['user']?['calendar_connected'] ?? false;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(
+                  isCalendarConnected ? Icons.check_circle : Icons.warning,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                SizedBox(width: 12),
+                Text(
+                  isCalendarConnected 
+                    ? 'Calendar conectado correctamente'
+                    : 'Calendar no está conectado',
+                ),
+              ],
+            ),
+            backgroundColor: isCalendarConnected ? Colors.green : Colors.orange,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al verificar estado: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _disconnectCalendar() async {
+    // Mostrar diálogo de confirmación
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.orange,
+                size: 28,
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Desconectar Calendar',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.darkBlue,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            '¿Estás seguro de que quieres desconectar tu Google Calendar? Esto afectará la sincronización de tus tutorías.',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[700],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(
+                'Cancelar',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text('Desconectar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      try {
+        await _calendarService.disconnectCalendar();
+        // Recargar el perfil del usuario para obtener el estado actualizado
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        await authProvider.loadCompleteUserProfile();
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Google Calendar desconectado exitosamente'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error al desconectar: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 }

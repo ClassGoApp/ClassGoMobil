@@ -1,10 +1,11 @@
+// ignore_for_file: avoid_print
+
 import 'dart:ui';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:image_picker/image_picker.dart';
 import 'payment_qr_screen.dart';
-import 'package:overlay_support/overlay_support.dart';
 
 class InstantTutoringScreen extends StatefulWidget {
   final String tutorName;
@@ -19,7 +20,7 @@ class InstantTutoringScreen extends StatefulWidget {
   final bool isScheduledBooking;
 
   const InstantTutoringScreen({
-    Key? key,
+    super.key,
     required this.tutorName,
     required this.tutorImage,
     required this.subjects,
@@ -30,10 +31,10 @@ class InstantTutoringScreen extends StatefulWidget {
     this.scheduledDate,
     this.scheduledTime,
     this.isScheduledBooking = false,
-  }) : super(key: key);
+  });
 
   @override
-  _InstantTutoringScreenState createState() => _InstantTutoringScreenState();
+  State<InstantTutoringScreen> createState() => _InstantTutoringScreenState();
 }
 
 class _InstantTutoringScreenState extends State<InstantTutoringScreen>
@@ -59,7 +60,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 300),
       vsync: this,
     );
     _fadeAnimation = Tween<double>(
@@ -87,11 +88,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
     // Iniciar la animación inmediatamente para la primera página
     _animationController.forward();
 
-    _scrollController.addListener(() {
-      if (_scrollController.size <= 0.8) {
-        if (Navigator.canPop(context)) Navigator.of(context).pop();
-      }
-    });
+    _scrollController.addListener(_onScrollChanged);
 
     // Controlador de animación para el nuevo dropdown
     _dropdownAnimController = AnimationController(
@@ -105,12 +102,45 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
     );
   }
 
+  void _onScrollChanged() {
+    if (!mounted) return;
+    
+    try {
+      if (_scrollController.size <= 0.8) {
+        if (Navigator.canPop(context)) {
+          Navigator.of(context).pop();
+        }
+      }
+    } catch (e) {
+      print('DEBUG: Error en _onScrollChanged: $e');
+    }
+  }
+
   @override
   void dispose() {
-    _scrollController.dispose();
-    _pageController.dispose();
-    _animationController.dispose();
-    _dropdownAnimController.dispose();
+    // Remover listener del scroll controller
+    _scrollController.removeListener(_onScrollChanged);
+    
+    // Cerrar dropdown si está abierto de manera segura
+    if (_overlayEntry != null) {
+      try {
+        _overlayEntry?.remove();
+      } catch (e) {
+        print('DEBUG: Error al remover overlay en dispose: $e');
+      }
+      _overlayEntry = null;
+    }
+    
+    // Limpiar controladores de manera segura
+    try {
+      _scrollController.dispose();
+      _pageController.dispose();
+      _animationController.dispose();
+      _dropdownAnimController.dispose();
+    } catch (e) {
+      print('DEBUG: Error al limpiar controladores en dispose: $e');
+    }
+    
     super.dispose();
   }
 
@@ -123,13 +153,18 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
   }
 
   void _openDropdown() {
+    if (!mounted) return;
+    
     // Cierra el dropdown si ya hay uno abierto (seguridad)
     if (_overlayEntry != null) {
       _closeDropdown();
+      return;
     }
 
-    final RenderBox renderBox =
-        _subjectSelectorKey.currentContext!.findRenderObject() as RenderBox;
+    final RenderBox? renderBox =
+        _subjectSelectorKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null || !mounted) return;
+    
     final size = renderBox.size;
     final offset = renderBox.localToGlobal(Offset.zero);
 
@@ -161,22 +196,48 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
       },
     );
 
-    Overlay.of(context).insert(_overlayEntry!);
-    setState(() {
-      _isDropdownOpen = true;
-    });
-    _dropdownAnimController.forward();
+    if (mounted) {
+      Overlay.of(context).insert(_overlayEntry!);
+      setState(() {
+        _isDropdownOpen = true;
+      });
+      _dropdownAnimController.forward();
+    }
   }
 
   void _closeDropdown() {
-    if (_overlayEntry != null) {
-      _dropdownAnimController.reverse().then((value) {
-        _overlayEntry?.remove();
-        _overlayEntry = null;
-        setState(() {
-          _isDropdownOpen = false;
+    if (_overlayEntry != null && mounted) {
+      try {
+        _dropdownAnimController.reverse().then((value) {
+          if (mounted) {
+            try {
+              _overlayEntry?.remove();
+            } catch (e) {
+              print('DEBUG: Error al remover overlay en _closeDropdown: $e');
+            }
+            _overlayEntry = null;
+            if (mounted) {
+              setState(() {
+                _isDropdownOpen = false;
+              });
+            }
+          }
         });
-      });
+      } catch (e) {
+        print('DEBUG: Error en _closeDropdown: $e');
+        // Fallback: cerrar inmediatamente sin animación
+        try {
+          _overlayEntry?.remove();
+        } catch (e2) {
+          print('DEBUG: Error en fallback de _closeDropdown: $e2');
+        }
+        _overlayEntry = null;
+        if (mounted) {
+          setState(() {
+            _isDropdownOpen = false;
+          });
+        }
+      }
     }
   }
 
@@ -336,7 +397,9 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
   Widget build(BuildContext context) {
     return makeDismissible(
       context: context,
-      child: DraggableScrollableSheet(
+      child: Material(
+        color: Colors.transparent,
+        child: DraggableScrollableSheet(
         initialChildSize: 0.9,
         minChildSize: 0.6,
         maxChildSize: 0.9,
@@ -382,7 +445,13 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                           children: [
                             CircleAvatar(
                               radius: 32,
-                              backgroundImage: NetworkImage(widget.tutorImage),
+                              backgroundImage: widget.tutorImage.isNotEmpty 
+                                ? NetworkImage(widget.tutorImage)
+                                : null,
+                              backgroundColor: Colors.white.withOpacity(0.2),
+                              child: widget.tutorImage.isEmpty 
+                                ? Icon(Icons.person, color: Colors.white, size: 32)
+                                : null,
                             ),
                             SizedBox(width: 16),
                             Expanded(
@@ -462,6 +531,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                           key: _subjectSelectorKey,
                           onTap: _toggleDropdown,
                           child: Container(
+                            width: double.infinity,
                             padding: EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 14),
                             decoration: BoxDecoration(
@@ -473,21 +543,28 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                       : Colors.white.withOpacity(0.2)),
                             ),
                             child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(
-                                  _selectedSubject ?? 'Seleccionar materia',
-                                  style: TextStyle(
-                                      color: _selectedSubject != null
-                                          ? Colors.white
-                                          : Colors.white70,
-                                      fontSize: 16),
+                                Flexible(
+                                  flex: 1,
+                                  child: Text(
+                                    _selectedSubject ?? 'Seleccionar materia',
+                                    style: TextStyle(
+                                        color: _selectedSubject != null
+                                            ? Colors.white
+                                            : Colors.white70,
+                                        fontSize: 16),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                    softWrap: false,
+                                  ),
                                 ),
+                                SizedBox(width: 8),
                                 AnimatedRotation(
                                   turns: _isDropdownOpen ? 0.5 : 0,
                                   duration: const Duration(milliseconds: 300),
                                   child: Icon(Icons.keyboard_arrow_down,
-                                      color: Colors.white70),
+                                      color: Colors.white70, size: 20),
                                 ),
                               ],
                             ),
@@ -974,6 +1051,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
           );
         },
       ),
+      ),
     );
   }
 
@@ -982,7 +1060,9 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
-        if (Navigator.canPop(context)) Navigator.of(context).pop();
+        if (mounted && Navigator.canPop(context)) {
+          Navigator.of(context).pop();
+        }
       },
       child: GestureDetector(onTap: () {}, child: child),
     );

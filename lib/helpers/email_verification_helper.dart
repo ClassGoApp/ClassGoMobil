@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 
 class EmailVerificationHelper {
-  static const String _baseUrl = 'https://classgoapp.com/api';
+  static const String _baseUrl = 'http://classgoapp.com/api';
 
   /// Reenvía el email de verificación
   static Future<Map<String, dynamic>> resendVerificationEmail(

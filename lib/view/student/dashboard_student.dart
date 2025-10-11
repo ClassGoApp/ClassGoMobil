@@ -451,7 +451,7 @@ class _DashboardStudentState extends State<DashboardStudent> {
                 Text(
                   email ?? 'email@ejemplo.com',
                   style: TextStyle(
-                    color: AppColors.textGreyColor,
+                    color: Colors.grey,
                     fontSize: 16,
                   ),
                 ),
@@ -544,12 +544,12 @@ class _DashboardStudentState extends State<DashboardStudent> {
           subtitle,
           style: TextStyle(
             fontSize: 14,
-            color: AppColors.textGreyColor,
+            color: Colors.grey,
           ),
         ),
         trailing: Icon(
           Icons.arrow_forward_ios,
-          color: AppColors.textGreyColor,
+          color: Colors.grey,
           size: 16,
         ),
         onTap: onTap,
@@ -591,31 +591,33 @@ class _DashboardStudentState extends State<DashboardStudent> {
   }
 
   Widget _buildBottomNavigationBar() {
-    return BottomNavigationBar(
-      currentIndex: _selectedIndex,
-      onTap: (index) {
-        setState(() {
-          _selectedIndex = index;
-        });
-      },
-      type: BottomNavigationBarType.fixed,
-      backgroundColor: Colors.white,
-      selectedItemColor: AppColors.primaryGreen,
-      unselectedItemColor: AppColors.textGreyColor,
-      items: [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Inicio',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.calendar_today),
-          label: 'Reservas',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: 'Perfil',
-        ),
-      ],
+    return SafeArea(
+      child: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.white,
+        selectedItemColor: AppColors.primaryGreen,
+        unselectedItemColor: Colors.grey,
+        items: [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Inicio',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today),
+            label: 'Reservas',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Perfil',
+          ),
+        ],
+      ),
     );
   }
 }

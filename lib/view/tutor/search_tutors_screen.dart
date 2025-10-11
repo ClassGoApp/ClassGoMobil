@@ -1305,19 +1305,21 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
               left: 0,
               right: 0,
               bottom: 0,
-              child: AnimatedSlide(
-                duration: const Duration(milliseconds: 400),
-                curve: Curves.easeInOut,
-                offset: _showBottomBar ? Offset(0, 0) : Offset(0, 1),
-                child: AnimatedOpacity(
+              child: SafeArea(
+                child: AnimatedSlide(
                   duration: const Duration(milliseconds: 400),
                   curve: Curves.easeInOut,
-                  opacity: _showBottomBar ? 1.0 : 0.0,
-                  child: SizedBox(
-                    height: 80,
-                    child: _ModernNavBar(
-                      currentIndex: selectedIndex,
-                      onTap: _onItemTapped,
+                  offset: _showBottomBar ? Offset(0, 0) : Offset(0, 1),
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 400),
+                    curve: Curves.easeInOut,
+                    opacity: _showBottomBar ? 1.0 : 0.0,
+                    child: SizedBox(
+                      height: 80,
+                      child: _ModernNavBar(
+                        currentIndex: selectedIndex,
+                        onTap: _onItemTapped,
+                      ),
                     ),
                   ),
                 ),
@@ -1349,7 +1351,7 @@ class _ModernNavBar extends StatelessWidget {
     ];
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      margin: const EdgeInsets.fromLTRB(20, 10, 20, 20),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
         color: AppColors.blurprimary.withOpacity(0.85),
@@ -1363,27 +1365,26 @@ class _ModernNavBar extends StatelessWidget {
         ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: List.generate(navItems.length, (index) {
           bool isActive = index == currentIndex;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => onTap(index),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 350),
-                curve: Curves.easeOutCubic,
-                padding:
-                    const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                decoration: BoxDecoration(
-                  color: isActive
-                      ? AppColors.orangeprimary.withOpacity(0.95)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(20),
-                ),
+          return GestureDetector(
+            onTap: () => onTap(index),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 350),
+              curve: Curves.easeOutCubic,
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: isActive
+                    ? AppColors.orangeColor
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Center(
                 child: Icon(
                   navItems[index]['icon'] as IconData,
-                  color:
-                      isActive ? Colors.white : Colors.white.withOpacity(0.7),
+                  color: isActive ? Colors.white : Colors.white.withOpacity(0.7),
                   size: 24,
                 ),
               ),

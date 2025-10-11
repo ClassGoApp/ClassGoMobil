@@ -22,7 +22,7 @@ import 'package:flutter_projects/provider/tutor_subjects_provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'dart:io';
 
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+import 'helpers/navigation_helper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

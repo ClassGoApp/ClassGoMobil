@@ -1,63 +1,36 @@
 import 'dart:ui';
 import 'dart:convert';
-import 'package:flutter/material.dart';
-import 'package:flutter_projects/api_structure/api_service.dart';
-import 'package:flutter_projects/styles/app_styles.dart';
-import 'package:flutter_projects/view/components/video_widget.dart';
-import 'package:video_player/video_player.dart';
-import 'package:video_thumbnail/video_thumbnail.dart';
 import 'dart:typed_data';
 import 'dart:async';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:video_player/video_player.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
+import 'package:shimmer/shimmer.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:pusher_channels_flutter/pusher_channels_flutter.dart';
+import 'package:http/http.dart' as http;
+import 'package:vibration/vibration.dart';
+import 'package:audioplayers/audioplayers.dart';
+
+import 'package:flutter_projects/api_structure/api_service.dart';
+import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/view/auth/login_screen.dart';
 import 'package:flutter_projects/view/auth/register_screen.dart';
 import 'package:flutter_projects/view/tutor/search_tutors_screen.dart';
-import 'package:shimmer/shimmer.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_projects/view/tutor/tutor_profile_screen.dart';
-import 'package:flutter_projects/helpers/slide_up_route.dart';
 import 'package:flutter_projects/view/tutor/instant_tutoring_screen.dart';
-import 'package:lottie/lottie.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
-import 'package:pusher_channels_flutter/pusher_channels_flutter.dart';
+import 'package:flutter_projects/helpers/slide_up_route.dart';
 import 'package:flutter_projects/helpers/pusher_service.dart';
 import 'package:flutter_projects/helpers/auth_helper.dart';
-import 'package:http/http.dart' as http;
-import 'package:flutter/services.dart';
-import 'package:flutter_projects/base_components/custom_dropdown.dart';
-import 'package:flutter_projects/helpers/slide_up_route.dart';
-import 'package:flutter_projects/styles/app_styles.dart';
-import 'package:flutter_projects/view/auth/login_screen.dart';
-import 'package:flutter_projects/view/components/login_required_alert.dart';
-import 'package:flutter_projects/view/components/main_header.dart';
 import 'package:flutter_projects/view/components/tutoring_status_cards.dart';
-import 'package:flutter_projects/view/detailPage/detail_screen.dart';
-import 'package:flutter_projects/view/profile/profile_screen.dart';
-import 'package:flutter_projects/view/tutor/search_tutors_screen.dart';
-import 'package:flutter_projects/view/tutor/student_calendar_screen.dart';
-import 'package:flutter_projects/view/tutor/student_history_screen.dart';
-import 'package:flutter_projects/view/tutor/tutor_profile_screen.dart';
-import 'package:flutter_projects/view/tutor/instant_tutoring_screen.dart';
-import 'package:flutter_projects/view/tutor/payment_qr_screen.dart';
-import 'package:flutter_projects/view/tutor/booking_success_screen.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:provider/provider.dart';
-import '../../provider/auth_provider.dart';
-import 'dart:async';
-import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import 'package:flutter/widgets.dart';
-import 'package:vibration/vibration.dart';
-import 'package:flutter/services.dart';
-import 'package:audioplayers/audioplayers.dart';
+import '../../helpers/navigation_helper.dart';
 
 // 1. Agrega RouteObserver para detectar cuando se vuelve a la pantalla principal
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
-
-// 2. GlobalKey para el Navigator - SOLUCIÓN DEFINITIVA
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -90,12 +63,21 @@ class _HomeScreenState extends State<HomeScreen>
   VideoPlayerController? _activeController;
   bool _isVideoLoading = true;
   int _playingIndex = -1;
+  
+  // Optimizaciones de rendimiento
+  static const int _maxThumbnailCache = 10; // Límite de thumbnails en memoria
+  static const int _maxVisibleItems = 5; // Máximo de items a procesar simultáneamente
+  Timer? _thumbnailGenerationTimer;
+  bool _isThumbnailGenerationActive = false;
   bool _isCustomDrawerOpen = false;
   bool _isLeftDrawerOpen = false;
+  bool _isLoadingTikTok = false;
+  bool _isLoadingFacebook = false;
+  bool _isLoadingInstagram = false;
 
   // Define las rutas base
-  final String baseImageUrl = 'https://classgoapp.com/storage/profile_images/';
-  final String baseVideoUrl = 'https://classgoapp.com/storage/profile_videos/';
+  final String baseImageUrl = 'http://classgoapp.com/storage/profile_images/';
+  final String baseVideoUrl = 'http://classgoapp.com/storage/profile_videos/';
 
   // Declara un PageController en el estado:
   late final PageController _featuredTutorsPageController = PageController(
@@ -381,14 +363,17 @@ class _HomeScreenState extends State<HomeScreen>
 
             // Extraer información del evento
             final int? slotBookingId = eventData['slotBookingId'];
-            final String? newStatus = eventData['newStatus'];
+            final dynamic rawNewStatus = eventData['newStatus'];
+            
+            // Mapear el estado numérico a string
+            final String newStatus = _mapStatusToString(rawNewStatus);
 
             print(
-                '🔄 Actualizando tutoría ID: $slotBookingId al estado: $newStatus');
+                '🔄 Actualizando tutoría ID: $slotBookingId al estado: $newStatus (original: $rawNewStatus)');
 
             // Reproducir sonido y hacer vibrar según el nuevo estado
             _HomeScreenState._playStatusChangeSound(newStatus);
-            _vibrateForStatus(newStatus ?? '');
+            _vibrateForStatus(newStatus);
 
             // Si el estado cambia a cursando, necesitamos actualizar los datos completos
             if (newStatus == '6' || newStatus == 'cursando') {
@@ -439,13 +424,24 @@ class _HomeScreenState extends State<HomeScreen>
     _authProvider?.removeListener(_checkAndFetchBookings);
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    
+    // Dispose del controlador de video de forma asíncrona
     if (_activeController != null) {
-      _activeController!.dispose();
+      final controller = _activeController;
+      _activeController = null;
+      Future.microtask(() async {
+        try {
+          await controller!.dispose();
+        } catch (e) {
+          // Ignorar errores de dispose
+        }
+      });
     }
+    
     _thumbnailCache.clear();
     _debounce?.cancel();
+    _thumbnailGenerationTimer?.cancel();
     _searchController.dispose();
-    _debounce?.cancel();
     _featuredTutorsScrollController.dispose();
     _featuredTutorsPageController.dispose();
     _pageController.dispose();
@@ -596,7 +592,7 @@ class _HomeScreenState extends State<HomeScreen>
                         if (!_isLoadingBookings && _todaysBookings.isNotEmpty)
                           RepaintBoundary(
                             child: UpcomingSessionBanner(
-                              key: ValueKey('upcoming_session_banner'),
+                              key: ValueKey('upcoming_session_banner_$_bookingUpdateTimestamp'),
                               bookings: _todaysBookings,
                             ),
                           ),
@@ -1129,37 +1125,65 @@ class _HomeScreenState extends State<HomeScreen>
                                                                             // Crear lista de materias del tutor (solo la materia encontrada)
                                                                             final validSubjects = <String>[subjectName];
                                                                             
+                                                                            // Solución definitiva: cerrar loader y navegar en una sola operación
+                                                                            print('DEBUG: 🚀 Iniciando navegación robusta...');
+                                                                            print('DEBUG: 📊 Contexto válido: ${context.mounted}');
+                                                                            print('DEBUG: 📊 Widget montado: $mounted');
+                                                                            
                                                                             try {
-                                                                              // 1. Cerrar el loader usando Navigator.of(context, rootNavigator: true)
-                                                                              if (mounted) {
-                                                                                Navigator.of(context, rootNavigator: true).pop();
-                                                                                print('DEBUG: ✅ Loader cerrado exitosamente');
+                                                                              // Solo cerrar el loader (el modal de materias ya se cerró en la línea 1021)
+                                                                              Navigator.of(context, rootNavigator: true).pop(); // Cierra el loader
+                                                                              print('DEBUG: 🔄 Loader cerrado');
+                                                                              
+                                                                              // Navegar normalmente (no reemplazar) para mantener HomeScreen en la pila
+                                                                              print('DEBUG: 🔄 Navegando normalmente...');
+                                                                              Navigator.of(context, rootNavigator: true).push(
+                                                                                MaterialPageRoute(
+                                                                                  builder: (context) => InstantTutoringScreen(
+                                                                                    tutorId: tutorId,
+                                                                                    tutorName: tutorName,
+                                                                                    tutorImage: tutorImage,
+                                                                                    subjects: validSubjects,
+                                                                                    selectedSubject: subjectName,
+                                                                                    subjectId: subjectId,
+                                                                                  ),
+                                                                                ),
+                                                                              );
+                                                                              print('DEBUG: ✅ Navegación normal exitosa');
+                                                                              
+                                                                            } catch (e) {
+                                                                              print('DEBUG: ❌ Error en navegación directa: $e');
+                                                                              
+                                                                              // Fallback: usar GlobalKey si el contexto falla
+                                                                              try {
+                                                                                print('DEBUG: 🔄 Intentando navegación con GlobalKey...');
+                                                                                // Solo cerrar loader con GlobalKey (modal de materias ya se cerró)
+                                                                                navigatorKey.currentState?.pop(); // Cierra el loader
+                                                                                print('DEBUG: 🔄 Loader cerrado con GlobalKey');
                                                                                 
-                                                                                // 2. Navegar usando GlobalKey después de un pequeño delay
-                                                                                Future.delayed(Duration(milliseconds: 300), () {
-                                                                                  print('DEBUG: 🚀 Navegando a InstantTutoringScreen...');
-                                                                                  
-                                                                                  try {
-                                                                                    // Navegar usando GlobalKey
-                                                                                    navigatorKey.currentState?.push(
-                                                                                      MaterialPageRoute(
-                                                                                        builder: (context) => InstantTutoringScreen(
-                                                                                          tutorId: tutorId,
-                                                                                          tutorName: tutorName,
-                                                                                          tutorImage: tutorImage,
-                                                                                          subjects: validSubjects,
-                                                                                          selectedSubject: subjectName,
-                                                                                          subjectId: subjectId,
-                                                                                        ),
-                                                                                      ),
-                                                                                    );
-                                                                                    print('DEBUG: ✅ Navegación exitosa a InstantTutoringScreen');
-                                                                                  } catch (e) {
-                                                                                    print('DEBUG: ❌ Error en navegación: $e');
-                                                                                    
-                                                                                    // Fallback: Intentar navegación alternativa
+                                                                                navigatorKey.currentState?.push(
+                                                                                  MaterialPageRoute(
+                                                                                    builder: (context) => InstantTutoringScreen(
+                                                                                      tutorId: tutorId,
+                                                                                      tutorName: tutorName,
+                                                                                      tutorImage: tutorImage,
+                                                                                      subjects: validSubjects,
+                                                                                      selectedSubject: subjectName,
+                                                                                      subjectId: subjectId,
+                                                                                    ),
+                                                                                  ),
+                                                                                );
+                                                                                print('DEBUG: ✅ Navegación con GlobalKey exitosa');
+                                                                              } catch (e2) {
+                                                                                print('DEBUG: ❌ Error en navegación con GlobalKey: $e2');
+                                                                                
+                                                                                // Último fallback: navegación alternativa
                                                                                     try {
                                                                                       print('DEBUG: 🔄 Intentando navegación alternativa...');
+                                                                                      // Solo cerrar loader con GlobalKey (modal de materias ya se cerró)
+                                                                                      navigatorKey.currentState?.pop(); // Cierra el loader
+                                                                                      print('DEBUG: 🔄 Loader cerrado con GlobalKey (fallback)');
+                                                                                      
                                                                                       navigatorKey.currentState?.push(
                                                                                         MaterialPageRoute(
                                                                                           builder: (context) => TutorProfileScreen(
@@ -1176,44 +1200,51 @@ class _HomeScreenState extends State<HomeScreen>
                                                                                         ),
                                                                                       );
                                                                                       print('DEBUG: ✅ Navegación alternativa exitosa');
-                                                                                    } catch (e2) {
-                                                                                      print('DEBUG: ❌ Error en navegación alternativa: $e2');
-                                                                                    }
-                                                                                  }
-                                                                                });
-                                                                              } else {
-                                                                                print('DEBUG: ⚠️ Widget no montado, usando navegación directa');
-                                                                                // Navegación directa sin contexto
-                                                                                navigatorKey.currentState?.push(
-                                                                                  MaterialPageRoute(
-                                                                                    builder: (context) => InstantTutoringScreen(
-                                                                                      tutorId: tutorId,
-                                                                                      tutorName: tutorName,
-                                                                                      tutorImage: tutorImage,
-                                                                                      subjects: validSubjects,
-                                                                                      selectedSubject: subjectName,
-                                                                                      subjectId: subjectId,
-                                                                                    ),
+                                                                                } catch (e3) {
+                                                                                  print('DEBUG: ❌ Error final en navegación: $e3');
+                                                                                  // Mostrar mensaje de error al usuario
+                                                                                  if (mounted) {
+                                                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                                                      SnackBar(
+                                                                                        content: Text('Error al abrir perfil del tutor. Intenta de nuevo.'),
+                                                                                        backgroundColor: Colors.red,
                                                                                   ),
                                                                                 );
                                                                               }
-                                                                              
-                                                                            } catch (e) {
-                                                                              print('DEBUG: ❌ Error en navegación: $e');
-                                                                              // Fallback final: mostrar mensaje de éxito
-                                                                              print('DEBUG: ✅ Tutor encontrado pero error en navegación');
+                                                                                }
+                                                                              }
                                                                             }
                                                                           } else {
                                                                             print('DEBUG: No se encontró tutor disponible para esta materia.');
-                                                                            // Cerrar el loader y mostrar mensaje de error
-                                                                            if (mounted) {
-                                                                              Navigator.of(context, rootNavigator: true).pop(); // Cierra el loader
+                                                                            // Usar GlobalKey para cerrar loader y mostrar modal de forma segura
+                                                                            try {
+                                                                              // Cerrar el loader usando GlobalKey
+                                                                              navigatorKey.currentState?.pop();
+                                                                              print('DEBUG: ✅ Loader cerrado exitosamente con GlobalKey');
+                                                                              
+                                                                              // Mostrar modal usando GlobalKey después de un pequeño delay
+                                                                              Future.delayed(Duration(milliseconds: 100), () {
+                                                                                _showNoTutorsModalWithGlobalKey(subjectName);
+                                                                              });
+                                                                              
+                                                                            } catch (e) {
+                                                                              print('DEBUG: ❌ Error al cerrar loader con GlobalKey: $e');
+                                                                              // Fallback: intentar mostrar modal directamente con GlobalKey
+                                                                              try {
+                                                                                _showNoTutorsModalWithGlobalKey(subjectName);
+                                                                              } catch (e2) {
+                                                                                print('DEBUG: ❌ Error al mostrar modal con GlobalKey: $e2');
+                                                                                // Último fallback: mostrar SnackBar con GlobalKey
+                                                                                final context = navigatorKey.currentContext;
+                                                                                if (context != null) {
                                                                               ScaffoldMessenger.of(context).showSnackBar(
                                                                                 SnackBar(
                                                                                   content: Text('No se encontró ningún tutor disponible para esta materia en este momento'),
                                                                                   backgroundColor: Colors.red,
                                                                                 ),
                                                                               );
+                                                                                }
+                                                                              }
                                                                             }
                                                                           }
                                                                         } catch (e) {
@@ -1669,15 +1700,17 @@ class _HomeScreenState extends State<HomeScreen>
                           icon: Icons.settings,
                           title: 'Configuración del perfil',
                           onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => SearchTutorsScreen(
-                                    initialMode: 'agendar', initialPage: 3),
-                              ),
-                            );
-                            setState(() {
-                              _isCustomDrawerOpen = false;
+                            _handleAuthenticatedAction(() {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => SearchTutorsScreen(
+                                      initialMode: 'agendar', initialPage: 3),
+                                ),
+                              );
+                              setState(() {
+                                _isCustomDrawerOpen = false;
+                              });
                             });
                           },
                         ),
@@ -1685,15 +1718,17 @@ class _HomeScreenState extends State<HomeScreen>
                           icon: Icons.calendar_today,
                           title: 'Mis tutorías',
                           onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => SearchTutorsScreen(
-                                    initialMode: 'agendar', initialPage: 1),
-                              ),
-                            );
-                            setState(() {
-                              _isCustomDrawerOpen = false;
+                            _handleAuthenticatedAction(() {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => SearchTutorsScreen(
+                                      initialMode: 'agendar', initialPage: 1),
+                                ),
+                              );
+                              setState(() {
+                                _isCustomDrawerOpen = false;
+                              });
                             });
                           },
                         ),
@@ -1701,38 +1736,52 @@ class _HomeScreenState extends State<HomeScreen>
                           icon: Icons.history,
                           title: 'Historial de tutorías',
                           onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => SearchTutorsScreen(
-                                    initialMode: 'agendar', initialPage: 2),
-                              ),
-                            );
-                            setState(() {
-                              _isCustomDrawerOpen = false;
+                            _handleAuthenticatedAction(() {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => SearchTutorsScreen(
+                                      initialMode: 'agendar', initialPage: 2),
+                                ),
+                              );
+                              setState(() {
+                                _isCustomDrawerOpen = false;
+                              });
                             });
                           },
                         ),
 
-                        Divider(
-                            color: Colors.white.withOpacity(0.1),
-                            thickness: 1), // Add a divider
-                        _buildMenuItem(
-                          icon: Icons.logout,
-                          title: 'Salir de la cuenta',
-                          onTap: () async {
-                            await Provider.of<AuthProvider>(context,
-                                    listen: false)
-                                .clearToken();
+                        // Solo mostrar el botón de salir si el usuario está logueado
+                        Consumer<AuthProvider>(
+                          builder: (context, authProvider, child) {
+                            if (authProvider.isLoggedIn && authProvider.userData != null) {
+                              return Column(
+                                children: [
+                                  Divider(
+                                      color: Colors.white.withOpacity(0.1),
+                                      thickness: 1), // Add a divider
+                                  _buildMenuItem(
+                                    icon: Icons.logout,
+                                    title: 'Salir de la cuenta',
+                                    onTap: () async {
+                                      await Provider.of<AuthProvider>(context,
+                                              listen: false)
+                                          .clearToken();
 
-                            Navigator.of(context).pushAndRemoveUntil(
-                              MaterialPageRoute(
-                                  builder: (context) => LoginScreen()),
-                              (Route<dynamic> route) => false,
-                            );
-                            setState(() {
-                              _isCustomDrawerOpen = false;
-                            });
+                                      Navigator.of(context).pushAndRemoveUntil(
+                                        MaterialPageRoute(
+                                            builder: (context) => LoginScreen()),
+                                        (Route<dynamic> route) => false,
+                                      );
+                                      setState(() {
+                                        _isCustomDrawerOpen = false;
+                                      });
+                                    },
+                                  ),
+                                ],
+                              );
+                            }
+                            return SizedBox.shrink(); // No mostrar nada si no está logueado
                           },
                         ),
                       ],
@@ -1828,7 +1877,7 @@ class _HomeScreenState extends State<HomeScreen>
                               style:
                                   TextStyle(color: Colors.white, fontSize: 16)),
                           onTap: () async {
-                            final url = 'https://www.classgoapp.com/about-us';
+                            final url = 'https://www.classgoapp.com/nosotros';
                             if (await canLaunchUrl(Uri.parse(url))) {
                               await launchUrl(Uri.parse(url));
                             }
@@ -1845,7 +1894,7 @@ class _HomeScreenState extends State<HomeScreen>
                                   TextStyle(color: Colors.white, fontSize: 16)),
                           onTap: () async {
                             final url =
-                                'https://www.classgoapp.com/how-it-works';
+                                'https://www.classgoapp.com/como-trabajamos';
                             if (await canLaunchUrl(Uri.parse(url))) {
                               await launchUrl(Uri.parse(url));
                             }
@@ -1861,23 +1910,7 @@ class _HomeScreenState extends State<HomeScreen>
                               style:
                                   TextStyle(color: Colors.white, fontSize: 16)),
                           onTap: () async {
-                            final url = 'https://www.classgoapp.com/faq';
-                            if (await canLaunchUrl(Uri.parse(url))) {
-                              await launchUrl(Uri.parse(url));
-                            }
-                            setState(() {
-                              _isLeftDrawerOpen = false;
-                            });
-                          },
-                        ),
-                        Divider(
-                            color: Colors.white54, thickness: 0.5), // Divider
-                        ListTile(
-                          title: Text('Blogs',
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 16)),
-                          onTap: () async {
-                            final url = 'https://www.classgoapp.com/blogs';
+                            final url = 'https://www.classgoapp.com/preguntas';
                             if (await canLaunchUrl(Uri.parse(url))) {
                               await launchUrl(Uri.parse(url));
                             }
@@ -1899,34 +1932,112 @@ class _HomeScreenState extends State<HomeScreen>
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         GestureDetector(
-                          onTap: () {
-                            _openSocialMediaLink(
-                              'https://www.tiktok.com/@classgoapp?_t=ZM-8yxTxzdclEu&_r=1',
-                              'TikTok',
-                            );
+                          onTap: () async {
+                            // Mostrar loader
+                            setState(() {
+                              _isLoadingTikTok = true;
+                            });
+                            
+                            // Intentar abrir TikTok app primero, luego web
+                            const tiktokAppUrl = 'tiktok://user/@classgoapp';
+                            const tiktokWebUrl = 'https://www.tiktok.com/@classgoapp';
+                            
+                            try {
+                              if (await canLaunchUrl(Uri.parse(tiktokAppUrl))) {
+                                await launchUrl(Uri.parse(tiktokAppUrl));
+                              } else {
+                                await launchUrl(Uri.parse(tiktokWebUrl), mode: LaunchMode.externalApplication);
+                              }
+                            } catch (e) {
+                              await launchUrl(Uri.parse(tiktokWebUrl), mode: LaunchMode.externalApplication);
+                            } finally {
+                              setState(() {
+                                _isLoadingTikTok = false;
+                              });
+                            }
                           },
-                          child: Icon(Icons.music_note,
-                              color: Colors.white, size: 30), // TikTok icon
+                          child: _isLoadingTikTok 
+                            ? SizedBox(
+                                width: 30,
+                                height: 30,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
+                            : Icon(Icons.music_note, color: Colors.white, size: 30),
                         ),
                         GestureDetector(
-                          onTap: () {
-                            _openSocialMediaLink(
-                              'https://www.facebook.com/share/1GeC6R8gM8/?mibextid=wwXIfr',
-                              'Facebook',
-                            );
+                          onTap: () async {
+                            // Mostrar loader
+                            setState(() {
+                              _isLoadingFacebook = true;
+                            });
+                            
+                            // Usar el ID numérico correcto del perfil de Facebook
+                            const facebookAppUrl = 'fb://profile/61578383078347';
+                            const facebookWebUrl = 'https://www.facebook.com/profile.php?id=61578383078347';
+                            
+                            try {
+                              if (await canLaunchUrl(Uri.parse(facebookAppUrl))) {
+                                await launchUrl(Uri.parse(facebookAppUrl));
+                              } else {
+                                await launchUrl(Uri.parse(facebookWebUrl), mode: LaunchMode.externalApplication);
+                              }
+                            } catch (e) {
+                              await launchUrl(Uri.parse(facebookWebUrl), mode: LaunchMode.externalApplication);
+                            } finally {
+                              setState(() {
+                                _isLoadingFacebook = false;
+                              });
+                            }
                           },
-                          child: Icon(Icons.facebook,
-                              color: Colors.white, size: 30), // Facebook icon
+                          child: _isLoadingFacebook 
+                            ? SizedBox(
+                                width: 30,
+                                height: 30,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
+                            : Icon(Icons.facebook, color: Colors.white, size: 30),
                         ),
                         GestureDetector(
-                          onTap: () {
-                            _openSocialMediaLink(
-                              'https://www.instagram.com/classgo_app?igsh=MXJxNzJ0aXk3NjJkYQ==',
-                              'Instagram',
-                            );
+                          onTap: () async {
+                            // Mostrar loader
+                            setState(() {
+                              _isLoadingInstagram = true;
+                            });
+                            
+                            // Intentar abrir Instagram app primero, luego web
+                            const instagramAppUrl = 'instagram://user?username=classgo_app';
+                            const instagramWebUrl = 'https://www.instagram.com/classgo_app';
+                            
+                            try {
+                              if (await canLaunchUrl(Uri.parse(instagramAppUrl))) {
+                                await launchUrl(Uri.parse(instagramAppUrl));
+                              } else {
+                                await launchUrl(Uri.parse(instagramWebUrl), mode: LaunchMode.externalApplication);
+                              }
+                            } catch (e) {
+                              await launchUrl(Uri.parse(instagramWebUrl), mode: LaunchMode.externalApplication);
+                            } finally {
+                              setState(() {
+                                _isLoadingInstagram = false;
+                              });
+                            }
                           },
-                          child: Icon(Icons.camera_alt,
-                              color: Colors.white, size: 30), // Instagram icon
+                          child: _isLoadingInstagram 
+                            ? SizedBox(
+                                width: 30,
+                                height: 30,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
+                            : Icon(Icons.camera_alt, color: Colors.white, size: 30),
                         ),
                       ],
                     ),
@@ -1941,8 +2052,28 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> _playVideo(String url, int index) async {
+    // Optimización: Reutilizar controlador si es el mismo video
+    if (_activeController != null && _playingIndex == index) {
+      if (_activeController!.value.isPlaying) {
+        _activeController!.pause();
+      } else {
+        _activeController!.play();
+      }
+      return;
+    }
+
+    // Dispose del controlador anterior de forma asíncrona
     if (_activeController != null) {
-      await _activeController!.dispose();
+      final oldController = _activeController;
+      _activeController = null;
+      // Dispose en background para no bloquear la UI
+      Future.microtask(() async {
+        try {
+          await oldController!.dispose();
+        } catch (e) {
+          // Ignorar errores de dispose
+        }
+      });
     }
 
     setState(() {
@@ -1968,8 +2099,9 @@ class _HomeScreenState extends State<HomeScreen>
         },
       );
 
+      // Configuración optimizada del controlador
       await controller.initialize().timeout(
-        Duration(seconds: 10),
+        Duration(seconds: 15), // Aumentado el timeout
         onTimeout: () {
           throw TimeoutException('Tiempo de espera agotado al cargar el video');
         },
@@ -1980,15 +2112,29 @@ class _HomeScreenState extends State<HomeScreen>
         return;
       }
 
+      // Configuración optimizada
       controller.setVolume(1.0);
       controller.setLooping(true);
+      
+      // Configurar buffer para mejor rendimiento
+      if (controller.value.hasError == false) {
+        await controller.seekTo(Duration.zero);
+      }
 
       setState(() {
         _activeController = controller;
         _isVideoLoading = false;
       });
 
+      // Reproducir de forma asíncrona
+      Future.microtask(() async {
+        try {
       await controller.play();
+        } catch (e) {
+          // Manejar errores de reproducción sin afectar la UI
+        }
+      });
+      
     } catch (e) {
       if (!mounted) return;
 
@@ -2049,8 +2195,16 @@ class _HomeScreenState extends State<HomeScreen>
   void _stopVideo() {
     if (_activeController != null) {
       _activeController!.pause();
-      _activeController!.dispose();
+      // Dispose de forma asíncrona para no bloquear la UI
+      final controller = _activeController;
       _activeController = null;
+      Future.microtask(() async {
+        try {
+          await controller!.dispose();
+        } catch (e) {
+          // Ignorar errores de dispose
+        }
+      });
     }
     if (!mounted) return;
 
@@ -2159,7 +2313,7 @@ class _HomeScreenState extends State<HomeScreen>
       return path;
     }
     // Si el path ya contiene la URL base, no duplicar
-    if (path.startsWith('https://classgoapp.com/storage/')) {
+    if (path.startsWith('http://classgoapp.com/storage/')) {
       return path;
     }
     return base + path;
@@ -2696,6 +2850,7 @@ class _HomeScreenState extends State<HomeScreen>
                                                                   final subjectName =
                                                                       subject[
                                                                           'name'];
+                                                                  final token = authProvider.token;
 
                                                                   // Mostrar loader
                                                                   showDialog(
@@ -2782,175 +2937,146 @@ class _HomeScreenState extends State<HomeScreen>
                                                                   );
 
                                                                   try {
-                                                                    print(
-                                                                        'DEBUG: Llamando a getAvailableTutors con subjectId: $subjectId');
-                                                                    // PRUEBA: Llamar exactamente como en Postman
-                                                                    final response =
-                                                                        await getAvailableTutors(null);
-                                                                    print(
-                                                                        'DEBUG: Respuesta de getAvailableTutors: $response');
-                                                                    List<dynamic> tutors = [];
-                                                                    if (response.containsKey('data')) {
-                                                                      final data = response['data'];
-                                                                      if (data.containsKey('list') && data['list'] is List) {
-                                                                        tutors = data['list'];
-                                                                      } else if (data.containsKey('data') && data['data'] is List) {
-                                                                        tutors = data['data'];
-                                                                      } else if (data is List) {
-                                                                        tutors = data;
-                                                                      }
-                                                                    }
-                                                                    print(
-                                                                        'DEBUG: Tutores encontrados: ${tutors.length}');
-                                                                    Navigator.of(
-                                                                            context,
-                                                                            rootNavigator:
-                                                                                true)
-                                                                        .pop(); // Cierra el loader
-                                                                    if (tutors
-                                                                        .isNotEmpty) {
-                                                                      final randomTutor = (tutors
-                                                                            ..shuffle())
-                                                                          .first;
-                                                                      final profile =
-                                                                          randomTutor['profile'] ??
-                                                                              {};
-                                                                      final tutorName =
-                                                                          profile['full_name'] ??
-                                                                              'Sin nombre';
-                                                                      final tutorImage = highResTutorImages != null &&
-                                                                              highResTutorImages[randomTutor['id']] !=
-                                                                                  null
-                                                                          ? highResTutorImages[randomTutor[
-                                                                              'id']]
-                                                                          : profile['image'] ??
-                                                                              '';
-                                                                      final validSubjects = (randomTutor['subjects']
-                                                                              as List)
-                                                                          .where((s) =>
-                                                                              s['status'] == 'active' &&
-                                                                              s['deleted_at'] ==
-                                                                                  null)
-                                                                          .map((s) =>
-                                                                              s['name'].toString())
-                                                                          .toList();
-                                                                      showModalBottomSheet(
-                                                                        context:
-                                                                            context,
-                                                                        isScrollControlled:
-                                                                            true,
-                                                                        backgroundColor:
-                                                                            Colors.transparent,
-                                                                        builder:
-                                                                            (context) =>
-                                                                                InstantTutoringScreen(
-                                                                          tutorName:
-                                                                              tutorName,
-                                                                          tutorImage:
-                                                                              tutorImage,
-                                                                          subjects:
-                                                                              validSubjects,
-                                                                          selectedSubject:
-                                                                              subjectName,
-                                                                          tutorId:
-                                                                              randomTutor['id'],
-                                                                          subjectId:
-                                                                              subjectId,
-                                                                        ),
-                                                                      );
-                                                                    } else {
-                                                                      print(
-                                                                          'DEBUG: No hay tutores disponibles para esta materia.');
-                                                                      await showDialog(
-                                                                        context:
-                                                                            context,
-                                                                        barrierDismissible:
-                                                                            true,
-                                                                        builder:
-                                                                            (context) =>
-                                                                                Center(
-                                                                          child:
-                                                                              Material(
-                                                                            color:
-                                                                                Colors.transparent,
-                                                                            child:
-                                                                                Container(
-                                                                              width: MediaQuery.of(context).size.width * 0.85,
-                                                                              padding: EdgeInsets.symmetric(horizontal: 28, vertical: 32),
-                                                                              decoration: BoxDecoration(
-                                                                                color: AppColors.darkBlue,
-                                                                                borderRadius: BorderRadius.circular(24),
-                                                                                boxShadow: [
-                                                                                  BoxShadow(
-                                                                                    color: Colors.black.withOpacity(0.18),
-                                                                                    blurRadius: 32,
-                                                                                    offset: Offset(0, 12),
-                                                                                  ),
-                                                                                ],
-                                                                                border: Border.all(color: Colors.white.withOpacity(0.08)),
-                                                                              ),
-                                                                              child: Column(
-                                                                                mainAxisSize: MainAxisSize.min,
-                                                                                children: [
-                                                                                  Icon(Icons.sentiment_dissatisfied_rounded, color: AppColors.orangeprimary, size: 54),
-                                                                                  SizedBox(height: 18),
-                                                                                  Text(
-                                                                                    '¡Ups! No hay tutores disponibles',
-                                                                                    style: TextStyle(
-                                                                                      color: Colors.white,
-                                                                                      fontWeight: FontWeight.bold,
-                                                                                      fontSize: 20,
-                                                                                    ),
-                                                                                    textAlign: TextAlign.center,
-                                                                                  ),
-                                                                                  SizedBox(height: 12),
-                                                                                  Text(
-                                                                                    'Por el momento no hay tutores disponibles para la materia seleccionada. Puedes intentarlo más tarde o elegir otra materia.',
-                                                                                    style: TextStyle(
-                                                                                      color: Colors.white.withOpacity(0.85),
-                                                                                      fontSize: 15,
-                                                                                    ),
-                                                                                    textAlign: TextAlign.center,
-                                                                                  ),
-                                                                                  SizedBox(height: 28),
-                                                                                  SizedBox(
-                                                                                    width: double.infinity,
-                                                                                    child: ElevatedButton.icon(
-                                                                                      onPressed: () => Navigator.of(context).pop(),
-                                                                                      icon: Icon(Icons.close, color: Colors.white),
-                                                                                      label: Text('Cerrar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                                                                      style: ElevatedButton.styleFrom(
-                                                                                        backgroundColor: AppColors.orangeprimary,
-                                                                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                                                                                        padding: EdgeInsets.symmetric(vertical: 16),
-                                                                                      ),
-                                                                                    ),
-                                                                                  ),
-                                                                                ],
-                                                                              ),
+                                                                    print('DEBUG: Llamando a getTutorForSubject con subjectId: $subjectId');
+                                                                    final response = await getTutorForSubject(token, subjectId);
+                                                                    print('DEBUG: Respuesta de getTutorForSubject: $response');
+                                                                    
+                                                                    // Procesar la respuesta
+                                                                    if (response['success'] == true) {
+                                                                      final tutor = response['data']['tutor'];
+                                                                      final subject = response['data']['subject'];
+                                                                      final tutorName = tutor['full_name'] ?? 'Sin nombre';
+                                                                      final tutorImage = tutor['image'] ?? '';
+                                                                      final tutorId = tutor['id'];
+                                                                      final subjectName = subject['name'] ?? '';
+                                                                      
+                                                                      print('DEBUG: ✅ Tutor encontrado: $tutorName (ID: $tutorId)');
+                                                                      print('DEBUG: ✅ Materia: $subjectName');
+                                                                      print('DEBUG: 🔄 Cerrando loader y navegando...');
+                                                                      
+                                                                      // Crear lista de materias del tutor (solo la materia encontrada)
+                                                                      final validSubjects = <String>[subjectName];
+                                                                      
+                                                                      // Solución definitiva: cerrar loader y navegar en una sola operación
+                                                                      print('DEBUG: 🚀 Iniciando navegación robusta...');
+                                                                      print('DEBUG: 📊 Contexto válido: ${context.mounted}');
+                                                                      
+                                                                      try {
+                                                                        // Navegar reemplazando el loader directamente
+                                                                        print('DEBUG: 🔄 Navegando reemplazando loader...');
+                                                                        Navigator.of(context, rootNavigator: true).pushReplacement(
+                                                                          MaterialPageRoute(
+                                                                            builder: (context) => InstantTutoringScreen(
+                                                                              tutorId: tutorId,
+                                                                              tutorName: tutorName,
+                                                                              tutorImage: tutorImage,
+                                                                              subjects: validSubjects,
+                                                                              selectedSubject: subjectName,
+                                                                              subjectId: subjectId,
                                                                             ),
                                                                           ),
+                                                                        );
+                                                                        print('DEBUG: ✅ Navegación con reemplazo exitosa');
+                                                                        
+                                                                      } catch (e) {
+                                                                        print('DEBUG: ❌ Error en navegación directa: $e');
+                                                                        
+                                                                        // Fallback: usar GlobalKey si el contexto falla
+                                                                        try {
+                                                                          print('DEBUG: 🔄 Intentando navegación con GlobalKey...');
+                                                                          navigatorKey.currentState?.pushReplacement(
+                                                                            MaterialPageRoute(
+                                                                              builder: (context) => InstantTutoringScreen(
+                                                                                tutorId: tutorId,
+                                                                                tutorName: tutorName,
+                                                                                tutorImage: tutorImage,
+                                                                                subjects: validSubjects,
+                                                                                selectedSubject: subjectName,
+                                                                                subjectId: subjectId,
+                                                                              ),
+                                                                            ),
+                                                                          );
+                                                                          print('DEBUG: ✅ Navegación con GlobalKey exitosa');
+                                                                        } catch (e2) {
+                                                                          print('DEBUG: ❌ Error en navegación con GlobalKey: $e2');
+                                                                          
+                                                                          // Último fallback: navegación alternativa
+                                                                          try {
+                                                                            print('DEBUG: 🔄 Intentando navegación alternativa...');
+                                                                            navigatorKey.currentState?.pushReplacement(
+                                                                              MaterialPageRoute(
+                                                                                builder: (context) => TutorProfileScreen(
+                                                                                  tutorId: tutorId,
+                                                                                  tutorName: tutorName,
+                                                                                  tutorImage: tutorImage,
+                                                                                  tutorVideo: '',
+                                                                                  description: 'Tutor disponible para tutoría instantánea',
+                                                                                  rating: 5.0,
+                                                                                  subjects: validSubjects,
+                                                                                  completedCourses: 0,
+                                                                                  languages: ['Español'],
+                                                                                ),
+                                                                              ),
+                                                                            );
+                                                                            print('DEBUG: ✅ Navegación alternativa exitosa');
+                                                                          } catch (e3) {
+                                                                            print('DEBUG: ❌ Error final en navegación: $e3');
+                                                                            // Mostrar mensaje de error al usuario
+                                                                            if (mounted) {
+                                                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                                                SnackBar(
+                                                                                  content: Text('Error al abrir perfil del tutor. Intenta de nuevo.'),
+                                                                                  backgroundColor: Colors.red,
+                                                                                ),
+                                                                              );
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      }
+                                                                    } else {
+                                                                      print('DEBUG: No se encontró tutor disponible para esta materia.');
+                                                                      // Usar GlobalKey para cerrar loader y mostrar modal de forma segura
+                                                                      try {
+                                                                        // Cerrar el loader usando GlobalKey
+                                                                        navigatorKey.currentState?.pop();
+                                                                        print('DEBUG: ✅ Loader cerrado exitosamente con GlobalKey');
+                                                                        
+                                                                        // Mostrar modal usando GlobalKey después de un pequeño delay
+                                                                        Future.delayed(Duration(milliseconds: 100), () {
+                                                                          _showNoTutorsModalWithGlobalKey(subjectName);
+                                                                        });
+                                                                        
+                                                                      } catch (e) {
+                                                                        print('DEBUG: ❌ Error al cerrar loader con GlobalKey: $e');
+                                                                        // Fallback: intentar mostrar modal directamente con GlobalKey
+                                                                        try {
+                                                                          _showNoTutorsModalWithGlobalKey(subjectName);
+                                                                        } catch (e2) {
+                                                                          print('DEBUG: ❌ Error al mostrar modal con GlobalKey: $e2');
+                                                                          // Último fallback: mostrar SnackBar con GlobalKey
+                                                                          final context = navigatorKey.currentContext;
+                                                                          if (context != null) {
+                                                                            ScaffoldMessenger.of(context).showSnackBar(
+                                                                              SnackBar(
+                                                                                content: Text('No se encontró ningún tutor disponible para esta materia en este momento'),
+                                                                                backgroundColor: Colors.red,
+                                                                              ),
+                                                                            );
+                                                                          }
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  } catch (e) {
+                                                                    // Cerrar el loader y mostrar error
+                                                                    if (mounted) {
+                                                                      Navigator.of(context, rootNavigator: true).pop(); // Cierra el loader
+                                                                      print('DEBUG: Error al buscar tutor: $e');
+                                                                      ScaffoldMessenger.of(context).showSnackBar(
+                                                                        SnackBar(
+                                                                          content: Text('Error al buscar tutor: $e'),
                                                                         ),
                                                                       );
                                                                     }
-                                                                  } catch (e) {
-                                                                    print(
-                                                                        'ERROR: Error al buscar tutores: $e');
-                                                                    Navigator.of(
-                                                                            rootContext,
-                                                                            rootNavigator:
-                                                                                true)
-                                                                        .pop(); // Cierra el loader
-                                                                    ScaffoldMessenger.of(
-                                                                            rootContext)
-                                                                        .showSnackBar(
-                                                                      SnackBar(
-                                                                        content:
-                                                                            Text('Error al buscar tutores. Inténtalo de nuevo.'),
-                                                                        backgroundColor:
-                                                                            Colors.red,
-                                                                      ),
-                                                                    );
                                                                   }
                                                                 },
                                                                 icon: Icon(
@@ -3132,23 +3258,390 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
+  void _showNoTutorsModalWithGlobalKey(String subjectName) {
+    final context = navigatorKey.currentContext;
+    if (context == null) {
+      print('DEBUG: ❌ No hay contexto disponible para mostrar modal');
+      return;
+    }
+    
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.85,
+            padding: EdgeInsets.symmetric(horizontal: 28, vertical: 36),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.darkBlue,
+                  AppColors.blurprimary
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.18),
+                  blurRadius: 32,
+                  offset: Offset(0, 12),
+                ),
+              ],
+              border: Border.all(color: Colors.white.withOpacity(0.10)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Icono de búsqueda con animación
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: Duration(milliseconds: 800),
+                  builder: (context, value, child) {
+                    return Transform.scale(
+                      scale: value,
+                      child: Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: AppColors.orangeprimary.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.search_off_rounded,
+                          color: AppColors.orangeprimary,
+                          size: 40,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                SizedBox(height: 24),
+                
+                // Título principal
+                Text(
+                  '¡Próximamente!',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 22,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 12),
+                
+                // Mensaje principal
+                Text(
+                  'No hay tutores disponibles para $subjectName en este momento',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 16,
+                    height: 1.4,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 20),
+                
+                // Mensaje motivacional
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white.withOpacity(0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.schedule_rounded,
+                        color: AppColors.lightBlueColor,
+                        size: 20,
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Estamos trabajando para agregar más tutores especializados en esta materia',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.85),
+                            fontSize: 14,
+                            height: 1.3,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 28),
+                
+                // Botones de acción
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(color: Colors.white.withOpacity(0.3)),
+                          ),
+                        ),
+                        child: Text(
+                          'Entendido',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          // Navegar a búsqueda de tutores
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => SearchTutorsScreen(),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.lightBlueColor,
+                          padding: EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: Text(
+                          'Buscar Otros',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showNoTutorsModal(BuildContext context, String subjectName) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.85,
+            padding: EdgeInsets.symmetric(horizontal: 28, vertical: 36),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.darkBlue,
+                  AppColors.blurprimary
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.18),
+                  blurRadius: 32,
+                  offset: Offset(0, 12),
+                ),
+              ],
+              border: Border.all(color: Colors.white.withOpacity(0.10)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Icono de búsqueda con animación
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: Duration(milliseconds: 800),
+                  builder: (context, value, child) {
+                    return Transform.scale(
+                      scale: value,
+                      child: Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: AppColors.orangeprimary.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.search_off_rounded,
+                          color: AppColors.orangeprimary,
+                          size: 40,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                SizedBox(height: 24),
+                
+                // Título principal
+                Text(
+                  '¡Próximamente!',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 22,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 12),
+                
+                // Mensaje principal
+                Text(
+                  'No hay tutores disponibles para $subjectName en este momento',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 16,
+                    height: 1.4,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 20),
+                
+                // Mensaje motivacional
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white.withOpacity(0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.schedule_rounded,
+                        color: AppColors.lightBlueColor,
+                        size: 20,
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Estamos trabajando para agregar más tutores especializados en esta materia',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.85),
+                            fontSize: 14,
+                            height: 1.3,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 28),
+                
+                // Botones de acción
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(color: Colors.white.withOpacity(0.3)),
+                          ),
+                        ),
+                        child: Text(
+                          'Entendido',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          // Navegar a búsqueda de tutores
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => SearchTutorsScreen(),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.lightBlueColor,
+                          padding: EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: Text(
+                          'Buscar Otros',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _onScroll() {
     if (!mounted || _isManualPlay) return;
 
     // Actualizar la visibilidad de los items (sin setState frecuente)
     bool hasChanges = false;
-    for (int i = 0; i < featuredTutors.length; i++) {
+    int visibleCount = 0;
+    
+    for (int i = 0; i < featuredTutors.length && visibleCount < _maxVisibleItems; i++) {
       final isVisible = _isItemVisible(i);
       if (_visibleItems[i] != isVisible) {
         _visibleItems[i] = isVisible;
         hasChanges = true;
-        if (isVisible && !_thumbnailCache.containsKey(i)) {
+        if (isVisible) {
+          visibleCount++;
+          if (!_thumbnailCache.containsKey(i)) {
           final tutor = featuredTutors[i];
           final profile = tutor['profile'] ?? {};
           final videoPath = profile['intro_video'] ?? '';
           if (videoPath.isNotEmpty) {
             final videoUrl = getFullUrl(videoPath, baseVideoUrl);
-            _preloadThumbnail(videoUrl, i);
+              _scheduleThumbnailGeneration(videoUrl, i);
+            }
           }
         }
       }
@@ -3158,7 +3651,7 @@ class _HomeScreenState extends State<HomeScreen>
     if (hasChanges && mounted) {
       // Usar debounce más largo para evitar setState excesivos
       _debounce?.cancel();
-      _debounce = Timer(Duration(milliseconds: 300), () {
+      _debounce = Timer(Duration(milliseconds: 500), () {
         if (mounted) {
           setState(() {});
         }
@@ -3177,8 +3670,19 @@ class _HomeScreenState extends State<HomeScreen>
         itemPosition <= scrollOffset + screenWidth;
   }
 
+  void _scheduleThumbnailGeneration(String videoUrl, int index) {
+    if (_isThumbnailGenerationActive) return;
+    
+    _thumbnailGenerationTimer?.cancel();
+    _thumbnailGenerationTimer = Timer(Duration(milliseconds: 1000), () {
+      _preloadThumbnail(videoUrl, index);
+    });
+  }
+
   Future<void> _preloadThumbnail(String videoUrl, int index) async {
-    if (_thumbnailCache.containsKey(index)) return;
+    if (_thumbnailCache.containsKey(index) || _isThumbnailGenerationActive) return;
+
+    _isThumbnailGenerationActive = true;
 
     try {
       if (videoUrl.isEmpty) {
@@ -3188,6 +3692,11 @@ class _HomeScreenState extends State<HomeScreen>
           });
         }
         return;
+      }
+
+      // Limpiar cache si excede el límite
+      if (_thumbnailCache.length >= _maxThumbnailCache) {
+        _cleanupThumbnailCache();
       }
 
       final thumbnail = await VideoThumbnail.thumbnailData(
@@ -3208,6 +3717,20 @@ class _HomeScreenState extends State<HomeScreen>
           _thumbnailCache[index] = null;
         });
       }
+    } finally {
+      _isThumbnailGenerationActive = false;
+    }
+  }
+
+  void _cleanupThumbnailCache() {
+    if (_thumbnailCache.length <= _maxThumbnailCache) return;
+    
+    // Eliminar thumbnails más antiguos (mantener solo los últimos)
+    final keys = _thumbnailCache.keys.toList();
+    final keysToRemove = keys.take(keys.length - _maxThumbnailCache + 2);
+    
+    for (final key in keysToRemove) {
+      _thumbnailCache.remove(key);
     }
   }
 
@@ -3427,7 +3950,7 @@ class _HomeScreenState extends State<HomeScreen>
   Future<String?> fetchTutorHDImage(int tutorId) async {
     try {
       final url = Uri.parse(
-          'https://classgoapp.com/api/verified-tutors-photos?tutor_id=$tutorId');
+          'http://classgoapp.com/api/verified-tutors-photos?tutor_id=$tutorId');
       final response = await http.get(url);
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -3510,13 +4033,67 @@ class _HomeScreenState extends State<HomeScreen>
       );
     } else {
       // Usuario no logueado, mostrar mensaje
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Debes iniciar sesión para acceder a esta función'),
-          backgroundColor: Colors.orange,
-          duration: Duration(seconds: 3),
-        ),
-      );
+      _showLoginRequiredMessage();
+    }
+  }
+
+  // Función helper para mostrar mensaje de autenticación requerida
+  void _showLoginRequiredMessage() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Debes iniciar sesión para acceder a esta función'),
+        backgroundColor: Colors.orange,
+        duration: Duration(seconds: 3),
+      ),
+    );
+  }
+
+  // Función helper para verificar autenticación y ejecutar acción
+  void _handleAuthenticatedAction(VoidCallback authenticatedAction) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.isLoggedIn) {
+      authenticatedAction();
+    } else {
+      _showLoginRequiredMessage();
+    }
+  }
+
+  // Función para mapear estados numéricos a string
+  String _mapStatusToString(dynamic status) {
+    print(
+        '🔍 Mapeando estado: $status (tipo: ${status.runtimeType}) - FUNCIÓN CORREGIDA');
+    if (status == null) return '';
+
+    // Convertir a string primero para manejar tanto strings como números
+    final statusStr = status.toString().trim();
+    print('🔍 Estado convertido a string: "$statusStr"');
+
+    // Mapear estados numéricos (tanto como string como número)
+    switch (statusStr) {
+      case '1':
+        print('🔍 Mapeando 1 -> aceptada');
+        return 'aceptada';
+      case '2':
+        print('🔍 Mapeando 2 -> pendiente');
+        return 'pendiente';
+      case '3':
+        print('🔍 Mapeando 3 -> rechazada');
+        return 'rechazada';
+      case '4':
+        print('🔍 Mapeando 4 -> rechazada');
+        return 'rechazada';
+      case '5':
+        print('🔍 Mapeando 5 -> completada');
+        return 'completada';
+      case '6':
+        print('🔍 Mapeando 6 -> cursando');
+        print('🔍 ✅ Estado 6 mapeado correctamente a cursando');
+        return 'cursando';
+      default:
+        // Si no es un número, tratar como string
+        final result = statusStr.toLowerCase().trim();
+        print('🔍 Estado por defecto: $result');
+        return result;
     }
   }
 }
@@ -4801,7 +5378,7 @@ class _UpcomingSessionBannerState extends State<UpcomingSessionBanner>
 
     print('DEBUG: Haciendo llamada a API para slot ID: $slotId');
     try {
-      final url = Uri.parse('https://classgoapp.com/api/slot-detail/$slotId');
+      final url = Uri.parse('http://classgoapp.com/api/slot-detail/$slotId');
       final response = await http.get(url);
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -4826,7 +5403,7 @@ class _UpcomingSessionBannerState extends State<UpcomingSessionBanner>
 
     try {
       final url = Uri.parse(
-          'https://classgoapp.com/api/verified-tutors-photos?tutor_id=$tutorId');
+          'http://classgoapp.com/api/verified-tutors-photos?tutor_id=$tutorId');
       final response = await http.get(url);
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -4918,7 +5495,7 @@ class _BookingDetailModal extends StatelessWidget {
       : super(key: key);
 
   Future<Map<String, dynamic>?> fetchSlotDetail(int slotId) async {
-    final url = Uri.parse('https://classgoapp.com/api/slot-detail/$slotId');
+    final url = Uri.parse('http://classgoapp.com/api/slot-detail/$slotId');
     final response = await http.get(url);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -4932,7 +5509,7 @@ class _BookingDetailModal extends StatelessWidget {
   Future<String?> fetchTutorHDImage(int tutorId) async {
     try {
       final url = Uri.parse(
-          'https://classgoapp.com/api/verified-tutors-photos?tutor_id=$tutorId');
+          'http://classgoapp.com/api/verified-tutors-photos?tutor_id=$tutorId');
       final response = await http.get(url);
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -5250,7 +5827,7 @@ class _TutorCardState extends State<_TutorCard>
     if (path.isEmpty) return '';
     if (path.startsWith('http://') || path.startsWith('https://')) return path;
     // Si el path ya contiene la URL base, no duplicar
-    if (path.startsWith('https://classgoapp.com/storage/')) return path;
+    if (path.startsWith('http://classgoapp.com/storage/')) return path;
     return base + path;
   }
 
