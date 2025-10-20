@@ -329,13 +329,17 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     if (token != null && userId != null) {
       try {
         final response = await getProfile(token, userId);
+        print('DEBUG - Profile response: $response');
 
         setState(() {
           _profileData = response['data'];
           _isLoading = false;
         });
 
+        print('DEBUG - Profile data loaded: $_profileData');
+
         if (_profileData != null && _profileData!['profile'] != null) {
+          print('DEBUG - Setting form fields with profile data');
           _firstNameController.text =
               _profileData!['profile']['first_name'] ?? '';
           _lastNameController.text =
@@ -392,8 +396,11 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 languages.map((lang) => lang['name'] as String).join(', ');
             _languagesController.text = _selectedLanguage!;
           }
-        } else {}
+        } else {
+          print('DEBUG - Profile data is null or profile field is missing');
+        }
       } catch (e) {
+        print('DEBUG - Error loading profile data: $e');
         setState(() {
           _isLoading = false;
         });
@@ -783,177 +790,189 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                               ],
                             ),
                           ),
-                          SizedBox(height: 10),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 8),
-                            width: screenWidth,
-                            decoration: BoxDecoration(
-                              color: AppColors.whiteColor,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              children: [
-                                Stack(
-                                  clipBehavior: Clip.none,
+                          // Campo de video solo para tutores
+                          Consumer<AuthProvider>(
+                            builder: (context, authProvider, child) {
+                              if (authProvider.isTutor) {
+                                return Column(
                                   children: [
-                                    GestureDetector(
-                                      onTap: () {
-                                        if (_profileData!['profile']
-                                                ['intro_video'] !=
-                                            null) {
-                                          String cleanedVideoUrl =
-                                              _profileData!['profile']
-                                                  ['intro_video'];
-                                          _playIntroVideo(cleanedVideoUrl);
-                                        } else {
-                                          _pickVideo();
-                                        }
-                                      },
-                                      child: Container(
-                                        width: 50,
-                                        height: 50,
-                                        decoration: BoxDecoration(
-                                          color: AppColors.primaryGreen,
-                                          shape: BoxShape.rectangle,
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                          image: _selectedVideo != null
-                                              ? DecorationImage(
-                                                  image: _profileData![
-                                                                  'profile']
+                                    SizedBox(height: 10),
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 8),
+                                      width: screenWidth,
+                                      decoration: BoxDecoration(
+                                        color: AppColors.whiteColor,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Stack(
+                                            clipBehavior: Clip.none,
+                                            children: [
+                                              GestureDetector(
+                                                onTap: () {
+                                                  if (_profileData!['profile']
+                                                          ['intro_video'] !=
+                                                      null) {
+                                                    String cleanedVideoUrl =
+                                                        _profileData!['profile']
+                                                            ['intro_video'];
+                                                    _playIntroVideo(cleanedVideoUrl);
+                                                  } else {
+                                                    _pickVideo();
+                                                  }
+                                                },
+                                                child: Container(
+                                                  width: 50,
+                                                  height: 50,
+                                                  decoration: BoxDecoration(
+                                                    color: AppColors.primaryGreen,
+                                                    shape: BoxShape.rectangle,
+                                                    borderRadius:
+                                                        BorderRadius.circular(10),
+                                                    image: _selectedVideo != null
+                                                        ? DecorationImage(
+                                                            image: _profileData![
+                                                                        'profile']
+                                                                    ['intro_video'] !=
+                                                                null
+                                                                ? NetworkImage(
+                                                                    _profileData![
+                                                                            'profile']
+                                                                        ['intro_video'],
+                                                                  )
+                                                                : FileImage(
+                                                                        _selectedVideo!)
+                                                                    as ImageProvider,
+                                                            fit: BoxFit.cover,
+                                                          )
+                                                        : null,
+                                                  ),
+                                                  child: _selectedVideo != null
+                                                      ? Padding(
+                                                          padding: EdgeInsets.all(10.0),
+                                                          child: SvgPicture.asset(
+                                                            AppImages.videoPlaceHolder,
+                                                            fit: BoxFit.cover,
+                                                          ),
+                                                        )
+                                                      : _profileData!['profile']
+                                                                  ['intro_video'] !=
+                                                              null
+                                                          ? Icon(
+                                                              Icons.play_circle_outline,
+                                                              color: AppColors.whiteColor,
+                                                              size: 24,
+                                                            )
+                                                          : null,
+                                                ),
+                                              ),
+                                              if (_selectedVideo == null &&
+                                                  _profileData!['profile']
+                                                          ['intro_video'] ==
+                                                      null)
+                                                Positioned(
+                                                  bottom: -8,
+                                                  right: -8,
+                                                  child: Container(
+                                                    padding: EdgeInsets.all(2),
+                                                    decoration: BoxDecoration(
+                                                      color: AppColors.whiteColor,
+                                                      shape: BoxShape.circle,
+                                                      border: Border.all(
+                                                          color: AppColors.whiteColor,
+                                                          width: 2),
+                                                    ),
+                                                    child: GestureDetector(
+                                                      onTap: () {
+                                                        _pickVideo();
+                                                      },
+                                                      child: CircleAvatar(
+                                                        radius: 12,
+                                                        backgroundColor:
+                                                            AppColors.primaryGreen,
+                                                        child: Icon(
+                                                          Icons.add,
+                                                          size: 16,
+                                                          color: AppColors.whiteColor,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                )
+                                            ],
+                                          ),
+                                          SizedBox(width: 16),
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Text(
+                                                    _profileData!['profile']
+                                                                ['intro_video'] !=
+                                                            null
+                                                        ? 'Reproducir video'
+                                                        : 'Subir video',
+                                                    style: TextStyle(
+                                                      color: AppColors.blackColor,
+                                                      fontSize:
+                                                          FontSize.scale(context, 14),
+                                                      fontFamily: 'SF-Pro-Text',
+                                                      fontWeight: FontWeight.w400,
+                                                      fontStyle: FontStyle.normal,
+                                                    ),
+                                                  ),
+                                                  if (_profileData!['profile']
+                                                          ['intro_video'] !=
+                                                      null)
+                                                    TextButton(
+                                                      onPressed: () {
+                                                        _pickVideo();
+                                                      },
+                                                      child: Text(
+                                                        'Reemplazar video',
+                                                        style: TextStyle(
+                                                          color: AppColors.primaryGreen,
+                                                          fontSize:
+                                                              FontSize.scale(context, 12),
+                                                          fontFamily: 'SF-Pro-Text',
+                                                          fontWeight: FontWeight.w600,
+                                                          fontStyle: FontStyle.normal,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                ],
+                                              ),
+                                              Transform.translate(
+                                                offset: const Offset(0.0, -10.0),
+                                                child: Text(
+                                                  _profileData!['profile']
                                                               ['intro_video'] !=
                                                           null
-                                                      ? NetworkImage(
-                                                          _profileData![
-                                                                  'profile']
-                                                              ['intro_video'],
-                                                        )
-                                                      : FileImage(
-                                                              _selectedVideo!)
-                                                          as ImageProvider,
-                                                  fit: BoxFit.cover,
-                                                )
-                                              : null,
-                                        ),
-                                        child: _selectedVideo != null
-                                            ? Padding(
-                                                padding: EdgeInsets.all(10.0),
-                                                child: SvgPicture.asset(
-                                                  AppImages.videoPlaceHolder,
-                                                  fit: BoxFit.cover,
+                                                      ? 'Reproducir o reemplazar video'
+                                                      : '',
+                                                  textAlign: TextAlign.center,
+                                                  style: TextStyle(
+                                                    color: AppColors.greyColor,
+                                                    fontSize: FontSize.scale(context, 12),
+                                                    fontFamily: 'SF-Pro-Text',
+                                                    fontWeight: FontWeight.w400,
+                                                    fontStyle: FontStyle.normal,
+                                                  ),
                                                 ),
-                                              )
-                                            : _profileData!['profile']
-                                                        ['intro_video'] !=
-                                                    null
-                                                ? Icon(
-                                                    Icons.play_circle_outline,
-                                                    color: AppColors.whiteColor,
-                                                    size: 24,
-                                                  )
-                                                : null,
-                                      ),
-                                    ),
-                                    if (_selectedVideo == null &&
-                                        _profileData!['profile']
-                                                ['intro_video'] ==
-                                            null)
-                                      Positioned(
-                                        bottom: -8,
-                                        right: -8,
-                                        child: Container(
-                                          padding: EdgeInsets.all(2),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.whiteColor,
-                                            shape: BoxShape.circle,
-                                            border: Border.all(
-                                                color: AppColors.whiteColor,
-                                                width: 2),
-                                          ),
-                                          child: GestureDetector(
-                                            onTap: () {
-                                              _pickVideo();
-                                            },
-                                            child: CircleAvatar(
-                                              radius: 12,
-                                              backgroundColor:
-                                                  AppColors.primaryGreen,
-                                              child: Icon(
-                                                Icons.add,
-                                                size: 16,
-                                                color: AppColors.whiteColor,
                                               ),
-                                            ),
+                                            ],
                                           ),
-                                        ),
-                                      )
-                                  ],
-                                ),
-                                SizedBox(width: 16),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Text(
-                                          _profileData!['profile']
-                                                      ['intro_video'] !=
-                                                  null
-                                              ? 'Reproducir video'
-                                              : 'Subir video',
-                                          style: TextStyle(
-                                            color: AppColors.blackColor,
-                                            fontSize:
-                                                FontSize.scale(context, 14),
-                                            fontFamily: 'SF-Pro-Text',
-                                            fontWeight: FontWeight.w400,
-                                            fontStyle: FontStyle.normal,
-                                          ),
-                                        ),
-                                        if (_profileData!['profile']
-                                                ['intro_video'] !=
-                                            null)
-                                          TextButton(
-                                            onPressed: () {
-                                              _pickVideo();
-                                            },
-                                            child: Text(
-                                              'Reemplazar video',
-                                              style: TextStyle(
-                                                color: AppColors.primaryGreen,
-                                                fontSize:
-                                                    FontSize.scale(context, 12),
-                                                fontFamily: 'SF-Pro-Text',
-                                                fontWeight: FontWeight.w600,
-                                                fontStyle: FontStyle.normal,
-                                              ),
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                    Transform.translate(
-                                      offset: const Offset(0.0, -10.0),
-                                      child: Text(
-                                        _profileData!['profile']
-                                                    ['intro_video'] !=
-                                                null
-                                            ? 'Reproducir o reemplazar video'
-                                            : '',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color: AppColors.greyColor,
-                                          fontSize: FontSize.scale(context, 12),
-                                          fontFamily: 'SF-Pro-Text',
-                                          fontWeight: FontWeight.w400,
-                                          fontStyle: FontStyle.normal,
-                                        ),
+                                        ],
                                       ),
                                     ),
                                   ],
-                                ),
-                              ],
-                            ),
+                                );
+                              }
+                              return SizedBox.shrink(); // No mostrar nada para estudiantes
+                            },
                           ),
                           SizedBox(height: 20),
                           Row(

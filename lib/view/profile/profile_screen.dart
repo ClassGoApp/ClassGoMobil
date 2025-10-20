@@ -443,13 +443,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   color: AppColors.whiteColor.withOpacity(0.8),
                                   size: 16,
                                 ),
-                                onTap: () {
-                                  Navigator.push(
+                                onTap: () async {
+                                  final result = await Navigator.push(
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => EditProfileScreen(),
                                     ),
                                   );
+                                  
+                                  // Mostrar mensaje de éxito si se actualizó el perfil
+                                  if (result == true) {
+                                    showCustomToast(context, 'Perfil actualizado exitosamente', true);
+                                  }
                                 },
                               ),
                             ),

@@ -21,6 +21,7 @@ import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/view/auth/login_screen.dart';
 import 'package:flutter_projects/view/auth/register_screen.dart';
 import 'package:flutter_projects/view/tutor/search_tutors_screen.dart';
+import 'package:flutter_projects/view/onboarding/become_tutor_screen.dart';
 import 'package:flutter_projects/view/tutor/tutor_profile_screen.dart';
 import 'package:flutter_projects/view/tutor/instant_tutoring_screen.dart';
 import 'package:flutter_projects/helpers/slide_up_route.dart';
@@ -1750,6 +1751,33 @@ class _HomeScreenState extends State<HomeScreen>
                             });
                           },
                         ),
+                        
+                        // Divider antes de la opción de tutor
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Divider(
+                            color: Colors.white.withOpacity(0.1),
+                            thickness: 1,
+                          ),
+                        ),
+                        
+                        // Opción para convertirse en tutor
+                        _buildMenuItem(
+                          icon: Icons.monetization_on,
+                          title: 'Conviértete en tutor',
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => BecomeTutorScreen(),
+                              ),
+                            );
+                            setState(() {
+                              _isCustomDrawerOpen = false;
+                            });
+                          },
+                          isHighlighted: true,
+                        ),
 
                         // Solo mostrar el botón de salir si el usuario está logueado
                         Consumer<AuthProvider>(
@@ -2400,9 +2428,25 @@ class _HomeScreenState extends State<HomeScreen>
     required IconData icon,
     required String title,
     required VoidCallback onTap,
+    bool isHighlighted = false,
   }) {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      decoration: isHighlighted
+          ? BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.orangeColor.withOpacity(0.15),
+                  AppColors.orangeprimary.withOpacity(0.15),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: AppColors.orangeColor.withOpacity(0.3),
+                width: 1,
+              ),
+            )
+          : null,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -2415,12 +2459,14 @@ class _HomeScreenState extends State<HomeScreen>
                 Container(
                   padding: EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+                    color: isHighlighted
+                        ? AppColors.orangeColor.withOpacity(0.2)
+                        : Colors.white.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     icon,
-                    color: Colors.white,
+                    color: isHighlighted ? AppColors.orangeColor : Colors.white,
                     size: 18,
                   ),
                 ),
@@ -2429,12 +2475,18 @@ class _HomeScreenState extends State<HomeScreen>
                   child: Text(
                     title,
                     style: TextStyle(
-                      color: Colors.white,
+                      color: isHighlighted ? AppColors.orangeColor : Colors.white,
                       fontSize: 14,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: isHighlighted ? FontWeight.w600 : FontWeight.w500,
                     ),
                   ),
                 ),
+                if (isHighlighted)
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    color: AppColors.orangeColor,
+                    size: 14,
+                  ),
               ],
             ),
           ),

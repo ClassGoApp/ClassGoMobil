@@ -2637,8 +2637,17 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
                             return;
                           }
                           
-                          // Si se actualizó la imagen, recargar la imagen del perfil
+                          // Si se actualizó el perfil, mostrar mensaje de éxito y recargar la imagen
                           if (result == true) {
+                            // Mostrar mensaje de éxito
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Perfil actualizado exitosamente'),
+                                backgroundColor: AppColors.primaryGreen,
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                            
                             // Obtener la imagen actualizada del AuthProvider primero
                             final authProvider = Provider.of<AuthProvider>(context, listen: false);
                             

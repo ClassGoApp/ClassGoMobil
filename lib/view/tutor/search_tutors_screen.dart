@@ -2432,10 +2432,11 @@ class BookingModalState extends State<BookingModal> {
                 left: 0,
                 right: 0,
                 bottom: 0,
-                child: Container(
-                  color: AppColors.darkBlue,
-                  padding: EdgeInsets.fromLTRB(18, 10, 18, 18),
-                  child: Column(
+                child: SafeArea(
+                  child: Container(
+                    color: AppColors.darkBlue,
+                    padding: EdgeInsets.fromLTRB(18, 10, 18, 18),
+                    child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (selectedDay != null && selectedHour != null) ...[
@@ -2565,6 +2566,7 @@ class BookingModalState extends State<BookingModal> {
                         ),
                       ),
                     ],
+                    ),
                   ),
                 ),
               ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/booking_provider.dart';
+import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/home/home_screen.dart';
 
@@ -15,6 +16,15 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> {
   DateTimeRange? _selectedRange;
   bool _orderDescending =
       true; // true: recientes primero, false: antiguas primero
+
+  @override
+  void initState() {
+    super.initState();
+    // Cargar tutorías automáticamente como en el calendario
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final bookingProvider = Provider.of<BookingProvider>(context, listen: false);
+    bookingProvider.loadBookings(authProvider);
+  }
 
   final List<Map<String, String>> _statusOptions = [
     {'label': 'Todas', 'value': 'todas'},
@@ -138,10 +148,9 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> {
                 icon: Icon(Icons.refresh, color: Colors.white),
                 onPressed: () {
                   final authProvider =
-                      Provider.of<BookingProvider>(context, listen: false);
+                      Provider.of<AuthProvider>(context, listen: false);
                   bookingProvider.clear();
-                  bookingProvider
-                      .loadBookings(Provider.of(context, listen: false));
+                  bookingProvider.loadBookings(authProvider);
                 },
               ),
             ],

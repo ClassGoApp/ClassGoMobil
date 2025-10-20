@@ -11,6 +11,7 @@ import '../../provider/auth_provider.dart';
 import '../../styles/app_styles.dart';
 import '../../base_components/custom_snack_bar.dart';
 import '../../api_structure/config/app_config.dart';
+import '../../api_structure/api_service.dart';
 import '../../services/google_calendar_service.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -37,6 +38,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late VideoPlayerController _videoController;
   final DefaultCacheManager _cacheManager = DefaultCacheManager();
   
+  // Variable para controlar el overlay del toast
+  OverlayEntry? _toastOverlay;
+  
   // Para Google Calendar
   final GoogleCalendarService _calendarService = GoogleCalendarService();
   
@@ -62,6 +66,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _phoneController.dispose();
     _descriptionController.dispose();
     
+    // Limpiar overlay del toast si existe
+    if (_toastOverlay != null && _toastOverlay!.mounted) {
+      try {
+        _toastOverlay!.remove();
+      } catch (e) {
+        print('Error al limpiar toast overlay: $e');
+      }
+      _toastOverlay = null;
+    }
+    
     // Dispose del video controller
     if (_isVideoInitialized) {
       try {
@@ -77,27 +91,49 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   
   void _loadCurrentProfile() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final token = authProvider.token;
+    final userId = authProvider.userId;
     
-    if (authProvider.userData == null) {
+    if (token == null || userId == null) {
+      print('DEBUG - EditProfile: Token o userId nulos');
       return;
     }
     
-    if (authProvider.userData!['user'] == null) {
-      return;
+    try {
+      print('DEBUG - EditProfile: Cargando perfil completo desde API');
+      // Usar la API completa de perfil en lugar de userData limitado
+      final response = await getProfile(token, userId);
+      print('DEBUG - EditProfile: Respuesta de API: $response');
+      
+      if (response['data'] != null && response['data']['profile'] != null) {
+        final profile = response['data']['profile'];
+        
+        _firstNameController.text = profile['first_name'] ?? '';
+        _lastNameController.text = profile['last_name'] ?? '';
+        _phoneController.text = profile['phone_number'] ?? '';
+        _descriptionController.text = profile['description'] ?? '';
+        
+        print('DEBUG - EditProfile: Campos poblados - Nombre: ${_firstNameController.text}, Apellido: ${_lastNameController.text}');
+        
+        // Cargar imagen de perfil usando EXACTAMENTE la misma API que el dashboard
+        await _loadProfileImageFromDashboard();
+      } else {
+        print('DEBUG - EditProfile: Profile data es null');
+      }
+    } catch (e) {
+      print('DEBUG - EditProfile: Error cargando perfil: $e');
+      // Fallback a userData si la API falla
+      if (authProvider.userData != null && authProvider.userData!['user'] != null) {
+        final profile = authProvider.userData!['user']['profile'];
+        if (profile != null) {
+          _firstNameController.text = profile['first_name'] ?? '';
+          _lastNameController.text = profile['last_name'] ?? '';
+          _phoneController.text = profile['phone_number'] ?? '';
+          _descriptionController.text = profile['description'] ?? '';
+          print('DEBUG - EditProfile: Usando fallback userData');
+        }
+      }
     }
-    
-    final profile = authProvider.userData!['user']['profile'];
-    if (profile == null) {
-      return;
-    }
-    
-    _firstNameController.text = profile['first_name'] ?? '';
-    _lastNameController.text = profile['last_name'] ?? '';
-    _phoneController.text = profile['phone_number'] ?? '';
-    _descriptionController.text = profile['description'] ?? '';
-    
-    // Cargar imagen de perfil usando EXACTAMENTE la misma API que el dashboard
-    await _loadProfileImageFromDashboard();
   }
   
   Future<void> _loadProfileImageFromDashboard() async {
@@ -717,11 +753,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         // Actualizar el perfil localmente
         await authProvider.updateUserProfiles(body);
         
-        // Mostrar mensaje de éxito
-        _showCustomToast('Perfil actualizado exitosamente', true);
-        
         // Regresar a la pantalla anterior y forzar actualización
-        Navigator.pop(context, true); // Pasar true para indicar que se actualizó la imagen
+        Navigator.pop(context, true); // Pasar true para indicar que se actualizó el perfil
         
         // Forzar actualización del provider para asegurar que la UI se actualice
         Future.delayed(Duration(milliseconds: 100), () {
@@ -744,7 +777,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     // Verificar que el contexto esté montado antes de mostrar el toast
     if (!mounted) return;
     
-    final overlayEntry = OverlayEntry(
+    // Limpiar toast anterior si existe
+    if (_toastOverlay != null && _toastOverlay!.mounted) {
+      try {
+        _toastOverlay!.remove();
+      } catch (e) {
+        print('Error al limpiar toast anterior: $e');
+      }
+    }
+    
+    _toastOverlay = OverlayEntry(
       builder: (context) => Positioned(
         top: 100.0,
         left: 16.0,
@@ -757,17 +799,27 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
 
     try {
-    Overlay.of(context).insert(overlayEntry);
-    Future.delayed(const Duration(seconds: 3), () {
-        if (mounted && overlayEntry.mounted) {
-      overlayEntry.remove();
+      Overlay.of(context).insert(_toastOverlay!);
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted && _toastOverlay != null && _toastOverlay!.mounted) {
+          try {
+            _toastOverlay!.remove();
+            _toastOverlay = null;
+          } catch (e) {
+            print('Error al remover toast: $e');
+          }
         }
       });
     } catch (e) {
       // Si hay un error al insertar el overlay, limpiarlo
-      if (overlayEntry.mounted) {
-        overlayEntry.remove();
+      if (_toastOverlay != null && _toastOverlay!.mounted) {
+        try {
+          _toastOverlay!.remove();
+        } catch (e) {
+          print('Error al limpiar toast en catch: $e');
+        }
       }
+      _toastOverlay = null;
     }
   }
 
@@ -848,7 +900,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
-             body: GestureDetector(
+      body: SafeArea(
+        child: GestureDetector(
          onPanUpdate: (details) {
            // Detectar deslizamiento hacia abajo
            if (details.delta.dy > 0 && details.delta.dy > 15) {
@@ -1084,99 +1137,102 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               
                                                  SizedBox(height: 20),
                          
-                         // Sección del Video de Introducción
-                         Container(
-                           width: double.infinity,
-                           padding: EdgeInsets.all(20),
-                           decoration: BoxDecoration(
-                             gradient: LinearGradient(
-                               colors: [AppColors.darkBlue.withOpacity(0.9), AppColors.darkBlue.withOpacity(0.7)],
-                               begin: Alignment.topLeft,
-                               end: Alignment.bottomRight,
-                             ),
-                             borderRadius: BorderRadius.circular(16),
-                             border: Border.all(
-                               color: AppColors.lightBlueColor.withOpacity(0.4),
-                               width: 1.5,
-                             ),
-                             boxShadow: [
-                               BoxShadow(
-                                 color: Colors.black.withOpacity(0.2),
-                                 blurRadius: 15,
-                                 offset: Offset(0, 8),
-                               ),
-                             ],
-                           ),
-                           child: Column(
-                             crossAxisAlignment: CrossAxisAlignment.start,
-                             children: [
-                               Row(
-                                 children: [
-                                   Container(
-                                     padding: EdgeInsets.all(8),
-                                     decoration: BoxDecoration(
-                                       gradient: LinearGradient(
-                                         colors: [AppColors.lightBlueColor, AppColors.primaryGreen],
-                                       ),
-                                       borderRadius: BorderRadius.circular(12),
-                                     ),
-                                     child: Icon(
-                                       Icons.videocam,
-                                       color: Colors.white,
-                                       size: 20,
-                                     ),
+                         // Sección del Video de Introducción - Solo para tutores
+                         Consumer<AuthProvider>(
+                           builder: (context, authProvider, child) {
+                             if (authProvider.isTutor) {
+                               return Container(
+                                 width: double.infinity,
+                                 padding: EdgeInsets.all(20),
+                                 decoration: BoxDecoration(
+                                   gradient: LinearGradient(
+                                     colors: [AppColors.darkBlue.withOpacity(0.9), AppColors.darkBlue.withOpacity(0.7)],
+                                     begin: Alignment.topLeft,
+                                     end: Alignment.bottomRight,
                                    ),
-                                   SizedBox(width: 12),
-                                   Expanded(
-                                     child: Column(
-                                       crossAxisAlignment: CrossAxisAlignment.start,
+                                   borderRadius: BorderRadius.circular(16),
+                                   border: Border.all(
+                                     color: AppColors.lightBlueColor.withOpacity(0.4),
+                                     width: 1.5,
+                                   ),
+                                   boxShadow: [
+                                     BoxShadow(
+                                       color: Colors.black.withOpacity(0.2),
+                                       blurRadius: 15,
+                                       offset: Offset(0, 8),
+                                     ),
+                                   ],
+                                 ),
+                                 child: Column(
+                                   crossAxisAlignment: CrossAxisAlignment.start,
+                                   children: [
+                                     Row(
                                        children: [
-                                         Text(
-                                           'Video de Introducción',
-                                           style: TextStyle(
+                                         Container(
+                                           padding: EdgeInsets.all(8),
+                                           decoration: BoxDecoration(
+                                             gradient: LinearGradient(
+                                               colors: [AppColors.lightBlueColor, AppColors.primaryGreen],
+                                             ),
+                                             borderRadius: BorderRadius.circular(12),
+                                           ),
+                                           child: Icon(
+                                             Icons.videocam,
                                              color: Colors.white,
-                                             fontSize: 18,
-                                             fontWeight: FontWeight.w600,
+                                             size: 20,
                                            ),
                                          ),
-                                         Text(
-                                           'Muestra tu personalidad a los estudiantes',
-                                           style: TextStyle(
-                                             color: Colors.white.withOpacity(0.8),
-                                             fontSize: 14,
+                                         SizedBox(width: 12),
+                                         Expanded(
+                                           child: Column(
+                                             crossAxisAlignment: CrossAxisAlignment.start,
+                                             children: [
+                                               Text(
+                                                 'Video de Introducción',
+                                                 style: TextStyle(
+                                                   color: Colors.white,
+                                                   fontSize: 18,
+                                                   fontWeight: FontWeight.w600,
+                                                 ),
+                                               ),
+                                               Text(
+                                                 'Muestra tu personalidad a los estudiantes',
+                                                 style: TextStyle(
+                                                   color: Colors.white.withOpacity(0.8),
+                                                   fontSize: 14,
+                                                 ),
+                                               ),
+                                             ],
                                            ),
                                          ),
                                        ],
                                      ),
-                                   ),
-                                 ],
-                               ),
-                               SizedBox(height: 16),
-                               
-                               // Widget del Video
-                               if (_profileVideoUrl != null && _profileVideoUrl!.isNotEmpty)
-                                 _buildVideoPlayer()
-                               else
-                                 _buildVideoPlaceholder(),
-                               
-                               SizedBox(height: 16),
-                               
-                               // Botón para cambiar video
-                               GestureDetector(
-                                 onTap: _isVideoLoading ? null : _selectVideo,
-                                 child: Container(
-                                   width: double.infinity,
-                                   padding: EdgeInsets.symmetric(vertical: 14),
-                                   decoration: BoxDecoration(
-                                     color: AppColors.lightBlueColor.withOpacity(0.2),
-                                     borderRadius: BorderRadius.circular(12),
-                                     border: Border.all(
-                                       color: AppColors.lightBlueColor.withOpacity(0.4),
-                                       width: 1,
-                                     ),
-                                   ),
-                                   child: Row(
-                                     mainAxisAlignment: MainAxisAlignment.center,
+                                     SizedBox(height: 16),
+                                     
+                                     // Widget del Video
+                                     if (_profileVideoUrl != null && _profileVideoUrl!.isNotEmpty)
+                                       _buildVideoPlayer()
+                                     else
+                                       _buildVideoPlaceholder(),
+                                     
+                                     SizedBox(height: 16),
+                                     
+                                     // Botón para cambiar video
+                                     GestureDetector(
+                                       onTap: _isVideoLoading ? null : _selectVideo,
+                                       child: Container(
+                                         width: double.infinity,
+                                         padding: EdgeInsets.symmetric(vertical: 14),
+                                         decoration: BoxDecoration(
+                                           color: AppColors.lightBlueColor.withOpacity(0.2),
+                                           borderRadius: BorderRadius.circular(12),
+                                           border: Border.all(
+                                             color: AppColors.lightBlueColor.withOpacity(0.4),
+                                             width: 1,
+                                           ),
+                                         ),
+                                         child: Row(
+                                           mainAxisAlignment: MainAxisAlignment.center,
                                      children: [
                                        if (_isVideoLoading)
                                          SizedBox(
@@ -1208,6 +1264,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                ),
                              ],
                            ),
+                         );
+                             }
+                             return SizedBox.shrink(); // No mostrar nada para estudiantes
+                           },
                          ),
                          
                          SizedBox(height: 20),
@@ -1349,6 +1409,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                ),
             ],
           ),
+        ),
         ),
       ),
     );
