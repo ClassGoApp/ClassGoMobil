@@ -18,6 +18,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_projects/services/google_calendar_service.dart';
+import 'package:flutter_projects/view/components/qr_payment_widget.dart';
 
 
 // --- Widget reutilizable para tarjetas de tiempo libre ---
@@ -565,6 +566,10 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
   double _sliderDragOffset = 0.0;
   bool _isSliderDragging = false;
 
+  // Variables para configuración de precio
+  bool _isLoadingPrice = false;
+  final TextEditingController _priceController = TextEditingController();
+
   // Variables para validación de conflictos de horarios
   String? _timeConflictError;
   bool _hasTimeConflict = false;
@@ -1040,6 +1045,98 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
     }
   }
 
+  Future<void> _saveTutorPrice() async {
+    if (_priceController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Por favor ingresa un precio válido'),
+          backgroundColor: AppColors.redColor,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    final priceText = _priceController.text.trim();
+    final price = double.tryParse(priceText);
+    
+    if (price == null || price <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Por favor ingresa un precio válido mayor a 0'),
+          backgroundColor: AppColors.redColor,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    try {
+      setState(() {
+        _isLoadingPrice = true;
+      });
+
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.token == null || authProvider.userId == null) {
+        print('Error: Token o userId no disponibles');
+        return;
+      }
+
+      print('Guardando precio del tutor: $price');
+      
+      final response = await updateTutorProfilePrice(
+        authProvider.token!,
+        authProvider.userId!,
+        price,
+      );
+
+      if (response['success'] == true) {
+        print('Precio guardado exitosamente: ${response['message']}');
+        
+        // Actualizar el precio en el AuthProvider
+        authProvider.updateTutorPrice(price.toString());
+        
+        // Limpiar el campo de texto
+        _priceController.clear();
+        
+        // Mostrar mensaje de éxito
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('¡Precio guardado exitosamente!'),
+            backgroundColor: AppColors.primaryGreen,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      } else {
+        print('Error al guardar precio: ${response['message']}');
+        // Mostrar mensaje de error
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${response['message']}'),
+            backgroundColor: AppColors.redColor,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error al guardar precio: $e');
+      // Mostrar mensaje de error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error de conexión. Intenta nuevamente.'),
+          backgroundColor: AppColors.redColor,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingPrice = false;
+        });
+      }
+    }
+  }
+
   // Método para cargar las tutorías del tutor
   Future<void> _fetchTutorBookings() async {
     if (!mounted) return;
@@ -1305,6 +1402,7 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
   void dispose() {
     _authProvider?.removeListener(_checkAndFetchBookings);
     WidgetsBinding.instance.removeObserver(this);
+    _priceController.dispose();
     super.dispose();
   }
 
@@ -2270,6 +2368,13 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
                   _buildCalendarConnectionSection(authProvider),
                   SizedBox(height: 16),
 
+                  // Sección de precio del tutor
+                  if (authProvider.tutorPrice == null || authProvider.tutorPrice!.isEmpty)
+                    _buildPriceConfigurationSection(authProvider)
+                  else
+                    _buildCompactPriceSection(authProvider),
+                  SizedBox(height: 16),
+
                   // Botón deslizante de disponibilidad
                   _buildAvailabilitySlider(),
                   SizedBox(height: 12),
@@ -2289,6 +2394,15 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
 
                   // Tarjeta de acciones rápidas
                   _buildQuickActionsCard(),
+                  SizedBox(height: 24),
+
+                  // Sección de QR de pago
+                  QrPaymentWidget(
+                    userId: authProvider.userId ?? 0,
+                    onQrUpdated: () {
+                      // Opcional: refrescar datos si es necesario
+                    },
+                  ),
                   SizedBox(height: 24),
 
                   // Sección de tutorías del tutor
@@ -2311,6 +2425,321 @@ class _DashboardTutorState extends State<DashboardTutor> with WidgetsBindingObse
   }
 
   // --- Widgets auxiliares ---
+
+  Widget _buildPriceConfigurationSection(AuthProvider authProvider) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.primaryGreen.withOpacity(0.1),
+            AppColors.orangeprimary.withOpacity(0.1),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.primaryGreen.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryGreen.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(
+                  Icons.attach_money,
+                  color: AppColors.primaryGreen,
+                  size: 20,
+                ),
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Configura tu precio',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Precio por sesión de 20 minutos',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12),
+          TextField(
+            controller: _priceController,
+            keyboardType: TextInputType.numberWithOptions(decimal: true),
+            style: TextStyle(color: Colors.white, fontSize: 14),
+            decoration: InputDecoration(
+              hintText: 'Ej: 25.50',
+              hintStyle: TextStyle(color: Colors.white60),
+              prefixText: 'Bs ',
+              prefixStyle: TextStyle(
+                color: AppColors.primaryGreen,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+              filled: true,
+              fillColor: Colors.white.withOpacity(0.1),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: AppColors.primaryGreen),
+              ),
+              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            ),
+          ),
+          SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _isLoadingPrice ? null : _saveTutorPrice,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryGreen,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: EdgeInsets.symmetric(vertical: 12),
+              ),
+              child: _isLoadingPrice
+                  ? SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : Text(
+                      'Guardar Precio',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Sección compacta de precio cuando ya está configurado
+  Widget _buildCompactPriceSection(AuthProvider authProvider) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.15),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.25),
+                width: 1,
+              ),
+            ),
+            child: Icon(
+              Icons.attach_money,
+              color: Colors.white,
+              size: 18,
+            ),
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Precio por sesión',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Bs ${authProvider.tutorPrice}',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          GestureDetector(
+            onTap: () => _showEditPriceModal(authProvider),
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.edit,
+                    color: Colors.white,
+                    size: 16,
+                  ),
+                  SizedBox(width: 6),
+                  Text(
+                    'Editar',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Modal para editar precio
+  void _showEditPriceModal(AuthProvider authProvider) {
+    _priceController.text = authProvider.tutorPrice ?? '';
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: AppColors.darkBlue,
+          title: Text(
+            'Editar Precio',
+            style: TextStyle(color: Colors.white),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Precio por sesión de 20 minutos',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 14,
+                ),
+              ),
+              SizedBox(height: 16),
+              TextField(
+                controller: _priceController,
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                style: TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: 'Precio (Bs)',
+                  labelStyle: TextStyle(color: Colors.white70),
+                  hintText: 'Ej: 25.50',
+                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                  prefixText: 'Bs ',
+                  prefixStyle: TextStyle(
+                    color: AppColors.primaryGreen,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.1),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: AppColors.primaryGreen),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'Cancelar',
+                style: TextStyle(color: Colors.white70),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _saveTutorPrice();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryGreen,
+              ),
+              child: Text(
+                'Guardar',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   // Barra deslizante con diseño consistente
   Widget _buildAvailabilitySlider() {

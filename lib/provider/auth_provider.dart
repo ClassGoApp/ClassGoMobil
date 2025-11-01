@@ -91,6 +91,16 @@ class AuthProvider with ChangeNotifier {
     return null;
   }
 
+  /// Obtiene el precio del tutor
+  String? get tutorPrice {
+    if (_userData != null &&
+        _userData!.containsKey('user') &&
+        _userData!['user'].containsKey('price')) {
+      return _userData!['user']['price'];
+    }
+    return null;
+  }
+
   /// Obtiene el nombre completo del usuario
   String get userName {
     print('DEBUG - userName llamado');
@@ -156,6 +166,13 @@ class AuthProvider with ChangeNotifier {
   void updateBalance(double newBalance) {
     if (userData != null && userData!['user'] != null) {
       userData!['user']['balance'] = newBalance;
+      notifyListeners();
+    }
+  }
+
+  void updateTutorPrice(String newPrice) {
+    if (userData != null && userData!['user'] != null) {
+      userData!['user']['price'] = newPrice;
       notifyListeners();
     }
   }
@@ -319,10 +336,12 @@ class AuthProvider with ChangeNotifier {
             _userData!['user']['profile_image_db_path'] = profileData['profile_image_db_path'];
             _userData!['user']['calendar_connected'] = profileData['calendar_connected'];
             _userData!['user']['calendar_info'] = profileData['calendar_info'];
+            _userData!['user']['price'] = profileData['price'];
             
             print('DEBUG - User profile updated with complete data');
             print('DEBUG - Updated name: ${profileData['name']}');
             print('DEBUG - Updated email: ${profileData['email']}');
+            print('DEBUG - Updated price: ${profileData['price']}');
             print('DEBUG - Calendar connected: ${profileData['calendar_connected']}');
             
             notifyListeners();

@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "934911540456",
-    "project_id": "classgo-fec0d",
-    "storage_bucket": "classgo-fec0d.firebasestorage.app"
+    "project_number": "932792843009",
+    "project_id": "classgo-79533",
+    "storage_bucket": "classgo-79533.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:934911540456:android:306f0e768c07edede45d5d",
+        "mobilesdk_app_id": "1:932792843009:android:c65f95b660b7d703363900",
         "android_client_info": {
           "package_name": "com.neurasoft.classgo"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDs5zKv82dGel5tUUIWE7MsLLyEBCKNW1g"
+          "current_key": "AIzaSyAVpxtoCycnlrNRZxYdl2bdHNYI2IQ6Br4"
         }
       ],
       "services": {

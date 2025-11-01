@@ -62,6 +62,13 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
   // Datos del pago (actualizados)
   bool _isPaymentCompleted = false;
 
+  // Variables para cupones
+  List<Map<String, dynamic>> _availableCoupons = [];
+  Map<String, dynamic>? _selectedCoupon;
+  double _originalAmount = 15.0; // Precio original de la tutoría (fallback)
+  double _finalAmount = 15.0; // Precio final después del descuento
+  bool _isLoadingPrice = true; // Para mostrar loading mientras se obtiene el precio
+
   @override
   void initState() {
     super.initState();
@@ -107,6 +114,12 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
     // Iniciar animaciones
     _slideAnimationController.forward();
     _qrAnimationController.forward();
+
+    // Cargar cupones del usuario
+    _loadUserCoupons();
+    
+    // Obtener el precio real del tutor
+    _loadTutorPrice();
   }
 
   @override
@@ -185,6 +198,152 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
         );
       },
     );
+  }
+
+  // Función para obtener el precio real del tutor
+  Future<void> _loadTutorPrice() async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final token = authProvider.token;
+
+      if (token == null) {
+        print('❌ No hay token disponible para obtener el precio del tutor');
+        setState(() {
+          _isLoadingPrice = false;
+        });
+        return;
+      }
+
+      print('🔍 Obteniendo precio del tutor ID: ${widget.tutorId}');
+      
+      final response = await getUserProfileImage(token, widget.tutorId);
+      
+      if (response['success'] == true && response['data'] != null) {
+        final profileData = response['data'];
+        final tutorPrice = profileData['price'];
+        
+        print('💰 Precio obtenido del perfil: $tutorPrice');
+        
+        if (tutorPrice != null) {
+          final price = double.tryParse(tutorPrice.toString());
+          if (price != null && price > 0) {
+            setState(() {
+              _originalAmount = price;
+              _finalAmount = price;
+              _isLoadingPrice = false;
+            });
+            print('✅ Precio actualizado: $_originalAmount Bs');
+            return;
+          }
+        }
+      }
+      
+      print('⚠️ No se pudo obtener el precio del tutor, usando fallback: $_originalAmount');
+      setState(() {
+        _isLoadingPrice = false;
+      });
+      
+    } catch (e) {
+      print('❌ Error al obtener precio del tutor: $e');
+      setState(() {
+        _isLoadingPrice = false;
+      });
+    }
+  }
+
+  Future<void> _loadUserCoupons() async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final token = authProvider.token;
+      final userData = authProvider.userData;
+
+      if (token == null || userData == null) {
+        return;
+      }
+
+      final userId = userData['user']?['id'];
+      if (userId == null) {
+        return;
+      }
+
+      final response = await getUserCoupons(token, userId);
+      
+      if (response['status'] == 200 && response['data'] != null) {
+        final couponsData = response['data']['coupons'] as List<dynamic>;
+        
+        // Mostrar todos los cupones del usuario, incluso si están inactivos
+        // para que el usuario pueda ver qué cupones tiene
+        final allUserCoupons = couponsData.where((coupon) {
+          final userCoupon = coupon['user_coupon'];
+          final statusInfo = coupon['status_info'];
+          
+          // Mostrar cupones que:
+          // 1. Están activos para el usuario Y
+          // 2. Tienen cantidad > 0 Y
+          // 3. No están expirados
+          return userCoupon['estado'] == 'activo' && 
+                 userCoupon['cantidad'] > 0 && 
+                 !statusInfo['is_expired'];
+        }).toList();
+
+        setState(() {
+          _availableCoupons = allUserCoupons.cast<Map<String, dynamic>>();
+        });
+
+        print('🎫 Total cupones del usuario: ${couponsData.length}');
+        print('🎫 Cupones disponibles para mostrar: ${_availableCoupons.length}');
+        
+        // Debug: mostrar detalles de cada cupón
+        for (int i = 0; i < _availableCoupons.length; i++) {
+          final coupon = _availableCoupons[i];
+          final statusInfo = coupon['status_info'];
+          final couponDetails = coupon['coupon_details'];
+          print('🎫 Cupón $i: ${couponDetails['nombre']} - can_use: ${statusInfo['can_use']} - coupon_active: ${statusInfo['coupon_active']}');
+        }
+      }
+    } catch (e) {
+      print('Error loading coupons: $e');
+    }
+  }
+
+  void _selectCoupon(Map<String, dynamic>? coupon) {
+    if (coupon != null) {
+      final statusInfo = coupon['status_info'];
+      
+      // Verificar si el cupón se puede usar
+      if (statusInfo['can_use'] == false) {
+        // Mostrar mensaje de que el cupón no se puede usar
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Este cupón no está disponible en este momento'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 3),
+          ),
+        );
+        return; // No seleccionar el cupón
+      }
+    }
+    
+    setState(() {
+      _selectedCoupon = coupon;
+      _calculateFinalAmount();
+    });
+  }
+
+  void _calculateFinalAmount() {
+    if (_selectedCoupon == null) {
+      _finalAmount = _originalAmount;
+      return;
+    }
+
+    final discountPercentage = double.tryParse(_selectedCoupon!['coupon_details']['descuento'].toString()) ?? 0.0;
+    final discountAmount = (_originalAmount * discountPercentage) / 100.0;
+    _finalAmount = _originalAmount - discountAmount;
+
+    // Asegurar que el precio final no sea negativo
+    if (_finalAmount < 0) {
+      _finalAmount = 0.0;
+    }
   }
 
   Future<void> _downloadQR() async {
@@ -436,7 +595,7 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
         'user_subject_slot_id': null,
         'start_time': startTime.toIso8601String(),
         'end_time': endTime.toIso8601String(),
-        'session_fee': 15.0,
+        'session_fee': _finalAmount, // Usar el precio final después del descuento
         'booked_at': now.toIso8601String(),
         'calendar_event_id': calendarEventId,
         'meeting_link': '',
@@ -481,6 +640,34 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
           _isPaymentCompleted = false;
         });
         return;
+      }
+
+      // 3. Si se usó un cupón, descontar la cantidad
+      if (_selectedCoupon != null) {
+        try {
+          final userCoupon = _selectedCoupon!['user_coupon'];
+          final currentQuantity = userCoupon['cantidad'];
+          final newQuantity = currentQuantity - 1;
+
+          print('🎫 Descontando cupón: ${_selectedCoupon!['coupon_details']['nombre']}');
+          print('🎫 Cantidad actual: $currentQuantity, nueva cantidad: $newQuantity');
+
+          final updateResponse = await updateCouponQuantity(
+            token,
+            studentId,
+            userCoupon['coupon_id'],
+            newQuantity,
+          );
+
+          if (updateResponse['status'] == 200) {
+            print('🎫 Cupón actualizado exitosamente');
+          } else {
+            print('🎫 Error al actualizar cupón: ${updateResponse['message']}');
+          }
+        } catch (e) {
+          print('🎫 Error al descontar cupón: $e');
+          // No mostrar error al usuario, ya que la tutoría se creó exitosamente
+        }
       }
 
       // ✅ CAMBIO: Mensaje dinámico según el tipo de tutoría
@@ -609,22 +796,233 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
                                 ),
                                 child: Column(
                                   children: [
+                                    // Precio original
                                     Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Text('Monto a pagar:',
+                                        Text('Precio original:',
                                             style: TextStyle(
                                                 color: Colors.white70,
                                                 fontSize: 16)),
-                                        Text('15 Bs',
-                                            style: TextStyle(
-                                                color: AppColors.lightBlueColor,
-                                                fontSize: 24,
-                                                fontWeight: FontWeight.bold)),
+                                        _isLoadingPrice
+                                            ? SizedBox(
+                                                width: 20,
+                                                height: 20,
+                                                child: CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
+                                                ),
+                                              )
+                                            : Text('${_originalAmount.toStringAsFixed(0)} Bs',
+                                                style: TextStyle(
+                                                    color: Colors.white70,
+                                                    fontSize: 16,
+                                                    decoration: _selectedCoupon != null 
+                                                        ? TextDecoration.lineThrough 
+                                                        : null)),
                                       ],
                                     ),
                                     SizedBox(height: 12),
+                                    
+                                    // Selector de cupones
+                                    if (_availableCoupons.isNotEmpty) ...[
+                                      Row(
+                                        children: [
+                                          Icon(Icons.local_offer, 
+                                               color: AppColors.primaryGreen, 
+                                               size: 20),
+                                          SizedBox(width: 8),
+                                          Text('Tus cupones:',
+                                              style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w600)),
+                                        ],
+                                      ),
+                                      SizedBox(height: 8),
+                                      // Verificar si hay cupones disponibles
+                                      if (_availableCoupons.any((coupon) => coupon['status_info']['can_use'] == true)) ...[
+                                        Text(
+                                          'Selecciona un cupón para aplicar descuento:',
+                                          style: TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ] else ...[
+                                        Container(
+                                          padding: EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: Colors.orange.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(
+                                              color: Colors.orange.withOpacity(0.3),
+                                            ),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.info_outline,
+                                                color: Colors.orange,
+                                                size: 16,
+                                              ),
+                                              SizedBox(width: 8),
+                                              Expanded(
+                                                child: Text(
+                                                  'Tus cupones no están disponibles en este momento',
+                                                  style: TextStyle(
+                                                    color: Colors.orange,
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        SizedBox(height: 8),
+                                      ],
+                                      SizedBox(height: 12),
+                                      Container(
+                                        height: 36,
+                                        child: ListView.builder(
+                                          scrollDirection: Axis.horizontal,
+                                          itemCount: _availableCoupons.length + 1, // +1 para "Sin cupón"
+                                          itemBuilder: (context, index) {
+                                            if (index == 0) {
+                                              // Opción "Sin cupón"
+                                              final isSelected = _selectedCoupon == null;
+                                              return GestureDetector(
+                                                onTap: () => _selectCoupon(null),
+                                                child: Container(
+                                                  margin: EdgeInsets.only(right: 8),
+                                                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                                  decoration: BoxDecoration(
+                                                    color: isSelected 
+                                                        ? AppColors.primaryGreen 
+                                                        : Colors.white.withOpacity(0.1),
+                                                    borderRadius: BorderRadius.circular(18),
+                                                    border: Border.all(
+                                                      color: isSelected 
+                                                          ? AppColors.primaryGreen 
+                                                          : Colors.white.withOpacity(0.3),
+                                                    ),
+                                                  ),
+                                                  child: Center(
+                                                    child: Text(
+                                                      'Sin cupón',
+                                                      style: TextStyle(
+                                                        color: isSelected ? Colors.white : Colors.white70,
+                                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                                        fontSize: 11,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                            
+                                            final coupon = _availableCoupons[index - 1];
+                                            final isSelected = _selectedCoupon == coupon;
+                                            final discountPercentage = double.tryParse(coupon['coupon_details']['descuento'].toString()) ?? 0.0;
+                                            final statusInfo = coupon['status_info'];
+                                            final canUse = statusInfo['can_use'] == true;
+                                            
+                                            return GestureDetector(
+                                              onTap: () => _selectCoupon(coupon),
+                                              child: Container(
+                                                margin: EdgeInsets.only(right: 8),
+                                                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                                decoration: BoxDecoration(
+                                                  color: isSelected 
+                                                      ? AppColors.primaryGreen 
+                                                      : canUse 
+                                                          ? Colors.white.withOpacity(0.1)
+                                                          : Colors.grey.withOpacity(0.2),
+                                                  borderRadius: BorderRadius.circular(16),
+                                                  border: Border.all(
+                                                    color: isSelected 
+                                                        ? AppColors.primaryGreen 
+                                                        : canUse 
+                                                            ? Colors.white.withOpacity(0.3)
+                                                            : Colors.grey.withOpacity(0.5),
+                                                  ),
+                                                ),
+                                                child: Center(
+                                                  child: Row(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      Text(
+                                                        '${discountPercentage.toStringAsFixed(0)}% OFF',
+                                                        style: TextStyle(
+                                                          color: isSelected 
+                                                              ? Colors.white 
+                                                              : canUse 
+                                                                  ? Colors.white70 
+                                                                  : Colors.grey,
+                                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                                          fontSize: 10,
+                                                        ),
+                                                      ),
+                                                      if (!canUse) ...[
+                                                        SizedBox(width: 3),
+                                                        Icon(
+                                                          Icons.lock,
+                                                          size: 10,
+                                                          color: Colors.grey,
+                                                        ),
+                                                      ],
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                      SizedBox(height: 12),
+                                    ],
+                                    
+                                    // Precio final
+                                    Container(
+                                      padding: EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primaryGreen.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: AppColors.primaryGreen.withOpacity(0.3),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text('Total a pagar:',
+                                              style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.bold)),
+                                          _isLoadingPrice
+                                              ? SizedBox(
+                                                  width: 24,
+                                                  height: 24,
+                                                  child: CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryGreen),
+                                                  ),
+                                                )
+                                              : Text('${_finalAmount.toStringAsFixed(0)} Bs',
+                                                  style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 24,
+                                                      fontWeight: FontWeight.bold)),
+                                        ],
+                                      ),
+                                    ),
+                                    SizedBox(height: 12),
+                                    
+                                    // Duración
                                     Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,

@@ -1,0 +1,2 @@
+C:/Users/ALVARO/Documents/flutter/proyectos/classgo-flutter-frontend-app-main/android/app/.cxx/Debug/5k1b6c15/x86_64/CMakeFiles/edit_cache.dir
+C:/Users/ALVARO/Documents/flutter/proyectos/classgo-flutter-frontend-app-main/android/app/.cxx/Debug/5k1b6c15/x86_64/CMakeFiles/rebuild_cache.dir

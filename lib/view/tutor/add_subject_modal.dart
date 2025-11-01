@@ -62,6 +62,7 @@ class _AddSubjectModalState extends State<AddSubjectModal> {
     });
   }
 
+
   Future<void> _searchSubjects() async {
     if (_searchQuery.trim().isEmpty) {
       _loadAvailableSubjects();
@@ -290,35 +291,41 @@ class _AddSubjectModalState extends State<AddSubjectModal> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.only(
-        left: 18,
-        right: 18,
-        top: 24,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 18,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.darkBlue,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 5,
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(10),
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: BoxDecoration(
+            color: AppColors.darkBlue,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                // Handle bar
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 5,
+                    margin: const EdgeInsets.only(top: 12, bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            Row(
+                // Content
+                Expanded(
+                  child: SingleChildScrollView(
+                    controller: scrollController,
+                    padding: EdgeInsets.symmetric(horizontal: 18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
               children: [
                 Container(
                   padding: EdgeInsets.all(12),
@@ -361,36 +368,65 @@ class _AddSubjectModalState extends State<AddSubjectModal> {
             ),
             SizedBox(height: 24),
 
-            // Indicador de materias seleccionadas
+            // Materias seleccionadas
             if (_selectedSubjectIds.isNotEmpty)
               Container(
                 padding: EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryGreen.withOpacity(0.2),
+                  color: AppColors.primaryGreen.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: AppColors.primaryGreen.withOpacity(0.3),
                     width: 1,
                   ),
                 ),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.check_circle,
-                      color: AppColors.primaryGreen,
-                      size: 20,
-                    ),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '${_selectedSubjectIds.length} materia${_selectedSubjectIds.length == 1 ? '' : 's'} seleccionada${_selectedSubjectIds.length == 1 ? '' : 's'}',
-                        style: TextStyle(
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.check_circle,
                           color: AppColors.primaryGreen,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                          size: 18,
                         ),
-                      ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Materias Seleccionadas (${_selectedSubjectIds.length})',
+                          style: TextStyle(
+                            color: AppColors.primaryGreen,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
                     ),
+                    SizedBox(height: 8),
+                    ..._selectedSubjectIds.map((subjectId) {
+                      final subject = _availableSubjects.firstWhere(
+                        (s) => s['id'] == subjectId,
+                        orElse: () => {'name': 'Materia desconocida'},
+                      );
+                      return Container(
+                        margin: EdgeInsets.only(bottom: 8),
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.1),
+                          ),
+                        ),
+                        child: Text(
+                          subject['name'],
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 14,
+                          ),
+                        ),
+                      );
+                    }).toList(),
                   ],
                 ),
               ),
@@ -592,66 +628,88 @@ class _AddSubjectModalState extends State<AddSubjectModal> {
                   ],
                 ),
               ),
-            SizedBox(height: 24),
-
-            // Botones
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed:
-                        _isLoading ? null : () => Navigator.of(context).pop(),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: Colors.white.withOpacity(0.3)),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: Text(
-                      'Cancelar',
-                      style: TextStyle(color: Colors.white),
+                        SizedBox(height: 24),
+                      ],
                     ),
                   ),
                 ),
-                SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed:
-                        _isLoading || _subjectsLoadError ? null : _addSubjects,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryGreen,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                // Botones fijos en la parte inferior
+                Container(
+                  padding: EdgeInsets.fromLTRB(
+                    18, 
+                    16, 
+                    18, 
+                    16 + MediaQuery.of(context).padding.bottom,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.darkBlue,
+                    border: Border(
+                      top: BorderSide(
+                        color: Colors.white.withOpacity(0.1),
+                        width: 1,
                       ),
-                      padding: EdgeInsets.symmetric(vertical: 16),
                     ),
-                    child: _isLoading
-                        ? SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed:
+                              _isLoading ? null : () => Navigator.of(context).pop(),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: Colors.white.withOpacity(0.3)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                          )
-                        : Text(
-                            _selectedSubjectIds.isEmpty
-                                ? 'Agregar'
-                                : 'Agregar ${_selectedSubjectIds.length} materia${_selectedSubjectIds.length == 1 ? '' : 's'}',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            padding: EdgeInsets.symmetric(vertical: 16),
                           ),
+                          child: Text(
+                            'Cancelar',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed:
+                              _isLoading || _subjectsLoadError ? null : _addSubjects,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryGreen,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          child: _isLoading
+                              ? SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor:
+                                        AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                )
+                              : Text(
+                                  _selectedSubjectIds.isEmpty
+                                      ? 'Agregar'
+                                      : 'Agregar ${_selectedSubjectIds.length} materia${_selectedSubjectIds.length == 1 ? '' : 's'}',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

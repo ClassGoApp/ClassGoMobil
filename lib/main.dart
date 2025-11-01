@@ -31,13 +31,20 @@ void main() async {
   bool firebaseInitialized = false;
   try {
     await Firebase.initializeApp(
+      // options: const FirebaseOptions(
+      //   apiKey: 'AIzaSyDs5zKv82dGel5tUUIWE7MsLLyEBCKNW1g',
+      //   appId: '1:934911540456:android:306f0e768c07edede45d5d',
+      //   messagingSenderId: '934911540456',
+      //   projectId: 'classgo-fec0d',
+      //   storageBucket: 'classgo-fec0d.firebasestorage.app',
+      // ),
       options: const FirebaseOptions(
-        apiKey: 'AIzaSyDs5zKv82dGel5tUUIWE7MsLLyEBCKNW1g',
-        appId: '1:934911540456:android:306f0e768c07edede45d5d',
-        messagingSenderId: '934911540456',
-        projectId: 'classgo-fec0d',
-        storageBucket: 'classgo-fec0d.firebasestorage.app',
-      ),
+        apiKey: 'AIzaSyAVpxtoCycnlrNRZxYdl2bdHNYI2IQ6Br4',
+        appId: '1:932792843009:android:c65f95b660b7d703363900',
+        messagingSenderId: '932792843009',
+        projectId: 'classgo-79533',
+        storageBucket: 'classgo-79533.firebasestorage.app',
+      )
     );
     firebaseInitialized = true;
     print('¡Firebase inicializado correctamente!');

@@ -1858,7 +1858,7 @@ Future<Map<String, dynamic>> getTutorSubjects(String token, int userId) async {
 }
 
 Future<Map<String, dynamic>> addTutorSubject(String token, int userId,
-    int subjectId, String description, String? imagePath) async {
+int subjectId, String description, String? imagePath) async {
   try {
     var request = http.MultipartRequest(
       'POST',
@@ -2118,7 +2118,7 @@ Future<Map<String, dynamic>> changeBookingToCursando(
 
 // Obtener imagen de perfil del usuario
 Future<Map<String, dynamic>> getUserProfileImage(
-    String token, int userId) async {
+String token, int userId) async {
   try {
     print('DEBUG - Obteniendo imagen de perfil para usuario: $userId');
 
@@ -2150,6 +2150,99 @@ Future<Map<String, dynamic>> getUserProfileImage(
     }
   } catch (e) {
     print('Error getting user profile image: $e');
+    return {
+      'success': false,
+      'message': 'Error de conexión: $e',
+    };
+  }
+}
+
+// Actualizar precio del perfil del tutor
+Future<Map<String, dynamic>> updateTutorProfilePrice(
+String token, int userId, double price) async {
+  try {
+    print('DEBUG - Actualizando precio del tutor: $userId con precio: $price');
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/user/$userId/profile-price'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'price': price,
+      }),
+    );
+
+    print(
+        'DEBUG - Respuesta del servidor: ${response.statusCode} - ${response.body}');
+
+    if (response.statusCode == 200) {
+      final responseData = jsonDecode(response.body);
+      return {
+        'success': true,
+        'data': responseData,
+        'message': 'Precio actualizado exitosamente',
+      };
+    } else {
+      final errorData = jsonDecode(response.body);
+      return {
+        'success': false,
+        'message':
+            errorData['message'] ?? 'Error al actualizar el precio',
+        'status': response.statusCode,
+      };
+    }
+  } catch (e) {
+    print('Error updating tutor profile price: $e');
+    return {
+      'success': false,
+      'message': 'Error de conexión: $e',
+    };
+  }
+}
+
+// Actualizar precio de una materia específica del tutor
+Future<Map<String, dynamic>> updateTutorSubjectPrice(
+String token, int userId, int subjectId, double price) async {
+  try {
+    print('DEBUG - Actualizando precio de materia: $subjectId para tutor: $userId con precio: $price');
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/tutor-subjects/$subjectId/price'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'user_id': userId,
+        'price': price,
+      }),
+    );
+
+    print(
+        'DEBUG - Respuesta del servidor: ${response.statusCode} - ${response.body}');
+
+    if (response.statusCode == 200) {
+      final responseData = jsonDecode(response.body);
+      return {
+        'success': true,
+        'data': responseData,
+        'message': 'Precio de materia actualizado exitosamente',
+      };
+    } else {
+      final errorData = jsonDecode(response.body);
+      return {
+        'success': false,
+        'message':
+            errorData['message'] ?? 'Error al actualizar el precio de la materia',
+        'status': response.statusCode,
+      };
+    }
+  } catch (e) {
+    print('Error updating tutor subject price: $e');
     return {
       'success': false,
       'message': 'Error de conexión: $e',
@@ -2522,5 +2615,60 @@ Future<Map<String, dynamic>> getTutorForSubject(String? token, int subjectId) as
       'message': 'Error de conexión: $e',
       'status': 500,
     };
+  }
+}
+
+// User Coupons API Methods
+Future<Map<String, dynamic>> getUserCoupons(String token, int userId) async {
+  try {
+    final response = await http.get(
+      Uri.parse('$baseUrl/user-coupons?user_id=$userId'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to get user coupons: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('Error getting user coupons: $e');
+    throw e;
+  }
+}
+
+Future<Map<String, dynamic>> updateCouponQuantity(
+  String token,
+  int userId,
+  int couponId,
+  int newQuantity,
+) async {
+  try {
+    final response = await http.put(
+      Uri.parse('$baseUrl/user-coupons/update-quantity'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: jsonEncode({
+        'user_id': userId,
+        'coupon_id': couponId,
+        'cantidad': newQuantity,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to update coupon quantity: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('Error updating coupon quantity: $e');
+    throw e;
   }
 }

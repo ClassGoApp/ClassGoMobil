@@ -1,5 +1,5 @@
 import 'package:url_launcher/url_launcher.dart';
-import 'google_auth_api_service.dart';
+import 'package:flutter_projects/services/google_auth_api_service.dart';
 
 class GoogleCalendarService {
   final GoogleAuthApiService _apiService = GoogleAuthApiService.instance;

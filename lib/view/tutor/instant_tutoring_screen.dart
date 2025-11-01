@@ -932,63 +932,31 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                       ElevatedButton(
                         onPressed: _selectedSubject != null
                             ? () {
-                                // Reemplaza el modal actual con la pantalla de pago
-                                Navigator.of(context).pushReplacement(
-                                  PageRouteBuilder(
-                                    opaque: false,
-                                    barrierColor: Colors.black.withOpacity(0.5),
-                                    pageBuilder: (context, animation,
-                                        secondaryAnimation) {
-                                      // ✅ DEBUG: Mostrar datos que se van a pasar a PaymentQRScreen
-                                      print(
-                                          '[InstantTutoringScreen] 🔍 DEBUG - Datos a pasar a PaymentQRScreen:');
-                                      print(
-                                          '[InstantTutoringScreen] scheduledDate: ${widget.scheduledDate}');
-                                      print(
-                                          '[InstantTutoringScreen] scheduledTime: ${widget.scheduledTime}');
-                                      print(
-                                          '[InstantTutoringScreen] isScheduledBooking: ${widget.isScheduledBooking}');
+                                // ✅ DEBUG: Mostrar datos que se van a pasar a PaymentQRScreen
+                                print('[InstantTutoringScreen] 🔍 DEBUG - Datos a pasar a PaymentQRScreen:');
+                                print('[InstantTutoringScreen] scheduledDate: ${widget.scheduledDate}');
+                                print('[InstantTutoringScreen] scheduledTime: ${widget.scheduledTime}');
+                                print('[InstantTutoringScreen] isScheduledBooking: ${widget.isScheduledBooking}');
 
-                                      return PaymentQRScreen(
-                                        tutorName: widget.tutorName,
-                                        tutorImage: widget.tutorImage,
-                                        selectedSubject: _selectedSubject!,
-                                        amount: "15 Bs",
-                                        sessionDuration: "20 min",
-                                        tutorId: widget.tutorId,
-                                        subjectId: widget.subjectId,
-                                        // ✅ NUEVO: Pasar datos de reserva programada
-                                        scheduledDate: widget.scheduledDate,
-                                        scheduledTime: widget.scheduledTime,
-                                        isScheduledBooking:
-                                            widget.isScheduledBooking,
-                                      );
-                                    },
-                                    transitionDuration:
-                                        Duration(milliseconds: 400),
-                                    reverseTransitionDuration:
-                                        Duration(milliseconds: 400),
-                                    transitionsBuilder: (context, animation,
-                                        secondaryAnimation, child) {
-                                      const begin = Offset(1.0, 0.0);
-                                      const end = Offset.zero;
-                                      const curve = Curves.easeOutCubic;
-
-                                      var tween = Tween(begin: begin, end: end)
-                                          .chain(CurveTween(curve: curve));
-                                      var offsetAnimation =
-                                          animation.drive(tween);
-
-                                      // Usa un FadeTransition para que la pantalla anterior no desaparezca bruscamente
-                                      return FadeTransition(
-                                        opacity: secondaryAnimation
-                                            .drive(Tween(begin: 1.0, end: 0.0)),
-                                        child: SlideTransition(
-                                          position: offsetAnimation,
-                                          child: child,
-                                        ),
-                                      );
-                                    },
+                                // Cerrar el modal actual primero
+                                Navigator.of(context).pop();
+                                
+                                // Luego navegar a la pantalla de pago
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => PaymentQRScreen(
+                                      tutorName: widget.tutorName,
+                                      tutorImage: widget.tutorImage,
+                                      selectedSubject: _selectedSubject!,
+                                      amount: "15 Bs",
+                                      sessionDuration: "20 min",
+                                      tutorId: widget.tutorId,
+                                      subjectId: widget.subjectId,
+                                      // ✅ NUEVO: Pasar datos de reserva programada
+                                      scheduledDate: widget.scheduledDate,
+                                      scheduledTime: widget.scheduledTime,
+                                      isScheduledBooking: widget.isScheduledBooking,
+                                    ),
                                   ),
                                 );
                               }
