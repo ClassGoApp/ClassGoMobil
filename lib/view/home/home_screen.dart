@@ -28,6 +28,8 @@ import 'package:flutter_projects/helpers/slide_up_route.dart';
 import 'package:flutter_projects/helpers/pusher_service.dart';
 import 'package:flutter_projects/helpers/auth_helper.dart';
 import 'package:flutter_projects/view/components/tutoring_status_cards.dart';
+import 'package:flutter_projects/view/about/about_us_screen.dart';
+import 'package:flutter_projects/view/how_we_work/how_we_work_screen.dart';
 import '../../helpers/navigation_helper.dart';
 
 // 1. Agrega RouteObserver para detectar cuando se vuelve a la pantalla principal
@@ -1904,11 +1906,13 @@ class _HomeScreenState extends State<HomeScreen>
                           title: Text('Sobre Nosotros',
                               style:
                                   TextStyle(color: Colors.white, fontSize: 16)),
-                          onTap: () async {
-                            final url = 'https://www.classgoapp.com/nosotros';
-                            if (await canLaunchUrl(Uri.parse(url))) {
-                              await launchUrl(Uri.parse(url));
-                            }
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AboutUsScreen(),
+                              ),
+                            );
                             setState(() {
                               _isLeftDrawerOpen = false;
                             });
@@ -1920,12 +1924,13 @@ class _HomeScreenState extends State<HomeScreen>
                           title: Text('Como Trabajamos',
                               style:
                                   TextStyle(color: Colors.white, fontSize: 16)),
-                          onTap: () async {
-                            final url =
-                                'https://www.classgoapp.com/como-trabajamos';
-                            if (await canLaunchUrl(Uri.parse(url))) {
-                              await launchUrl(Uri.parse(url));
-                            }
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => HowWeWorkScreen(),
+                              ),
+                            );
                             setState(() {
                               _isLeftDrawerOpen = false;
                             });
