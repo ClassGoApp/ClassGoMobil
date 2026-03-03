@@ -1,0 +1,2 @@
+D:/ClassGo2025/codigo fuente/classgo-app/classgo-mobile/android/app/.cxx/Debug/374q3p62/x86_64/CMakeFiles/edit_cache.dir
+D:/ClassGo2025/codigo fuente/classgo-app/classgo-mobile/android/app/.cxx/Debug/374q3p62/x86_64/CMakeFiles/rebuild_cache.dir

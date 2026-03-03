@@ -1,0 +1,2 @@
+D:/ClassGo2025/classgo-flutter-frontend-app/android/app/.cxx/RelWithDebInfo/u6p25271/armeabi-v7a/CMakeFiles/edit_cache.dir
+D:/ClassGo2025/classgo-flutter-frontend-app/android/app/.cxx/RelWithDebInfo/u6p25271/armeabi-v7a/CMakeFiles/rebuild_cache.dir
