@@ -49,6 +49,7 @@ class _NextAppointmentSectionState extends State<NextAppointmentSection> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       children: [
         Padding(
@@ -59,7 +60,7 @@ class _NextAppointmentSectionState extends State<NextAppointmentSection> {
               Text(
                 "Tu Próxima Cita",
                 style: TextStyle(
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                  color: isDark ? Colors.white : AppColors.brandBlue,
                   fontSize: 20,
                   fontFamily: _kTitleFont,
                   fontWeight: FontWeight.w900,

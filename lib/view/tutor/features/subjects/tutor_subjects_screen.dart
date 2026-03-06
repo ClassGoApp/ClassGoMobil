@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_projects/view/tutor/features/widgets/tutor_header.dart';
 import 'package:provider/provider.dart';
 
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/provider/tutor_subjects_provider.dart'; 
-import 'package:flutter_projects/view/tutor/dashboard/widgets/tutor_header-.dart';
 
 import 'package:flutter_projects/view/tutor/features/subjects/sheets/add_subject_sheet.dart';
 import 'package:flutter_projects/view/tutor/features/subjects/widgets/add_subject_button.dart';
@@ -79,12 +79,16 @@ class _TutorSubjectsScreenState extends State<TutorSubjectsScreen> {
     return Scaffold(
       backgroundColor: scaffoldBg,
       body: SafeArea(
+        top: false,
         child: Column(
           children: [
             TutorHeader(
               title: "Materias",
+              subtitle: "GESTIÓN DE MATERIAS",
               onBackTap: () => Navigator.maybePop(context),
             ),
+
+            const SizedBox(height: 8),
             
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
@@ -200,4 +204,4 @@ class _TutorSubjectsScreenState extends State<TutorSubjectsScreen> {
       ),
     );
   }
-}
+} 

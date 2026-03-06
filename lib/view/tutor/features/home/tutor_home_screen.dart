@@ -48,7 +48,6 @@ class _TutorHomeScreenState extends State<TutorHomeScreen> {
     String? imageUrl =
         user?['profile']?['image'] ?? user?['profile']?['profile_image'];
 
-    // Limpiamos la URL por si la API la manda duplicada
     if (imageUrl != null && imageUrl.isNotEmpty) {
       if (imageUrl
           .contains('https://classgoapp.com/storagehttps://classgoapp.com')) {

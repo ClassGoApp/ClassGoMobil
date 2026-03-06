@@ -37,7 +37,7 @@ class DashboardTopSection extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     final backgroundColor = isDark 
-        ? AppColors.headerDark 
+        ? AppColors.cardDark 
         : AppColors.headerLight;
 
     // Altura del Notch (Cámara frontal)
@@ -51,7 +51,7 @@ class DashboardTopSection extends StatelessWidget {
         clipBehavior: Clip.none,
         alignment: Alignment.topCenter,
         children: [
-          Container(
+                  Container(
             width: double.infinity,
             padding: EdgeInsets.only(
               top: statusBarHeight + 15, 
