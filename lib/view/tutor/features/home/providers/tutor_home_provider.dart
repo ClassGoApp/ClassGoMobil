@@ -150,6 +150,18 @@ class TutorHomeProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> refreshOnlySubjects(BuildContext context) async {
+    try {
+      print('🔄 Refrescando tutorías...');
+      
+      await fetchNextBooking(context);
+      
+      print('✅ Tutorías actualizadas correctamente');
+    } catch (e) {
+      print('❌ Error en el refresco silencioso: $e');
+    }
+  }
+
   Future<void> handleAvailabilityToggle(BuildContext context, bool newState) async {
     isAvailable = newState;
     notifyListeners();

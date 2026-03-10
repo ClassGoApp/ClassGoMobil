@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
-import 'package:flutter_projects/view/tutor/dashboard/widgets/next_appointment_section.dart';
-import 'package:flutter_projects/view/tutor/dashboard/widgets/stats_grid.dart';
 import 'package:flutter_projects/view/tutor/dashboard/widgets/tutor_bottom_nav.dart';
 import 'package:flutter_projects/view/tutor/features/agenda/tutor_agenda_screen.dart';
 import 'package:flutter_projects/view/tutor/features/home/tutor_home_screen.dart';
 import 'package:flutter_projects/view/tutor/features/profile/tutor_profile_screen.dart';
 import 'package:flutter_projects/view/tutor/features/subjects/tutor_subjects_screen.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'package:url_launcher/url_launcher.dart';
@@ -21,7 +18,6 @@ import 'package:flutter_projects/api_structure/api_service.dart';
 
 // Vistas
 import 'package:flutter_projects/view/tutor/add_subject_modal.dart';
-import 'package:flutter_projects/view/profile/edit_profile_screen.dart';
 import 'package:flutter_projects/view/auth/login_screen.dart';
 import 'package:flutter_projects/view/components/success_animation_dialog.dart';
 
@@ -31,21 +27,9 @@ import 'package:flutter_projects/helpers/pusher_service.dart';
 // Widgets
 import 'package:flutter_projects/view/tutor/dashboard/sheets/add_schedule_sheet.dart';
 import 'package:flutter_projects/models/tutor_subject.dart';
-import 'package:flutter_projects/view/tutor/dashboard/widgets/tutor_quick_actions.dart';
-import 'package:flutter_projects/view/tutor/dashboard/widgets/availability_slider.dart';
-import 'package:flutter_projects/view/tutor/dashboard/widgets/tutor_booking_section.dart';
-import 'package:flutter_projects/view/tutor/dashboard/widgets/tutor_subject_section.dart';
-import 'package:flutter_projects/view/tutor/dashboard/widgets/tutor_availability_calendar.dart';
-import 'package:flutter_projects/view/tutor/dashboard/widgets/classgo_info_widget.dart';
 
-import 'package:flutter_projects/view/tutor/dashboard/widgets/tutor_booking_card.dart';
-import 'package:flutter_projects/view/tutor/dashboard/widgets/free_time_slot_card.dart';
-import 'package:flutter_projects/view/tutor/dashboard/widgets/tutor_header.dart';
 import 'package:flutter_projects/view/tutor/dashboard/logic/calendar_selection_controller.dart';
 
-import 'package:flutter_projects/view/tutor/dashboard/widgets/dashboard_header.dart';
-import 'package:flutter_projects/view/tutor/dashboard/widgets/availability_capsule.dart';
-import 'package:flutter_projects/view/tutor/dashboard/widgets/dashboard_top_section.dart';
 
 class DashboardTutor extends StatefulWidget {
   @override
@@ -78,7 +62,6 @@ class _DashboardTutorState extends State<DashboardTutor>
   String? _profileImageUrl;
   bool _isLoadingProfileImage = false;
 
-// 🔥 LÓGICA DE HIDE ON SCROLL
   bool _handleScrollNotification(ScrollNotification notification) {
     if (notification is ScrollUpdateNotification) {
       if (notification.scrollDelta! > 2.0 && _isBottomNavVisible) {
@@ -133,7 +116,6 @@ class _DashboardTutorState extends State<DashboardTutor>
     _loadAvailableSlots();
     _fetchTutorBookings();
     _loadProfileImage();
-    _loadTutoringAvailability();
   }
 
   Future<void> _loadAvailableSlots() async {
@@ -510,51 +492,6 @@ class _DashboardTutorState extends State<DashboardTutor>
 
   /// Limpia los errores de validación
 
-  // 🔥 NUEVO: Lógica para aplicar horarios a múltiples días
-  void _showAddRangeModal() {
-    // Usamos el mismo AddScheduleSheet, pero le pasamos la fecha de inicio del rango
-    // solo como referencia visual.
-    final firstSelectedDay = _calendarController.selectedDays.first;
-
-    // showModalBottomSheet(
-    //   context: context,
-    //   isScrollControlled: true,
-    //   backgroundColor: Colors.transparent,
-    //   builder: (context) => AddScheduleSheet(
-    //     initialDate: firstSelectedDay,
-    //     onSave: (timesGenerated) {
-    //       // timesGenerated trae: [{'start': 10:00, 'end': 12:00, 'day': firstSelectedDay}]
-    //       // PERO nosotros queremos aplicar esas horas a TODOS los días seleccionados.
-    //       _saveSlotsForRange(timesGenerated);
-    //     },
-    //   ),
-    // );
-  }
-
-  Future<void> _saveSlotsForRange(
-      List<Map<String, dynamic>> sourceSlots) async {
-    // 1. Preparamos la lista maestra
-    List<Map<String, dynamic>> allSlotsToCreate = [];
-
-    // 2. Por cada día seleccionado en el rango...
-    for (var day in _calendarController.selectedDays) {
-      // ... copiamos los horarios definidos en el modal
-      for (var slot in sourceSlots) {
-        allSlotsToCreate.add({
-          'day': day, // Aquí cambiamos la fecha a la del día del rango
-          'start': slot['start'],
-          'end': slot['end']
-        });
-      }
-    }
-
-    // 3. Enviamos todo junto a la función que ya tenías
-    await _createSlots(allSlotsToCreate);
-
-    // 4. Limpiamos la selección al terminar
-    _calendarController.clearSelection();
-  }
-
   void _updateFreeTimesByDay() {
     freeTimesByDay.clear();
 
@@ -774,28 +711,8 @@ class _DashboardTutorState extends State<DashboardTutor>
       // 2. MATERIAS
       TutorSubjectsScreen(),
         
+      // 3. PERFIL 
       const TutorProfileScreen(), 
-      //   // 1. Pasamos tu lista de materias reales (o una vacía [] por ahora)
-      //   subjects: [], // Si tienes una variable con tus materias, ponla aquí (ej. tutorProvider.subjects)
-
-      //   // 2. Controla si está cargando
-      //   isLoading: false,
-
-      //   // 3. Lo que pasa al presionar el botón azul gigante de abajo
-      //   onAddPressed: () {
-      //     print("Abrir formulario para crear materia");
-      //     // Aquí luego abriremos el modal o pantalla para agregar materias
-      //   },
-
-      //   // 4. Lo que pasa al presionar la "X" roja de una tarjeta
-      //   onDeletePressed: (int id) {
-      //     print("Eliminar materia con ID: $id");
-      //     // Aquí pondremos tu lógica de borrado del backend
-      //   },
-      // ),
-
-      // // 3. PERFIL
-      // const TutorProfileView(), // Cambia al nombre de clase correcto si usaste otro
     ];
 
     // bool showNavbar = false;
@@ -806,175 +723,7 @@ class _DashboardTutorState extends State<DashboardTutor>
         IndexedStack(
           index: _currentIndex,
           children: _screens,
-        ),
-
-        // SingleChildScrollView(
-        //   physics: const BouncingScrollPhysics(),
-        //   padding: const EdgeInsets.only(bottom: 120),
-        //   child: Column(
-        //     children: [
-        //       DashboardTopSection(
-        //         userName: authProvider.userName,
-        //         profileImageUrl: _profileImageUrl,
-        //         rating: 4.9,
-        //         totalClasses: 120,
-        //         isLoadingImage: _isLoadingProfileImage,
-        //         isAvailable: isAvailable,
-        //         onLogoutTap: _showLogoutDialog,
-        //         onAvailabilityToggle: (bool newState) {
-        //           setState(() {
-        //             isAvailable = newState;
-        //           });
-        //           if (isAvailable) _playSuccessSound();
-        //           _updateTutoringAvailability(newState);
-        //         },
-        //       ),
-
-        //       const SizedBox(height: 60),
-
-        //       StatsGrid(
-        //         acceptanceRate: "98%",
-        //         responseTime: "2.5m",
-        //         onAcceptanceTap: () {
-        //           print("Click en Aceptación");
-        //         },
-        //         onResponseTap: () {
-        //           print("Click en Respuesta");
-        //         },
-        //       ),
-
-        //       const SizedBox(height: 15),
-
-        //       NextAppointmentSection(
-        //         appointments: [
-        //           AppointmentModel(
-        //             title: "Física General",
-        //             studentName: "Maria Garcia",
-        //             time: "09:00 AM",
-        //             status: "Pendiente",
-        //           ),
-        //           AppointmentModel(
-        //             title: "Cálculo II",
-        //             studentName: "Juan Perez",
-        //             time: "11:30 AM",
-        //             status: "Confirmada",
-        //           ),
-        //         ],
-        //       ),
-
-        //       const SizedBox(height: 20),
-// --------------------------------------------------------------------
-        // Tarjeta de acciones rápidas
-        // TutorQuickActions(
-        //   onManageSubjects: _showAddSubjectModal,
-        //   onDefineSchedule: () =>
-        //       _showAddFreeTimeModal(initialDate: _selectedDay),
-        //   onMyTutorials: () {},
-        // ),
-        // SizedBox(height: 24),
-
-        // TutorBookingsSection(
-        //   isLoading: _isLoadingBookings,
-        //   bookings: _tutorBookings,
-        //   isAvailable: isAvailable,
-        //   onStartSession: (bookingId) => {_changeToCursando(bookingId)},
-        //   onOpenMeet: (meetLink) => {_openMeetLink(meetLink)},
-        // ),
-        // SizedBox(height: 24),
-
-        // TutorSubjectsSection(
-        //   subjects: subjectsProvider.subjects,
-        //   isLoading: subjectsProvider.isLoading,
-        //   onAddPressed: () => _showAddSubjectModal,
-        //   onDeletePressed: _deleteSubject,
-        // ),
-        // SizedBox(height: 24),
-
-        // TutorAvailabilityCalendar(
-        //   focusedDay: _focusedDay,
-        //   selectedDay: _selectedDay,
-        //   freeTimesByDay: freeTimesByDay,
-        //   selectionController: _calendarController,
-        //   onPageChanged: (d) => setState(() => _focusedDay = d),
-        //   onDayTap: (day) {
-        //     bool shouldOpenNormal = _calendarController.handleDayTap(day);
-        //     if (shouldOpenNormal) {
-        //       setState(() => _selectedDay = day);
-        //     }
-        //   },
-        //   onAddSlot: () =>
-        //       _showAddFreeTimeModal(initialDate: _selectedDay),
-        //   onDeleteSlot: _deleteTimeSlot,
-        // ),
-
-        //     ],
-        //   ),
-        // ),
-        Positioned(
-          bottom: 100,
-          left: 20,
-          right: 20,
-          child: AnimatedBuilder(
-            animation: _calendarController,
-            builder: (context, _) {
-              if (!_calendarController.isRangeMode)
-                return const SizedBox.shrink();
-
-              return Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                decoration: BoxDecoration(
-                    color: AppColors.primaryGreen,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5))
-                    ]),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                            "${_calendarController.selectedCount} días seleccionados",
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                fontSize: 16)),
-                        const Text("Toca para asignar horario",
-                            style:
-                                TextStyle(color: Colors.white70, fontSize: 12)),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.close, color: Colors.white),
-                          onPressed: () => _calendarController.clearSelection(),
-                          tooltip: "Cancelar",
-                        ),
-                        const SizedBox(width: 8),
-                        FloatingActionButton.small(
-                          onPressed:
-                              _showAddRangeModal, // <--- Llama al modal masivo
-                          backgroundColor: Colors.white,
-                          child: const Icon(Icons.check,
-                              color: AppColors.primaryGreen),
-                        )
-                      ],
-                    )
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-
-        // if (showNavbar)
+        ),      
           Positioned(
               left: 0,
               right: 0,
@@ -983,7 +732,7 @@ class _DashboardTutorState extends State<DashboardTutor>
                 currentIndex: _currentIndex,
                 onTap: (index) {
                   setState(() => _currentIndex = index);
-                  // Aquí iría tu lógica de navegación real:
+                  // lógica de navegación real:
                   // if (index == 1) Navigator.pushNamed...
                   print("Navegar a tab: $index");
                 },
@@ -991,8 +740,6 @@ class _DashboardTutorState extends State<DashboardTutor>
       ]),
     );
   }
-
-  // --- Widgets auxiliares ---
 
   // Barra deslizante con diseño consistente
   // availavilitySlider.dart
@@ -1015,294 +762,12 @@ class _DashboardTutorState extends State<DashboardTutor>
   // Método para crear un solo slot de tiempo
 
   // Método para eliminar un slot de tiempo
-  void _deleteTimeSlot(Map<String, String> slot) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.darkBlue,
-        title: Text(
-          'Eliminar horario',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: Text(
-          '¿Estás seguro de que quieres eliminar este horario?',
-          style: TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('Cancelar', style: TextStyle(color: Colors.white70)),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              await _performDeleteSlot(slot);
-            },
-            style:
-                ElevatedButton.styleFrom(backgroundColor: AppColors.redColor),
-            child: Text('Eliminar', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-  }
 
   // Método para ejecutar la eliminación del slot
-  Future<void> _performDeleteSlot(Map<String, String> slot) async {
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      if (authProvider.token == null || authProvider.userId == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error de autenticación'),
-            backgroundColor: AppColors.redColor,
-          ),
-        );
-        return;
-      }
-
-      // Obtener el ID del slot del mapa
-      final slotId = int.tryParse(slot['id'] ?? '');
-      if (slotId == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ID de slot inválido'),
-            backgroundColor: AppColors.redColor,
-          ),
-        );
-        return;
-      }
-
-      final response = await deleteUserSubjectSlot(
-        authProvider.token!,
-        slotId,
-        authProvider.userId!,
-      );
-
-      if (response['success'] == true) {
-        // Recargar los slots después de eliminar
-        await _loadAvailableSlots();
-
-        showSuccessDialog(
-          context: context,
-          title: '¡Horario Eliminado!',
-          message: 'El horario ha sido eliminado exitosamente',
-          buttonText: 'Continuar',
-          onContinue: () {
-            // El diálogo se cierra automáticamente
-          },
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content:
-                Text(response['message'] ?? 'Error al eliminar el horario'),
-            backgroundColor: AppColors.redColor,
-          ),
-        );
-      }
-    } catch (e) {
-      print('Error deleting slot: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error de conexión al eliminar el horario'),
-          backgroundColor: AppColors.redColor,
-        ),
-      );
-    }
-  }
 
   // Método para mostrar diálogo de cerrar sesión
-  void _showLogoutDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppColors.darkBlue.withOpacity(0.98),
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.4),
-                  blurRadius: 24,
-                  offset: Offset(0, 8),
-                ),
-              ],
-            ),
-            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Icono de logout con animación
-                Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.redColor.withOpacity(0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  padding: EdgeInsets.all(18),
-                  child: Icon(
-                    Icons.logout_rounded,
-                    color: AppColors.redColor,
-                    size: 48,
-                  ),
-                ),
-                SizedBox(height: 18),
-                Text(
-                  '¿Cerrar sesión?',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 22,
-                    letterSpacing: 0.2,
-                  ),
-                ),
-                SizedBox(height: 14),
-                Text(
-                  'Al cerrar sesión, tendrás que volver a iniciar sesión para acceder a tu cuenta de tutor.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 16,
-                    height: 1.5,
-                  ),
-                ),
-                SizedBox(height: 28),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: Colors.white70, width: 1.2),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          backgroundColor: Colors.transparent,
-                          padding: EdgeInsets.symmetric(vertical: 14),
-                        ),
-                        child: Text(
-                          'Cancelar',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 16),
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.redColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          padding: EdgeInsets.symmetric(vertical: 14),
-                        ),
-                        onPressed: () => _performLogout(),
-                        child: Text(
-                          'Cerrar Sesión',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
 
   // Método para realizar el logout
-  void _performLogout() async {
-    try {
-      // Cerrar el diálogo
-      Navigator.of(context).pop();
-
-      // Mostrar indicador de carga
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => Dialog(
-          backgroundColor: Colors.transparent,
-          child: Container(
-            padding: EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: AppColors.darkBlue.withOpacity(0.9),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-                SizedBox(height: 16),
-                Text(
-                  'Cerrando sesión...',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-
-      // Obtener el AuthProvider y hacer logout
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      await authProvider.logout();
-
-      // Cerrar el indicador de carga
-      Navigator.of(context).pop();
-
-      // Navegar al login y limpiar el stack de navegación
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (context) => LoginScreen(),
-        ),
-        (Route<dynamic> route) => false,
-      );
-
-      // Mostrar mensaje de éxito
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Sesión cerrada exitosamente'),
-          backgroundColor: AppColors.primaryGreen,
-          duration: Duration(seconds: 2),
-        ),
-      );
-    } catch (e) {
-      // Cerrar el indicador de carga si hay error
-      Navigator.of(context).pop();
-
-      // Mostrar mensaje de error
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al cerrar sesión: $e'),
-          backgroundColor: AppColors.redColor,
-          duration: Duration(seconds: 3),
-        ),
-      );
-    }
-  }
 
   // Sección de tutorías del tutor
   // tutor_booking_section.dart
@@ -1312,219 +777,6 @@ class _DashboardTutorState extends State<DashboardTutor>
   // Botón de acción según el estado de la tutoría
 
   // Método para cambiar estado a "Cursando"
-  Future<void> _changeToCursando(int bookingId) async {
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final token = authProvider.token;
-
-      if (token == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: No hay token de autenticación'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      // Mostrar diálogo de confirmación
-      bool confirmed = await showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (context) => Dialog(
-              backgroundColor: Colors.transparent,
-              child: Container(
-                padding: EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: AppColors.darkBlue.withOpacity(0.95),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: Colors.green.withOpacity(0.3),
-                    width: 2,
-                  ),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.play_circle_fill,
-                        color: Colors.green,
-                        size: 48,
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    Text(
-                      '¿Iniciar Tutoría?',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    SizedBox(height: 12),
-                    Text(
-                      'Al iniciar la tutoría:\n• El estudiante podrá ver que ya estás en la reunión\n• Se activará el enlace de Google Meet\n• La sesión comenzará oficialmente',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                        height: 1.4,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    SizedBox(height: 24),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () => Navigator.of(context).pop(false),
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: Colors.grey, width: 1),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              padding: EdgeInsets.symmetric(vertical: 12),
-                            ),
-                            child: Text(
-                              'Cancelar',
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () => Navigator.of(context).pop(true),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              padding: EdgeInsets.symmetric(vertical: 12),
-                            ),
-                            child: Text(
-                              'Iniciar',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ) ??
-          false;
-
-      if (!confirmed) return;
-
-      // Mostrar indicador de carga
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => Dialog(
-          backgroundColor: Colors.transparent,
-          child: Container(
-            padding: EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: AppColors.darkBlue.withOpacity(0.9),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-                SizedBox(height: 16),
-                Text(
-                  'Iniciando tutoría...',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-
-      final result = await changeBookingToCursando(token, bookingId);
-
-      // Cerrar indicador de carga
-      Navigator.of(context).pop();
-
-      if (result['success'] == true) {
-        // print('✅ CAMBIO EXITOSO - Estado cambiado a cursando');
-        // print('✅ Respuesta del servidor: $result');
-
-        // Mostrar mensaje de éxito con información adicional
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '¡Tutoría iniciada exitosamente!',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'El estudiante ya puede ver que estás en la reunión',
-                  style: TextStyle(fontSize: 14),
-                ),
-              ],
-            ),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 4),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
-
-        // Refrescar las tutorías para mostrar el nuevo estado
-        _fetchTutorBookings();
-      } else {
-        // Mostrar mensaje de error
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['message'] ?? 'Error al cambiar el estado'),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
-    } catch (e) {
-      // Cerrar indicador de carga si hay error
-      Navigator.of(context).pop();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 3),
-        ),
-      );
-    }
-  }
 
   // Método para abrir enlace de Meet
   void _openMeetLink(String meetLink) {
@@ -1542,53 +794,7 @@ class _DashboardTutorState extends State<DashboardTutor>
   }
 
   // Método para reproducir sonido de éxito
-  void _playSuccessSound() async {
-    try {
-      final player = AudioPlayer();
-      await player.play(AssetSource('sounds/success.mp3'));
-    } catch (e) {
-      // Error silencioso para no interrumpir la experiencia del usuario
-      print('Error reproduciendo sonido: $e');
-    }
-  }
 
-  // Método para cargar el estado inicial de disponibilidad del tutor
-  Future<void> _loadTutoringAvailability() async {
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      if (authProvider.token == null || authProvider.userId == null) {
-        print(
-            'Error: Token o userId no disponibles para cargar disponibilidad');
-        return;
-      }
-
-      print('Cargando estado inicial de disponibilidad del tutor...');
-
-      final response = await getTutorTutoringAvailability(
-        authProvider.token,
-        authProvider.userId!,
-      );
-
-      if (response['success'] == true) {
-        final availableForTutoring =
-            response['available_for_tutoring'] ?? false;
-        print(
-            'Estado de disponibilidad cargado: ${availableForTutoring ? "Activada" : "Desactivada"}');
-
-        if (mounted) {
-          setState(() {
-            isAvailable = availableForTutoring;
-          });
-        }
-      } else {
-        print('Error al cargar disponibilidad: ${response['message']}');
-        // Mantener el estado por defecto (false)
-      }
-    } catch (e) {
-      print('Error al cargar disponibilidad del tutor: $e');
-      // Mantener el estado por defecto (false)
-    }
-  }
 
   // Método para actualizar la disponibilidad de tutoría
   Future<void> _updateTutoringAvailability(bool newAvailability) async {

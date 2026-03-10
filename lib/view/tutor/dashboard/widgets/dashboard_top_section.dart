@@ -40,7 +40,6 @@ class DashboardTopSection extends StatelessWidget {
         ? AppColors.cardDark 
         : AppColors.headerLight;
 
-    // Altura del Notch (Cámara frontal)
     final double statusBarHeight = MediaQuery.of(context).padding.top;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -97,11 +96,11 @@ class DashboardTopSection extends StatelessWidget {
             right: 5,
             child: AvailabilityCapsule(
               isAvailable: isAvailable,
-              onTap: () async {
+              onTap: () {
                 if (isAvailable) {
-                   await HapticFeedback.lightImpact();
+                   HapticFeedback.lightImpact();
                 } else {
-                   await HapticFeedback.heavyImpact();
+                   HapticFeedback.heavyImpact();
                 }
                 
                 onAvailabilityToggle(!isAvailable);

@@ -75,8 +75,6 @@ class _HeaderProfileImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
-    // ⬇️ AGREGA ESTA LÍNEA AQUÍ PARA VER QUÉ ESTÁ LLEGANDO ⬇️
     print("====== URL DE LA FOTO DEL TUTOR: $imageUrl ======");
     
     const double size = 56.0;
@@ -92,7 +90,6 @@ class _HeaderProfileImage extends StatelessWidget {
           decoration: BoxDecoration(
             color: theme.colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(18),
-            // NUESTRA UI NEOCLEAN (Borde sutil)
             border: Border.all(
               color: isDark
                   ? Colors.white.withOpacity(0.1)

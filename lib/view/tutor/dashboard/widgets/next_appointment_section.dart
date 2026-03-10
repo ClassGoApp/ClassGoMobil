@@ -31,12 +31,13 @@ class AppointmentModel {
 }
 
 class NextAppointmentSection extends StatefulWidget {
-  // Se recibe una list si está vacia, mostramos el "empty state" 
   final List<AppointmentModel> appointments;
+  final bool isAvailable;
 
   const NextAppointmentSection({
     Key? key,
     required this.appointments,
+    required this.isAvailable
   }) : super(key: key);
 
   @override
@@ -82,7 +83,7 @@ class _NextAppointmentSectionState extends State<NextAppointmentSection> {
         SizedBox(
           height: 200,
           child: widget.appointments.isEmpty
-              ? const _EmptyStateCard()
+              ? _EmptyStateCard(isAvailable: widget.isAvailable)
               : PageView.builder(
                   controller: _pageController,
                   itemCount: widget.appointments.length,
@@ -128,7 +129,7 @@ class _AppointmentCard extends StatelessWidget {
   Color _getStatusColor(String status) {
     final s = status.toLowerCase();
     if (s.contains('pendiente')) return AppColors.brandOrange;
-    if (s.contains('aceptad')) return AppColors.neonGreen; // Color brillante para Aceptado
+    if (s.contains('aceptad')) return AppColors.neonGreen;
     if (s.contains('cursando')) return AppColors.brandBlue;
     if (s.contains('completad')) return Colors.grey;
     return AppColors.brandCyan;
@@ -427,7 +428,8 @@ class _AppointmentCard extends StatelessWidget {
 }
 
 class _EmptyStateCard extends StatelessWidget {
-  const _EmptyStateCard({Key? key}) : super(key: key);
+  final bool isAvailable;
+  const _EmptyStateCard({Key? key, required this.isAvailable}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -451,13 +453,13 @@ class _EmptyStateCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.weekend_rounded,
+              isAvailable ? Icons.weekend_rounded : Icons.visibility_off_rounded,
               size: 40,
               color: isDark ? Colors.white24 : Colors.grey[300],
             ),
             const SizedBox(height: 12),
             Text(
-              "¡Todo despejado!",
+              isAvailable ? "¡Todo despejado!":"Modo offline" ,
               style: TextStyle(
                 color: isDark ? Colors.white : AppColors.brandBlue,
                 fontSize: 18,
@@ -466,8 +468,8 @@ class _EmptyStateCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-            Text(
-              "No tienes citas programadas para hoy.",
+            Text( isAvailable ?
+              "No tienes citas programadas para hoy.": "Activa tu disponibilidad para que los alumnos te vean.",
               style: TextStyle(
                 color: isDark ? Colors.grey : Colors.grey[500],
                 fontSize: 14,

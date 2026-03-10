@@ -9,7 +9,6 @@ import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/view/tutor/features/agenda/providers/tutor_agenda_provider.dart';
 import 'package:flutter_projects/view/tutor/dashboard/sheets/add_schedule_sheet.dart';
-import 'package:flutter_projects/view/tutor/dashboard/widgets/section_header.dart';
 
 class TutorAgendaScreen extends StatefulWidget {
   const TutorAgendaScreen({Key? key}) : super(key: key);
