@@ -3,13 +3,13 @@ import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/view/tutor/dashboard_tutor.dart';
 import 'package:flutter_projects/view/layout/main_shell.dart';
+import 'package:flutter_projects/view/student/dashboard_student.dart';
 
 class RoleBasedNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, _) {
-
         // 1️⃣ Esperar a que la sesión cargue
         if (!authProvider.isSessionLoaded) {
           return const Scaffold(
@@ -27,7 +27,10 @@ class RoleBasedNavigation extends StatelessWidget {
           return DashboardTutor();
         }
 
-        // 4️⃣ ESTUDIANTE
+        // 4️⃣ ESTUDIANTE -> Mostrar Dashboard específico para estudiantes
+        if (authProvider.isStudent) {
+          return DashboardStudent();
+        }
         return const MainShell();
       },
     );

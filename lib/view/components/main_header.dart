@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
-import 'package:flutter_projects/view/layout/main_shell.dart';
+import 'package:flutter_projects/view/components/role_based_navigation.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_projects/view/home/home_screen.dart';
 
@@ -37,7 +37,8 @@ class MainHeader extends StatelessWidget {
                     color: AppColors.whiteColor, size: 24),
                 onPressed: () {
                   Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (context) => MainShell()),
+                    MaterialPageRoute(
+                        builder: (context) => RoleBasedNavigation()),
                     (route) => false,
                   );
                 },

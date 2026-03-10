@@ -566,11 +566,29 @@ class _HomeScreenWithLoadingState extends State<HomeScreenWithLoading>
 
   void _loadHomeScreen() {
     Future.delayed(Duration(seconds: 2), () {
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => HomeScreen()),
-        );
+      if (!mounted) {
+        print(
+            '[HomeScreenWithLoading] widget not mounted, aborting navigation');
+        return;
+      }
+
+      print(
+          '[HomeScreenWithLoading] Navigating to HomeScreen (pushReplacement)');
+      try {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) {
+            print(
+                '[HomeScreenWithLoading] not mounted in post-frame, aborting');
+            return;
+          }
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => HomeScreen()),
+          );
+        });
+      } catch (e, st) {
+        print('[HomeScreenWithLoading] Error navigating to HomeScreen: $e');
+        print(st);
       }
     });
   }

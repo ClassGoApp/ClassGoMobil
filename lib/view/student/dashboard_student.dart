@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
-import 'package:flutter_projects/view/tutor/search_tutors_screen.dart';
+import 'package:flutter_projects/view/student/serch_Tutor/search_tutors_screen.dart';
+import 'package:flutter_projects/view/student/reservations/reservations_screen.dart';
+import 'package:flutter_projects/view/student/widgets/student_bottom_nav.dart';
+import 'package:flutter_projects/view/tutor/dashboard/widgets/dashboard_header.dart';
+import 'package:flutter_projects/view/student/profile_screen_student.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 
@@ -14,36 +18,17 @@ class _DashboardStudentState extends State<DashboardStudent> {
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context);
-    final userData = authProvider.userData;
-    final String? fullName = userData != null && userData['user'] != null
-        ? userData['user']['profile']['full_name']
-        : null;
-
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
-      appBar: AppBar(
-        backgroundColor: AppColors.primaryGreen,
-        elevation: 0,
-        title: Text(
-          'Dashboard Estudiante',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.notifications, color: Colors.white),
-            onPressed: () {
-              // TODO: Implementar notificaciones
-            },
-          ),
-        ],
-      ),
       body: _buildBody(),
-      bottomNavigationBar: _buildBottomNavigationBar(),
+      bottomNavigationBar: StudentBottomNav(
+        currentIndex: _selectedIndex,
+        onTap: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+      ),
     );
   }
 
@@ -54,101 +39,57 @@ class _DashboardStudentState extends State<DashboardStudent> {
       case 1:
         return _buildBookingsTab();
       case 2:
-        return _buildProfileTab();
+        return _buildSubjectsTab();
+      case 3:
+        return ProfileScreen(showAppBar: false);
       default:
         return _buildHomeTab();
     }
   }
 
   Widget _buildHomeTab() {
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildWelcomeCard(),
-          SizedBox(height: 24),
-          _buildQuickActions(),
-          SizedBox(height: 24),
-          _buildRecentBookings(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWelcomeCard() {
     final authProvider = Provider.of<AuthProvider>(context);
     final userData = authProvider.userData;
     final String? fullName = userData != null && userData['user'] != null
         ? userData['user']['profile']['full_name']
         : null;
-
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColors.primaryGreen, AppColors.lightBlueColor],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
+    return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 30,
-                backgroundColor: Colors.white.withOpacity(0.2),
-                child: Icon(
-                  Icons.school,
-                  color: Colors.white,
-                  size: 30,
-                ),
-              ),
-              SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '¡Bienvenido!',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      fullName ?? 'Estudiante',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          // Header estilo Tutor con padding top para status bar
+          SizedBox(height: MediaQuery.of(context).padding.top + 20),
+          DashboardHeader(
+            tutorName: fullName ?? 'Estudiante',
+            profileImageUrl: userData != null && userData['user'] != null
+                ? userData['user']['profile']['image']
+                : null,
+            rating: 0.0,
+            isVerified: false,
+            isLoadingImage: false,
+            isAvailable: false, // Not used without availability capsule
+            onLogoutTap: () {
+              final authProvider =
+                  Provider.of<AuthProvider>(context, listen: false);
+              authProvider.logout();
+            },
+            // show rating and verified only for tutors; hide for students
+            showRating: false,
+            showVerified: false,
           ),
-          SizedBox(height: 16),
-          Text(
-            'Encuentra los mejores tutores y mejora tus habilidades',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.9),
-              fontSize: 14,
-            ),
+          const SizedBox(height: 32),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: _buildQuickActions(),
           ),
+          SizedBox(height: 24),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: _buildRecentBookings(),
+          ),
+          SizedBox(
+              height:
+                  24), // Reduced bottom space since nav is now in bottomNavigationBar
         ],
       ),
     );
@@ -173,7 +114,7 @@ class _DashboardStudentState extends State<DashboardStudent> {
           crossAxisCount: 2,
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
-          childAspectRatio: 1.2,
+          childAspectRatio: 0.95,
           children: [
             _buildActionCard(
               icon: Icons.search,
@@ -201,22 +142,24 @@ class _DashboardStudentState extends State<DashboardStudent> {
               },
             ),
             _buildActionCard(
-              icon: Icons.payment,
-              title: 'Pagos',
-              subtitle: 'Gestionar pagos',
+              icon: Icons.menu_book_rounded,
+              title: 'Mis Materias',
+              subtitle: 'Ver materias',
               color: Colors.orange,
               onTap: () {
-                // TODO: Navegar a pagos
+                setState(() {
+                  _selectedIndex = 2;
+                });
               },
             ),
             _buildActionCard(
-              icon: Icons.settings,
-              title: 'Configuración',
+              icon: Icons.person_rounded,
+              title: 'Perfil',
               subtitle: 'Ajustes del perfil',
               color: Colors.purple,
               onTap: () {
                 setState(() {
-                  _selectedIndex = 2;
+                  _selectedIndex = 3;
                 });
               },
             ),
@@ -365,253 +308,55 @@ class _DashboardStudentState extends State<DashboardStudent> {
   }
 
   Widget _buildBookingsTab() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.calendar_today,
-            size: 64,
-            color: AppColors.greyColor,
+    // Usar el contenido reutilizable de Reservas (sin Scaffold ni bottom nav)
+    return Column(
+      children: [
+        SizedBox(height: MediaQuery.of(context).padding.top + 20),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: ReservationsContent(),
           ),
-          SizedBox(height: 16),
-          Text(
-            'Mis Reservas',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: AppColors.blackColor,
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Aquí verás todas tus sesiones programadas',
-            style: TextStyle(
-              color: AppColors.greyColor,
-              fontSize: 16,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  Widget _buildProfileTab() {
-    final authProvider = Provider.of<AuthProvider>(context);
-    final userData = authProvider.userData;
-    final String? fullName = userData != null && userData['user'] != null
-        ? userData['user']['profile']['full_name']
-        : null;
-    final String? email = userData != null && userData['user'] != null
-        ? userData['user']['email']
-        : null;
-
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(16),
-      child: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 8,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
+  Widget _buildSubjectsTab() {
+    return Column(
+      children: [
+        SizedBox(height: MediaQuery.of(context).padding.top + 20),
+        Expanded(
+          child: Center(
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                CircleAvatar(
-                  radius: 50,
-                  backgroundColor: AppColors.primaryGreen.withOpacity(0.1),
-                  child: Icon(
-                    Icons.person,
-                    size: 50,
-                    color: AppColors.primaryGreen,
-                  ),
+                Icon(
+                  Icons.menu_book_rounded,
+                  size: 64,
+                  color: AppColors.greyColor,
                 ),
                 SizedBox(height: 16),
                 Text(
-                  fullName ?? 'Estudiante',
+                  'Mis Materias',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: AppColors.blackColor,
                   ),
                 ),
-                SizedBox(height: 4),
+                SizedBox(height: 8),
                 Text(
-                  email ?? 'email@ejemplo.com',
+                  'Aquí verás todas las materias que estás estudiando',
                   style: TextStyle(
                     color: AppColors.greyColor,
                     fontSize: 16,
                   ),
-                ),
-                SizedBox(height: 8),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppColors.lightBlueColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    'Estudiante',
-                    style: TextStyle(
-                      color: AppColors.lightBlueColor,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  textAlign: TextAlign.center,
                 ),
               ],
             ),
           ),
-          SizedBox(height: 24),
-          _buildProfileOption(
-            icon: Icons.edit,
-            title: 'Editar Perfil',
-            subtitle: 'Modificar información personal',
-            onTap: () {
-              // TODO: Navegar a editar perfil
-            },
-          ),
-          _buildProfileOption(
-            icon: Icons.security,
-            title: 'Seguridad',
-            subtitle: 'Cambiar contraseña y configuración',
-            onTap: () {
-              // TODO: Navegar a configuración de seguridad
-            },
-          ),
-          _buildProfileOption(
-            icon: Icons.help_outline,
-            title: 'Ayuda',
-            subtitle: 'Centro de ayuda y soporte',
-            onTap: () {
-              // TODO: Navegar a ayuda
-            },
-          ),
-          _buildProfileOption(
-            icon: Icons.logout,
-            title: 'Cerrar Sesión',
-            subtitle: 'Salir de la aplicación',
-            onTap: () {
-              _showLogoutDialog();
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProfileOption({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: Container(
-          padding: EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: AppColors.primaryGreen.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(
-            icon,
-            color: AppColors.primaryGreen,
-            size: 24,
-          ),
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: AppColors.blackColor,
-          ),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(
-            fontSize: 14,
-            color: AppColors.greyColor,
-          ),
-        ),
-        trailing: Icon(
-          Icons.arrow_forward_ios,
-          color: AppColors.greyColor,
-          size: 16,
-        ),
-        onTap: onTap,
-      ),
-    );
-  }
-
-  void _showLogoutDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Cerrar Sesión'),
-          content: Text('¿Estás seguro de que quieres cerrar sesión?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('Cancelar'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                // Implementar logout
-                final authProvider =
-                    Provider.of<AuthProvider>(context, listen: false);
-                authProvider.logout();
-              },
-              child: Text(
-                'Cerrar Sesión',
-                style: TextStyle(color: Colors.red),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return BottomNavigationBar(
-      currentIndex: _selectedIndex,
-      onTap: (index) {
-        setState(() {
-          _selectedIndex = index;
-        });
-      },
-      type: BottomNavigationBarType.fixed,
-      backgroundColor: Colors.white,
-      selectedItemColor: AppColors.primaryGreen,
-      unselectedItemColor: AppColors.greyColor,
-      items: [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Inicio',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.calendar_today),
-          label: 'Reservas',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: 'Perfil',
         ),
       ],
     );

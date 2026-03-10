@@ -37,6 +37,7 @@ class InstantTutoringScreen extends StatefulWidget {
 class _InstantTutoringScreenState extends State<InstantTutoringScreen>
     with TickerProviderStateMixin {
   String? _selectedSubject;
+  int? _selectedSubjectId;
   File? _selectedImage;
   final DraggableScrollableController _scrollController =
       DraggableScrollableController();
@@ -52,6 +53,60 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
   bool _isDropdownOpen = false;
   late AnimationController _dropdownAnimController;
   late Animation<double> _dropdownAnimation;
+
+  String _displaySubjectName(dynamic subject) {
+    try {
+      String name = subject?.toString() ?? '';
+      final idx = name.indexOf('-');
+      if (idx >= 0 && idx < name.length - 1) {
+        return name.substring(idx + 1).trim();
+      }
+      return name;
+    } catch (_) {
+      return subject.toString();
+    }
+  }
+
+  int? _extractSubjectId(dynamic subject) {
+    try {
+      if (subject == null) return null;
+      if (subject is Map) {
+        final keys = [
+          'id',
+          'subject_id',
+          'id_subget',
+          'id_subjet',
+          'subget_id'
+        ];
+        for (final k in keys) {
+          if (subject.containsKey(k) && subject[k] != null) {
+            final val = subject[k].toString();
+            final n = int.tryParse(val);
+            if (n != null) return n;
+          }
+        }
+        // If map has a name field like '410-Teoría...', try to extract from it
+        if (subject.containsKey('name') && subject['name'] != null) {
+          final maybe = subject['name'].toString();
+          final lead = RegExp(r'^\s*(\d+)').firstMatch(maybe);
+          if (lead != null) return int.tryParse(lead.group(1)!);
+          final any = RegExp(r'(\d+)').firstMatch(maybe);
+          if (any != null) return int.tryParse(any.group(1)!);
+        }
+      }
+      final s = subject.toString();
+      // Try leading digits (e.g. "410-..."), accept different dash chars
+      final leading = RegExp(r'^\s*(\d+)\s*[-–—:]?').firstMatch(s);
+      if (leading != null) return int.tryParse(leading.group(1)!);
+      // Fallback: any digits anywhere
+      final cleaned = s.replaceAll(RegExp(r'(?i)subget'), '');
+      final match = RegExp(r'(\d+)').firstMatch(cleaned);
+      if (match != null) return int.tryParse(match.group(0)!);
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
 
   @override
   void initState() {
@@ -80,6 +135,8 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
     if (widget.selectedSubject != null &&
         widget.subjects.contains(widget.selectedSubject)) {
       _selectedSubject = widget.selectedSubject;
+      _selectedSubjectId =
+          _extractSubjectId(widget.selectedSubject) ?? widget.subjectId;
     }
 
     // Iniciar la animación inmediatamente para la primera página
@@ -209,12 +266,15 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
               endIndent: 16,
             ),
             itemBuilder: (context, index) {
+              print('--------------------------SUBJECT EN DROPDOWN----' +
+                  widget.subjects[index].toString());
               final subject = widget.subjects[index];
               final isSelected = subject == _selectedSubject;
               return InkWell(
                 onTap: () {
                   setState(() {
                     _selectedSubject = subject;
+                    _selectedSubjectId = _extractSubjectId(subject)!;
                   });
                   _toggleDropdown();
                 },
@@ -235,7 +295,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                       SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          subject,
+                          _displaySubjectName(subject),
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: isSelected
@@ -396,7 +456,9 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                   ),
                                   SizedBox(height: 4),
                                   Text(
-                                    _selectedSubject ?? 'Tutor de ClassGo',
+                                    _selectedSubject != null
+                                        ? _displaySubjectName(_selectedSubject)
+                                        : 'Tutor de ClassGo',
                                     style: AppTextStyles.body
                                         .copyWith(color: Colors.white70),
                                   ),
@@ -474,7 +536,9 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  _selectedSubject ?? 'Seleccionar materia',
+                                  _selectedSubject != null
+                                      ? _displaySubjectName(_selectedSubject)
+                                      : 'Seleccionar materia',
                                   style: TextStyle(
                                       color: _selectedSubject != null
                                           ? Colors.white
@@ -854,6 +918,9 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                         onPressed: _selectedSubject != null
                             ? () {
                                 // Reemplaza el modal actual con la pantalla de pago
+                                print(
+                                    '--------------------------IS MATERIAAAAA----' +
+                                        _selectedSubjectId.toString());
                                 Navigator.of(context).pushReplacement(
                                   PageRouteBuilder(
                                     opaque: false,
@@ -877,7 +944,8 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                         amount: "15 Bs",
                                         sessionDuration: "20 min",
                                         tutorId: widget.tutorId,
-                                        subjectId: widget.subjectId,
+                                        subjectId: _selectedSubjectId ??
+                                            widget.subjectId,
                                         // ✅ NUEVO: Pasar datos de reserva programada
                                         scheduledDate: widget.scheduledDate,
                                         scheduledTime: widget.scheduledTime,

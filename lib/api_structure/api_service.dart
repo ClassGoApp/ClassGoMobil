@@ -415,9 +415,11 @@ Future<Map<String, dynamic>> getAvailableTutors(
 
     if (response.statusCode == 200) {
       final responseData = json.decode(response.body);
-      print('DEBUG - Available Tutors Response data keys: ${responseData.keys.toList()}');
+      print(
+          'DEBUG - Available Tutors Response data keys: ${responseData.keys.toList()}');
       if (responseData.containsKey('data')) {
-        print('DEBUG - Available Tutors Data keys: ${responseData['data'].keys.toList()}');
+        print(
+            'DEBUG - Available Tutors Data keys: ${responseData['data'].keys.toList()}');
       }
       return responseData;
     } else {
@@ -635,6 +637,63 @@ Future<Map<String, dynamic>> getSubjects(String? token) async {
     }
   } catch (e) {
     throw 'Failed to get subjects $e';
+  }
+}
+
+/// Obtener materias por Institucion
+Future<Map<String, dynamic>> getSubjectsForInstitution(
+    String? token, String? institution) async {
+  try {
+    final Uri uri = Uri.parse('$baseUrl/subjects-institution').replace(
+      queryParameters: {
+        'institution': institution ?? '',
+      },
+    );
+    final headers = <String, String>{
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+
+    final response = await http.get(uri, headers: headers);
+    if (response.statusCode == 200) {
+      final decodedBody = json.decode(response.body);
+      return decodedBody;
+    } else {
+      final error = json.decode(response.body);
+      throw Exception(error['message'] ?? 'Failed to get subjects');
+    }
+  } catch (e) {
+    throw 'Failed to get subjects $e';
+  }
+}
+
+/// Obtener el nombre de una materia por su id
+/// Endpoint: GET /api/subject/{id}/name
+Future<Map<String, dynamic>> getSubjectNameById(String? token, int id) async {
+  try {
+    final Uri uri = Uri.parse('$baseUrl/subject/$id/name');
+    final headers = <String, String>{
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+
+    final response = await http.get(uri, headers: headers);
+
+    if (response.statusCode == 200) {
+      final decodedBody = json.decode(response.body);
+      return decodedBody;
+    } else {
+      final error = json.decode(response.body);
+      throw Exception(error['message'] ?? 'Failed to get subject name');
+    }
+  } catch (e) {
+    throw 'Failed to get subject name: $e';
   }
 }
 
@@ -1272,7 +1331,6 @@ Future<Map<String, dynamic>> getInvoices(String token) async {
 
 Future<Map<String, dynamic>> getTutorAvailableSlots(
     String token, String userId) async {
-  // ✅ CAMBIO: Usar el endpoint correcto para obtener slots del tutor
   final Uri uri = Uri.parse('$baseUrl/tutor/$userId/available-slots');
   final headers = {
     'Authorization': 'Bearer $token',
@@ -1286,21 +1344,28 @@ Future<Map<String, dynamic>> getTutorAvailableSlots(
       headers: headers,
     );
 
-    if (response.statusCode == 200) {
-      final decodedBody = json.decode(response.body);
+    // Decodificar usando bodyBytes para evitar problemas de encoding
+    final String bodyString = utf8.decode(response.bodyBytes);
+    final dynamic decodedBody = json.decode(bodyString);
 
-      // Si la respuesta es una lista, convertirla a un Map con estructura estándar
+    if (response.statusCode == 200) {
       if (decodedBody is List) {
-        return {
-          'status': 200,
-          'data': decodedBody,
-        };
+        return {'status': 200, 'data': decodedBody};
       }
 
-      // Si ya es un Map, devolverlo tal como está
-      return decodedBody;
+      if (decodedBody is Map<String, dynamic>) {
+        if (!decodedBody.containsKey('status')) {
+          decodedBody['status'] = 200;
+        }
+        return decodedBody;
+      }
+
+      // Caso inesperado: envolver en data
+      return {'status': 200, 'data': decodedBody};
     } else {
-      final error = json.decode(response.body);
+      final error = decodedBody is Map
+          ? decodedBody
+          : {'message': 'Failed to fetch available slots'};
       throw Exception(error['message'] ?? 'Failed to fetch available slots');
     }
   } catch (e) {
@@ -1836,7 +1901,7 @@ Future<Map<String, dynamic>> deleteTutorSubject(
     print('🔍 DEBUG - Token: ${token.substring(0, 20)}...');
     print('🔍 DEBUG - Tutor ID: $tutorId');
     print('🔍 DEBUG - Subject ID: $subjectId');
-    
+
     final response = await http.delete(
       Uri.parse(url),
       headers: {
@@ -1848,13 +1913,19 @@ Future<Map<String, dynamic>> deleteTutorSubject(
 
     print('🔍 DEBUG - Status code de respuesta: ${response.statusCode}');
     print('🔍 DEBUG - Cuerpo de respuesta: ${response.body}');
-    
+
     if (response.statusCode == 200 || response.statusCode == 204) {
       return {'success': true, 'message': 'Subject deleted successfully'};
     } else {
-      final responseBody = response.body.isNotEmpty ? jsonDecode(response.body) : {};
-      final errorMessage = responseBody['message'] ?? 'Failed to delete tutor subject: ${response.statusCode}';
-      return {'success': false, 'message': errorMessage, 'status': response.statusCode};
+      final responseBody =
+          response.body.isNotEmpty ? jsonDecode(response.body) : {};
+      final errorMessage = responseBody['message'] ??
+          'Failed to delete tutor subject: ${response.statusCode}';
+      return {
+        'success': false,
+        'message': errorMessage,
+        'status': response.statusCode
+      };
     }
   } catch (e) {
     print('Error deleting tutor subject: $e');
@@ -1952,7 +2023,8 @@ Future<Map<String, dynamic>> createUserSubjectSlot(
 Future<Map<String, dynamic>> deleteUserSubjectSlot(
     String token, int slotId, int userId) async {
   try {
-    print('DEBUG - deleteUserSubjectSlot request: slot_id = $slotId, user_id = $userId');
+    print(
+        'DEBUG - deleteUserSubjectSlot request: slot_id = $slotId, user_id = $userId');
 
     final response = await http.delete(
       Uri.parse('$baseUrl/tutor/slots'),
@@ -1967,17 +2039,20 @@ Future<Map<String, dynamic>> deleteUserSubjectSlot(
       }),
     );
 
-    print('DEBUG - deleteUserSubjectSlot response: ${response.statusCode} - ${response.body}');
+    print(
+        'DEBUG - deleteUserSubjectSlot response: ${response.statusCode} - ${response.body}');
 
     if (response.statusCode == 200 || response.statusCode == 204) {
-      final responseData = response.body.isNotEmpty ? jsonDecode(response.body) : {};
+      final responseData =
+          response.body.isNotEmpty ? jsonDecode(response.body) : {};
       return {
         'success': true,
         'message': responseData['message'] ?? 'Slot eliminado exitosamente',
         'data': responseData['data'],
       };
     } else {
-      final errorData = response.body.isNotEmpty ? jsonDecode(response.body) : {};
+      final errorData =
+          response.body.isNotEmpty ? jsonDecode(response.body) : {};
       return {
         'success': false,
         'message': errorData['message'] ?? 'Error al eliminar el slot',
@@ -2088,90 +2163,98 @@ Future<Map<String, dynamic>> checkTutorCurrentSlotBookings(
   try {
     print('DEBUG - Verificando slot bookings actuales del tutor: $tutorId');
     print('DEBUG - URL del endpoint: $baseUrl/tutor/$tutorId/available-slots');
-    
+
     // Obtener la hora actual en Bolivia (UTC-4)
     final now = DateTime.now().subtract(Duration(hours: 4));
-    final currentDate = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-    final currentTime = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:00';
-    
+    final currentDate =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final currentTime =
+        '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:00';
+
     print('DEBUG - Fecha actual: $currentDate, Hora actual: $currentTime');
     print('DEBUG - DateTime.now(): ${DateTime.now()}');
     print('DEBUG - DateTime.now() en Bolivia: $now');
-    
+
     final Uri uri = Uri.parse('$baseUrl/tutor/$tutorId/available-slots');
     final headers = <String, String>{
       'Accept': 'application/json',
       'Content-Type': 'application/json',
     };
-    
+
     if (token != null && token.isNotEmpty) {
       headers['Authorization'] = 'Bearer $token';
     }
-    
+
     final response = await http.get(uri, headers: headers);
-    print('DEBUG - Respuesta de slot bookings: ${response.statusCode} - ${response.body}');
-    
+    print(
+        'DEBUG - Respuesta de slot bookings: ${response.statusCode} - ${response.body}');
+
     if (response.statusCode == 200) {
       final responseData = json.decode(response.body);
-      
-            // Verificar si hay slots disponibles para la hora actual
+
+      // Verificar si hay slots disponibles para la hora actual
       bool hasCurrentSlot = false;
-      
+
       print('DEBUG - responseData completo: $responseData');
-      
+
       // El responseData ya es la lista directamente, no tiene 'data' key
       if (responseData is List) {
         final slots = responseData;
         print('DEBUG - Número de slots encontrados: ${slots.length}');
-        
+
         for (var slot in slots) {
           try {
             print('DEBUG - Procesando slot: $slot');
-            
+
             // Verificar que el slot tenga los campos necesarios
-            if (slot['start_time'] != null && 
-                slot['end_time'] != null && 
+            if (slot['start_time'] != null &&
+                slot['end_time'] != null &&
                 slot['date'] != null) {
-              
               final slotDate = slot['date'].toString().trim();
-              final startTimeUTC = DateTime.parse(slot['start_time'].toString().trim());
-              final endTimeUTC = DateTime.parse(slot['end_time'].toString().trim());
-              
+              final startTimeUTC =
+                  DateTime.parse(slot['start_time'].toString().trim());
+              final endTimeUTC =
+                  DateTime.parse(slot['end_time'].toString().trim());
+
               print('DEBUG - slotDate: $slotDate');
               print('DEBUG - startTimeUTC: $startTimeUTC');
               print('DEBUG - endTimeUTC: $endTimeUTC');
-              
+
               // Convertir a hora local de Bolivia (UTC-4)
               final startTime = startTimeUTC.subtract(Duration(hours: 4));
               final endTime = endTimeUTC.subtract(Duration(hours: 4));
-              
+
               print('DEBUG - startTime (Bolivia): $startTime');
               print('DEBUG - endTime (Bolivia): $endTime');
-              
+
               // Verificar si el slot es para hoy y la hora actual está dentro del rango
-              print('DEBUG - 🔍 Comparando fechas: slotDate="$slotDate" vs currentDate="$currentDate"');
+              print(
+                  'DEBUG - 🔍 Comparando fechas: slotDate="$slotDate" vs currentDate="$currentDate"');
               print('DEBUG - 🔍 ¿Son iguales?: ${slotDate == currentDate}');
-              
+
               if (slotDate == currentDate) {
                 print('DEBUG - ✅ Slot es para hoy, verificando horario...');
-                
+
                 final slotStartMinutes = startTime.hour * 60 + startTime.minute;
                 final slotEndMinutes = endTime.hour * 60 + endTime.minute;
                 final currentMinutes = now.hour * 60 + now.minute;
-                
+
                 print('DEBUG - slotStartMinutes: $slotStartMinutes');
                 print('DEBUG - slotEndMinutes: $slotEndMinutes');
                 print('DEBUG - currentMinutes: $currentMinutes');
-                
-                if (currentMinutes >= slotStartMinutes && currentMinutes < slotEndMinutes) {
+
+                if (currentMinutes >= slotStartMinutes &&
+                    currentMinutes < slotEndMinutes) {
                   hasCurrentSlot = true;
-                  print('DEBUG - ✅ Encontrado slot válido: ${startTime.hour}:${startTime.minute} - ${endTime.hour}:${endTime.minute}');
+                  print(
+                      'DEBUG - ✅ Encontrado slot válido: ${startTime.hour}:${startTime.minute} - ${endTime.hour}:${endTime.minute}');
                   break;
                 } else {
                   print('DEBUG - ❌ Slot no válido para hora actual');
                 }
               } else {
-                print('DEBUG - ❌ Slot no es para hoy (slotDate: $slotDate, currentDate: $currentDate)');
+                print(
+                    'DEBUG - ❌ Slot no es para hoy (slotDate: $slotDate, currentDate: $currentDate)');
               }
             } else {
               print('DEBUG - ❌ Slot no tiene campos necesarios');
@@ -2182,11 +2265,12 @@ Future<Map<String, dynamic>> checkTutorCurrentSlotBookings(
           }
         }
       } else {
-        print('DEBUG - ❌ responseData no es una lista: ${responseData.runtimeType}');
+        print(
+            'DEBUG - ❌ responseData no es una lista: ${responseData.runtimeType}');
       }
-      
+
       print('DEBUG - Resultado final: hasCurrentSlot = $hasCurrentSlot');
-      
+
       return {
         'success': true,
         'has_current_slot': hasCurrentSlot,
@@ -2197,7 +2281,8 @@ Future<Map<String, dynamic>> checkTutorCurrentSlotBookings(
       final error = json.decode(response.body);
       return {
         'success': false,
-        'message': error['message'] ?? 'Error al verificar slot bookings: ${response.statusCode}',
+        'message': error['message'] ??
+            'Error al verificar slot bookings: ${response.statusCode}',
         'has_current_slot': false,
       };
     }
@@ -2215,40 +2300,45 @@ Future<Map<String, dynamic>> checkTutorCurrentSlotBookings(
 Future<Map<String, dynamic>> checkTutorAvailabilityBeforeBooking(
     String? token, int tutorId) async {
   try {
-    print('DEBUG - Verificando disponibilidad del tutor antes de confirmar tutoría: $tutorId');
-    print('DEBUG - URL del endpoint: $baseUrl/verified-tutors-photos?tutor_id=$tutorId');
-    
-    final Uri uri = Uri.parse('$baseUrl/verified-tutors-photos?tutor_id=$tutorId');
+    print(
+        'DEBUG - Verificando disponibilidad del tutor antes de confirmar tutoría: $tutorId');
+    print(
+        'DEBUG - URL del endpoint: $baseUrl/verified-tutors-photos?tutor_id=$tutorId');
+
+    final Uri uri =
+        Uri.parse('$baseUrl/verified-tutors-photos?tutor_id=$tutorId');
     final headers = <String, String>{
       'Accept': 'application/json',
       'Content-Type': 'application/json',
     };
-    
+
     if (token != null && token.isNotEmpty) {
       headers['Authorization'] = 'Bearer $token';
     }
-    
+
     final response = await http.get(uri, headers: headers);
-    print('DEBUG - Respuesta de verificación: ${response.statusCode} - ${response.body}');
-    
+    print(
+        'DEBUG - Respuesta de verificación: ${response.statusCode} - ${response.body}');
+
     if (response.statusCode == 200) {
       final responseData = json.decode(response.body);
-      
+
       // Extraer la disponibilidad del primer tutor en la lista
       print('DEBUG - responseData: $responseData');
       print('DEBUG - responseData[\'data\']: ${responseData['data']}');
-      
-      if (responseData['data'] != null && 
-          responseData['data'] is List && 
+
+      if (responseData['data'] != null &&
+          responseData['data'] is List &&
           responseData['data'].isNotEmpty) {
         final tutorData = responseData['data'][0];
         print('DEBUG - tutorData: $tutorData');
-        final availableForTutoring = tutorData['available_for_tutoring'] ?? false;
+        final availableForTutoring =
+            tutorData['available_for_tutoring'] ?? false;
         final tutorName = tutorData['name'] ?? 'Tutor';
-        
+
         print('DEBUG - available_for_tutoring extraído: $availableForTutoring');
         print('DEBUG - tutorName extraído: $tutorName');
-        
+
         return {
           'success': true,
           'available_for_tutoring': availableForTutoring,
@@ -2267,7 +2357,8 @@ Future<Map<String, dynamic>> checkTutorAvailabilityBeforeBooking(
       final error = json.decode(response.body);
       return {
         'success': false,
-        'message': error['message'] ?? 'Error al verificar disponibilidad del tutor: ${response.statusCode}',
+        'message': error['message'] ??
+            'Error al verificar disponibilidad del tutor: ${response.statusCode}',
         'available_for_tutoring': false,
         'tutor_name': 'Tutor',
       };
@@ -2288,30 +2379,33 @@ Future<Map<String, dynamic>> getTutorTutoringAvailability(
     String? token, int tutorId) async {
   try {
     print('DEBUG - Obteniendo disponibilidad de tutoría para tutor: $tutorId');
-    
-    final Uri uri = Uri.parse('$baseUrl/verified-tutors-photos?tutor_id=$tutorId');
+
+    final Uri uri =
+        Uri.parse('$baseUrl/verified-tutors-photos?tutor_id=$tutorId');
     final headers = <String, String>{
       'Accept': 'application/json',
       'Content-Type': 'application/json',
     };
-    
+
     if (token != null && token.isNotEmpty) {
       headers['Authorization'] = 'Bearer $token';
     }
-    
+
     final response = await http.get(uri, headers: headers);
-    print('DEBUG - Respuesta del servidor: ${response.statusCode} - ${response.body}');
-    
+    print(
+        'DEBUG - Respuesta del servidor: ${response.statusCode} - ${response.body}');
+
     if (response.statusCode == 200) {
       final responseData = json.decode(response.body);
-      
+
       // Extraer la disponibilidad del primer tutor en la lista
-      if (responseData['data'] != null && 
-          responseData['data'] is List && 
+      if (responseData['data'] != null &&
+          responseData['data'] is List &&
           responseData['data'].isNotEmpty) {
         final tutorData = responseData['data'][0];
-        final availableForTutoring = tutorData['available_for_tutoring'] ?? false;
-        
+        final availableForTutoring =
+            tutorData['available_for_tutoring'] ?? false;
+
         return {
           'success': true,
           'available_for_tutoring': availableForTutoring,
@@ -2328,7 +2422,8 @@ Future<Map<String, dynamic>> getTutorTutoringAvailability(
       final error = json.decode(response.body);
       return {
         'success': false,
-        'message': error['message'] ?? 'Error al obtener disponibilidad del tutor: ${response.statusCode}',
+        'message': error['message'] ??
+            'Error al obtener disponibilidad del tutor: ${response.statusCode}',
         'available_for_tutoring': false,
       };
     }
@@ -2346,8 +2441,10 @@ Future<Map<String, dynamic>> getTutorTutoringAvailability(
 Future<Map<String, dynamic>> updateTutoringAvailability(
     String token, int userId, bool availableForTutoring) async {
   try {
-    print('DEBUG - Actualizando disponibilidad de tutoría para usuario: $userId');
-    print('DEBUG - Disponibilidad: ${availableForTutoring ? "Activada" : "Desactivada"}');
+    print(
+        'DEBUG - Actualizando disponibilidad de tutoría para usuario: $userId');
+    print(
+        'DEBUG - Disponibilidad: ${availableForTutoring ? "Activada" : "Desactivada"}');
 
     final response = await http.put(
       Uri.parse('$baseUrl/user/$userId/tutoring-availability'),
@@ -2361,13 +2458,14 @@ Future<Map<String, dynamic>> updateTutoringAvailability(
       }),
     );
 
-    print('DEBUG - Respuesta del servidor: ${response.statusCode} - ${response.body}');
+    print(
+        'DEBUG - Respuesta del servidor: ${response.statusCode} - ${response.body}');
 
     if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
       return {
         'success': true,
-        'message': availableForTutoring 
+        'message': availableForTutoring
             ? 'Disponibilidad de tutoría activada exitosamente'
             : 'Disponibilidad de tutoría desactivada exitosamente',
         'data': responseData,
@@ -2376,7 +2474,8 @@ Future<Map<String, dynamic>> updateTutoringAvailability(
       final errorData = jsonDecode(response.body);
       return {
         'success': false,
-        'message': errorData['message'] ?? 'Error al actualizar la disponibilidad de tutoría',
+        'message': errorData['message'] ??
+            'Error al actualizar la disponibilidad de tutoría',
         'status': response.statusCode,
       };
     }
@@ -2390,20 +2489,21 @@ Future<Map<String, dynamic>> updateTutoringAvailability(
 }
 
 /// Obtiene un tutor específico para una materia
-/// 
+///
 /// ✅ NUEVO: Endpoint para buscar tutor por materia
 /// /api/tutor-for-subject/{subjectId}
-/// 
+///
 /// Devuelve:
 /// - Un tutor si está disponible para esa materia
 /// - 404 si no hay tutores disponibles
-Future<Map<String, dynamic>> getTutorForSubject(String? token, int subjectId) async {
+Future<Map<String, dynamic>> getTutorForSubject(
+    String? token, int subjectId) async {
   try {
     print('DEBUG - Buscando tutor para materia: $subjectId');
     print('DEBUG - URL del endpoint: $baseUrl/tutor-for-subject/$subjectId');
-    
+
     final Uri uri = Uri.parse('$baseUrl/tutor-for-subject/$subjectId');
-    
+
     final response = await http.get(
       uri,
       headers: {
@@ -2411,13 +2511,14 @@ Future<Map<String, dynamic>> getTutorForSubject(String? token, int subjectId) as
         'Accept': 'application/json',
       },
     );
-    
-    print('DEBUG - Respuesta del servidor: ${response.statusCode} - ${response.body}');
-    
+
+    print(
+        'DEBUG - Respuesta del servidor: ${response.statusCode} - ${response.body}');
+
     if (response.statusCode == 200) {
       final responseData = json.decode(response.body);
       print('DEBUG - Datos del tutor encontrado: $responseData');
-      
+
       return {
         'success': true,
         'data': responseData['data'],
@@ -2429,7 +2530,8 @@ Future<Map<String, dynamic>> getTutorForSubject(String? token, int subjectId) as
       print('DEBUG - No se encontró tutor para la materia: $subjectId');
       return {
         'success': false,
-        'message': 'No se encontró ningún tutor disponible para esta materia en este momento',
+        'message':
+            'No se encontró ningún tutor disponible para esta materia en este momento',
         'status': 404,
       };
     } else {

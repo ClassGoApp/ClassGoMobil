@@ -13,6 +13,8 @@ class DashboardHeader extends StatelessWidget {
   // --- ESTADOS ---
   final bool isLoadingImage;
   final bool isAvailable;
+  final bool showRating;
+  final bool showVerified;
 
   // --- ACCIONES ---
   final VoidCallback onLogoutTap;
@@ -25,6 +27,8 @@ class DashboardHeader extends StatelessWidget {
     this.isVerified = true,
     this.isLoadingImage = false,
     required this.isAvailable,
+    this.showRating = true,
+    this.showVerified = true,
     required this.onLogoutTap,
   }) : super(key: key);
 
@@ -48,6 +52,8 @@ class DashboardHeader extends StatelessWidget {
               tutorName: tutorName,
               rating: rating,
               isVerified: isVerified,
+              showRating: showRating,
+              showVerified: showVerified,
               textColor: colorScheme.onSurface,
             ),
           ),
@@ -75,10 +81,9 @@ class _HeaderProfileImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     // ⬇️ AGREGA ESTA LÍNEA AQUÍ PARA VER QUÉ ESTÁ LLEGANDO ⬇️
     print("====== URL DE LA FOTO DEL TUTOR: $imageUrl ======");
-    
+
     const double size = 56.0;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -163,6 +168,8 @@ class _HeaderUserInfo extends StatelessWidget {
   final String tutorName;
   final double rating;
   final bool isVerified;
+  final bool showRating;
+  final bool showVerified;
   final Color textColor;
 
   const _HeaderUserInfo({
@@ -170,6 +177,8 @@ class _HeaderUserInfo extends StatelessWidget {
     required this.tutorName,
     required this.rating,
     required this.isVerified,
+    this.showRating = true,
+    this.showVerified = true,
     required this.textColor,
   }) : super(key: key);
 
@@ -190,7 +199,7 @@ class _HeaderUserInfo extends StatelessWidget {
     final verifiedIcon = AppColors.brandCyan;
 
     final unverifiedBg = Color.fromRGBO(255, 255, 255, 0.1);
-    
+
     final unverifiedText = Colors.grey;
 
     return Column(
@@ -216,61 +225,62 @@ class _HeaderUserInfo extends StatelessWidget {
         // 2. RATING Y VERIFICACION
         Row(
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-              decoration: BoxDecoration(
-                color: ratingCardBg,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.star_rounded,
-                      color: Color(0xFFFFC107), size: 18),
-                  const SizedBox(width: 4),
-                  Text(
-                    rating.toStringAsFixed(1),
-                    style: TextStyle(
-                      color: textColor,
-                      fontFamily: 'manrope',
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                  color: isVerified ? verifiedBg : unverifiedBg,
+            if (showRating)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                decoration: BoxDecoration(
+                  color: ratingCardBg,
                   borderRadius: BorderRadius.circular(8),
-                  border: isVerified
-                      ? null
-                      : Border.all(color: Colors.grey.withOpacity(0.3))),
-              child: Row(
-                children: [
-                  Icon(
-                    isVerified
-                        ? Icons.verified_user_outlined
-                        : Icons.hourglass_empty_rounded,
-                    color: isVerified ? verifiedIcon : unverifiedText,
-                    size: 14,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(isVerified ? "VERIFICADO" : "PENDIENTE",
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.star_rounded,
+                        color: Color(0xFFFFC107), size: 18),
+                    const SizedBox(width: 4),
+                    Text(
+                      rating.toStringAsFixed(1),
                       style: TextStyle(
-                        color: isVerified ? verifiedText : unverifiedText,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
+                        color: textColor,
                         fontFamily: 'manrope',
-                        letterSpacing: 0.5,
-                      ))
-                ],
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            )
+            if (showRating) const SizedBox(width: 8),
+            if (showVerified)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                    color: isVerified ? verifiedBg : unverifiedBg,
+                    borderRadius: BorderRadius.circular(8),
+                    border: isVerified
+                        ? null
+                        : Border.all(color: Colors.grey.withOpacity(0.3))),
+                child: Row(
+                  children: [
+                    Icon(
+                      isVerified
+                          ? Icons.verified_user_outlined
+                          : Icons.hourglass_empty_rounded,
+                      color: isVerified ? verifiedIcon : unverifiedText,
+                      size: 14,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(isVerified ? "VERIFICADO" : "PENDIENTE",
+                        style: TextStyle(
+                          color: isVerified ? verifiedText : unverifiedText,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          fontFamily: 'manrope',
+                          letterSpacing: 0.5,
+                        ))
+                  ],
+                ),
+              )
           ],
         ),
       ],

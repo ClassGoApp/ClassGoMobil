@@ -271,73 +271,95 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
       }
 
       // ✅ NUEVO: Verificar disponibilidad del tutor SOLO para tutorías instantáneas
-      print('[PaymentQRScreen] 🔍 DEBUG - Iniciando validación de disponibilidad...');
-      print('[PaymentQRScreen] 🔍 DEBUG - isScheduledBooking: ${widget.isScheduledBooking}');
+      print(
+          '[PaymentQRScreen] 🔍 DEBUG - Iniciando validación de disponibilidad...');
+      print(
+          '[PaymentQRScreen] 🔍 DEBUG - isScheduledBooking: ${widget.isScheduledBooking}');
       print('[PaymentQRScreen] 🔍 DEBUG - tutorId: ${widget.tutorId}');
-      
+
       if (!widget.isScheduledBooking) {
-        print('[PaymentQRScreen] 🔍 DEBUG - Es tutoría instantánea, aplicando validación...');
-        
+        print(
+            '[PaymentQRScreen] 🔍 DEBUG - Es tutoría instantánea, aplicando validación...');
+
         // Verificar disponibilidad general del tutor
-        print('[PaymentQRScreen] 🔍 DEBUG - Llamando a checkTutorAvailabilityBeforeBooking...');
-        final availabilityResponse = await checkTutorAvailabilityBeforeBooking(token, widget.tutorId);
-        print('[PaymentQRScreen] 🔍 DEBUG - Respuesta de disponibilidad: $availabilityResponse');
-        
+        print(
+            '[PaymentQRScreen] 🔍 DEBUG - Llamando a checkTutorAvailabilityBeforeBooking...');
+        final availabilityResponse =
+            await checkTutorAvailabilityBeforeBooking(token, widget.tutorId);
+        print(
+            '[PaymentQRScreen] 🔍 DEBUG - Respuesta de disponibilidad: $availabilityResponse');
+
         if (availabilityResponse['success'] == true) {
-          final isAvailable = availabilityResponse['available_for_tutoring'] ?? false;
+          final isAvailable =
+              availabilityResponse['available_for_tutoring'] ?? false;
           final tutorName = availabilityResponse['tutor_name'] ?? 'Tutor';
-          
+
           print('[PaymentQRScreen] 🔍 DEBUG - isAvailable: $isAvailable');
           print('[PaymentQRScreen] 🔍 DEBUG - tutorName: $tutorName');
-          
+
           if (!isAvailable) {
-            print('[PaymentQRScreen] 🔍 DEBUG - Tutor NO disponible, verificando slot bookings...');
-            
+            print(
+                '[PaymentQRScreen] 🔍 DEBUG - Tutor NO disponible, verificando slot bookings...');
+
             // Si no está disponible, verificar si tiene slot bookings para la hora actual
-            print('[PaymentQRScreen] 🔍 DEBUG - Llamando a checkTutorCurrentSlotBookings...');
-            final slotBookingsResponse = await checkTutorCurrentSlotBookings(token, widget.tutorId);
-            print('[PaymentQRScreen] 🔍 DEBUG - Respuesta de slot bookings: $slotBookingsResponse');
-            
+            print(
+                '[PaymentQRScreen] 🔍 DEBUG - Llamando a checkTutorCurrentSlotBookings...');
+            final slotBookingsResponse =
+                await checkTutorCurrentSlotBookings(token, widget.tutorId);
+            print(
+                '[PaymentQRScreen] 🔍 DEBUG - Respuesta de slot bookings: $slotBookingsResponse');
+
             if (slotBookingsResponse['success'] == true) {
-              final hasCurrentSlot = slotBookingsResponse['has_current_slot'] ?? false;
-              
-              print('[PaymentQRScreen] 🔍 DEBUG - hasCurrentSlot: $hasCurrentSlot');
-              
+              final hasCurrentSlot =
+                  slotBookingsResponse['has_current_slot'] ?? false;
+
+              print(
+                  '[PaymentQRScreen] 🔍 DEBUG - hasCurrentSlot: $hasCurrentSlot');
+
               if (!hasCurrentSlot) {
                 // ✅ AMBAS CONDICIONES CUMPLIDAS: No está disponible Y no tiene slot para la hora actual
-                print('[PaymentQRScreen] 🔍 DEBUG - AMBAS CONDICIONES CUMPLIDAS: No disponible Y sin slot');
-                print('[PaymentQRScreen] 🔍 DEBUG - Mostrando modal de error...');
-                
+                print(
+                    '[PaymentQRScreen] 🔍 DEBUG - AMBAS CONDICIONES CUMPLIDAS: No disponible Y sin slot');
+                print(
+                    '[PaymentQRScreen] 🔍 DEBUG - Mostrando modal de error...');
+
                 setState(() {
                   _isPaymentCompleted = false;
                 });
-                
+
                 _showTutorUnavailableDialog(tutorName);
                 return;
               } else {
                 // ✅ TIENE SLOT PARA HORA ACTUAL: Continuar con la tutoría
-                print('[PaymentQRScreen] 🔍 DEBUG - Tutor no disponible pero TIENE slot para hora actual, continuando...');
+                print(
+                    '[PaymentQRScreen] 🔍 DEBUG - Tutor no disponible pero TIENE slot para hora actual, continuando...');
               }
             } else {
               // Error al verificar slot bookings, continuar por seguridad
-              print('[PaymentQRScreen] 🔍 DEBUG - Error al verificar slot bookings: ${slotBookingsResponse['message']}');
-              print('[PaymentQRScreen] 🔍 DEBUG - Continuando por seguridad...');
+              print(
+                  '[PaymentQRScreen] 🔍 DEBUG - Error al verificar slot bookings: ${slotBookingsResponse['message']}');
+              print(
+                  '[PaymentQRScreen] 🔍 DEBUG - Continuando por seguridad...');
             }
           } else {
             // ✅ ESTÁ DISPONIBLE: Continuar normalmente
-            print('[PaymentQRScreen] 🔍 DEBUG - Tutor DISPONIBLE, continuando normalmente...');
+            print(
+                '[PaymentQRScreen] 🔍 DEBUG - Tutor DISPONIBLE, continuando normalmente...');
           }
         } else {
-          print('[PaymentQRScreen] 🔍 DEBUG - Error al verificar disponibilidad: ${availabilityResponse['message']}');
+          print(
+              '[PaymentQRScreen] 🔍 DEBUG - Error al verificar disponibilidad: ${availabilityResponse['message']}');
           print('[PaymentQRScreen] 🔍 DEBUG - Continuando por seguridad...');
           // Continuar con el proceso si no se puede verificar la disponibilidad
         }
       } else {
         // ✅ TUTORÍA AGENDADA: No aplicar validación de disponibilidad
-        print('[PaymentQRScreen] 🔍 DEBUG - Es tutoría AGENDADA, OMITIENDO validación de disponibilidad...');
+        print(
+            '[PaymentQRScreen] 🔍 DEBUG - Es tutoría AGENDADA, OMITIENDO validación de disponibilidad...');
       }
-      
-      print('[PaymentQRScreen] 🔍 DEBUG - Validación completada, continuando con el proceso...');
+
+      print(
+          '[PaymentQRScreen] 🔍 DEBUG - Validación completada, continuando con el proceso...');
 
       // 1. Crear el slot booking
       final now = DateTime.now();
@@ -438,7 +460,7 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
         'booked_at': now.toIso8601String(),
         'calendar_event_id': calendarEventId,
         'meeting_link': '',
-        'status': 2,
+        'status': 1,
         'meta_data': metaData,
         'subject_id': widget.subjectId,
       };
@@ -1015,7 +1037,8 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
                       child: ElevatedButton(
                         onPressed: () {
                           Navigator.of(context).pop(); // Cerrar modal
-                          Navigator.of(context).pop(); // Volver a la pantalla anterior
+                          Navigator.of(context)
+                              .pop(); // Volver a la pantalla anterior
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.redColor,

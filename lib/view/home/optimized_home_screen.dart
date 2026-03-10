@@ -6,7 +6,7 @@ import 'package:flutter_projects/provider/home_provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/view/auth/login_screen.dart';
-import 'package:flutter_projects/view/tutor/search_tutors_screen.dart';
+import 'package:flutter_projects/view/student/serch_Tutor/search_tutors_screen.dart';
 
 class OptimizedHomeScreen extends StatefulWidget {
   final bool forceRefresh;

@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/view/student/reservations/widgets/booking_modal.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:ui';
 import 'package:flutter_projects/view/tutor/instant_tutoring_screen.dart';
-import 'package:flutter_projects/view/tutor/search_tutors_screen.dart'
-    show BookingModal;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
@@ -169,7 +168,9 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
 
   @override
   void dispose() {
-    _videoController.dispose();
+    try {
+      _videoController.dispose();
+    } catch (_) {}
     _scrollController.dispose();
     super.dispose();
   }
