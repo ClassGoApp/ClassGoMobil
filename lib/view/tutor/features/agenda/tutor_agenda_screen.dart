@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_projects/view/tutor/features/widgets/tutor_header.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
@@ -96,25 +97,28 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
+        top: false,
         child: Column(
           children: [
-            SectionHeader(
+            TutorHeader(
               title: "Agenda",
-              profileImageUrl: photoUrl,
+              subtitle: "GESTIÓN DE TIEMPO",
+              onBackTap: () => Navigator.maybePop(context),
               actionIcon: Icons.calendar_today_rounded,
               onActionTap: () {
                 setState(() => _focusedDay = DateTime.now());
                 _clearSelection();
               },
             ),
+            const SizedBox(height: 8),
             Expanded(
               //  EL REFRESH INDICATOR PARA RECARGAR DESLIZANDO HACIA ABAJO
               child: RefreshIndicator(
                 color: AppColors.brandCyan,
-                backgroundColor: isDark ? const Color(0xFF151A24) : Colors.white,
+                backgroundColor:
+                    isDark ? const Color(0xFF151A24) : Colors.white,
                 onRefresh: _fetchAgendaData,
                 child: SingleChildScrollView(
-                  // ESTO PERMITE QUE EL SCROLL FUNCIONE EN TODA LA PANTALLA
                   physics: const AlwaysScrollableScrollPhysics(
                       parent: BouncingScrollPhysics()),
                   padding: const EdgeInsets.only(bottom: 120, top: 10),
@@ -126,11 +130,13 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
                         margin: const EdgeInsets.symmetric(horizontal: 20),
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF151A24) : Colors.white,
+                          color:
+                              isDark ? const Color(0xFF151A24) : Colors.white,
                           borderRadius: BorderRadius.circular(40),
                           boxShadow: [
                             BoxShadow(
-                                color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
+                                color: Colors.black
+                                    .withOpacity(isDark ? 0.2 : 0.05),
                                 blurRadius: 20,
                                 offset: const Offset(0, 8))
                           ],
@@ -155,8 +161,13 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
                       _buildSectionTitleRow(
                           isDark, isActivelySelecting, allSelectedDays.length),
                       const SizedBox(height: 16),
-                      _buildBottomState(agendaProvider, showBlocksList,
-                          todaySlots, isDark, isActivelySelecting, authProvider),
+                      _buildBottomState(
+                          agendaProvider,
+                          showBlocksList,
+                          todaySlots,
+                          isDark,
+                          isActivelySelecting,
+                          authProvider),
                     ],
                   ),
                 ),
@@ -168,7 +179,6 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
     );
   }
 
-  // WIDGETS MODULARIZADOS DE LA PANTALLA
   Widget _buildCalendarHeader(bool isDark, bool isActivelySelecting) {
     final textColor = isDark ? Colors.white : AppColors.brandBlue;
     return Row(
@@ -357,33 +367,50 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
             day: d,
             color: AppColors.brandOrange,
             hasSchedule: provider.hasSchedule(d)),
-        
         todayBuilder: (context, day, focusedDay) {
           // Si el día de "Hoy" está seleccionado en un rango, dejamos que se pinte naranja
-          bool isRangeStart = _isRangeMode && _rangeStart != null && isSameDay(day, _rangeStart);
-          bool isRangeEnd = _isRangeMode && _rangeEnd != null && isSameDay(day, _rangeEnd);
+          bool isRangeStart = _isRangeMode &&
+              _rangeStart != null &&
+              isSameDay(day, _rangeStart);
+          bool isRangeEnd =
+              _isRangeMode && _rangeEnd != null && isSameDay(day, _rangeEnd);
           bool isWithinRange = false;
-          
+
           if (_isRangeMode && _rangeStart != null && _rangeEnd != null) {
-            DateTime s = _rangeStart!.isBefore(_rangeEnd!) ? _rangeStart! : _rangeEnd!;
-            DateTime e = _rangeStart!.isBefore(_rangeEnd!) ? _rangeEnd! : _rangeStart!;
+            DateTime s =
+                _rangeStart!.isBefore(_rangeEnd!) ? _rangeStart! : _rangeEnd!;
+            DateTime e =
+                _rangeStart!.isBefore(_rangeEnd!) ? _rangeEnd! : _rangeStart!;
             if (day.isAfter(s) && day.isBefore(e)) isWithinRange = true;
           }
-          
-          bool isSelected = (!_isRangeMode && _isMultiSelectMode && _selectedDays.any((d) => isSameDay(d, day))) || 
-                            (!_isRangeMode && !_isMultiSelectMode && isSameDay(_viewedDay, day));
+
+          bool isSelected = (!_isRangeMode &&
+                  _isMultiSelectMode &&
+                  _selectedDays.any((d) => isSameDay(d, day))) ||
+              (!_isRangeMode &&
+                  !_isMultiSelectMode &&
+                  isSameDay(_viewedDay, day));
 
           // Si cayó en un rango naranja, lo forzamos a ser naranja
           if (isRangeStart || isRangeEnd || isWithinRange) {
-             return _DayDotBuilder(day: day, color: AppColors.brandOrange, hasSchedule: provider.hasSchedule(day));
+            return _DayDotBuilder(
+                day: day,
+                color: AppColors.brandOrange,
+                hasSchedule: provider.hasSchedule(day));
           }
           // Si está seleccionado manualmente (Punto Azul/Cyan)
           if (isSelected) {
-             return _DayDotBuilder(day: day, color: _isMultiSelectMode ? AppColors.brandBlue : AppColors.brandCyan, hasSchedule: provider.hasSchedule(day));
+            return _DayDotBuilder(
+                day: day,
+                color: _isMultiSelectMode
+                    ? AppColors.brandBlue
+                    : AppColors.brandCyan,
+                hasSchedule: provider.hasSchedule(day));
           }
 
           // Si el día de Hoy NO está seleccionado, le ponemos su borde propio
-          Color borderC = _isRangeMode ? AppColors.brandOrange : AppColors.brandCyan;
+          Color borderC =
+              _isRangeMode ? AppColors.brandOrange : AppColors.brandCyan;
           return SizedBox(
             width: 46,
             height: 46,
@@ -416,7 +443,6 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
             ),
           );
         },
-        
         defaultBuilder: (context, day, focusedDay) {
           if (provider.hasSchedule(day)) {
             Color borderC =
@@ -459,7 +485,8 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
       ),
       selectedDayPredicate: (day) {
         if (_isRangeMode) return false;
-        if (_isMultiSelectMode) return _selectedDays.any((d) => isSameDay(d, day));
+        if (_isMultiSelectMode)
+          return _selectedDays.any((d) => isSameDay(d, day));
         return isSameDay(_viewedDay, day);
       },
       onDaySelected: (sDay, fDay) {
@@ -514,35 +541,34 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 0.5)),
-        onPressed: (isActivelySelecting &&
-                days.isNotEmpty &&
-                !provider.isMutating)
-            ? () {
-                final scaffoldMsg = ScaffoldMessenger.of(context);
-                showDialog(
-                  context: context,
-                  barrierColor: Colors.black.withOpacity(0.6), 
-                  builder: (dialogContext) => AddScheduleSheet(
-                    selectedDays: days,
-                    onSave: (sTime, eTime) async {
-                      final success = await provider.saveSlotsForDays(
-                          token: auth.token ?? '',
-                          userId: auth.userId?.toString() ?? '',
-                          days: days,
-                          newSlots: [
-                            {'start': sTime, 'end': eTime}
-                          ]);
-                      if (success && mounted) {
-                        _clearSelection();
-                        scaffoldMsg.showSnackBar(const SnackBar(
-                            content: Text("Horarios asignados"),
-                            backgroundColor: AppColors.primaryGreen));
-                      }
-                    },
-                  ),
-                );
-              }
-            : null,
+        onPressed:
+            (isActivelySelecting && days.isNotEmpty && !provider.isMutating)
+                ? () {
+                    final scaffoldMsg = ScaffoldMessenger.of(context);
+                    showDialog(
+                      context: context,
+                      barrierColor: Colors.black.withOpacity(0.6),
+                      builder: (dialogContext) => AddScheduleSheet(
+                        selectedDays: days,
+                        onSave: (sTime, eTime) async {
+                          final success = await provider.saveSlotsForDays(
+                              token: auth.token ?? '',
+                              userId: auth.userId?.toString() ?? '',
+                              days: days,
+                              newSlots: [
+                                {'start': sTime, 'end': eTime}
+                              ]);
+                          if (success && mounted) {
+                            _clearSelection();
+                            scaffoldMsg.showSnackBar(const SnackBar(
+                                content: Text("Horarios asignados"),
+                                backgroundColor: AppColors.primaryGreen));
+                          }
+                        },
+                      ),
+                    );
+                  }
+                : null,
         style: ElevatedButton.styleFrom(
             backgroundColor:
                 isActivelySelecting ? AppColors.brandBlue : Colors.grey[300],
@@ -659,47 +685,69 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
                 timeRange: "${slot['start']} - ${slot['end']}",
                 isDark: isDark,
                 onDelete: () async {
-                  showDialog(context: context, builder: (dialogContext) => AlertDialog(
-                    backgroundColor: isDark ? const Color(0xFF151A24) : Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                title: Text('Eliminar horario', style: TextStyle(color: isDark ? Colors.white : AppColors.brandBlue, fontWeight: FontWeight.bold)),
-                content: Text('¿Estás seguro de que quieres eliminar este horario?', style: TextStyle(color: Colors.grey[500])),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(dialogContext).pop(),
-                    child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
-                  ),
-                  ElevatedButton(
-                    onPressed: () async {
-                      Navigator.of(dialogContext).pop(); 
-                      
-                      final scaffoldMsg = ScaffoldMessenger.of(context);
-                      final ok = await p.deleteSlot(
-                        auth.token ?? '', 
-                        slot['id'].toString(), 
-                        auth.userId?.toString() ?? '', 
-                        _viewedDay
-                      );
-                      
-                      if (ok && mounted) {
-                        scaffoldMsg.showSnackBar(const SnackBar(content: Text("Horario eliminado exitosamente"), backgroundColor: AppColors.primaryGreen));
-                      } else {
-                        scaffoldMsg.showSnackBar(const SnackBar(content: Text("Error al eliminar el horario"), backgroundColor: Colors.redAccent));
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                    child: const Text('Eliminar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  ),
-                ],
-              ),
-            );
-          })).toList(),
+                  showDialog(
+                    context: context,
+                    builder: (dialogContext) => AlertDialog(
+                      backgroundColor:
+                          isDark ? const Color(0xFF151A24) : Colors.white,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20)),
+                      title: Text('Eliminar horario',
+                          style: TextStyle(
+                              color:
+                                  isDark ? Colors.white : AppColors.brandBlue,
+                              fontWeight: FontWeight.bold)),
+                      content: Text(
+                          '¿Estás seguro de que quieres eliminar este horario?',
+                          style: TextStyle(color: Colors.grey[500])),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(dialogContext).pop(),
+                          child: const Text('Cancelar',
+                              style: TextStyle(color: Colors.grey)),
+                        ),
+                        ElevatedButton(
+                          onPressed: () async {
+                            Navigator.of(dialogContext).pop();
+
+                            final scaffoldMsg = ScaffoldMessenger.of(context);
+                            final ok = await p.deleteSlot(
+                                auth.token ?? '',
+                                slot['id'].toString(),
+                                auth.userId?.toString() ?? '',
+                                _viewedDay);
+
+                            if (ok && mounted) {
+                              scaffoldMsg.showSnackBar(const SnackBar(
+                                  content:
+                                      Text("Horario eliminado exitosamente"),
+                                  backgroundColor: AppColors.primaryGreen));
+                            } else {
+                              scaffoldMsg.showSnackBar(const SnackBar(
+                                  content: Text("Error al eliminar el horario"),
+                                  backgroundColor: Colors.redAccent));
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.redAccent,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12))),
+                          child: const Text('Eliminar',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                  );
+                }))
+            .toList(),
       ),
     );
   }
 }
 
-// WIDGETS PRIVADOS EXCLUIDOS 
+// WIDGETS PRIVADOS EXCLUIDOS
 class _DayDotBuilder extends StatelessWidget {
   final DateTime day;
   final Color color;

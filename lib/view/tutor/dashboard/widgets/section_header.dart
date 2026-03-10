@@ -4,11 +4,11 @@ import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/tutor/dashboard/widgets/theme_toggle_button.dart';
 
 class SectionHeader extends StatelessWidget {
-  final String title;              // "Agenda", "Materias", etc.
+  final String title;
   final String? profileImageUrl;
-  final VoidCallback? onActionTap; // Acción del botón derecho
-  final IconData? actionIcon;      // Icono del botón derecho
-  final bool showAction;           // Si queremos mostrar el botón extra o no
+  final VoidCallback? onActionTap;
+  final IconData? actionIcon;
+  final bool showAction;
 
   const SectionHeader({
     Key? key,

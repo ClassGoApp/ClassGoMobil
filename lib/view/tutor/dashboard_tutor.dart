@@ -775,7 +775,6 @@ class _DashboardTutorState extends State<DashboardTutor>
       TutorSubjectsScreen(),
         
       const TutorProfileScreen(), 
-
       //   // 1. Pasamos tu lista de materias reales (o una vacía [] por ahora)
       //   subjects: [], // Si tienes una variable con tus materias, ponla aquí (ej. tutorProvider.subjects)
 
@@ -799,6 +798,7 @@ class _DashboardTutorState extends State<DashboardTutor>
       // const TutorProfileView(), // Cambia al nombre de clase correcto si usaste otro
     ];
 
+    // bool showNavbar = false;
     return Scaffold(
       resizeToAvoidBottomInset: false,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -973,19 +973,21 @@ class _DashboardTutorState extends State<DashboardTutor>
             },
           ),
         ),
-        Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: TutorBottomNav(
-              currentIndex: _currentIndex,
-              onTap: (index) {
-                setState(() => _currentIndex = index);
-                // Aquí iría tu lógica de navegación real:
-                // if (index == 1) Navigator.pushNamed...
-                print("Navegar a tab: $index");
-              },
-            ))
+
+        // if (showNavbar)
+          Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: TutorBottomNav(
+                currentIndex: _currentIndex,
+                onTap: (index) {
+                  setState(() => _currentIndex = index);
+                  // Aquí iría tu lógica de navegación real:
+                  // if (index == 1) Navigator.pushNamed...
+                  print("Navegar a tab: $index");
+                },
+              ))
       ]),
     );
   }
