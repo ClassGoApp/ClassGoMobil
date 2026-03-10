@@ -66,7 +66,6 @@ class _TutorSubjectsScreenState extends State<TutorSubjectsScreen> {
     final provider = Provider.of<TutorSubjectsProvider>(context);
     final auth = Provider.of<AuthProvider>(context);
 
-    // Filtro local
     final searchQuery = _searchController.text.toLowerCase();
     final filteredSubjects = provider.subjects.where((item) {
       return item.subject.name.toLowerCase().contains(searchQuery);
@@ -97,7 +96,6 @@ class _TutorSubjectsScreenState extends State<TutorSubjectsScreen> {
 
             const SizedBox(height: 8),
 
-            // LISTA VERTICAL RECARGABLE
             Expanded(
               child: RefreshIndicator(
                 color: AppColors.brandCyan,
@@ -108,7 +106,7 @@ class _TutorSubjectsScreenState extends State<TutorSubjectsScreen> {
                     : ListView.builder(
                         physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                         padding: const EdgeInsets.symmetric(horizontal: 24),
-                        itemCount: listCount, // Usamos la nueva cuenta segura
+                        itemCount: listCount,
                         itemBuilder: (context, index) {
                           
                           // ESCENARIO A: NO HAY MATERIAS
@@ -129,7 +127,6 @@ class _TutorSubjectsScreenState extends State<TutorSubjectsScreen> {
 
                           // ESCENARIO B: SÍ HAY MATERIAS
                           else {
-                            // 1. Dibujamos las tarjetas de materias
                             if (index < filteredSubjects.length) {
                               final item = filteredSubjects[index];
                               final isSelected = _selectedSubjectId == item.id;
@@ -162,14 +159,12 @@ class _TutorSubjectsScreenState extends State<TutorSubjectsScreen> {
                                 },
                               );
                             } 
-                            // 2. Dibujamos el botón de añadir al final de las materias
                             else if (index == filteredSubjects.length) {
                               return Padding(
                                 padding: const EdgeInsets.only(top: 8.0),
                                 child: AddSubjectButton(onPressed: _openAddSubjectModal),
                               );
                             } 
-                            // 3. Dibujamos el Espacio Fantasma para salvar el Nav Bar
                             else {
                               return const SizedBox(height: 120);
                             }

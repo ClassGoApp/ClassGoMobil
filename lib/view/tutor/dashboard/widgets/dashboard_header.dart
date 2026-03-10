@@ -97,7 +97,6 @@ class _HeaderProfileImage extends StatelessWidget {
           decoration: BoxDecoration(
             color: theme.colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(18),
-            // NUESTRA UI NEOCLEAN (Borde sutil)
             border: Border.all(
               color: isDark
                   ? Colors.white.withOpacity(0.1)
