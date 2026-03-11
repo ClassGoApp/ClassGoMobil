@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter_projects/view/student/dashboard_student.dart';
 import 'package:lottie/lottie.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/home/home_screen.dart';
@@ -82,7 +83,9 @@ class _BookingSuccessScreenState extends State<BookingSuccessScreen>
   void _startAnimations() {
     _checkmarkController.forward();
     Future.delayed(Duration(milliseconds: 300), () {
-      _fadeController.forward();
+      if(mounted){
+        _fadeController.forward();
+      }
     });
   }
 
@@ -95,27 +98,33 @@ class _BookingSuccessScreenState extends State<BookingSuccessScreen>
   }
 
   void _navigateToHomeWithReload() {
-    Navigator.pushAndRemoveUntil(
+    if(!mounted) return;
+    Future.delayed(const Duration(milliseconds: 150), (){
+      Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(
         builder: (context) => HomeScreenWithLoading(),
       ),
       (route) => false,
     );
+    });
   }
 
   Future<void> _playSuccessSound() async {
     try {
       await _audioPlayer.play(AssetSource('sounds/success.mp3'));
+      if (!mounted) return;
       setState(() {
         _isAudioPlaying = true;
       });
 
       Future.delayed(Duration(seconds: 3), () {
-        _audioPlayer.stop();
-        setState(() {
-          _isAudioPlaying = false;
-        });
+      if (mounted && _audioPlayer.state != PlayerState.disposed) {
+          _audioPlayer.stop();
+          setState(() {
+            _isAudioPlaying = false;
+          });
+        }
       });
     } catch (e) {
       print('Error al reproducir audio: $e');
@@ -124,6 +133,9 @@ class _BookingSuccessScreenState extends State<BookingSuccessScreen>
 
   @override
   void dispose() {
+    if (_audioPlayer.state == PlayerState.playing) {
+      _audioPlayer.stop();
+    }
     _fadeController.dispose();
     _checkmarkController.dispose();
     _audioPlayer.dispose();
@@ -583,7 +595,7 @@ class _HomeScreenWithLoadingState extends State<HomeScreenWithLoading>
           }
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => HomeScreen()),
+            MaterialPageRoute(builder: (context) => DashboardStudent()),
           );
         });
       } catch (e, st) {
