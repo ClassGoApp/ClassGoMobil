@@ -21,6 +21,7 @@ import 'package:flutter_projects/view/tutor/student_history_screen.dart';
 import 'package:flutter_projects/view/components/main_header.dart';
 import 'package:flutter_projects/view/tutor/dashboard/widgets/tutor_bottom_nav.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:flutter_projects/view/student/reservations/services/reservations_service.dart';
 // removed unused imports
 
 class SearchTutorsScreen extends StatefulWidget {
@@ -1463,15 +1464,14 @@ class BookingModalState extends State<BookingModal> {
   /// lo que causaba que se mostraran días incorrectos. Ahora se usa la fecha completa
   /// como clave (millisecondsSinceEpoch) para evitar conflictos entre meses.
   Future<void> _loadTutorAvailableSlots() async {
-    try {
-      setState(() {
-        isLoading = true;
-        errorMessage = null;
-      });
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
 
+    try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final token = authProvider.token;
-
       if (token == null) {
         setState(() {
           errorMessage = 'No se pudo autenticar';
@@ -1480,95 +1480,12 @@ class BookingModalState extends State<BookingModal> {
         return;
       }
 
-      final response =
-          await getTutorAvailableSlots(token, widget.tutorId.toString());
+      final parsed = await ReservationsService.loadTutorAvailableSlots(
+          token, widget.tutorId.toString());
 
-      final Map<int, List<String>> newAvailableDays = {};
-
-      // ✅ CAMBIO: Procesar la respuesta del nuevo endpoint
-      // La API devuelve directamente una lista de slots
-      dynamic data;
-
-      if (response.containsKey('data')) {
-        data = response['data'];
-      } else {
-        data = response;
-      }
-
-      // ✅ SIMPLIFICADO: Solo procesar la lista de slots
-      if (data is List) {
-        for (var slot in data) {
-          try {
-            // Verificar que el slot tenga los campos necesarios
-            if (slot['start_time'] == null ||
-                slot['end_time'] == null ||
-                slot['date'] == null) {
-              continue;
-            }
-
-            // ✅ CAMBIO: Determinar el día a partir del campo `date` si está
-            // disponible; si no, usar `start_time` ajustado a UTC-4.
-            final startTimeUTC =
-                DateTime.parse(slot['start_time'].toString().trim());
-            final endTimeUTC =
-                DateTime.parse(slot['end_time'].toString().trim());
-
-            final startTime = startTimeUTC.subtract(Duration(hours: 4));
-            final endTime = endTimeUTC.subtract(Duration(hours: 4));
-
-            DateTime slotDateLocal;
-            if (slot.containsKey('date') &&
-                slot['date'] != null &&
-                slot['date'].toString().isNotEmpty) {
-              try {
-                final parsed = DateTime.parse(slot['date'].toString());
-                slotDateLocal = DateTime(parsed.year, parsed.month, parsed.day);
-              } catch (_) {
-                slotDateLocal =
-                    DateTime(startTime.year, startTime.month, startTime.day);
-              }
-            } else {
-              slotDateLocal =
-                  DateTime(startTime.year, startTime.month, startTime.day);
-            }
-
-            // Hora actual en Bolivia (UTC-4)
-            final nowBolivia =
-                DateTime.now().toUtc().subtract(Duration(hours: 4));
-            final todayBolivia =
-                DateTime(nowBolivia.year, nowBolivia.month, nowBolivia.day);
-            final slotDateNormalized = DateTime(
-                slotDateLocal.year, slotDateLocal.month, slotDateLocal.day);
-
-            // Omitir fechas anteriores
-            if (slotDateNormalized.isBefore(todayBolivia)) continue;
-
-            // Si es hoy, omitir si endTime ya pasó
-            if (isSameDay(slotDateNormalized, todayBolivia) &&
-                !endTime.isAfter(nowBolivia)) continue;
-
-            final dateKey = DateTime(
-                slotDateLocal.year, slotDateLocal.month, slotDateLocal.day);
-            final timeRange =
-                '${_formatTime(startTime)}-${_formatTime(endTime)}';
-
-            if (!newAvailableDays.containsKey(dateKey.millisecondsSinceEpoch)) {
-              newAvailableDays[dateKey.millisecondsSinceEpoch] = [];
-            }
-            if (!newAvailableDays[dateKey.millisecondsSinceEpoch]!
-                .contains(timeRange)) {
-              newAvailableDays[dateKey.millisecondsSinceEpoch]!.add(timeRange);
-            }
-          } catch (e) {
-            // Error parsing slot
-          }
-        }
-      }
-
-      print(
-          '[BookingModal] availableDays keys: ${newAvailableDays.keys.toList()}');
+      print('[BookingModal] availableDays keys: ${parsed.keys.toList()}');
       setState(() {
-        availableDays = newAvailableDays;
+        availableDays = parsed;
         isLoading = false;
       });
     } catch (e) {

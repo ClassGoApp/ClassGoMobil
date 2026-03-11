@@ -7,6 +7,7 @@ import 'package:flutter_projects/api_structure/api_service.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/view/tutor/instant_tutoring_screen.dart';
+import 'package:flutter_projects/view/student/reservations/services/reservations_service.dart';
 
 class BookingModal extends StatefulWidget {
   final String tutorName;
@@ -141,17 +142,16 @@ class BookingModalState extends State<BookingModal> {
   }
 
   Future<void> _loadTutorAvailableSlots() async {
-    try {
-      if (mounted) {
-        setState(() {
-          isLoading = true;
-          errorMessage = null;
-        });
-      }
+    if (mounted) {
+      setState(() {
+        isLoading = true;
+        errorMessage = null;
+      });
+    }
 
+    try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final token = authProvider.token;
-
       if (token == null) {
         if (mounted) {
           setState(() {
@@ -162,98 +162,14 @@ class BookingModalState extends State<BookingModal> {
         return;
       }
 
-      final response =
-          await getTutorAvailableSlots(token, widget.tutorId.toString());
-
-      final Map<int, List<String>> newAvailableDays = {};
-      dynamic data;
-      if (response.containsKey('data')) {
-        data = response['data'];
-      } else {
-        data = response;
-      }
-
-      if (data is List) {
-        for (var slot in data) {
-          try {
-            if (slot['start_time'] == null || slot['end_time'] == null)
-              continue;
-
-            final startTimeUTC =
-                DateTime.parse(slot['start_time'].toString().trim());
-            final endTimeUTC =
-                DateTime.parse(slot['end_time'].toString().trim());
-
-            final startTime = startTimeUTC.subtract(Duration(hours: 4));
-            final endTime = endTimeUTC.subtract(Duration(hours: 4));
-
-            DateTime slotDateLocal;
-            if (slot.containsKey('date') &&
-                slot['date'] != null &&
-                slot['date'].toString().isNotEmpty) {
-              try {
-                final parsed = DateTime.parse(slot['date'].toString());
-                slotDateLocal = DateTime(parsed.year, parsed.month, parsed.day);
-              } catch (_) {
-                slotDateLocal =
-                    DateTime(startTime.year, startTime.month, startTime.day);
-              }
-            } else {
-              slotDateLocal =
-                  DateTime(startTime.year, startTime.month, startTime.day);
-            }
-
-            final nowBolivia =
-                DateTime.now().toUtc().subtract(Duration(hours: 4));
-            final todayBolivia =
-                DateTime(nowBolivia.year, nowBolivia.month, nowBolivia.day);
-            final slotDateNormalized = DateTime(
-                slotDateLocal.year, slotDateLocal.month, slotDateLocal.day);
-
-            if (slotDateNormalized.isBefore(todayBolivia)) continue;
-            if (isSameDay(slotDateNormalized, todayBolivia) &&
-                !endTime.isAfter(nowBolivia)) continue;
-
-            final dateKey = DateTime(
-                slotDateLocal.year, slotDateLocal.month, slotDateLocal.day);
-            final timeRange =
-                '${_formatTime(startTime)}-${_formatTime(endTime)}';
-
-            if (!newAvailableDays.containsKey(dateKey.millisecondsSinceEpoch)) {
-              newAvailableDays[dateKey.millisecondsSinceEpoch] = [];
-            }
-            if (!newAvailableDays[dateKey.millisecondsSinceEpoch]!
-                .contains(timeRange)) {
-              newAvailableDays[dateKey.millisecondsSinceEpoch]!.add(timeRange);
-            }
-          } catch (e) {
-            // ignore
-          }
-        }
-      }
+      final parsed = await ReservationsService.loadTutorAvailableSlots(
+          token, widget.tutorId.toString());
 
       if (mounted) {
         setState(() {
-          availableDays = newAvailableDays;
+          availableDays = parsed;
           isLoading = false;
         });
-        // Debug: mostrar resumen de las fechas cargadas
-        try {
-          final keys = availableDays.keys
-              .map((k) =>
-                  DateTime.fromMillisecondsSinceEpoch(k).toIso8601String())
-              .toList();
-          // Mostrar ranges por clave
-          availableDays.forEach((k, v) {
-            try {
-              final iso =
-                  DateTime.fromMillisecondsSinceEpoch(k).toIso8601String();
-              print('DEBUG availableDays[$iso] -> ${v.length} ranges: $v');
-            } catch (e) {}
-          });
-        } catch (e) {
-          print('DEBUG availableDays print error: $e');
-        }
       }
     } catch (e) {
       if (mounted) {

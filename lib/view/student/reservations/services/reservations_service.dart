@@ -1,4 +1,5 @@
 import 'package:flutter_projects/api_structure/api_service.dart';
+import 'package:intl/intl.dart';
 
 class ReservationItem {
   final int id;
@@ -78,7 +79,7 @@ class ReservationsService {
             } else if (tutorResp.containsKey('full_name')) {
               tutorName = tutorResp['full_name'].toString();
             }
-                    } catch (_) {}
+          } catch (_) {}
         }
 
         // Subject name: prefer booking subject fields, otherwise call API
@@ -96,7 +97,7 @@ class ReservationsService {
                   subjResp['data'].containsKey('name')) {
                 subjectName = subjResp['data']['name'].toString();
               }
-                        }
+            }
           } catch (_) {}
         }
 
@@ -172,5 +173,87 @@ class ReservationsService {
     } catch (e) {
       return false;
     }
+  }
+
+  /// Carga y parsea los slots disponibles de un tutor.
+  /// Devuelve un mapa donde la clave es millisecondsSinceEpoch de la fecha
+  /// (sin tiempo) y el valor es la lista de rangos de hora 'HH:mm-HH:mm'.
+  static Future<Map<int, List<String>>> loadTutorAvailableSlots(
+      String token, String tutorId) async {
+    final Map<int, List<String>> newAvailableDays = {};
+    try {
+      final response = await getTutorAvailableSlots(token, tutorId);
+      dynamic data = response is Map && response.containsKey('data')
+          ? response['data']
+          : response;
+
+      if (data is List) {
+        for (var slot in data) {
+          try {
+            if (slot['start_time'] == null || slot['end_time'] == null) {
+              continue;
+            }
+
+            final startTimeUTC =
+                DateTime.parse(slot['start_time'].toString().trim());
+            final endTimeUTC =
+                DateTime.parse(slot['end_time'].toString().trim());
+
+            final startTime = startTimeUTC.subtract(Duration(hours: 4));
+            final endTime = endTimeUTC.subtract(Duration(hours: 4));
+
+            DateTime slotDateLocal;
+            if (slot.containsKey('date') &&
+                slot['date'] != null &&
+                slot['date'].toString().isNotEmpty) {
+              try {
+                final parsed = DateTime.parse(slot['date'].toString());
+                slotDateLocal = DateTime(parsed.year, parsed.month, parsed.day);
+              } catch (_) {
+                slotDateLocal =
+                    DateTime(startTime.year, startTime.month, startTime.day);
+              }
+            } else {
+              slotDateLocal =
+                  DateTime(startTime.year, startTime.month, startTime.day);
+            }
+
+            final nowBolivia =
+                DateTime.now().toUtc().subtract(Duration(hours: 4));
+            final todayBolivia =
+                DateTime(nowBolivia.year, nowBolivia.month, nowBolivia.day);
+            final slotDateNormalized = DateTime(
+                slotDateLocal.year, slotDateLocal.month, slotDateLocal.day);
+
+            if (slotDateNormalized.isBefore(todayBolivia)) continue;
+            if (slotDateNormalized.isAtSameMomentAs(todayBolivia) &&
+                !endTime.isAfter(nowBolivia)) continue;
+
+            final dateKey = DateTime(
+                slotDateLocal.year, slotDateLocal.month, slotDateLocal.day);
+            final timeRange =
+                '${_formatTimeSimple(startTime)}-${_formatTimeSimple(endTime)}';
+
+            if (!newAvailableDays.containsKey(dateKey.millisecondsSinceEpoch)) {
+              newAvailableDays[dateKey.millisecondsSinceEpoch] = [];
+            }
+            if (!newAvailableDays[dateKey.millisecondsSinceEpoch]!
+                .contains(timeRange)) {
+              newAvailableDays[dateKey.millisecondsSinceEpoch]!.add(timeRange);
+            }
+          } catch (_) {}
+        }
+      }
+    } catch (e) {
+      rethrow;
+    }
+
+    return newAvailableDays;
+  }
+
+  static String _formatTimeSimple(DateTime t) {
+    // siempre devolvemos HH:mm
+    final two = (int n) => n.toString().padLeft(2, '0');
+    return '${two(t.hour)}:${two(t.minute)}';
   }
 }

@@ -412,8 +412,6 @@ class _NewReservationModalState extends State<NewReservationModal> {
                         }
 
                         if (raw != null && raw['subjects'] is List) {
-                          print('-------------MATERIASS RAW----------------' +
-                              raw['subjects'].toString());
                           for (final s in raw['subjects']) {
                             if (s is Map && s['name'] != null) {
                               subjectsList.add(s['id'].toString() +
@@ -476,13 +474,6 @@ class _NewReservationModalState extends State<NewReservationModal> {
                         onPressed: () => Navigator.of(context).pop(),
                         child: const Text('Cancelar'))),
                 const SizedBox(width: 12),
-                Expanded(
-                    child: ElevatedButton(
-                        onPressed: (_selectedInstitution != null &&
-                                _selectedSubject != null)
-                            ? _confirm
-                            : null,
-                        child: const Text('Confirmar'))),
               ],
             ),
             const SizedBox(height: 8),
