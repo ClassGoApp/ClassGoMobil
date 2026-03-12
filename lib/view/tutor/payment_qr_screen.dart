@@ -485,23 +485,23 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
         return;
       }
 
-      // 2. Subir el comprobante de pago usando el nuevo endpoint
-      final uploadResponse =
-          await uploadPaymentReceipt(token, _receiptImage!, slotBookingId);
-      print('Respuesta al subir comprobante: $uploadResponse');
-      final comprobanteId = uploadResponse['id'];
-      if (comprobanteId == null) {
-        String errorMsg =
-            uploadResponse['message'] ?? 'Error al subir el comprobante';
-        if (uploadResponse['errors'] != null) {
-          errorMsg += '\n' + uploadResponse['errors'].toString();
-        }
-        showCustomToast(context, errorMsg, false);
-        setState(() {
-          _isPaymentCompleted = false;
-        });
-        return;
-      }
+      // // 2. Subir el comprobante de pago usando el nuevo endpoint
+      // final uploadResponse =
+      //     await uploadPaymentReceipt(token, _receiptImage!, slotBookingId);
+      // print('Respuesta al subir comprobante: $uploadResponse');
+      // final comprobanteId = uploadResponse['id'];
+      // if (comprobanteId == null) {
+      //   String errorMsg =
+      //       uploadResponse['message'] ?? 'Error al subir el comprobante';
+      //   if (uploadResponse['errors'] != null) {
+      //     errorMsg += '\n' + uploadResponse['errors'].toString();
+      //   }
+      //   showCustomToast(context, errorMsg, false);
+      //   setState(() {
+      //     _isPaymentCompleted = false;
+      //   });
+      //   return;
+      // }
 
       // ✅ CAMBIO: Mensaje dinámico según el tipo de tutoría
       final successMessage = widget.isScheduledBooking

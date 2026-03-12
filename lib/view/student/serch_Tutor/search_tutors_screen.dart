@@ -12,13 +12,12 @@ import 'package:flutter_projects/view/student/profile_screen_student.dart';
 import 'package:flutter_projects/view/tutor/component/filter_turtor_bottom_sheet.dart';
 import 'package:flutter_projects/view/student/services/text_normalization.dart';
 import 'package:flutter_projects/view/student/serch_Tutor/services/sort_service.dart';
+import 'package:flutter_projects/view/student/reservations/tutor_reservation_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
-import 'package:flutter_projects/view/tutor/tutor_profile_screen.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:flutter_projects/view/tutor/instant_tutoring_screen.dart';
 import 'package:flutter_projects/view/tutor/student_calendar_screen.dart';
-import 'package:table_calendar/table_calendar.dart';
 import 'package:flutter_projects/view/tutor/student_history_screen.dart';
 import 'package:flutter_projects/view/components/main_header.dart';
 import 'package:flutter_projects/view/student/reservations/widgets/booking_modal.dart';
@@ -1137,7 +1136,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                           Navigator.push(
                             context,
                             SlideUpRoute(
-                              page: TutorProfileScreen(
+                              page: ReservationTutorProfileScreen(
                                 tutorId: tutor['id'].toString(),
                                 tutorName:
                                     profile['full_name'] ?? 'No name available',
@@ -1190,7 +1189,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                             Navigator.push(
                               context,
                               SlideUpRoute(
-                                page: TutorProfileScreen(
+                                page: ReservationTutorProfileScreen(
                                   tutorId: tutor['id'].toString(),
                                   tutorName: profile['full_name'] ??
                                       'No name available',

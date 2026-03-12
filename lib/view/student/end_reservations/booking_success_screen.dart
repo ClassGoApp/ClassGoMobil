@@ -82,7 +82,9 @@ class _BookingSuccessScreenState extends State<BookingSuccessScreen>
   void _startAnimations() {
     _checkmarkController.forward();
     Future.delayed(Duration(milliseconds: 300), () {
-      _fadeController.forward();
+      if (mounted) {
+        _fadeController.forward();
+      }
     });
   }
 
@@ -95,27 +97,33 @@ class _BookingSuccessScreenState extends State<BookingSuccessScreen>
   }
 
   void _navigateToHomeWithReload() {
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(
-        builder: (context) => HomeScreenWithLoading(),
-      ),
-      (route) => false,
-    );
+    if (!mounted) return;
+    Future.delayed(const Duration(milliseconds: 150), () {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HomeScreenWithLoading(),
+        ),
+        (route) => false,
+      );
+    });
   }
 
   Future<void> _playSuccessSound() async {
     try {
       await _audioPlayer.play(AssetSource('sounds/success.mp3'));
+      if (!mounted) return;
       setState(() {
         _isAudioPlaying = true;
       });
 
       Future.delayed(Duration(seconds: 3), () {
-        _audioPlayer.stop();
-        setState(() {
-          _isAudioPlaying = false;
-        });
+        if (mounted && _audioPlayer.state != PlayerState.disposed) {
+          _audioPlayer.stop();
+          setState(() {
+            _isAudioPlaying = false;
+          });
+        }
       });
     } catch (e) {
       print('Error al reproducir audio: $e');
@@ -124,6 +132,9 @@ class _BookingSuccessScreenState extends State<BookingSuccessScreen>
 
   @override
   void dispose() {
+    if (_audioPlayer.state == PlayerState.playing) {
+      _audioPlayer.stop();
+    }
     _fadeController.dispose();
     _checkmarkController.dispose();
     _audioPlayer.dispose();
