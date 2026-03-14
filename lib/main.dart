@@ -4,6 +4,7 @@ import 'package:flutter_projects/config/firebase_options.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/provider/connectivity_provider.dart';
 import 'package:flutter_projects/provider/settings_provider.dart';
+import 'package:flutter_projects/view/splash/splash_transicion.dart';
 import 'package:flutter_projects/view/tutor/features/agenda/providers/tutor_agenda_provider.dart';
 import 'package:flutter_projects/view/tutor/features/home/providers/tutor_home_provider.dart';
 import 'package:provider/provider.dart';
@@ -102,7 +103,7 @@ class _MyAppState extends State<MyApp> {
             Locale('es'),
             Locale('en'),
           ],
-          home: RoleBasedNavigation(),
+          home: SplashTransicion(),
         ),
     );
   }
