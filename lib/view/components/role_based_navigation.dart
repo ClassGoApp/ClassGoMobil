@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_projects/view/home/home_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/view/tutor/dashboard_tutor.dart';
@@ -19,7 +20,7 @@ class RoleBasedNavigation extends StatelessWidget {
 
         // 2️⃣ MODO VISITANTE (NO LOGUEADO)
         if (!authProvider.isLoggedIn) {
-          return const MainShell();
+          return const HomeScreen();
         }
 
         // 3️⃣ TUTOR
