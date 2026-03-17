@@ -1638,7 +1638,12 @@ Future<Map<String, dynamic>> fetchAlliances() async {
     };
     final response = await http.get(uri, headers: headers);
     if (response.statusCode == 200) {
-      return {'data': json.decode(response.body)};
+     final List<dynamic> body = json.decode(response.body);
+      
+      // Mira la consola de VS Code cuando corras la app
+      print('🔍 DEBUG DATA ALIANZAS: $body'); 
+      
+      return {'data': body};
     } else {
       final error = json.decode(response.body);
       throw Exception(error['message'] ?? 'Error al obtener alianzas');
