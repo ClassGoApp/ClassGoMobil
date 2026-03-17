@@ -1,9 +1,7 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/helpers/auth_helper.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
-import 'package:flutter_projects/view/home/widgets/alliance_card.dart';
 import 'package:flutter_projects/view/home/widgets/categories_carousel.dart';
 import 'package:flutter_projects/view/home/widgets/home_drawer.dart';
 import 'package:flutter_projects/view/home/widgets/home_header.dart';
@@ -40,22 +38,26 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: AppColors.backgroundLight,
+      // 🚨 SOSPECHOSO 1 APAGADO
       drawer: const HomeDrawer(),
       body: CustomScrollView(
         physics: const ClampingScrollPhysics(),
         slivers: [
+          // 🚨 SOSPECHOSO 2 APAGADO
           HomeHeader(
             onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
             onProfileTap: () {
               debugPrint("Perfil");
             },
           ),
+          
           SliverToBoxAdapter(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 25),
 
+                // 🚨 SOSPECHOSO 3 APAGADO
                 QuickActionsRow(
                   onInstantTutorTap: () {
                     if (!AuthHelper.requireAuth(context,
@@ -90,59 +92,30 @@ class _HomeScreenState extends State<HomeScreen> {
                     // Navigator.push(...);
                   },
                 ),
+
                 const SizedBox(height: 25),
+                // 🚨 SOSPECHOSO 4 APAGADO
                 const MascotBanner(),
 
                 const SizedBox(height: 35),
+                // 🚨 SOSPECHOSO 5 APAGADO
                 const CategoriesCarousel(),
 
                 const SizedBox(height: 35),
+
                 const TrustActionsRow(),
+                
                 const SizedBox(height: 35),
                 _placeholderBloque('Lista de Tutores Destacados',
                     height: 180, color: Colors.white),
 
                 const SizedBox(height: 30),
 
-                // Banner
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20.0),
                   child: _placeholderBloque('Banner: Gana dinero enseñando',
                       height: 120, color: AppColors.brandBlue),
                 ),
-                const SizedBox(height: 20),
-
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Text(
-                    'Explorar Categorías',
-                    style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF113644)),
-                  ),
-                ),
-                const SizedBox(height: 15),
-                _placeholderBloque('Slider de Categorías (Matemáticas, etc)',
-                    height: 140, color: Colors.white),
-
-                const SizedBox(height: 30),
-                
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Text(
-                    'Tutores Destacados',
-                    style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF113644)),
-                  ),
-                ),
-                const SizedBox(height: 15),
-                // const TutorListPreview(),
-                _placeholderBloque('Lista de Tutores Destacados',
-                    height: 250, color: Colors.white),
-
                 const SizedBox(height: 40),
               ],
             ),
@@ -155,7 +128,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _placeholderBloque(String titulo,
       {required double height, required Color color}) {
     bool isDark =
-        color == AppColors.brandBlue || color == AppColors.brandOrange;
+        color == AppColors.brandBlue || color == AppColors.brandOrange || color == Colors.red;
     return Container(
       height: height,
       decoration: BoxDecoration(

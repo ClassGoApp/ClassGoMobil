@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/api_structure/config/app_config.dart';
 import 'package:flutter_projects/config/firebase_options.dart';
@@ -24,6 +26,33 @@ import 'package:flutter_projects/styles/app_styles.dart';
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 2. ESCUDO 1: Atrapa errores de renderizado en los Widgets (Evita la pantalla roja)
+  ErrorWidget.builder = (FlutterErrorDetails details) {
+    debugPrint("🔴 ERROR DE WIDGET ATRAPADO: ${details.exception}");
+    return Material(
+      color: Colors.redAccent.withOpacity(0.1),
+      child: Center(
+        child: Text(
+          "Error en este bloque.\nRevisa la consola.",
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.red, fontSize: 12),
+        ),
+      ),
+    );
+  };
+
+  // 3. ESCUDO 2: Atrapa errores lógicos de Flutter
+  FlutterError.onError = (FlutterErrorDetails details) {
+    debugPrint("🔴 FLUTTER ERROR GLOBAL: ${details.exceptionAsString()}");
+    FlutterError.presentError(details);
+  };
+
+  // 4. ESCUDO 3: Atrapa errores asíncronos y de código Dart profundo
+  PlatformDispatcher.instance.onError = (error, stack) {
+    debugPrint("🔴 ERROR NATIVO/ASÍNCRONO: $error");
+    return true; // Devuelve true para decirle al sistema "Ya lo manejé, no cierres la app"
+  };
 
   bool firebaseInitialized = false;
   try {

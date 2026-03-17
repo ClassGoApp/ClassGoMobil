@@ -12,13 +12,44 @@ class _CategoriesCarouselState extends State<CategoriesCarousel> {
   late final PageController _pageController;
   int _currentPage = 0;
 
+  // 🚨 AHORA USAMOS ASSETS LOCALES O ICONOS
   final List<Map<String, dynamic>> _categories = [
-    {'title': 'Contabilidad', 'image': 'https://www.classgoapp.com/images/home/Tugo-skin/contabilidad.webp'},
-    {'title': 'Química', 'image': 'https://www.classgoapp.com/images/home/Tugo-skin/quimica.webp'},
-    {'title': 'Programación', 'image': 'https://www.classgoapp.com/images/home/Tugo-skin/programacion.webp'},
-    {'title': 'Inglés', 'image': 'https://www.classgoapp.com/images/home/Tugo-skin/ingles.webp'},
-    {'title': 'Ciencias Exactas', 'image': 'https://www.classgoapp.com/images/home/Tugo-skin/matematicas.webp'},
-    {'title': 'Música', 'image': 'https://www.classgoapp.com/images/home/Tugo-skin/musica.webp'},
+    {
+      'title': 'Contabilidad', 
+      'localImage': 'assets/images/categories/contabilidad.png', // Cuando la tengas, pones la ruta aquí
+      'icon': Icons.calculate_rounded,
+      'color': const Color(0xFF4A90E2)
+    },
+    {
+      'title': 'Química', 
+      'localImage': 'assets/images/categories/quimica.png',
+      'icon': Icons.science_rounded,
+      'color': const Color(0xFF50E3C2)
+    },
+    {
+      'title': 'Programación', 
+      'localImage': 'assets/images/categories/programacion.png',
+      'icon': Icons.terminal_rounded,
+      'color': const Color(0xFF9013FE)
+    },
+    {
+      'title': 'Inglés', 
+      'localImage': 'assets/images/categories/ingles.png',
+      'icon': Icons.language_rounded,
+      'color': const Color(0xFFF5A623)
+    },
+    {
+      'title': 'Ciencias Exactas', 
+      'localImage': 'assets/images/categories/matematicas.png',
+      'icon': Icons.functions_rounded,
+      'color': const Color(0xFFE1145C)
+    },
+    {
+      'title': 'Música', 
+      'localImage': 'assets/images/categories/musica.png',
+      'icon': Icons.music_note_rounded,
+      'color': const Color(0xFF8B572A)
+    },
   ];
 
   @override
@@ -57,14 +88,17 @@ class _CategoriesCarouselState extends State<CategoriesCarousel> {
             clipBehavior: Clip.none,
             controller: _pageController,
             onPageChanged: (int page) {
-              setState(() => _currentPage = page);
+              if (_currentPage != page) {
+                setState(() => _currentPage = page);
+              }
             },
             itemCount: _categories.length,
             physics: const BouncingScrollPhysics(),
             itemBuilder: (context, index) {
               return _buildPosterCard(
                 isActive: index == _currentPage, 
-                category: _categories[index]
+                category: _categories[index],
+                index: index,
               );
             },
           ),
@@ -73,101 +107,102 @@ class _CategoriesCarouselState extends State<CategoriesCarousel> {
     );
   }
 
-  Widget _buildPosterCard({required bool isActive, required Map<String, dynamic> category}) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 350),
-      curve: Curves.easeOutCubic,
-      margin: EdgeInsets.only(
-        top: isActive ? 0 : 10,
-        bottom: isActive ? 20 : 40,
-        left: 10,
-        right: 10,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          if (isActive)
-            BoxShadow(
-              color: AppColors.cardLight,
-            )
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            // 1. Imagen
-            Image.network(
-              category['image'], 
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  color: AppColors.brandBlue,
-                  child: const Center(
-                    child: Icon(Icons.image, color: Color.fromARGB(0, 143, 9, 9), size: 40),
-                  ),
-                );
-              },
-            ),
-            
-            // 2. Gradiente inferior para proteger el texto
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Colors.transparent,
-                    Colors.black.withOpacity(0.2),
-                  ],
-                  stops: const [0.0, 0.6, 1.0],
-                ),
-              ),
-            ),
-            
-            Positioned(
-              bottom: 20,
-              left: 12,
-              right: 12,
-              child: Text(
-                category['title'] ?? '',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'outfit',
-                  fontSize: isActive ? 22 : 16, 
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                  shadows: [
-                    Shadow(
-                      color: Colors.black.withOpacity(0.8),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+  Widget _buildPosterCard({required bool isActive, required Map<String, dynamic> category, required int index}) {
+    final double topMargin = isActive ? 0 : 20.0;
+    final double bottomMargin = isActive ? 10 : 30.0;
 
-            Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () {
-                  if (!isActive) {
-                    _pageController.animateToPage(
-                      _categories.indexOf(category),
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                    );
-                  } else {
-                    debugPrint("Abrir materia: ${category['title']}");
-                  }
-                },
-              ),
-            ),
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+      padding: EdgeInsets.only(top: topMargin, bottom: bottomMargin, left: 10, right: 10),
+      child: Container(
+        decoration: BoxDecoration(
+          // Si no hay imagen, usamos el color base de la categoría
+          color: category['color'], 
+          borderRadius: BorderRadius.circular(28),
+          boxShadow: [
+            if (isActive)
+              BoxShadow(
+                color: (category['color'] as Color).withOpacity(0.4),
+                blurRadius: 15,
+                offset: const Offset(0, 8),
+              )
           ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(28),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // 1. EL FONDO (Icono gigante de placeholder mientras pones tus imágenes)
+              Center(
+                child: Icon(
+                  category['icon'], 
+                  size: 100, 
+                  color: Colors.white.withOpacity(0.2) // Un efecto de agua (watermark)
+                ),
+              ),
+
+              // NOTA PARA DIEGO: Cuando ya tengas las imágenes descargadas,
+              // Descomenta este bloque de abajo y borrarás el Center de arriba.
+              /*
+              Image.asset(
+                category['localImage'],
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => const SizedBox(),
+              ),
+              */
+              
+              // 2. Gradiente inferior
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withOpacity(0.1),
+                      Colors.black.withOpacity(0.5),
+                    ],
+                    stops: const [0.4, 0.7, 1.0],
+                  ),
+                ),
+              ),
+              
+              // 3. Título Animado
+              Positioned(
+                bottom: 25,
+                left: 15,
+                right: 15,
+                child: AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 300),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'outfit',
+                    fontSize: isActive ? 24 : 18, 
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
+                  child: Text(category['title'] ?? ''),
+                ),
+              ),
+
+              // 4. Tap
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  splashColor: Colors.white.withOpacity(0.2),
+                  onTap: () {
+                    if (!isActive) {
+                      _pageController.animateToPage(index, duration: const Duration(milliseconds: 400), curve: Curves.easeInOut);
+                    } else {
+                      debugPrint("Abrir materia: ${category['title']}");
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
