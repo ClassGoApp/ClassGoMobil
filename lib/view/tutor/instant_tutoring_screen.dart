@@ -272,9 +272,10 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
               final isSelected = subject == _selectedSubject;
               return InkWell(
                 onTap: () {
+                  final id = _extractSubjectId(subject);
                   setState(() {
                     _selectedSubject = subject;
-                    _selectedSubjectId = _extractSubjectId(subject)!;
+                    _selectedSubjectId = id ?? widget.subjectId;
                   });
                   _toggleDropdown();
                 },

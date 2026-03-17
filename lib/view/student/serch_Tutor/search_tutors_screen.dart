@@ -7,6 +7,7 @@ import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/auth/login_screen.dart';
 import 'package:flutter_projects/view/components/login_required_alert.dart';
 import 'package:flutter_projects/view/components/skeleton/tutor_card_skeleton.dart';
+import 'package:flutter_projects/view/student/favorite_tutor/services/favorite_tutor_service.dart';
 import 'package:flutter_projects/view/student/serch_Tutor/widgets/tutor_card.dart';
 import 'package:flutter_projects/view/student/profile_screen_student.dart';
 import 'package:flutter_projects/view/tutor/component/filter_turtor_bottom_sheet.dart';
@@ -55,8 +56,6 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   late ScrollController _scrollController;
 
   final GlobalKey _searchFilterContentKey = GlobalKey();
-  // double _initialSearchFilterHeight = 0.0; // unused
-  // double _opacity = 1.0; // unused
   double _lastScrollOffset = 0.0; // Para rastrear la dirección del scroll
 
   // Opacidades separadas para cada elemento
@@ -66,6 +65,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
 
   late double screenWidth;
   late double screenHeight;
+  bool searchByTutor =
+      false; // false = buscar por materia, true = buscar por tutor
   List<String> selectedLanguages = [];
   List<String> selectedSubjects = [];
   List<String> subjectGroups = [];
@@ -115,14 +116,27 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
       if (!mounted) return; // Evitar setState después de disposed
-      if (keyword != value) {
-        setState(() {
-          keyword = value;
-          currentPage = 1;
-          tutors.clear();
-          isInitialLoading = true;
-        });
-        fetchInitialTutors();
+      // Actualizar el campo de búsqueda según el modo seleccionado
+      if (searchByTutor) {
+        if (tutorName != value) {
+          setState(() {
+            tutorName = value;
+            currentPage = 1;
+            tutors.clear();
+            isInitialLoading = true;
+          });
+          fetchInitialTutors();
+        }
+      } else {
+        if (keyword != value) {
+          setState(() {
+            keyword = value;
+            currentPage = 1;
+            tutors.clear();
+            isInitialLoading = true;
+          });
+          fetchInitialTutors();
+        }
       }
     });
   }
@@ -391,13 +405,28 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
       print('DEBUG - keyword (materia): $keyword');
       print('DEBUG - Modo seleccionado: $selectedMode');
 
+      final String? effectiveKeyword = searchByTutor
+          ? null
+          : ((keyword != null && keyword!.trim().isNotEmpty)
+              ? keyword!.trim()
+              : null);
+
+      final String? requestedTutorName = tutorName ?? this.tutorName;
+      final String? effectiveTutorName = searchByTutor &&
+              requestedTutorName != null &&
+              requestedTutorName.trim().isNotEmpty
+          ? requestedTutorName.trim()
+          : null;
+
+      print('DEBUG - Enviando keyword: $effectiveKeyword');
+      print('DEBUG - Enviando tutorName: $effectiveTutorName');
+
       final response = selectedMode == 'instantanea'
           ? await getAvailableTutors(
               token,
               page: currentPage,
-              keyword: keyword, // Usar keyword para buscar por materia
-              tutorName:
-                  tutorName, // Usar tutorName para buscar por nombre del tutor
+              keyword: effectiveKeyword,
+              tutorName: effectiveTutorName,
               maxPrice: maxPrice,
               country: country,
               groupId: groupId,
@@ -410,9 +439,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
           : await getVerifiedTutors(
               token,
               page: currentPage,
-              keyword: keyword, // Usar keyword para buscar por materia
-              tutorName:
-                  tutorName, // Usar tutorName para buscar por nombre del tutor
+              keyword: effectiveKeyword,
+              tutorName: effectiveTutorName,
               maxPrice: maxPrice,
               country: country,
               groupId: groupId,
@@ -811,6 +839,43 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
           key: _searchFilterContentKey,
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Contador de tutores (ahora arriba del buscador)
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              height: counterHeight * _counterOpacity,
+              transform: Matrix4.translationValues(0,
+                  _counterOpacity < 1.0 ? -50 * (1 - _counterOpacity) : 0, 0),
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 200),
+                opacity: _counterOpacity,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          (searchByTutor
+                              ? (tutorName != null && tutorName!.isNotEmpty
+                                  ? '${totalTutors} tutores para "${tutorName!}"'
+                                  : '${totalTutors} tutores encontrados')
+                              : (keyword != null && keyword!.isNotEmpty
+                                  ? '${totalTutors} tutores para "${keyword!}"'
+                                  : '${totalTutors} tutores encontrados')),
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.body.copyWith(
+                            color: AppColors.whiteColor.withOpacity(0.9),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            // (El selector y botón de ordenar se muestran debajo del buscador)
             // Buscador
             AnimatedContainer(
               duration: const Duration(milliseconds: 300),
@@ -827,7 +892,9 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                     focusNode: _searchFocusNode,
                     onChanged: _onSearchChanged,
                     decoration: InputDecoration(
-                      hintText: 'Busca por materia o tutor...',
+                      hintText: searchByTutor
+                          ? 'Busca por tutor...'
+                          : 'Busca por materia...',
                       hintStyle: AppTextStyles.body.copyWith(
                           color: AppColors.greyColor.withOpacity(0.7)),
                       contentPadding: const EdgeInsets.symmetric(
@@ -847,73 +914,106 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                 ),
               ),
             ),
-            // Contador de tutores
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              height: counterHeight * _counterOpacity,
-              transform: Matrix4.translationValues(0,
-                  _counterOpacity < 1.0 ? -50 * (1 - _counterOpacity) : 0, 0),
-              child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 200),
-                opacity: _counterOpacity,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Flexible(
-                        child: Text(
-                          (keyword != null && keyword!.isNotEmpty)
-                              ? '${totalTutors} tutores para "${keyword!}"'
-                              : '${totalTutors} tutores encontrados',
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.body.copyWith(
-                            color: AppColors.whiteColor.withOpacity(0.9),
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
+            // Selector desplegable Materia/Tutor + botón Ordenar (debajo del buscador)
+            Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 20.0, vertical: 6.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.25),
+                        width: 1,
+                      ),
+                    ),
+                    child: DropdownButton<String>(
+                      value: searchByTutor ? 'Tutor' : 'Materia',
+                      dropdownColor: AppColors.primaryGreen,
+                      underline: SizedBox.shrink(),
+                      iconEnabledColor: Colors.white,
+                      iconSize: 16,
+                      isDense: true,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      items: ['Materia', 'Tutor']
+                          .map((e) => DropdownMenuItem<String>(
+                                value: e,
+                                child: Text(
+                                  e,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ))
+                          .toList(),
+                      onChanged: (val) {
+                        if (val == null) return;
+                        final wantTutor = val == 'Tutor';
+                        setState(() {
+                          searchByTutor = wantTutor;
+                          // limpiar el campo opuesto
+                          if (searchByTutor) {
+                            keyword = null;
+                          } else {
+                            tutorName = null;
+                          }
+                          _searchController.clear();
+                          currentPage = 1;
+                          tutors.clear();
+                          isInitialLoading = true;
+                        });
+                        fetchInitialTutors();
+                      },
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: _showSortOptions,
+                    child: Container(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.25),
+                          width: 1,
                         ),
                       ),
-                      SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: _showSortOptions,
-                        child: Container(
-                          padding:
-                              EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.25),
-                              width: 1,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.sort_rounded,
+                              color: Colors.white, size: 16),
+                          SizedBox(width: 6),
+                          Text(
+                            _selectedSortOption ?? 'Ordenar',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.sort_rounded,
-                                  color: Colors.white, size: 16),
-                              SizedBox(width: 6),
-                              Text(
-                                _selectedSortOption ?? 'Ordenar',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              SizedBox(width: 4),
-                              Icon(Icons.keyboard_arrow_down_rounded,
-                                  color: Colors.white70, size: 18),
-                            ],
-                          ),
-                        ),
+                          SizedBox(width: 4),
+                          Icon(Icons.keyboard_arrow_down_rounded,
+                              color: Colors.white70, size: 18),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
+
             // Filtros + Chips con scroll y botón fijo
             AnimatedContainer(
               duration: const Duration(milliseconds: 300),
@@ -1117,11 +1217,6 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                   .firstOrNull;
               final subjectId = firstValidSubject?['id'] ?? 1;
 
-              // Depuración de imágenes de tutores
-              final hdUrl = highResTutorImages[tutor['id']];
-              print(
-                  'Tutor: ${profile['full_name']} - tutor["id"]: ${tutor['id']} - HD URL: $hdUrl');
-
               return AnimationConfiguration.staggeredList(
                 position: index,
                 duration: const Duration(milliseconds: 600),
@@ -1270,9 +1365,78 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                               : 'Profesión no disponible',
                           sessionDuration: 'Clases de 20 minutos',
                           isFavoriteInitial: tutor['is_favorite'] ?? false,
-                          onFavoritePressed: (isFavorite) {
-                            print(
-                                'Tutor ${profile['full_name'] ?? ''} es favorito: $isFavorite');
+                          onFavoritePressed: (isFavorite) async {
+                            try {
+                              final authProvider = Provider.of<AuthProvider>(
+                                  context,
+                                  listen: false);
+
+                              final token = authProvider.token;
+                              final dynamic rawStudentId =
+                                  authProvider.userData?['user']?['id'];
+                              final dynamic rawTutorId = tutor['id'];
+
+                              final int? studentId = rawStudentId is int
+                                  ? rawStudentId
+                                  : int.tryParse(rawStudentId.toString());
+
+                              final int? tutorId = rawTutorId is int
+                                  ? rawTutorId
+                                  : int.tryParse(rawTutorId.toString());
+
+                              if (token == null ||
+                                  token.isEmpty ||
+                                  studentId == null ||
+                                  tutorId == null) {
+                                throw Exception(
+                                    'Datos inválidos para eliminar favorito');
+                              }
+
+                              if (!isFavorite && mounted) {
+                                await FavoriteTutorService.removeFavorite(
+                                  token: token,
+                                  studentId: studentId,
+                                  tutorId: tutorId,
+                                );
+
+                                setState(() {
+                                  tutor['is_favorite'] = false;
+                                });
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content:
+                                        Text('Tutor eliminado de favoritos'),
+                                  ),
+                                );
+                              } else if (isFavorite && mounted) {
+                                await FavoriteTutorService.addFavorite(
+                                  token: token,
+                                  studentId: studentId,
+                                  tutorId: tutorId,
+                                );
+
+                                setState(() {
+                                  tutor['is_favorite'] = true;
+                                });
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Tutor agregado a favoritos'),
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              debugPrint(
+                                  'Error al eliminar/adicionar favorito: $e');
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                      'No se pudo eliminar/adicionar de favoritos'),
+                                ),
+                              );
+                            }
                           },
                           subjectsString: validSubjects.join(', '),
                           matchedSubjects:

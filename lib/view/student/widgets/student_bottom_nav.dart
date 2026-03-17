@@ -59,8 +59,8 @@ class StudentBottomNav extends StatelessWidget {
               onTap: () => onTap(1),
             ),
             _AnimatedNavItem(
-              icon: Icons.menu_book_rounded,
-              label: "MATERIAS",
+              icon: Icons.favorite,
+              label: "Favoritos",
               isSelected: currentIndex == 2,
               onTap: () => onTap(2),
             ),
