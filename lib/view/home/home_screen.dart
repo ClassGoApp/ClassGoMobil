@@ -1,10 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_projects/helpers/auth_helper.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/view/home/widgets/alliance_card.dart';
+import 'package:flutter_projects/view/home/widgets/categories_carousel.dart';
 import 'package:flutter_projects/view/home/widgets/home_drawer.dart';
 import 'package:flutter_projects/view/home/widgets/home_header.dart';
-import 'package:flutter_projects/view/home/widgets/menu_option_widget.dart';
-import 'package:flutter_projects/view/home/widgets/social_button.dart';
-import 'package:flutter_projects/view/home/widgets/start_journey_card.dart';
+import 'package:flutter_projects/view/home/widgets/pet_banner.dart';
+import 'package:flutter_projects/view/home/widgets/quick_actions_section.dart';
+import 'package:flutter_projects/view/home/widgets/trust_actions_row.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -51,42 +56,49 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 const SizedBox(height: 25),
 
-                // Tutorias al instante
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: _placeholderBloque('Botón Naranja: Tutor al Instante',
-                      height: 110, color: AppColors.brandOrange),
+                QuickActionsRow(
+                  onInstantTutorTap: () {
+                    if (!AuthHelper.requireAuth(context,
+                        customTitle: 'Acceso a Tutor al Instante',
+                        customMessage:
+                            'Para acceder a tutorías instantáneas, necesitas iniciar sesión en tu cuenta.')) {
+                      return;
+                    }
+
+                    debugPrint(
+                        "Usuario verificado. Abrir lógica de Tutor al Instante...");
+                  },
+                  onScheduleTap: () {
+                    if (!AuthHelper.requireAuth(context,
+                        customTitle: 'Agendar Tutoría',
+                        customMessage:
+                            'Para agendar una clase con un tutor, necesitas iniciar sesión.')) {
+                      return;
+                    }
+
+                    debugPrint("Usuario verificado. Navegando a Agendar...");
+                    // Navigator.push(...);
+                  },
+                  onExploreTap: () {
+                    if (!AuthHelper.requireAuth(context,
+                        customTitle: 'Explorar Tutores',
+                        customMessage:
+                            'Para ver perfiles completos y contactar tutores, inicia sesión.')) {
+                      return;
+                    }
+                    debugPrint("Usuario verificado. Navegando a Explorar...");
+                    // Navigator.push(...);
+                  },
                 ),
+                const SizedBox(height: 25),
+                const MascotBanner(),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 35),
+                const CategoriesCarousel(),
 
-                // Top Tutores
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Top Tutores',
-                        style: TextStyle(
-                            fontFamily: 'outfit',
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.brandBlue),
-                      ),
-                      TextButton(
-                        onPressed: () {},
-                        child: const Text('Ver todos',
-                            style: TextStyle(
-                                fontFamily: 'manrope',
-                                color: AppColors.brandCyan,
-                                fontWeight: FontWeight.bold)),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10),
-
+                const SizedBox(height: 35),
+                const TrustActionsRow(),
+                const SizedBox(height: 35),
                 _placeholderBloque('Lista de Tutores Destacados',
                     height: 180, color: Colors.white),
 
@@ -99,26 +111,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       height: 120, color: AppColors.brandBlue),
                 ),
                 const SizedBox(height: 20),
-                MenuOptionWidget(
-                    icon: Icons.ice_skating_outlined,
-                    label: "diego",
-                    onTap: () {}),
-                const SizedBox(height: 20),
-                SocialButton(
-                    platform: "Tiktok",
-                    url: "https:/tiktok.com",
-                    icon: Icons.tiktok),
-                SocialButton(
-                    platform: "Tiktok",
-                    url: "https:/tiktok.com",
-                    icon: Icons.facebook_rounded),
-                const SizedBox(height: 20),
-                StartJourneyCard(),
-                const SizedBox(height: 20),
 
-                const SizedBox(height: 30),
-
-                // CATEGORÍAS (Deslizable horizontal)
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16.0),
                   child: Text(
@@ -134,8 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     height: 140, color: Colors.white),
 
                 const SizedBox(height: 30),
-
-                // TUTORES DESTACADOS
+                
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16.0),
                   child: Text(
