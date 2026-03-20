@@ -3,7 +3,7 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:ui';
-import 'package:flutter_projects/view/tutor/instant_tutoring_screen.dart';
+import 'package:flutter_projects/view/student/reservations/instant-reservation/instant_tutoring_screen.dart';
 import 'package:flutter_projects/view/student/reservations/widgets/confirm_booking_modal.dart';
 import 'package:flutter_projects/view/student/reservations/services/reservations_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';

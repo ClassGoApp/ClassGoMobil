@@ -17,7 +17,7 @@ import 'package:flutter_projects/view/student/reservations/tutor_reservation_scr
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import 'package:flutter_projects/view/tutor/instant_tutoring_screen.dart';
+import 'package:flutter_projects/view/student/reservations/instant-reservation/instant_tutoring_screen.dart';
 import 'package:flutter_projects/view/tutor/student_calendar_screen.dart';
 import 'package:flutter_projects/view/tutor/student_history_screen.dart';
 import 'package:flutter_projects/view/components/main_header.dart';

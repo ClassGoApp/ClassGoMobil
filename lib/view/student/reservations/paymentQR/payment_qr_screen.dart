@@ -9,8 +9,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:overlay_support/overlay_support.dart';
 import 'package:provider/provider.dart';
-import '../../provider/auth_provider.dart';
-import '../student/end_reservations/booking_success_screen.dart';
+import '../../../../provider/auth_provider.dart';
+import '../../end_reservations/booking_success_screen.dart';
 
 class PaymentQRScreen extends StatefulWidget {
   final String tutorName;

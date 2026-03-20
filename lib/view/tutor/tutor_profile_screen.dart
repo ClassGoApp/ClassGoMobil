@@ -4,7 +4,7 @@ import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/student/reservations/widgets/booking_modal.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:ui';
-import 'package:flutter_projects/view/tutor/instant_tutoring_screen.dart';
+import 'package:flutter_projects/view/student/reservations/instant-reservation/instant_tutoring_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';

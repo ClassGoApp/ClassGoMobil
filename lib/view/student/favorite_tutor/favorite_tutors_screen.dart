@@ -10,7 +10,7 @@ import 'package:flutter_projects/view/components/role_based_navigation.dart';
 import 'package:flutter_projects/view/student/favorite_tutor/services/favorite_tutor_service.dart';
 import 'package:flutter_projects/view/student/serch_Tutor/search_tutors_screen.dart';
 import 'package:flutter_projects/view/student/serch_Tutor/widgets/tutor_card.dart';
-import 'package:flutter_projects/view/tutor/instant_tutoring_screen.dart';
+import 'package:flutter_projects/view/student/reservations/instant-reservation/instant_tutoring_screen.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/helpers/slide_up_route.dart';
