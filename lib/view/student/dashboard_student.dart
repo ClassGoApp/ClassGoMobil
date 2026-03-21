@@ -5,8 +5,10 @@ import 'package:flutter_projects/view/student/reservations/reservations_screen.d
 import 'package:flutter_projects/view/student/widgets/student_bottom_nav.dart';
 import 'package:flutter_projects/view/tutor/dashboard/widgets/dashboard_header.dart';
 import 'package:flutter_projects/view/student/profile_screen_student.dart';
+import 'package:flutter_projects/view/student/favorite_tutor/favorite_tutors_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
+import 'package:flutter_projects/view/student/services/profile_service.dart';
 
 class DashboardStudent extends StatefulWidget {
   @override
@@ -15,6 +17,22 @@ class DashboardStudent extends StatefulWidget {
 
 class _DashboardStudentState extends State<DashboardStudent> {
   int _selectedIndex = 0;
+  String? profileImageUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final int? userId = authProvider.userId;
+      if (userId != null) {
+        try {
+          final img = await ProfileService.fetchProfileImage(userId);
+          if (mounted) setState(() => profileImageUrl = img);
+        } catch (_) {}
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +57,7 @@ class _DashboardStudentState extends State<DashboardStudent> {
       case 1:
         return _buildBookingsTab();
       case 2:
-        return _buildSubjectsTab();
+        return FavoriteTutorsScreen(showBottomNav: false);
       case 3:
         return ProfileScreen(showAppBar: false);
       default:
@@ -61,9 +79,10 @@ class _DashboardStudentState extends State<DashboardStudent> {
           SizedBox(height: MediaQuery.of(context).padding.top + 20),
           DashboardHeader(
             tutorName: fullName ?? 'Estudiante',
-            profileImageUrl: userData != null && userData['user'] != null
-                ? userData['user']['profile']['image']
-                : null,
+            profileImageUrl: profileImageUrl ??
+                (userData != null && userData['user'] != null
+                    ? userData['user']['profile']['image']
+                    : null),
             rating: 0.0,
             isVerified: false,
             isLoadingImage: false,
@@ -142,14 +161,16 @@ class _DashboardStudentState extends State<DashboardStudent> {
               },
             ),
             _buildActionCard(
-              icon: Icons.menu_book_rounded,
-              title: 'Mis Materias',
-              subtitle: 'Ver materias',
-              color: Colors.orange,
+              icon: Icons.favorite,
+              title: 'Favoritos',
+              subtitle: 'Tutores favoritos',
+              color: const Color.fromARGB(255, 255, 100, 88),
               onTap: () {
-                setState(() {
-                  _selectedIndex = 2;
-                });
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => FavoriteTutorsScreen()),
+                );
               },
             ),
             _buildActionCard(
@@ -338,7 +359,7 @@ class _DashboardStudentState extends State<DashboardStudent> {
                 ),
                 SizedBox(height: 16),
                 Text(
-                  'Mis Materias',
+                  'Favoritos',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,

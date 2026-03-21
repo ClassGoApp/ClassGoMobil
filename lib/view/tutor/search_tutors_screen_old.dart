@@ -16,10 +16,10 @@ import 'package:flutter_projects/view/components/main_header.dart';
 import 'dart:async';
 import 'package:flutter_projects/view/tutor/tutor_profile_screen.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import 'package:flutter_projects/view/tutor/instant_tutoring_screen.dart';
+import 'package:flutter_projects/view/student/reservations/instant-reservation/instant_tutoring_screen.dart';
 import 'package:flutter_projects/view/tutor/student_calendar_screen.dart';
 import 'package:flutter_projects/view/tutor/student_history_screen.dart';
-import 'package:flutter_projects/view/tutor/payment_qr_screen.dart';
+import 'package:flutter_projects/view/student/reservations/paymentQR/payment_qr_screen.dart';
 
 class SearchTutorsScreen extends StatefulWidget {
   final String? initialKeyword;

@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
@@ -8,9 +7,9 @@ import 'package:flutter_projects/view/profile/skeleton/profile_image_skeleton.da
 import 'package:flutter_projects/view/settings/account_settings.dart';
 import 'package:flutter_projects/base_components/custom_snack_bar.dart';
 import 'package:provider/provider.dart';
-import 'package:http/http.dart' as http;
 
 import '../../provider/auth_provider.dart';
+import 'services/profile_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   final bool showAppBar;
@@ -31,19 +30,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       if (!authProvider.isLoggedIn) return;
-
       final int? userId = authProvider.userId;
       if (userId != null) {
         try {
-          final response = await http.get(
-            Uri.parse('https://classgoapp.com/api/user/$userId/profile-image'),
-          );
-          if (response.statusCode == 200) {
-            final data = json.decode(response.body);
-            setState(() {
-              profileImageUrl = data['profile_image'] as String?;
-            });
-          }
+          final img = await ProfileService.fetchProfileImage(userId);
+          setState(() {
+            profileImageUrl = img;
+          });
         } catch (_) {}
       }
     });

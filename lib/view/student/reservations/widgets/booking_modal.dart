@@ -6,7 +6,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
-import 'package:flutter_projects/view/tutor/instant_tutoring_screen.dart';
+import 'package:flutter_projects/view/student/reservations/instant-reservation/instant_tutoring_screen.dart';
 import 'package:flutter_projects/view/student/reservations/services/reservations_service.dart';
 
 class BookingModal extends StatefulWidget {

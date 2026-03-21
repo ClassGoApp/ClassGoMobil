@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:image_picker/image_picker.dart';
-import 'payment_qr_screen.dart';
+import '../paymentQR/payment_qr_screen.dart';
 
 class InstantTutoringScreen extends StatefulWidget {
   final String tutorName;
@@ -272,9 +272,10 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
               final isSelected = subject == _selectedSubject;
               return InkWell(
                 onTap: () {
+                  final id = _extractSubjectId(subject);
                   setState(() {
                     _selectedSubject = subject;
-                    _selectedSubjectId = _extractSubjectId(subject)!;
+                    _selectedSubjectId = id ?? widget.subjectId;
                   });
                   _toggleDropdown();
                 },

@@ -3,8 +3,6 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
-import 'dart:io';
-import 'dart:io' show File;
 import 'package:path/path.dart' as path;
 
 final String baseUrl = 'https://classgoapp.com/api';
@@ -2549,5 +2547,93 @@ Future<Map<String, dynamic>> getTutorForSubject(
       'message': 'Error de conexión: $e',
       'status': 500,
     };
+  }
+}
+
+// Obtener los tutores favoritos de un estudiante
+Future<List<Map<String, dynamic>>> getFavourites(
+    String? token, int studentId) async {
+  try {
+    final Uri uri = Uri.parse('$baseUrl/favourites/$studentId');
+    final headers = <String, String>{
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+
+    final response = await http.get(uri, headers: headers);
+
+    if (response.statusCode == 200) {
+      final decodedBody = json.decode(response.body);
+      if (decodedBody is Map &&
+          decodedBody.containsKey('data') &&
+          decodedBody['data'] is List) {
+        final List<dynamic> rawList = decodedBody['data'];
+        return rawList.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+      return <Map<String, dynamic>>[];
+    } else {
+      final decoded =
+          response.body.isNotEmpty ? json.decode(response.body) : null;
+      final message = (decoded is Map && decoded.containsKey('message'))
+          ? decoded['message']
+          : 'Failed to get favourites';
+      throw Exception(message);
+    }
+  } catch (e) {
+    throw 'Failed to get favourites: $e';
+  }
+}
+
+// Agregar un tutor a favoritos
+Future<Map<String, dynamic>> addFavourite(
+    String token, int studentId, int tutorId) async {
+  try {
+    final Uri uri = Uri.parse('$baseUrl/favourites/$studentId/$tutorId/add');
+    final headers = <String, String>{
+      'Authorization': 'Bearer $token',
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
+    final response = await http.post(uri, headers: headers);
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return json.decode(response.body);
+    } else {
+      final decoded =
+          response.body.isNotEmpty ? json.decode(response.body) : null;
+      final message = (decoded is Map && decoded.containsKey('message'))
+          ? decoded['message']
+          : 'Failed to add favourite';
+      throw Exception(message);
+    }
+  } catch (e) {
+    throw 'Failed to add favourite: $e';
+  }
+}
+
+Future<Map<String, dynamic>> deleteFavourite(
+    String token, int studentId, int tutorId) async {
+  try {
+    final Uri uri = Uri.parse('$baseUrl/favourites/$studentId/$tutorId/remove');
+    final headers = <String, String>{
+      'Authorization': 'Bearer $token',
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
+    final response = await http.delete(uri, headers: headers);
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return json.decode(response.body);
+    } else {
+      final decoded =
+          response.body.isNotEmpty ? json.decode(response.body) : null;
+      final message = (decoded is Map && decoded.containsKey('message'))
+          ? decoded['message']
+          : 'Failed to delete favourite';
+      throw Exception(message);
+    }
+  } catch (e) {
+    throw 'Failed to delete favourite: $e';
   }
 }
