@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/helpers/auth_helper.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
@@ -38,26 +39,22 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: AppColors.backgroundLight,
-      // 🚨 SOSPECHOSO 1 APAGADO
       drawer: const HomeDrawer(),
       body: CustomScrollView(
         physics: const ClampingScrollPhysics(),
         slivers: [
-          // 🚨 SOSPECHOSO 2 APAGADO
           HomeHeader(
             onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
             onProfileTap: () {
               debugPrint("Perfil");
             },
           ),
-          
           SliverToBoxAdapter(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 25),
 
-                // 🚨 SOSPECHOSO 3 APAGADO
                 QuickActionsRow(
                   onInstantTutorTap: () {
                     if (!AuthHelper.requireAuth(context,
@@ -92,64 +89,20 @@ class _HomeScreenState extends State<HomeScreen> {
                     // Navigator.push(...);
                   },
                 ),
-
                 const SizedBox(height: 25),
-                // 🚨 SOSPECHOSO 4 APAGADO
                 const MascotBanner(),
 
                 const SizedBox(height: 35),
-                // 🚨 SOSPECHOSO 5 APAGADO
                 const CategoriesCarousel(),
 
                 const SizedBox(height: 35),
-
                 const TrustActionsRow(),
-                
-                const SizedBox(height: 35),
-                _placeholderBloque('Lista de Tutores Destacados',
-                    height: 180, color: Colors.white),
-
-                const SizedBox(height: 30),
-
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: _placeholderBloque('Banner: Gana dinero enseñando',
-                      height: 120, color: AppColors.brandBlue),
-                ),
+               
                 const SizedBox(height: 40),
               ],
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _placeholderBloque(String titulo,
-      {required double height, required Color color}) {
-    bool isDark =
-        color == AppColors.brandBlue || color == AppColors.brandOrange || color == Colors.red;
-    return Container(
-      height: height,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4))
-        ],
-      ),
-      child: Center(
-        child: Text(
-          titulo,
-          style: TextStyle(
-              fontFamily: 'outfit',
-              color: isDark ? Colors.white : Colors.grey.shade600,
-              fontWeight: FontWeight.bold,
-              fontSize: 16),
-        ),
       ),
     );
   }

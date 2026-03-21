@@ -36,9 +36,8 @@ class HomeDrawer extends StatelessWidget {
                   children: [
                     _buildDrawerItem(Icons.bolt, 'Tutor al instante', isPrimary: true),
                     _buildDrawerItem(Icons.search, 'Buscar Tutores'),
-                    _buildDrawerItem(Icons.people_outline, 'Mis Tutores'),
-                    _buildDrawerItem(Icons.calendar_today_outlined, 'Mis Sesiones'),
-                    _buildDrawerItem(Icons.account_balance_wallet_outlined, 'Mi Billetera'),
+                    _buildDrawerItem(Icons.people_outline, 'Sobre Nosotros'),
+                    _buildDrawerItem(Icons.account_balance_wallet_outlined, 'Preguntas'),
                   ],
                 ),
               ),
