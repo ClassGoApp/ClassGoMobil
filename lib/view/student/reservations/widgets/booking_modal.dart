@@ -12,9 +12,9 @@ import 'package:flutter_projects/view/student/reservations/services/reservations
 class BookingModal extends StatefulWidget {
   final String tutorName;
   final String tutorImage;
-  final List<String> subjects;
+  final List<Map<String, dynamic>> subjects;
+  final int? subjectId;
   final int tutorId;
-  final int subjectId;
   final String? tagline;
 
   const BookingModal({
@@ -31,11 +31,12 @@ class BookingModal extends StatefulWidget {
 }
 
 class BookingModalState extends State<BookingModal> {
-  String? selectedSubject;
+  Map<String, dynamic>? selectedSubject;
   DateTime? selectedDay;
   String? selectedHour;
 
-  Map<int, List<String>> availableDays = {};
+  Map<int, List<Map<String, dynamic>>> availableDays = {};
+  Map<String, dynamic>? selectedSlot;
   bool isLoading = true;
   String? errorMessage;
 
@@ -62,64 +63,17 @@ class BookingModalState extends State<BookingModal> {
     _loadTutorAvailableSlots();
   }
 
-  String _displaySubjectName(dynamic subject) {
-    try {
-      String name;
-      if (subject is String) {
-        name = subject;
-      } else if (subject is Map && subject.containsKey('name')) {
-        name = subject['name']?.toString() ?? '';
-      } else {
-        name = subject.toString();
-      }
-      final idx = name.indexOf('-');
-      if (idx >= 0 && idx < name.length - 1) {
-        return name.substring(idx + 1).trim();
-      }
-      return name;
-    } catch (_) {
-      return subject.toString();
-    }
+  String _displaySubjectName(Map<String, dynamic>? subject) {
+    if (subject == null) return '';
+    return (subject['name'] ?? '').toString();
   }
 
-  int? _extractSubjectId(dynamic subject) {
-    try {
-      if (subject == null) return null;
-      if (subject is Map) {
-        // buscar claves comunes de id
-        final keys = [
-          'id',
-          'subject_id',
-          'id_subget',
-          'id_subjet',
-          'subget_id'
-        ];
-        for (final k in keys) {
-          if (subject.containsKey(k) && subject[k] != null) {
-            final val = subject[k].toString();
-            final n = int.tryParse(val);
-            if (n != null) return n;
-          }
-        }
-        // Try name field if present
-        if (subject.containsKey('name') && subject['name'] != null) {
-          final maybe = subject['name'].toString();
-          final lead = RegExp(r'^\s*(\d+)').firstMatch(maybe);
-          if (lead != null) return int.tryParse(lead.group(1)!);
-          final any = RegExp(r'(\d+)').firstMatch(maybe);
-          if (any != null) return int.tryParse(any.group(1)!);
-        }
-      }
-      final s = subject.toString();
-      final leading = RegExp(r'^\s*(\d+)\s*[-–—:]?').firstMatch(s);
-      if (leading != null) return int.tryParse(leading.group(1)!);
-      final cleaned = s.replaceAll(RegExp(r'(?i)subget'), '');
-      final match = RegExp(r'(\d+)').firstMatch(cleaned);
-      if (match != null) return int.tryParse(match.group(0)!);
-      return null;
-    } catch (_) {
-      return null;
-    }
+  int? _extractSubjectId(Map<String, dynamic>? subject) {
+    if (subject == null) return null;
+
+    final value = subject['id'];
+    if (value is int) return value;
+    return int.tryParse(value?.toString() ?? '');
   }
 
   bool _hasSchedule(DateTime day) {
@@ -141,7 +95,7 @@ class BookingModalState extends State<BookingModal> {
     super.dispose();
   }
 
-  Future<void> _loadTutorAvailableSlots() async {
+  Future<void> _loadTutorAvailableSlots({DateTime? targetMonth}) async {
     if (mounted) {
       setState(() {
         isLoading = true;
@@ -163,7 +117,11 @@ class BookingModalState extends State<BookingModal> {
       }
 
       final parsed = await ReservationsService.loadTutorAvailableSlots(
-          token, widget.tutorId.toString());
+        token,
+        widget.tutorId.toString(),
+        year: (targetMonth ?? currentMonth).year,
+        month: (targetMonth ?? currentMonth).month,
+      );
 
       if (mounted) {
         setState(() {
@@ -447,27 +405,33 @@ class BookingModalState extends State<BookingModal> {
                 : [],
           ),
           child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
+            child: DropdownButton<Map<String, dynamic>>(
               value: selectedSubject,
               dropdownColor: AppColors.darkBlue,
               borderRadius: BorderRadius.circular(12),
-              style:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              items: widget.subjects
-                  .map((s) => DropdownMenuItem(
-                      value: s,
-                      child: Text(_displaySubjectName(s),
-                          style: TextStyle(color: Colors.white))))
-                  .toList(),
-              onChanged: (v) {
-                setState(() => selectedSubject = v);
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+              items: widget.subjects.map((subject) {
+                return DropdownMenuItem<Map<String, dynamic>>(
+                  value: subject,
+                  child: Text(
+                    _displaySubjectName(subject),
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() => selectedSubject = value);
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (_sheetScrollController != null &&
                       _sheetScrollController!.hasClients) {
                     _sheetScrollController!.animateTo(
-                        _sheetScrollController!.position.maxScrollExtent,
-                        duration: Duration(milliseconds: 400),
-                        curve: Curves.easeOut);
+                      _sheetScrollController!.position.maxScrollExtent,
+                      duration: const Duration(milliseconds: 400),
+                      curve: Curves.easeOut,
+                    );
                   }
                 });
               },
@@ -510,29 +474,38 @@ class BookingModalState extends State<BookingModal> {
                     IconButton(
                       icon: Icon(Icons.chevron_left, color: Colors.white70),
                       onPressed: () {
+                        final newMonth = DateTime(
+                            currentMonth.year, currentMonth.month - 1, 1);
                         setState(() {
-                          currentMonth = DateTime(
-                              currentMonth.year, currentMonth.month - 1);
+                          currentMonth = newMonth;
+                          _focusedDayBooking = newMonth;
                           selectedDay = null;
                           selectedHour = null;
+                          selectedSlot = null;
                         });
-                        _loadTutorAvailableSlots();
+                        _loadTutorAvailableSlots(targetMonth: newMonth);
                       },
                     ),
                     Text(
-                        '${_monthName(currentMonth.month)} ${currentMonth.year}',
-                        style: TextStyle(
-                            color: Colors.white, fontWeight: FontWeight.bold)),
+                      '${_monthName(currentMonth.month)} ${currentMonth.year}',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     IconButton(
                       icon: Icon(Icons.chevron_right, color: Colors.white70),
                       onPressed: () {
+                        final newMonth = DateTime(
+                            currentMonth.year, currentMonth.month + 1, 1);
                         setState(() {
-                          currentMonth = DateTime(
-                              currentMonth.year, currentMonth.month + 1);
+                          currentMonth = newMonth;
+                          _focusedDayBooking = newMonth;
                           selectedDay = null;
                           selectedHour = null;
+                          selectedSlot = null;
                         });
-                        _loadTutorAvailableSlots();
+                        _loadTutorAvailableSlots(targetMonth: newMonth);
                       },
                     ),
                   ],
@@ -709,6 +682,7 @@ class BookingModalState extends State<BookingModal> {
                         _focusedDayBooking = focused;
                         selectedDay = DateTime(day.year, day.month, day.day);
                         selectedHour = null;
+                        selectedSlot = null;
                       });
                       // Mostrar en consola las ranges para la fecha seleccionada
                       try {
@@ -731,7 +705,21 @@ class BookingModalState extends State<BookingModal> {
                       });
                     },
                     onPageChanged: (focused) {
-                      _focusedDayBooking = focused;
+                      final bool monthChanged =
+                          focused.year != currentMonth.year ||
+                              focused.month != currentMonth.month;
+                      setState(() {
+                        _focusedDayBooking = focused;
+                        currentMonth = DateTime(focused.year, focused.month, 1);
+                        if (monthChanged) {
+                          selectedDay = null;
+                          selectedHour = null;
+                          selectedSlot = null;
+                        }
+                      });
+                      if (monthChanged) {
+                        _loadTutorAvailableSlots(targetMonth: currentMonth);
+                      }
                     },
                   ),
                 // Mostrar horas disponibles cuando se selecciona un día
@@ -751,25 +739,20 @@ class BookingModalState extends State<BookingModal> {
                         Builder(builder: (ctx) {
                           final dateKey = DateTime(selectedDay!.year,
                               selectedDay!.month, selectedDay!.day);
-                          final ranges =
+
+                          final slotsForDay =
                               availableDays[dateKey.millisecondsSinceEpoch] ??
                                   [];
-                          if (ranges.isEmpty) {
+
+                          if (slotsForDay.isEmpty) {
                             return Container(
                               padding: EdgeInsets.symmetric(vertical: 18),
                               child: Text(
-                                  'No hay horas disponibles para este día',
-                                  style: TextStyle(color: Colors.white54)),
+                                'No hay horas disponibles para este día',
+                                style: TextStyle(color: Colors.white54),
+                              ),
                             );
                           }
-
-                          // Construir lista de horas (slots) a partir de los rangos
-                          final nowBolivia = DateTime.now()
-                              .toUtc()
-                              .subtract(Duration(hours: 4));
-                          final todayBolivia = DateTime(nowBolivia.year,
-                              nowBolivia.month, nowBolivia.day);
-                          final isToday = isSameDay(selectedDay, todayBolivia);
 
                           final List<Widget> slotButtons = [];
                           final bool isDarkTheme =
@@ -779,83 +762,112 @@ class BookingModalState extends State<BookingModal> {
                           final Color unselectedBgColor = isDarkTheme
                               ? Colors.white12
                               : AppColors.cardLight;
-                          for (final range in ranges) {
-                            // Debug: mostrar cada rango recibido para la fecha
-                            try {
-                              print(
-                                  'DEBUG build slots for date ${dateKey.toIso8601String()} range="${range}"');
-                            } catch (_) {}
-                            final slots = _generateTimeSlots(range,
-                                nowBolivia: nowBolivia, isToday: isToday);
-                            for (final start in slots) {
-                              final parsed = _parseTime(start);
-                              if (parsed == null) continue;
-                              final end = parsed.add(Duration(minutes: 20));
-                              final endStr = _formatTime(end);
-                              final fullRange = '$start-$endStr';
-                              final isSelected = selectedHour == fullRange;
-                              slotButtons.add(Padding(
-                                padding: const EdgeInsets.only(
-                                    right: 8.0, bottom: 8.0),
-                                child: GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      selectedHour = fullRange;
-                                    });
-                                  },
-                                  child: Container(
-                                    padding: EdgeInsets.symmetric(
-                                        vertical: 10, horizontal: 12),
-                                    decoration: BoxDecoration(
-                                      color: isSelected
-                                          ? AppColors.lightBlueColor
-                                          : unselectedBgColor,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                          color: isSelected
-                                              ? Colors.white
-                                              : AppColors.dividerLight),
-                                    ),
-                                    child: Text(start,
-                                        style: TextStyle(
-                                            color: isSelected
-                                                ? Colors.white
-                                                : unselectedTextColor,
-                                            fontWeight: FontWeight.bold)),
-                                  ),
-                                ),
-                              ));
-                            }
-                          }
 
-                          if (slotButtons.isEmpty) {
-                            // Si no se generaron botones, mostrar información de depuración
+                          if (slotsForDay.isEmpty) {
                             return Container(
-                              padding: EdgeInsets.symmetric(vertical: 12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('No se generaron slots para este día',
-                                      style: TextStyle(color: Colors.white54)),
-                                  SizedBox(height: 8),
-                                  Text('Ranges recibidos:',
-                                      style: TextStyle(color: Colors.white70)),
-                                  ...ranges
-                                      .map((r) => Text('- $r',
-                                          style: TextStyle(
-                                              color: Colors.white54,
-                                              fontSize: 12)))
-                                      .toList(),
-                                ],
+                              padding: const EdgeInsets.symmetric(vertical: 18),
+                              child: const Text(
+                                'No hay horas disponibles para este día',
+                                style: TextStyle(color: Colors.white54),
                               ),
                             );
                           }
 
-                          print(
-                              'DEBUG: About to render ${slotButtons.length} slot buttons');
+                          final nowBolivia = DateTime.now()
+                              .toUtc()
+                              .subtract(const Duration(hours: 4));
+                          final todayBolivia = DateTime(nowBolivia.year,
+                              nowBolivia.month, nowBolivia.day);
+                          final isToday = isSameDay(selectedDay, todayBolivia);
+
+                          final List<Map<String, dynamic>> expandedBlocks = [];
+
+                          for (final slot in slotsForDay) {
+                            expandedBlocks.addAll(
+                              _expandSlotTo20MinBlocks(
+                                slot,
+                                nowBolivia: nowBolivia,
+                                isToday: isToday,
+                              ),
+                            );
+                          }
+
+                          if (expandedBlocks.isEmpty) {
+                            return Container(
+                              padding: const EdgeInsets.symmetric(vertical: 18),
+                              child: const Text(
+                                'No hay horas disponibles para este día',
+                                style: TextStyle(color: Colors.white54),
+                              ),
+                            );
+                          }
+
+                          for (final block in expandedBlocks) {
+                            final String start = block['start'];
+                            final String end = block['end'];
+                            final String fullRange = '$start-$end';
+                            final bool isSelected = selectedHour == fullRange;
+                            final bool isOccupied =
+                                (block['status']?.toString().toLowerCase() ??
+                                        '') ==
+                                    'occupied';
+
+                            slotButtons.add(
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                    right: 8.0, bottom: 8.0),
+                                child: GestureDetector(
+                                  onTap: isOccupied
+                                      ? null
+                                      : () {
+                                          setState(() {
+                                            selectedHour = fullRange;
+                                            selectedSlot = {
+                                              'id': block['id'],
+                                              'start': start,
+                                              'end': end,
+                                            };
+                                          });
+                                        },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 10, horizontal: 12),
+                                    decoration: BoxDecoration(
+                                      color: isOccupied
+                                          ? Colors.red.withOpacity(0.18)
+                                          : isSelected
+                                              ? AppColors.lightBlueColor
+                                              : unselectedBgColor,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: isOccupied
+                                            ? Colors.red.withOpacity(0.45)
+                                            : isSelected
+                                                ? Colors.white
+                                                : AppColors.dividerLight,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      start,
+                                      style: TextStyle(
+                                        color: isOccupied
+                                            ? Colors.white54
+                                            : isSelected
+                                                ? Colors.white
+                                                : unselectedTextColor,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+
                           return Container(
-                            constraints: BoxConstraints(minHeight: 50),
-                            padding: EdgeInsets.only(top: 10, bottom: 100),
+                            constraints: const BoxConstraints(minHeight: 50),
+                            padding:
+                                const EdgeInsets.only(top: 10, bottom: 100),
                             child: Wrap(
                               spacing: 8,
                               runSpacing: 8,
@@ -934,10 +946,12 @@ class BookingModalState extends State<BookingModal> {
                               selectedSubject: selectedSubject,
                               tutorId: widget.tutorId,
                               subjectId: _extractSubjectId(selectedSubject) ??
-                                  widget.subjectId,
+                                  widget.subjectId ??
+                                  0,
                               scheduledDate: selectedDay,
                               scheduledTime: selectedHour,
                               isScheduledBooking: true,
+                              slotId: _buildSlotIdFormatted(),
                             ),
                           ),
                         );
@@ -1016,6 +1030,101 @@ class BookingModalState extends State<BookingModal> {
       'Diciembre'
     ];
     return months[m - 1];
+  }
+
+  String? _buildSlotIdFormatted() {
+    if (selectedSlot == null) return null;
+
+    final id = selectedSlot!['id']?.toString();
+    final start = selectedSlot!['start']?.toString();
+    final end = selectedSlot!['end']?.toString();
+
+    if (id == null || id.isEmpty || start == null || end == null) {
+      return null;
+    }
+
+    return '$id|$start|$end';
+  }
+
+  List<Map<String, dynamic>> _expandSlotTo20MinBlocks(
+    Map<String, dynamic> slot, {
+    DateTime? nowBolivia,
+    bool isToday = false,
+  }) {
+    final slotStatus = (slot['status'] ?? '').toString().toLowerCase();
+    if (slotStatus == 'occupied') {
+      return [];
+    }
+
+    final bool isTwentyMinBlock = slot['is_twenty_min_block'] == true;
+    if (isTwentyMinBlock) {
+      final start = _parseTime(slot['start24']?.toString() ?? '');
+      final end = _parseTime(slot['end24']?.toString() ?? '');
+      if (start == null || end == null) return [];
+
+      if (isToday && nowBolivia != null) {
+        final ref = DateTime(1, 1, 1, nowBolivia.hour, nowBolivia.minute);
+        if (!end.isAfter(ref)) {
+          return [];
+        }
+      }
+
+      final int slotId =
+          slot['id'] is int ? slot['id'] : int.tryParse('${slot['id']}') ?? 0;
+
+      return [
+        {
+          'id': slotId,
+          'start': _formatTime(start),
+          'end': _formatTime(end),
+          'status': slotStatus,
+          'formatted': '$slotId|${_formatTime(start)}|${_formatTime(end)}',
+        }
+      ];
+    }
+
+    final students = slot['students'];
+    if (students is List && students.isNotEmpty) {
+      return [];
+    }
+
+    final String startStr = slot['start24']?.toString() ?? '';
+    final String endStr = slot['end24']?.toString() ?? '';
+    final int slotId =
+        slot['id'] is int ? slot['id'] : int.tryParse('${slot['id']}') ?? 0;
+
+    final start = _parseTime(startStr);
+    final end = _parseTime(endStr);
+
+    if (start == null || end == null) return [];
+
+    final List<Map<String, dynamic>> blocks = [];
+    DateTime current = start;
+
+    while (current.isBefore(end.subtract(const Duration(minutes: 20))) ||
+        current.isAtSameMomentAs(end.subtract(const Duration(minutes: 20)))) {
+      final blockEnd = current.add(const Duration(minutes: 20));
+
+      if (isToday && nowBolivia != null) {
+        final ref = DateTime(1, 1, 1, nowBolivia.hour, nowBolivia.minute);
+        if (current.isBefore(ref)) {
+          current = blockEnd;
+          continue;
+        }
+      }
+
+      blocks.add({
+        'id': slotId,
+        'start': _formatTime(current),
+        'end': _formatTime(blockEnd),
+        'status': 'free',
+        'formatted': '$slotId|${_formatTime(current)}|${_formatTime(blockEnd)}',
+      });
+
+      current = blockEnd;
+    }
+
+    return blocks;
   }
 }
 

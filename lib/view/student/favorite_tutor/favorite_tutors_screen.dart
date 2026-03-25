@@ -154,22 +154,22 @@ class _FavoriteTutorsContentState extends State<FavoriteTutorsContent> {
     return 0;
   }
 
-  List<String> _extractValidSubjects(Map<String, dynamic> tutor) {
+  List<Map<String, dynamic>> _extractValidSubjects(Map<String, dynamic> tutor) {
     final subjects = tutor['subjects'];
     if (subjects is! List) return [];
 
     return subjects
         .whereType<Map>()
         .where((s) => s['status'] == 'active' && s['deleted_at'] == null)
-        .map((s) => (s['name'] ?? '').toString())
-        .where((name) => name.isNotEmpty)
+        .map((s) => Map<String, dynamic>.from(s))
+        .where((s) => (s['name'] ?? '').toString().isNotEmpty)
         .toList();
   }
 
   void _openTutorProfile(
     Map<String, dynamic> tutor,
     Map<String, dynamic> profile,
-    List<String> validSubjects,
+    List<Map<String, dynamic>> validSubjects,
   ) {
     _searchFocusNode.unfocus();
 
@@ -300,6 +300,13 @@ class _FavoriteTutorsContentState extends State<FavoriteTutorsContent> {
                 : <String, dynamic>{};
 
             final validSubjects = _extractValidSubjects(t);
+            final validSubjectNames = validSubjects
+                .map((s) => (s['name'] ?? '').toString())
+                .where((name) => name.isNotEmpty)
+                .toList();
+            final selectedSubjectId = validSubjects.isNotEmpty
+                ? _toInt(validSubjects.first['id'])
+                : 1;
 
             return AnimationConfiguration.staggeredList(
               position: index,
@@ -347,13 +354,13 @@ class _FavoriteTutorsContentState extends State<FavoriteTutorsContent> {
                                     .toString(),
                                 subjects: validSubjects,
                                 tutorId: t['id'],
-                                subjectId: 1,
+                                subjectId: selectedSubjectId,
                               ),
                             ),
                           );
                         },
-                        tutorProfession: validSubjects.isNotEmpty
-                            ? validSubjects.first
+                        tutorProfession: validSubjectNames.isNotEmpty
+                            ? validSubjectNames.first
                             : 'No especificada',
                         sessionDuration: 'Clases de 20 minutos',
                         isFavoriteInitial: true,
@@ -386,7 +393,7 @@ class _FavoriteTutorsContentState extends State<FavoriteTutorsContent> {
                             }
                           }
                         },
-                        subjectsString: validSubjects.join(', '),
+                        subjectsString: validSubjectNames.join(', '),
                         description: (profile['description'] ?? '').toString(),
                         isVerified:
                             t['is_verified'] == true || t['is_verified'] == 1,

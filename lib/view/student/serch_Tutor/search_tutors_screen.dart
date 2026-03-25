@@ -1206,7 +1206,12 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                   .where((subject) =>
                       subject['status'] == 'active' &&
                       subject['deleted_at'] == null)
-                  .map((subject) => subject['name'] as String)
+                  .whereType<Map>()
+                  .map((subject) => Map<String, dynamic>.from(subject))
+                  .toList();
+              final validSubjectNames = validSubjects
+                  .map((subject) => (subject['name'] ?? '').toString())
+                  .where((name) => name.isNotEmpty)
                   .toList();
 
               // Obtener el primer subject válido para el ID
@@ -1360,8 +1365,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                     ),
                                   );
                                 },
-                          tutorProfession: validSubjects.isNotEmpty
-                              ? validSubjects.first
+                          tutorProfession: validSubjectNames.isNotEmpty
+                              ? validSubjectNames.first
                               : 'Profesión no disponible',
                           sessionDuration: 'Clases de 20 minutos',
                           isFavoriteInitial: tutor['is_favorite'] ?? false,
@@ -1438,10 +1443,10 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                               );
                             }
                           },
-                          subjectsString: validSubjects.join(', '),
+                          subjectsString: validSubjectNames.join(', '),
                           matchedSubjects:
                               (keyword != null && keyword!.trim().isNotEmpty)
-                                  ? validSubjects
+                                  ? validSubjectNames
                                       .where((s) => normalize(s)
                                           .contains(normalize(keyword!)))
                                       .toList()

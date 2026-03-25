@@ -1031,9 +1031,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                             ? tutor['avg_rating'].toDouble()
                                             : 0.0))
                                     : 0.0,
-                                subjects: validSubjects
-                                    .map((s) => s['name'] as String)
-                                    .toList(),
+                                subjects: validSubjects,
                                 completedCourses: (tutor[
                                         'completed_courses_count'] is int)
                                     ? tutor['completed_courses_count'] ?? 0
@@ -1086,9 +1084,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                               ? tutor['avg_rating'].toDouble()
                                               : 0.0))
                                       : 0.0,
-                                  subjects: validSubjects
-                                      .map((s) => s['name'] as String)
-                                      .toList(),
+                                  subjects: validSubjects,
                                   completedCourses: (tutor[
                                           'completed_courses_count'] is int)
                                       ? tutor['completed_courses_count'] ?? 0
@@ -1141,13 +1137,16 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                             highResTutorImages[tutor['id']] ??
                                                 profile['image'] ??
                                                 AppImages.placeHolderImage,
-                                        subjects: validSubjects
-                                            .map((s) => s['name'] as String)
-                                            .toList(),
+                                        subjects: validSubjects,
                                         tutorId: tutor['id'],
                                         subjectId: validSubjects.isNotEmpty
-                                            ? 1
-                                            : 1, // Default subject ID
+                                            ? (validSubjects.first['id'] is int
+                                                ? validSubjects.first['id']
+                                                : int.tryParse(validSubjects
+                                                        .first['id']
+                                                        .toString()) ??
+                                                    1)
+                                            : 1,
                                       ),
                                     ),
                                   );
