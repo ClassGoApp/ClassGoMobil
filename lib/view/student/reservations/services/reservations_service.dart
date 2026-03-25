@@ -22,6 +22,52 @@ class ReservationItem {
 }
 
 class ReservationsService {
+  static DateTime _nowBolivia() {
+    return DateTime.now().toUtc().subtract(const Duration(hours: 4));
+  }
+
+  static int _extractMonthInt(dynamic value) {
+    if (value is int && value >= 1 && value <= 12) return value;
+    final parsed = int.tryParse(value?.toString() ?? '');
+    if (parsed != null && parsed >= 1 && parsed <= 12) return parsed;
+    return DateTime.now().month;
+  }
+
+  static Map<dynamic, dynamic>? _extractDateMap(dynamic source) {
+    if (source is! Map) return null;
+
+    if (source['Date'] is Map) {
+      return source['Date'] as Map<dynamic, dynamic>;
+    }
+
+    if (source['date'] is Map) {
+      return source['date'] as Map<dynamic, dynamic>;
+    }
+
+    if (source['data'] is Map) {
+      final data = source['data'];
+      if (data is Map && data['Date'] is Map) {
+        return data['Date'] as Map<dynamic, dynamic>;
+      }
+      if (data is Map && data['date'] is Map) {
+        return data['date'] as Map<dynamic, dynamic>;
+      }
+    }
+
+    return null;
+  }
+
+  static DateTime? _parseHm(String? time) {
+    if (time == null) return null;
+    final parts = time.trim().split(':');
+    if (parts.length != 2) return null;
+    final hour = int.tryParse(parts[0]);
+    final minute = int.tryParse(parts[1]);
+    if (hour == null || minute == null) return null;
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
+    return DateTime(1, 1, 1, hour, minute);
+  }
+
   /// Obtiene y parsea las reservas del usuario
   static Future<List<ReservationItem>> fetchUserReservations(
       String token, int userId) async {
@@ -123,10 +169,45 @@ class ReservationsService {
   static Future<bool> isTutorInstantAvailable(
       String token, String tutorId) async {
     try {
-      final response = await getTutorAvailableSlots(token, tutorId);
-      final now = DateTime.now();
+      final now = _nowBolivia();
+      final response = await getTutorAvailableSlots(
+        token,
+        tutorId,
+        now.year,
+        now.month,
+      );
 
       bool available = false;
+
+      final dateMap = _extractDateMap(response);
+      if (dateMap != null) {
+        final todaySlots = dateMap['${now.day}'];
+        if (todaySlots is List) {
+          for (final raw in todaySlots) {
+            if (raw is! Map) continue;
+
+            final status = (raw['status'] ?? '').toString().toLowerCase();
+            if (status != 'free') continue;
+
+            final startOnly = _parseHm(raw['time']?.toString());
+            if (startOnly == null) continue;
+
+            final start = DateTime(
+              now.year,
+              now.month,
+              now.day,
+              startOnly.hour,
+              startOnly.minute,
+            );
+            final end = start.add(const Duration(minutes: 20));
+
+            if ((now.isAfter(start) || now.isAtSameMomentAs(start)) &&
+                now.isBefore(end)) {
+              return true;
+            }
+          }
+        }
+      }
 
       final Map<String, dynamic> responseMap = response;
       final dynamic data =
@@ -178,82 +259,219 @@ class ReservationsService {
   /// Carga y parsea los slots disponibles de un tutor.
   /// Devuelve un mapa donde la clave es millisecondsSinceEpoch de la fecha
   /// (sin tiempo) y el valor es la lista de rangos de hora 'HH:mm-HH:mm'.
-  static Future<Map<int, List<String>>> loadTutorAvailableSlots(
-      String token, String tutorId) async {
-    final Map<int, List<String>> newAvailableDays = {};
+  static Future<Map<int, List<Map<String, dynamic>>>> loadTutorAvailableSlots(
+    String token,
+    String tutorId, {
+    int? year,
+    int? month,
+  }) async {
+    final Map<int, List<Map<String, dynamic>>> newAvailableDays = {};
+    final nowBolivia = _nowBolivia();
+    final todayBolivia =
+        DateTime(nowBolivia.year, nowBolivia.month, nowBolivia.day);
+    final targetMonth = DateTime(
+      year ?? nowBolivia.year,
+      month ?? nowBolivia.month,
+      1,
+    );
+
     try {
-      final response = await getTutorAvailableSlots(token, tutorId);
-      dynamic data = response is Map && response.containsKey('data')
+      final response = await getTutorAvailableSlots(
+        token,
+        tutorId,
+        targetMonth.year,
+        targetMonth.month,
+      );
+
+      final dateMap = _extractDateMap(response);
+      if (dateMap != null) {
+        for (final entry in dateMap.entries) {
+          final int? day = int.tryParse(entry.key.toString());
+          if (day == null || day <= 0) continue;
+
+          final DateTime slotDate =
+              DateTime(targetMonth.year, targetMonth.month, day);
+
+          if (slotDate.month != targetMonth.month) continue;
+          if (slotDate.isBefore(todayBolivia)) continue;
+
+          final daySlots = entry.value;
+          if (daySlots is! List) continue;
+
+          for (final raw in daySlots) {
+            if (raw is! Map) continue;
+
+            final status = (raw['status'] ?? '').toString().toLowerCase();
+            if (status == 'occupied') continue;
+
+            final startOnly = _parseHm(raw['time']?.toString());
+            if (startOnly == null) continue;
+
+            final DateTime startTimeLocal = DateTime(
+              slotDate.year,
+              slotDate.month,
+              slotDate.day,
+              startOnly.hour,
+              startOnly.minute,
+            );
+            final DateTime endTimeLocal =
+                startTimeLocal.add(const Duration(minutes: 20));
+
+            if (slotDate.isAtSameMomentAs(todayBolivia) &&
+                !endTimeLocal.isAfter(nowBolivia)) {
+              continue;
+            }
+
+            final int slotId = raw['slot_id'] is int
+                ? raw['slot_id']
+                : int.tryParse(raw['slot_id']?.toString() ?? '') ?? 0;
+
+            final int dateKey =
+                DateTime(slotDate.year, slotDate.month, slotDate.day)
+                    .millisecondsSinceEpoch;
+
+            final Map<String, dynamic> slotData = {
+              'id': slotId,
+              'date': DateFormat('yyyy-MM-dd').format(slotDate),
+              'start': _formatTime12h(startTimeLocal),
+              'end': _formatTime12h(endTimeLocal),
+              'range':
+                  '${_formatTime24h(startTimeLocal)}-${_formatTime24h(endTimeLocal)}',
+              'start24': _formatTime24h(startTimeLocal),
+              'end24': _formatTime24h(endTimeLocal),
+              'raw_start_time': raw['time']?.toString(),
+              'raw_end_time': _formatTime24h(endTimeLocal),
+              'bookings_count': 0,
+              'students': const [],
+              'status': status,
+              'is_twenty_min_block': true,
+            };
+
+            newAvailableDays.putIfAbsent(dateKey, () => []);
+
+            final alreadyExists = newAvailableDays[dateKey]!.any(
+              (item) =>
+                  item['id'] == slotId &&
+                  item['start24'] == slotData['start24'],
+            );
+
+            if (!alreadyExists) {
+              newAvailableDays[dateKey]!.add(slotData);
+            }
+          }
+        }
+
+        for (final daySlots in newAvailableDays.values) {
+          daySlots.sort((a, b) {
+            final sa = a['start24']?.toString() ?? '';
+            final sb = b['start24']?.toString() ?? '';
+            return sa.compareTo(sb);
+          });
+        }
+
+        return newAvailableDays;
+      }
+
+      final dynamic data = response is Map && response.containsKey('data')
           ? response['data']
           : response;
 
       if (data is List) {
-        for (var slot in data) {
+        for (final slot in data) {
           try {
-            if (slot['start_time'] == null || slot['end_time'] == null) {
+            if (slot['start_time'] == null ||
+                slot['end_time'] == null ||
+                slot['date'] == null) {
               continue;
             }
 
-            final startTimeUTC =
-                DateTime.parse(slot['start_time'].toString().trim());
-            final endTimeUTC =
-                DateTime.parse(slot['end_time'].toString().trim());
+            final int slotId = slot['id'] is int
+                ? slot['id']
+                : int.tryParse(slot['id']?.toString() ?? '') ?? 0;
 
-            final startTime = startTimeUTC.subtract(Duration(hours: 4));
-            final endTime = endTimeUTC.subtract(Duration(hours: 4));
+            final DateTime startTimeUtc =
+                DateTime.parse(slot['start_time'].toString().trim()).toUtc();
+            final DateTime endTimeUtc =
+                DateTime.parse(slot['end_time'].toString().trim()).toUtc();
 
-            DateTime slotDateLocal;
-            if (slot.containsKey('date') &&
-                slot['date'] != null &&
-                slot['date'].toString().isNotEmpty) {
-              try {
-                final parsed = DateTime.parse(slot['date'].toString());
-                slotDateLocal = DateTime(parsed.year, parsed.month, parsed.day);
-              } catch (_) {
-                slotDateLocal =
-                    DateTime(startTime.year, startTime.month, startTime.day);
-              }
-            } else {
-              slotDateLocal =
-                  DateTime(startTime.year, startTime.month, startTime.day);
-            }
+            // Bolivia UTC-4
+            final DateTime startTimeLocal =
+                startTimeUtc.subtract(const Duration(hours: 4));
+            final DateTime endTimeLocal =
+                endTimeUtc.subtract(const Duration(hours: 4));
 
-            final nowBolivia =
-                DateTime.now().toUtc().subtract(Duration(hours: 4));
-            final todayBolivia =
+            // La fecha real SIEMPRE viene de "date"
+            final DateTime parsedDate =
+                DateTime.parse(slot['date'].toString().trim());
+            final DateTime slotDate =
+                DateTime(parsedDate.year, parsedDate.month, parsedDate.day);
+
+            final DateTime nowBolivia =
+                DateTime.now().toUtc().subtract(const Duration(hours: 4));
+            final DateTime todayBolivia =
                 DateTime(nowBolivia.year, nowBolivia.month, nowBolivia.day);
-            final slotDateNormalized = DateTime(
-                slotDateLocal.year, slotDateLocal.month, slotDateLocal.day);
 
-            if (slotDateNormalized.isBefore(todayBolivia)) continue;
-            if (slotDateNormalized.isAtSameMomentAs(todayBolivia) &&
-                !endTime.isAfter(nowBolivia)) continue;
+            if (slotDate.isBefore(todayBolivia)) continue;
 
-            final dateKey = DateTime(
-                slotDateLocal.year, slotDateLocal.month, slotDateLocal.day);
-            final timeRange =
-                '${_formatTimeSimple(startTime)}-${_formatTimeSimple(endTime)}';
-
-            if (!newAvailableDays.containsKey(dateKey.millisecondsSinceEpoch)) {
-              newAvailableDays[dateKey.millisecondsSinceEpoch] = [];
+            // Si el slot es de hoy, validar que aún no haya terminado
+            if (slotDate.isAtSameMomentAs(todayBolivia) &&
+                !endTimeLocal.isAfter(nowBolivia)) {
+              continue;
             }
-            if (!newAvailableDays[dateKey.millisecondsSinceEpoch]!
-                .contains(timeRange)) {
-              newAvailableDays[dateKey.millisecondsSinceEpoch]!.add(timeRange);
+
+            final int dateKey = slotDate.millisecondsSinceEpoch;
+
+            final Map<String, dynamic> slotData = {
+              'id': slotId,
+              'date': slot['date'].toString(),
+              'start': _formatTime12h(startTimeLocal),
+              'end': _formatTime12h(endTimeLocal),
+              'range':
+                  '${_formatTime24h(startTimeLocal)} - ${_formatTime24h(endTimeLocal)}',
+              'start24': _formatTime24h(startTimeLocal),
+              'end24': _formatTime24h(endTimeLocal),
+              'raw_start_time': slot['start_time'],
+              'raw_end_time': slot['end_time'],
+              'bookings_count': slot['bookings_count'] ?? 0,
+              'students': slot['students'] ?? [],
+            };
+
+            newAvailableDays.putIfAbsent(dateKey, () => []);
+
+            final alreadyExists = newAvailableDays[dateKey]!.any(
+              (item) => item['id'] == slotId,
+            );
+
+            if (!alreadyExists) {
+              newAvailableDays[dateKey]!.add(slotData);
             }
-          } catch (_) {}
+          } catch (_) {
+            // omitir slot inválido
+          }
         }
       }
     } catch (e) {
       rethrow;
     }
 
+    print('Parsed available slots for tutor $tutorId: $newAvailableDays');
+
     return newAvailableDays;
   }
 
-  static String _formatTimeSimple(DateTime t) {
-    // siempre devolvemos HH:mm
+  static String _formatTime24h(DateTime t) {
     final two = (int n) => n.toString().padLeft(2, '0');
     return '${two(t.hour)}:${two(t.minute)}';
+  }
+
+  static String _formatTime12h(DateTime t) {
+    final hour = t.hour == 0
+        ? 12
+        : t.hour > 12
+            ? t.hour - 12
+            : t.hour;
+    final minute = t.minute.toString().padLeft(2, '0');
+    final period = t.hour >= 12 ? 'PM' : 'AM';
+    return '$hour:$minute $period';
   }
 }

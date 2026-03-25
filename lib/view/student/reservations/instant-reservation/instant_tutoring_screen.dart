@@ -7,14 +7,15 @@ import '../paymentQR/payment_qr_screen.dart';
 class InstantTutoringScreen extends StatefulWidget {
   final String tutorName;
   final String tutorImage;
-  final List<String> subjects;
-  final String? selectedSubject;
+  final List<Map<String, dynamic>> subjects;
+  final Map<String, dynamic>? selectedSubject;
   final int tutorId;
   final int subjectId;
   // ✅ NUEVO: Parámetros para reserva programada
   final DateTime? scheduledDate;
   final String? scheduledTime;
   final bool isScheduledBooking;
+  final String? slotId;
 
   const InstantTutoringScreen({
     Key? key,
@@ -28,6 +29,7 @@ class InstantTutoringScreen extends StatefulWidget {
     this.scheduledDate,
     this.scheduledTime,
     this.isScheduledBooking = false,
+    this.slotId,
   }) : super(key: key);
 
   @override
@@ -36,7 +38,7 @@ class InstantTutoringScreen extends StatefulWidget {
 
 class _InstantTutoringScreenState extends State<InstantTutoringScreen>
     with TickerProviderStateMixin {
-  String? _selectedSubject;
+  Map<String, dynamic>? _selectedSubject;
   int? _selectedSubjectId;
   File? _selectedImage;
   final DraggableScrollableController _scrollController =
@@ -56,7 +58,12 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
 
   String _displaySubjectName(dynamic subject) {
     try {
-      String name = subject?.toString() ?? '';
+      String name;
+      if (subject is Map) {
+        name = (subject['name'] ?? '').toString();
+      } else {
+        name = subject?.toString() ?? '';
+      }
       final idx = name.indexOf('-');
       if (idx >= 0 && idx < name.length - 1) {
         return name.substring(idx + 1).trim();
@@ -132,11 +139,23 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
     print('[InstantTutoringScreen] selectedSubject: ${widget.selectedSubject}');
 
     // Selecciona la materia si viene preseleccionada
-    if (widget.selectedSubject != null &&
-        widget.subjects.contains(widget.selectedSubject)) {
-      _selectedSubject = widget.selectedSubject;
+    if (widget.selectedSubject != null) {
+      final selectedId = _extractSubjectId(widget.selectedSubject);
+      Map<String, dynamic>? matched;
+      if (selectedId != null) {
+        for (final subject in widget.subjects) {
+          if (_extractSubjectId(subject) == selectedId) {
+            matched = subject;
+            break;
+          }
+        }
+      }
+      _selectedSubject = matched ?? widget.selectedSubject;
+      _selectedSubjectId = selectedId ?? widget.subjectId;
+    } else if (widget.subjects.isNotEmpty) {
+      _selectedSubject = widget.subjects.first;
       _selectedSubjectId =
-          _extractSubjectId(widget.selectedSubject) ?? widget.subjectId;
+          _extractSubjectId(widget.subjects.first) ?? widget.subjectId;
     }
 
     // Iniciar la animación inmediatamente para la primera página
@@ -919,29 +938,18 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                         onPressed: _selectedSubject != null
                             ? () {
                                 // Reemplaza el modal actual con la pantalla de pago
-                                print(
-                                    '--------------------------IS MATERIAAAAA----' +
-                                        _selectedSubjectId.toString());
+
                                 Navigator.of(context).pushReplacement(
                                   PageRouteBuilder(
                                     opaque: false,
                                     barrierColor: Colors.black.withOpacity(0.5),
                                     pageBuilder: (context, animation,
                                         secondaryAnimation) {
-                                      // ✅ DEBUG: Mostrar datos que se van a pasar a PaymentQRScreen
-                                      print(
-                                          '[InstantTutoringScreen] 🔍 DEBUG - Datos a pasar a PaymentQRScreen:');
-                                      print(
-                                          '[InstantTutoringScreen] scheduledDate: ${widget.scheduledDate}');
-                                      print(
-                                          '[InstantTutoringScreen] scheduledTime: ${widget.scheduledTime}');
-                                      print(
-                                          '[InstantTutoringScreen] isScheduledBooking: ${widget.isScheduledBooking}');
-
                                       return PaymentQRScreen(
                                         tutorName: widget.tutorName,
                                         tutorImage: widget.tutorImage,
-                                        selectedSubject: _selectedSubject!,
+                                        selectedSubject: _displaySubjectName(
+                                            _selectedSubject),
                                         amount: "15 Bs",
                                         sessionDuration: "20 min",
                                         tutorId: widget.tutorId,
@@ -952,6 +960,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                         scheduledTime: widget.scheduledTime,
                                         isScheduledBooking:
                                             widget.isScheduledBooking,
+                                        slotId: widget.slotId,
                                       );
                                     },
                                     transitionDuration:

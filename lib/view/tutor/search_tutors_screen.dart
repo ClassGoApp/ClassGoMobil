@@ -1057,7 +1057,12 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                   .where((subject) =>
                       subject['status'] == 'active' &&
                       subject['deleted_at'] == null)
-                  .map((subject) => subject['name'] as String)
+                  .whereType<Map>()
+                  .map((subject) => Map<String, dynamic>.from(subject))
+                  .toList();
+              final validSubjectNames = validSubjects
+                  .map((subject) => (subject['name'] ?? '').toString())
+                  .where((name) => name.isNotEmpty)
                   .toList();
 
               // Obtener el primer subject válido para el ID
@@ -1216,8 +1221,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                     ),
                                   );
                                 },
-                          tutorProfession: validSubjects.isNotEmpty
-                              ? validSubjects.first
+                          tutorProfession: validSubjectNames.isNotEmpty
+                              ? validSubjectNames.first
                               : 'Profesión no disponible',
                           sessionDuration: 'Clases de 20 minutos',
                           isFavoriteInitial: tutor['is_favorite'] ?? false,
@@ -1225,7 +1230,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                             print(
                                 'Tutor ${profile['full_name'] ?? ''} es favorito: $isFavorite');
                           },
-                          subjectsString: validSubjects.join(', '),
+                          subjectsString: validSubjectNames.join(', '),
                           description: profile['description'] ??
                               'No hay descripción disponible.',
                           isVerified: true,
@@ -1404,7 +1409,7 @@ class _ModernNavBar extends StatelessWidget {
 class BookingModal extends StatefulWidget {
   final String tutorName;
   final String tutorImage;
-  final List<String> subjects;
+  final List<Map<String, dynamic>> subjects;
   final int tutorId;
   final int subjectId;
 
@@ -1421,7 +1426,7 @@ class BookingModal extends StatefulWidget {
 }
 
 class BookingModalState extends State<BookingModal> {
-  String? selectedSubject;
+  Map<String, dynamic>? selectedSubject;
   DateTime? selectedDay;
   String? selectedHour;
 
@@ -1484,8 +1489,37 @@ class BookingModalState extends State<BookingModal> {
           token, widget.tutorId.toString());
 
       print('[BookingModal] availableDays keys: ${parsed.keys.toList()}');
+
+      // Convertir Map<int, List<Map>> a Map<int, List<String>> (rangos)
+      final Map<int, List<String>> mapped = {};
+      try {
+        parsed.forEach((key, list) {
+          try {
+            final List<String> ranges = (list as List)
+                .map<String>((slot) {
+                  if (slot is Map) {
+                    final s = slot['start24']?.toString();
+                    final e = slot['end24']?.toString();
+                    if (s != null && e != null) return '$s-$e';
+                    final rawRange = slot['range']?.toString();
+                    if (rawRange != null && rawRange.isNotEmpty) {
+                      return rawRange
+                          .replaceAll(' ', '')
+                          .replaceAll('\u2013', '-');
+                    }
+                  }
+                  return slot.toString();
+                })
+                .where((r) => r.isNotEmpty)
+                .toList();
+
+            mapped[key as int] = ranges;
+          } catch (_) {}
+        });
+      } catch (_) {}
+
       setState(() {
-        availableDays = parsed;
+        availableDays = mapped;
         isLoading = false;
       });
     } catch (e) {
@@ -1778,7 +1812,7 @@ class BookingModalState extends State<BookingModal> {
                                   : [],
                             ),
                             child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
+                              child: DropdownButton<Map<String, dynamic>>(
                                 value: selectedSubject,
                                 dropdownColor: AppColors.darkBlue,
                                 borderRadius: BorderRadius.circular(12),
@@ -1788,7 +1822,8 @@ class BookingModalState extends State<BookingModal> {
                                 items: widget.subjects
                                     .map((s) => DropdownMenuItem(
                                           value: s,
-                                          child: Text(s,
+                                          child: Text(
+                                              (s['name'] ?? '').toString(),
                                               style: TextStyle(
                                                   color: Colors.white)),
                                         ))

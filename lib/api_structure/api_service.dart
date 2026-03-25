@@ -1328,21 +1328,34 @@ Future<Map<String, dynamic>> getInvoices(String token) async {
 }
 
 Future<Map<String, dynamic>> getTutorAvailableSlots(
-    String token, String userId) async {
-  final Uri uri = Uri.parse('$baseUrl/tutor/$userId/available-slots');
+  String token,
+  String userId, [
+  int? year,
+  int? month,
+]) async {
+  final Uri uri = Uri.parse('$baseUrl/tutor/$userId/slots-for-date');
+  final DateTime now = DateTime.now();
+  final int requestYear = year ?? now.year;
+  final int requestMonth = month ?? now.month;
+
   final headers = {
     'Authorization': 'Bearer $token',
     'Accept': 'application/json',
     'Content-Type': 'application/json',
   };
 
+  final body = json.encode({
+    "year": requestYear,
+    "month": requestMonth,
+  });
+
   try {
-    final response = await http.get(
+    final response = await http.post(
       uri,
       headers: headers,
+      body: body,
     );
 
-    // Decodificar usando bodyBytes para evitar problemas de encoding
     final String bodyString = utf8.decode(response.bodyBytes);
     final dynamic decodedBody = json.decode(bodyString);
 
@@ -1358,7 +1371,6 @@ Future<Map<String, dynamic>> getTutorAvailableSlots(
         return decodedBody;
       }
 
-      // Caso inesperado: envolver en data
       return {'status': 200, 'data': decodedBody};
     } else {
       final error = decodedBody is Map
@@ -1638,7 +1650,12 @@ Future<Map<String, dynamic>> fetchAlliances() async {
     };
     final response = await http.get(uri, headers: headers);
     if (response.statusCode == 200) {
-      return {'data': json.decode(response.body)};
+      final List<dynamic> body = json.decode(response.body);
+
+      // Mira la consola de VS Code cuando corras la app
+      print('🔍 DEBUG DATA ALIANZAS: $body');
+
+      return {'data': body};
     } else {
       final error = json.decode(response.body);
       throw Exception(error['message'] ?? 'Error al obtener alianzas');
@@ -1709,20 +1726,59 @@ Future<Map<String, dynamic>> getVerifiedTutorsPhotos(String? token) async {
 Future<Map<String, dynamic>> createSlotBooking(
     String token, Map<String, dynamic> data) async {
   final Uri uri = Uri.parse('$baseUrl/slot-bookings');
-  final headers = {
-    'Authorization': 'Bearer $token',
-    'Accept': 'application/json',
-    'Content-Type': 'application/json',
-  };
 
   try {
-    final response = await http.post(
-      uri,
-      headers: headers,
-      body: jsonEncode(data),
-    );
+    final hasComprobante = data['comprobante'] is File;
+    late final http.Response response;
 
-    final decodedResponse = jsonDecode(response.body);
+    if (hasComprobante) {
+      final request = http.MultipartRequest('POST', uri);
+      request.headers.addAll({
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      });
+
+      data.forEach((key, value) {
+        if (key == 'comprobante' || value == null) return;
+        request.fields[key] = value.toString();
+      });
+
+      final comprobanteFile = data['comprobante'] as File;
+      final mimeType = lookupMimeType(comprobanteFile.path);
+      final mimeParts = mimeType?.split('/');
+
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'comprobante',
+          comprobanteFile.path,
+          contentType: mimeParts != null && mimeParts.length == 2
+              ? MediaType(mimeParts[0], mimeParts[1])
+              : null,
+        ),
+      );
+
+      final streamedResponse = await request.send();
+      response = await http.Response.fromStream(streamedResponse);
+    } else {
+      final headers = {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      };
+
+      final payload = Map<String, dynamic>.from(data)
+        ..removeWhere((key, value) => value == null || key == 'comprobante');
+
+      response = await http.post(
+        uri,
+        headers: headers,
+        body: jsonEncode(payload),
+      );
+    }
+
+    final decodedResponse = response.body.isNotEmpty
+        ? jsonDecode(response.body)
+        : <String, dynamic>{};
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       return decodedResponse;

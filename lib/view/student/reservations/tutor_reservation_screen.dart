@@ -17,7 +17,7 @@ class ReservationTutorProfileScreen extends StatefulWidget {
   final String tutorVideo;
   final String description;
   final double rating;
-  final List<String> subjects;
+  final List<Map<String, dynamic>> subjects;
   final int completedCourses;
 
   // Idiomas por defecto

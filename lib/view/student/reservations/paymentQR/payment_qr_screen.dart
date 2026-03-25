@@ -24,6 +24,7 @@ class PaymentQRScreen extends StatefulWidget {
   final DateTime? scheduledDate;
   final String? scheduledTime;
   final bool isScheduledBooking;
+  final String? slotId;
 
   const PaymentQRScreen({
     Key? key,
@@ -38,6 +39,7 @@ class PaymentQRScreen extends StatefulWidget {
     this.scheduledDate,
     this.scheduledTime,
     this.isScheduledBooking = false,
+    this.slotId,
   }) : super(key: key);
 
   @override
@@ -46,6 +48,14 @@ class PaymentQRScreen extends StatefulWidget {
 
 class _PaymentQRScreenState extends State<PaymentQRScreen>
     with TickerProviderStateMixin {
+  static const int _maxComprobanteBytes = 5 * 1024 * 1024; // 5MB
+  static const List<String> _allowedComprobanteExtensions = [
+    'jpg',
+    'jpeg',
+    'png',
+    'pdf'
+  ];
+
   File? _receiptImage;
   final ImagePicker _picker = ImagePicker();
   final DraggableScrollableController _scrollController =
@@ -116,6 +126,22 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
     super.dispose();
   }
 
+  String? _validateComprobanteFile(File file) {
+    final fileSize = file.lengthSync();
+    if (fileSize > _maxComprobanteBytes) {
+      return 'El comprobante no puede superar 5MB.';
+    }
+
+    final filePath = file.path.toLowerCase();
+    final extension = filePath.contains('.') ? filePath.split('.').last : '';
+
+    if (!_allowedComprobanteExtensions.contains(extension)) {
+      return 'Formato no permitido. Usa JPG, JPEG, PNG o PDF.';
+    }
+
+    return null;
+  }
+
   Future<void> _pickReceiptImage(ImageSource source) async {
     try {
       final XFile? image = await _picker.pickImage(
@@ -126,8 +152,21 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
       );
 
       if (image != null) {
+        final pickedFile = File(image.path);
+        final validationError = _validateComprobanteFile(pickedFile);
+
+        if (validationError != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(validationError),
+              backgroundColor: Colors.orange,
+            ),
+          );
+          return;
+        }
+
         setState(() {
-          _receiptImage = File(image.path);
+          _receiptImage = pickedFile;
         });
       }
     } catch (e) {
@@ -236,6 +275,17 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Por favor, sube el comprobante de pago'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    final validationError = _validateComprobanteFile(_receiptImage!);
+    if (validationError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(validationError),
           backgroundColor: Colors.orange,
         ),
       );
@@ -437,48 +487,44 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
         metaData = {'comentario': 'Tutoría instantánea'};
       }
 
-      // ✅ DEBUG: Mostrar qué valores se están enviando
-      print('[PaymentQRScreen] 🔍 DEBUG - Valores a enviar a la API:');
-      print(
-          '[PaymentQRScreen] isScheduledBooking: ${widget.isScheduledBooking}');
-      print('[PaymentQRScreen] scheduledDate: ${widget.scheduledDate}');
-      print('[PaymentQRScreen] scheduledTime: ${widget.scheduledTime}');
-      print(
-          '[PaymentQRScreen] startTime: $startTime (${startTime.toIso8601String()})');
-      print(
-          '[PaymentQRScreen] endTime: $endTime (${endTime.toIso8601String()})');
-      print('[PaymentQRScreen] calendarEventId: $calendarEventId');
-      print('[PaymentQRScreen] metaData: $metaData');
+      final String? normalizedSlotId = widget.slotId?.trim();
+
+      print('[PaymentQRScreen] 🔍 DEBUG - slotId enviado: $normalizedSlotId');
 
       final slotBookingData = {
         'student_id': studentId,
         'tutor_id': widget.tutorId,
-        'user_subject_slot_id': null,
         'start_time': startTime.toIso8601String(),
         'end_time': endTime.toIso8601String(),
-        'session_fee': 15.0,
-        'booked_at': now.toIso8601String(),
-        'calendar_event_id': calendarEventId,
-        'meeting_link': '',
-        'status': 1,
-        'meta_data': metaData,
+        'slot_id': normalizedSlotId,
         'subject_id': widget.subjectId,
+        'comprobante': _receiptImage,
       };
+
+      print(
+          "Datos para crear slot booking:------------------------------------- $slotBookingData");
 
       final slotBookingResponse =
           await createSlotBooking(token, slotBookingData);
       print('[PaymentQRScreen] 📤 Datos enviados a la API: $slotBookingData');
       print('[PaymentQRScreen] 📥 Respuesta de la API: $slotBookingResponse');
 
-      final slotBookingId =
-          slotBookingResponse['data']?['id'] ?? slotBookingResponse['id'];
-      if (slotBookingId == null) {
+      final bool isSuccess = slotBookingResponse['success'] == true;
+
+      final slotBookingId = slotBookingResponse['booking_id'] ??
+          slotBookingResponse['data']?['id'] ??
+          slotBookingResponse['id'];
+
+      if (!isSuccess || slotBookingId == null) {
         String errorMsg =
             slotBookingResponse['message'] ?? 'Error al crear la tutoría';
+
         if (slotBookingResponse['errors'] != null) {
-          errorMsg += '\n' + slotBookingResponse['errors'].toString();
+          errorMsg += '\n${slotBookingResponse['errors']}';
         }
+
         showCustomToast(context, errorMsg, false);
+
         setState(() {
           _isPaymentCompleted = false;
         });

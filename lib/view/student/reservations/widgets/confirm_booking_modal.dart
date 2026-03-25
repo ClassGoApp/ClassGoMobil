@@ -5,9 +5,9 @@ import 'package:flutter_projects/view/student/reservations/widgets/booking_modal
 class ConfirmBookingModal extends StatelessWidget {
   final String tutorName;
   final String tutorImage;
-  final List<String> subjects;
+  final List<Map<String, dynamic>> subjects;
+  final int? subjectId;
   final int tutorId;
-  final int subjectId;
   final String? tagline;
 
   const ConfirmBookingModal({

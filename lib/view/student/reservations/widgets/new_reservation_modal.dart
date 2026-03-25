@@ -394,8 +394,7 @@ class _NewReservationModalState extends State<NewReservationModal> {
                                             raw['avg_rating'].toString()) ??
                                         0.0)
                                 : 0.0;
-                        final subjectsList = <String>[];
-                        final subjectsIds = <String>[];
+                        final subjectsList = <Map<String, dynamic>>[];
                         String? _extractId(dynamic s) {
                           if (s is Map) {
                             if (s['id'] != null) return s['id'].toString();
@@ -414,25 +413,25 @@ class _NewReservationModalState extends State<NewReservationModal> {
                         if (raw != null && raw['subjects'] is List) {
                           for (final s in raw['subjects']) {
                             if (s is Map && s['name'] != null) {
-                              subjectsList.add(s['id'].toString() +
-                                  '-' +
-                                  s['name'].toString());
-                              subjectsIds.add(_extractId(s) ?? '');
+                              final subjectMap = Map<String, dynamic>.from(s);
+                              if (subjectMap['id'] == null) {
+                                subjectMap['id'] = _extractId(s);
+                              }
+                              subjectsList.add(subjectMap);
                             } else if (s is String) {
-                              subjectsList.add(s);
-                              subjectsIds.add('');
+                              subjectsList.add({'id': null, 'name': s});
                             }
                           }
                         } else if (profile['subjects'] is List) {
                           for (final s in profile['subjects']) {
                             if (s is Map && s['name'] != null) {
-                              subjectsList.add(s['id'].toString() +
-                                  '-' +
-                                  s['name'].toString());
-                              subjectsIds.add(_extractId(s) ?? '');
+                              final subjectMap = Map<String, dynamic>.from(s);
+                              if (subjectMap['id'] == null) {
+                                subjectMap['id'] = _extractId(s);
+                              }
+                              subjectsList.add(subjectMap);
                             } else if (s is String) {
-                              subjectsList.add(s);
-                              subjectsIds.add('');
+                              subjectsList.add({'id': null, 'name': s});
                             }
                           }
                         }
