@@ -32,7 +32,7 @@ class RoleBasedNavigation extends StatelessWidget {
         if (authProvider.isStudent) {
           return DashboardStudent();
         }
-        return const MainShell();
+        return const HomeScreen();
       },
     );
   }

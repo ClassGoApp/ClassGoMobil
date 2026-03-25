@@ -9,6 +9,9 @@ import 'package:flutter_projects/view/home/widgets/home_header.dart';
 import 'package:flutter_projects/view/home/widgets/pet_banner.dart';
 import 'package:flutter_projects/view/home/widgets/quick_actions_section.dart';
 import 'package:flutter_projects/view/home/widgets/trust_actions_row.dart';
+import 'package:flutter_projects/view/profile/profile_screen.dart';
+import 'package:flutter_projects/view/student/profile_screen_student.dart' hide ProfileScreen; 
+import 'package:flutter_projects/view/student/serch_Tutor/search_tutors_screen.dart'; 
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -46,7 +49,12 @@ class _HomeScreenState extends State<HomeScreen> {
           HomeHeader(
             onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
             onProfileTap: () {
-              debugPrint("Perfil");
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ProfileScreen(),
+                ),
+              );
             },
           ),
           SliverToBoxAdapter(
@@ -63,9 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             'Para acceder a tutorías instantáneas, necesitas iniciar sesión en tu cuenta.')) {
                       return;
                     }
-
-                    debugPrint(
-                        "Usuario verificado. Abrir lógica de Tutor al Instante...");
+                    debugPrint("Usuario verificado. Abrir lógica de Tutor al Instante...");
                   },
                   onScheduleTap: () {
                     if (!AuthHelper.requireAuth(context,
@@ -76,17 +82,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     }
 
                     debugPrint("Usuario verificado. Navegando a Agendar...");
-                    // Navigator.push(...);
                   },
+                  
                   onExploreTap: () {
-                    if (!AuthHelper.requireAuth(context,
-                        customTitle: 'Explorar Tutores',
-                        customMessage:
-                            'Para ver perfiles completos y contactar tutores, inicia sesión.')) {
-                      return;
-                    }
-                    debugPrint("Usuario verificado. Navegando a Explorar...");
-                    // Navigator.push(...);
+                    debugPrint("Navegando a Explorar Tutores (Vista Pública)...");
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SearchTutorsScreen(),
+                      ),
+                    );
                   },
                 ),
                 const SizedBox(height: 25),

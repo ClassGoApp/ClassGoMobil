@@ -2637,3 +2637,94 @@ Future<Map<String, dynamic>> deleteFavourite(
     throw 'Failed to delete favourite: $e';
   }
 }
+
+/// 1. OBTENER EL QR DEL TUTOR
+Future<Map<String, dynamic>> getTutorQrMethod(String token, int userId) async {
+  try {
+    final Uri uri = Uri.parse('$baseUrl/qr-payout-methods/$userId');
+    final headers = <String, String>{
+      'Authorization': 'Bearer $token',
+      'Accept': 'application/json',
+    };
+    final response = await http.get(uri, headers: headers);
+  print(response.body);
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      final error = json.decode(response.body);
+      throw Exception(error['message'] ?? 'Error al obtener el QR del tutor');
+    }
+  } catch (e) {
+    throw 'Error al obtener el QR: $e';
+  }
+}
+
+/// 2. SUBIR O ACTUALIZAR EL QR DEL TUTOR
+Future<Map<String, dynamic>> uploadTutorQrMethod(String token, int userId, File imageFile) async {
+  final Uri uri = Uri.parse('$baseUrl/qr-payout-methods'); 
+  try {
+    var request = http.MultipartRequest('POST', uri);
+    request.headers.addAll({
+      'Authorization': 'Bearer $token',
+      'Accept': 'application/json',
+    });
+
+    request.fields['user_id'] = userId.toString();
+
+    String mimeType = lookupMimeType(imageFile.path) ?? 'image/jpeg';
+    var mimeTypeData = mimeType.split('/');
+    
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'img_qr', 
+        imageFile.path,
+        contentType: MediaType(mimeTypeData[0], mimeTypeData[1]),
+      ),
+    );
+
+    var streamedResponse = await request.send();
+    var response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return json.decode(response.body);
+    } 
+    else {
+      if (response.body.trim().startsWith('<')) {
+        throw Exception('Error del servidor: Código ${response.statusCode}');
+      }
+
+      final decoded = response.body.isNotEmpty ? json.decode(response.body) : null;
+      final message = (decoded is Map && decoded.containsKey('message'))
+          ? decoded['message']
+          : 'Error desconocido al subir QR';
+      throw Exception(message);
+    }
+  } catch (e) {
+    throw Exception('Error de conexión: $e'); 
+  }
+}
+
+/// 3. ELIMINAR EL QR DEL TUTOR
+Future<Map<String, dynamic>> deleteTutorQrMethod(String token, int userId) async {
+  final Uri uri = Uri.parse('$baseUrl/qr-payout-methods/$userId');
+  
+  try {
+    final response = await http.delete(
+      uri,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return response.body.isNotEmpty ? json.decode(response.body) : {'success': true};
+    } else {
+      final error = response.body.isNotEmpty ? json.decode(response.body) : {};
+      throw Exception(error['message'] ?? 'Error al eliminar el QR');
+    }
+  } catch (e) {
+    throw 'Error al eliminar el QR: $e';
+  }
+}

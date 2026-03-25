@@ -5,6 +5,7 @@ import 'package:flutter_projects/base_components/custom_snack_bar.dart';
 import 'package:flutter_projects/base_components/textfield.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/view/home/home_screen.dart';
 import 'package:flutter_projects/view/layout/main_shell.dart';
 import 'package:flutter_projects/view/student/serch_Tutor/search_tutors_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -274,7 +275,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                           Navigator.pushAndRemoveUntil(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => MainShell()),
+                                builder: (context) => HomeScreen()),
                             (Route<dynamic> route) => false,
                           );
                         },
