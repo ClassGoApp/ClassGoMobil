@@ -1,7 +1,6 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_projects/api_structure/config/app_config.dart';
 import 'package:flutter_projects/config/firebase_options.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/provider/connectivity_provider.dart';
@@ -15,11 +14,9 @@ import 'package:flutter_projects/helpers/pusher_service.dart';
 import 'package:flutter_projects/services/deep_link_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'helpers/firebase_messaging_service.dart';
-import 'package:flutter_projects/view/components/role_based_navigation.dart';
 import 'package:flutter_projects/provider/booking_provider.dart';
 import 'package:flutter_projects/provider/tutor_subjects_provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'dart:io';
 import 'package:flutter_projects/provider/theme_provider.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 
@@ -56,12 +53,20 @@ void main() async {
 
   bool firebaseInitialized = false;
   try {
-    // CAMBIO AQUÍ: Solo inicializa si no hay apps activas
+    // Inicializacion idempotente: evita duplicate-app en relanzamientos/hot-restart.
     if (Firebase.apps.isEmpty) {
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.android,
-      );
+      try {
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
+      } on FirebaseException catch (e) {
+        // Si otra inicializacion se adelanto, lo tratamos como valido.
+        if (e.code != 'duplicate-app') {
+          rethrow;
+        }
+      }
     }
+
     firebaseInitialized = true;
     print('¡Firebase inicializado correctamente!');
   } catch (e) {
@@ -70,7 +75,7 @@ void main() async {
 
   // El resto de tu lógica de Messaging y Config...
   if (firebaseInitialized) {
-    // ... tu código de Messaging
+    await FirebaseMessagingService.initialize(navigatorKey: navigatorKey);
   }
 
   runApp(
@@ -105,6 +110,7 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     // Inicializar el servicio de deep links después de que el widget esté montado
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      FirebaseMessagingService.requestPermissionOnFirstLaunch();
       DeepLinkService().initialize(navigatorKey.currentContext!);
     });
   }
@@ -114,26 +120,24 @@ class _MyAppState extends State<MyApp> {
     final themeProvider = Provider.of<ThemeProvider>(context);
 
     return OverlaySupport.global(
-        child: MaterialApp(
-          navigatorKey: navigatorKey,
-          title: 'ClassGo',
-          debugShowCheckedModeBanner: false,
-
-          themeMode: themeProvider.themeMode, 
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
-
-          localizationsDelegates: const [
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: const [
-            Locale('es'),
-            Locale('en'),
-          ],
-          home: SplashTransicion(),
-        ),
+      child: MaterialApp(
+        navigatorKey: navigatorKey,
+        title: 'ClassGo',
+        debugShowCheckedModeBanner: false,
+        themeMode: themeProvider.themeMode,
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('es'),
+          Locale('en'),
+        ],
+        home: SplashTransicion(),
+      ),
     );
   }
 }

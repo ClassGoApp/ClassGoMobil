@@ -2,14 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 
+import '../instant_tutoring/instant_tutoring_screen.dart'
+    show InstantTutoringScreen;
+
 class StudentBottomNav extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
+  final VoidCallback? onCenterTap;
 
   const StudentBottomNav({
     Key? key,
     required this.currentIndex,
     required this.onTap,
+    this.onCenterTap,
   }) : super(key: key);
 
   @override
@@ -46,29 +51,170 @@ class StudentBottomNav extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _AnimatedNavItem(
-              icon: Icons.home_rounded,
-              label: "INICIO",
-              isSelected: currentIndex == 0,
-              onTap: () => onTap(0),
+            Expanded(
+              child: Center(
+                child: _AnimatedNavItem(
+                  icon: Icons.home_rounded,
+                  label: "INICIO",
+                  isSelected: currentIndex == 0,
+                  onTap: () => onTap(0),
+                ),
+              ),
             ),
-            _AnimatedNavItem(
-              icon: Icons.calendar_today_rounded,
-              label: "AGENDA",
-              isSelected: currentIndex == 1,
-              onTap: () => onTap(1),
+            Expanded(
+              child: Center(
+                child: _AnimatedNavItem(
+                  icon: Icons.calendar_today_rounded,
+                  label: "AGENDA",
+                  isSelected: currentIndex == 1,
+                  onTap: () => onTap(1),
+                ),
+              ),
             ),
-            _AnimatedNavItem(
-              icon: Icons.favorite,
-              label: "Favoritos",
-              isSelected: currentIndex == 2,
-              onTap: () => onTap(2),
+
+            // Botón central grande
+            Expanded(
+              child: Center(
+                child: _CenterNavButton(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    if (onCenterTap != null) {
+                      onCenterTap!();
+                      return;
+                    }
+
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const InstantTutoringScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ),
             ),
-            _AnimatedNavItem(
-              icon: Icons.person_rounded,
-              label: "PERFIL",
-              isSelected: currentIndex == 3,
-              onTap: () => onTap(3),
+
+            Expanded(
+              child: Center(
+                child: _AnimatedNavItem(
+                  icon: Icons.favorite,
+                  label: "Favoritos",
+                  isSelected: currentIndex == 2,
+                  onTap: () => onTap(2),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Center(
+                child: _AnimatedNavItem(
+                  icon: Icons.person_rounded,
+                  label: "PERFIL",
+                  isSelected: currentIndex == 3,
+                  onTap: () => onTap(3),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CenterNavButton extends StatefulWidget {
+  final VoidCallback onTap;
+
+  const _CenterNavButton({required this.onTap, super.key});
+
+  @override
+  State<_CenterNavButton> createState() => _CenterNavButtonState();
+}
+
+class _CenterNavButtonState extends State<_CenterNavButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: widget.onTap,
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 78,
+        height: 76,
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
+          children: [
+            AnimatedBuilder(
+              animation: _controller,
+              builder: (context, child) {
+                final progress = _controller.value;
+                final scale = 1.0 + (progress * 0.45);
+                final opacity = (1.0 - progress) * 0.55;
+
+                return IgnorePointer(
+                  child: Transform.translate(
+                    offset: const Offset(0, -18),
+                    child: Opacity(
+                      opacity: opacity.clamp(0.0, 1.0),
+                      child: Transform.scale(
+                        scale: scale,
+                        child: Container(
+                          width: 70,
+                          height: 70,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: const Color.fromRGBO(251, 133, 0, 1),
+                              width: 5,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            Transform.translate(
+              offset: const Offset(0, -18),
+              child: Container(
+                width: 66,
+                height: 66,
+                decoration: BoxDecoration(
+                  color: const Color.fromRGBO(251, 133, 0, 1),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.orange.withOpacity(0.62),
+                      blurRadius: 18,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.flash_on_rounded,
+                    color: Colors.white,
+                    size: 36,
+                  ),
+                ),
+              ),
             ),
           ],
         ),
@@ -103,7 +249,7 @@ class _AnimatedNavItem extends StatelessWidget {
       },
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
-        width: 65,
+        width: 56,
         height: 76,
         child: Stack(
           alignment: Alignment.center,

@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_projects/view/tutor/education/education_details.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_projects/services/notification_topic_service.dart';
 
 class AuthProvider with ChangeNotifier {
   String? _token;
@@ -397,13 +398,25 @@ class AuthProvider with ChangeNotifier {
 
   Future<void> setUserData(Map<String, dynamic> userData) async {
     print('setUserData llamado con datos: $userData');
+
     _userData = userData;
-    print('Datos de usuario guardados en memoria: $_userData');
+
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('userData', jsonEncode(userData));
-    print('Datos de usuario guardados en SharedPreferences');
+
+    print('Datos de usuario guardados en memoria');
+
+    // 🔥 NUEVO: Configurar topics según rol
+    String? role = userRole;
+
+    if (role != null) {
+      print('Configurando topics para rol: $role');
+      await NotificationTopicService.configureTopics(role);
+    } else {
+      print('No se pudo detectar el rol para topics');
+    }
+
     notifyListeners();
-    print('setUserData completado y notificados los listeners');
   }
 
   Future<void> clearToken() async {
@@ -524,13 +537,15 @@ class AuthProvider with ChangeNotifier {
   Future<void> updateUserProfiles(Map<String, dynamic>? updatedProfile) async {
     if (updatedProfile != null && _userData != null) {
       // Construir full_name si tenemos first_name y last_name
-      if (updatedProfile['first_name'] != null && updatedProfile['last_name'] != null) {
-        updatedProfile['full_name'] = '${updatedProfile['first_name']} ${updatedProfile['last_name']}';
+      if (updatedProfile['first_name'] != null &&
+          updatedProfile['last_name'] != null) {
+        updatedProfile['full_name'] =
+            '${updatedProfile['first_name']} ${updatedProfile['last_name']}';
       }
-      
+
       // Actualizar _userData['user']['profile']
       _userData!['user']['profile'] = updatedProfile;
-      
+
       // Actualizar los campos individuales para mantener sincronizados los datos
       if (updatedProfile['first_name'] != null) {
         _firstName = updatedProfile['first_name'];
@@ -544,17 +559,17 @@ class AuthProvider with ChangeNotifier {
       if (updatedProfile['description'] != null) {
         _description = updatedProfile['description'];
       }
-      
+
       // Guardar en SharedPreferences
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setString('userData', jsonEncode(_userData));
-      
+
       // Guardar los campos individuales también
       await prefs.setString('firstName', _firstName ?? '');
       await prefs.setString('lastName', _lastName ?? '');
       await prefs.setString('phone', _phone ?? '');
       await prefs.setString('description', _description ?? '');
-      
+
       notifyListeners();
     } else {}
   }
@@ -565,16 +580,16 @@ class AuthProvider with ChangeNotifier {
       if (_userData!['user']['profile'] == null) {
         _userData!['user']['profile'] = {};
       }
-      
+
       // Limpiar y normalizar la URL
       final cleanedUrl = _cleanUrl(newImageUrl);
-      
+
       // Actualizar la imagen de perfil
       _userData!['user']['profile']['image'] = cleanedUrl;
-      
+
       // También actualizar profile_image si existe
       _userData!['user']['profile']['profile_image'] = cleanedUrl;
-      
+
       SharedPreferences.getInstance().then((prefs) {
         prefs.setString('userData', jsonEncode(_userData));
         notifyListeners();
@@ -587,12 +602,12 @@ class AuthProvider with ChangeNotifier {
     if (url.startsWith('http://') || url.startsWith('https://')) {
       return url;
     }
-    
+
     // Si la URL es relativa, construir la URL completa
     if (url.startsWith('/')) {
       return '${AppConfig.mediaBaseUrl}${url.substring(1)}';
     }
-    
+
     // Si la URL no tiene slash inicial, agregarlo
     return '${AppConfig.mediaBaseUrl}$url';
   }
@@ -699,6 +714,8 @@ class AuthProvider with ChangeNotifier {
   /// Cierra la sesión del usuario
   Future<void> logout() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    await NotificationTopicService.unsubscribeAll();
 
     // Limpiar token
     _token = null;
