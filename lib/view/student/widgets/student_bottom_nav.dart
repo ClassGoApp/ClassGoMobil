@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 
+import '../instant_tutoring/instant_tutoring_screen.dart'
+    show InstantTutoringScreen;
+
 class StudentBottomNav extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
@@ -77,10 +80,14 @@ class StudentBottomNav extends StatelessWidget {
                     HapticFeedback.selectionClick();
                     if (onCenterTap != null) {
                       onCenterTap!();
-                    } else {
-                      // Si no hay callback específico, delegar a onTap(2) (mantener índices existentes)
-                      onTap(2);
+                      return;
                     }
+
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const InstantTutoringScreen(),
+                      ),
+                    );
                   },
                 ),
               ),
