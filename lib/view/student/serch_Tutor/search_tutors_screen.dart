@@ -1262,6 +1262,14 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                     : int.tryParse(
                                             '${tutor['completed_courses_count'] ?? 0}') ??
                                         0,
+                                price: profile['price'] != null
+                                    ? (profile['price'] is String
+                                        ? double.tryParse(profile['price']) ??
+                                            0.0
+                                        : (profile['price'] is num
+                                            ? profile['price'].toDouble()
+                                            : 0.0))
+                                    : 0.0,
                               ),
                             ),
                           );
@@ -1315,6 +1323,14 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                       : int.tryParse(
                                               '${tutor['completed_courses_count'] ?? 0}') ??
                                           0,
+                                  price: profile['price'] != null
+                                      ? (profile['price'] is String
+                                          ? double.tryParse(profile['price']) ??
+                                              0.0
+                                          : (profile['price'] is num
+                                              ? profile['price'].toDouble()
+                                              : 0.0))
+                                      : 0.0,
                                 ),
                               ),
                             );

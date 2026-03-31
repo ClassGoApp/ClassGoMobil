@@ -23,6 +23,7 @@ class ReservationTutorProfileScreen extends StatefulWidget {
   // Idiomas por defecto
   final List<String> languages;
   final String? tagline;
+  final double? price;
 
   const ReservationTutorProfileScreen({
     Key? key,
@@ -36,6 +37,7 @@ class ReservationTutorProfileScreen extends StatefulWidget {
     required this.completedCourses,
     this.languages = const ['Español', 'Inglés'],
     this.tagline = '',
+    this.price,
   }) : super(key: key);
 
   @override
@@ -1000,7 +1002,9 @@ class _ReservationTutorProfileScreenState
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Text(
-                                '15 Bs',
+                                (widget.price != null)
+                                    ? '\Bs ${widget.price!.toStringAsFixed(2)}'
+                                    : '20',
                                 style: TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
@@ -1112,7 +1116,7 @@ class _ReservationTutorProfileScreenState
                                     ? 'Comprobando...'
                                     : _instantAvailable
                                         ? 'Tutoría ahora'
-                                        : 'No disponible ahora',
+                                        : 'No disponible',
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.bold,
