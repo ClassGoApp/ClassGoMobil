@@ -5,9 +5,11 @@ import 'package:flutter_projects/base_components/custom_snack_bar.dart';
 import 'package:flutter_projects/base_components/textfield.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/view/auth/tutor_subject_selection_screen.dart';
 import 'package:flutter_projects/view/home/home_screen.dart';
 import 'package:flutter_projects/view/layout/main_shell.dart';
 import 'package:flutter_projects/view/student/serch_Tutor/search_tutors_screen.dart';
+import 'package:flutter_projects/view/tutor/features/subjects/sheets/add_subject_sheet.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/helpers/back_button_handler.dart';
@@ -52,6 +54,9 @@ class _RegistrationScreenState extends State<RegistrationScreen>
   String _confirmPasswordErrorMessage = '';
   String role = 'student';
 
+  bool _hasSelectedSubjects = false;
+  List<int> _selectedSubjects = [];
+
   bool _isLoading = false;
 
   bool _isValidEmail(String email) {
@@ -86,6 +91,45 @@ class _RegistrationScreenState extends State<RegistrationScreen>
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  void _executeRegistration(Map<String, dynamic> finalUserData) async {
+    // 🚀 RASTREADOR 4: ¿Qué entra a la función final?
+    print(
+        '🚀 [Paso 4 - Ejecución] Iniciando _executeRegistration con: $finalUserData');
+    setState(() => _isLoading = true);
+
+    try {
+      final responseData = await registerUser(finalUserData);
+
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (responseData.containsKey('data') &&
+          responseData['data'].containsKey('token')) {
+        authProvider.setToken(responseData['data']['token']);
+      }
+
+      showCustomToast(
+          context, responseData['message'] ?? 'Registration successful', true);
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => VerificationPendingScreen(
+            userData: {
+              'email': finalUserData['email'],
+              'first_name': finalUserData['first_name'],
+              'last_name': finalUserData['last_name'],
+              'response': responseData,
+            },
+          ),
+        ),
+      );
+    } catch (error) {
+      print('Error capturado en registro: $error');
+      // ... manejo de errores de Toast ...
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   void showCustomToast(BuildContext context, String message, bool isSuccess) {
@@ -190,6 +234,36 @@ class _RegistrationScreenState extends State<RegistrationScreen>
         "user_role": role,
         "terms": _isChecked,
       };
+      if (role == 'tutor') {
+        print(
+            '🚀 [Paso 2A - Registro] Abriendo pantalla de selección de materias...');
+
+        final List<int>? selectedSubjects = await Navigator.push<List<int>>(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const TutorSubjectSelectionScreen(),
+          ),
+        );
+
+        // 🚀 RASTREADOR 2: ¿Qué recibió el formulario?
+        print(
+            '🚀 [Paso 2B - Registro] Regresamos al formulario. Recibimos: $selectedSubjects');
+
+        if (selectedSubjects != null && selectedSubjects.isNotEmpty) {
+          userData['subjects'] = selectedSubjects;
+
+          // 🚀 RASTREADOR 3: ¿Cómo quedó el paquete final?
+          print(
+              '🚀 [Paso 3 - Registro] Paquete armado con éxito. Datos finales: $userData');
+
+          _executeRegistration(userData);
+        } else {
+          print(
+              '⚠️ [Alerta] El usuario cerró la pantalla sin materias o dio hacia atrás.');
+        }
+      } else {
+        _executeRegistration(userData);
+      }
 
       try {
         print('Iniciando proceso de registro...');
@@ -672,7 +746,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                                 ),
                               ),
                               child: Text(
-                                'Registrarse',
+                                role == 'tutor' ? 'Siguiente' : 'Registrarse',
                                 style: TextStyle(
                                   color: AppColors.whiteColor,
                                   fontSize: FontSize.scale(context, 16),

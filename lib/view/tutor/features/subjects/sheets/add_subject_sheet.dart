@@ -12,7 +12,14 @@ const String _kFontFamily = 'manrope';
 const String _kTitleFont = 'outfit';
 
 class AddSubjectSheet extends StatefulWidget {
-  const AddSubjectSheet({Key? key}) : super(key: key);
+  final bool isRegistration;
+  final Function(List<int>)? onRegistrationComplete;
+
+  const AddSubjectSheet({
+    Key? key, 
+    this.isRegistration = false, 
+    this.onRegistrationComplete,
+  }) : super(key: key);
 
   @override
   State<AddSubjectSheet> createState() => _AddSubjectSheetState();
@@ -75,6 +82,12 @@ class _AddSubjectSheetState extends State<AddSubjectSheet> {
       
       final query = _searchController.text.trim();
       
+      String? tokenToUse;
+      if (!widget.isRegistration) {
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        tokenToUse = authProvider.token;
+      }
+
       final response = await getAllSubjects(
         authProvider.token!, 
         page: reset ? 1 : _currentPage + 1, 
@@ -86,13 +99,27 @@ class _AddSubjectSheetState extends State<AddSubjectSheet> {
 
       if (response['status'] == 200 && response['data'] != null) {
         final List<dynamic> subjectsData = response['data']['data'];
+        List<Map<String, dynamic>> filtered = [];
+
+        if (widget.isRegistration) {
+          filtered = subjectsData
+              .map((s) => {'id': s['id'], 'name': s['name']})
+              .toList();
+        } else {
+          final subjectsProvider = Provider.of<TutorSubjectsProvider>(context, listen: false);
+          final currentSubjectIds = subjectsProvider.subjects.map((s) => s.subjectId).toSet();
+          
+          filtered = subjectsData
+              .where((s) => !currentSubjectIds.contains(s['id']))
+              .map((s) => {'id': s['id'], 'name': s['name']})
+              .toList();
+        }
+        // final currentSubjectIds = subjectsProvider.subjects.map((s) => s.subjectId).toSet();
         
-        final currentSubjectIds = subjectsProvider.subjects.map((s) => s.subjectId).toSet();
-        
-        final filtered = subjectsData
-            .where((s) => !currentSubjectIds.contains(s['id']))
-            .map((s) => {'id': s['id'], 'name': s['name']})
-            .toList();
+        // final filtered = subjectsData
+        //     .where((s) => !currentSubjectIds.contains(s['id']))
+        //     .map((s) => {'id': s['id'], 'name': s['name']})
+        //     .toList();
         
         setState(() {
           if (reset) {
@@ -277,7 +304,15 @@ class _AddSubjectSheetState extends State<AddSubjectSheet> {
           Expanded(
             flex: 2,
             child: ElevatedButton(
-              onPressed: (_selectedSubjectIds.isEmpty || _isSaving) ? null : _saveSelections,
+              onPressed: (_selectedSubjectIds.isEmpty || _isSaving) ? null : () {
+              if (widget.isRegistration) {
+                  widget.onRegistrationComplete?.call(_selectedSubjectIds.toList());
+                  Navigator.pop(context);
+                   // Solo cerramos y devolvemos los datos
+                } else {
+                  _saveSelections(); // Llama a tu API para guardar (Modo Edición)
+                }
+              },
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 backgroundColor: AppColors.brandCyan,

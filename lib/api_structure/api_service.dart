@@ -1689,7 +1689,8 @@ Future<Map<String, dynamic>> getAllSubjects(String? token,
     final response = await http.get(uri, headers: headers);
 
     if (response.statusCode == 200) {
-      final decodedBody = json.decode(response.body);
+      var decodedBody = json.decode(response.body);
+      List listaMaterias = decodedBody['data']['data'];
       return decodedBody;
     } else {
       final error = json.decode(response.body);

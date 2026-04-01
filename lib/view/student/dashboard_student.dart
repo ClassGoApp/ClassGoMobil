@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/view/student/instant_tutoring/instant_tutoring_screen.dart';
 import 'package:flutter_projects/view/student/serch_Tutor/search_tutors_screen.dart';
 import 'package:flutter_projects/view/student/reservations/reservations_screen.dart';
 import 'package:flutter_projects/view/student/widgets/student_bottom_nav.dart';
@@ -18,10 +19,12 @@ class DashboardStudent extends StatefulWidget {
 class _DashboardStudentState extends State<DashboardStudent> {
   int _selectedIndex = 0;
   String? profileImageUrl;
+  late PageController _pageController;
 
   @override
   void initState() {
     super.initState();
+    _pageController = PageController(initialPage: _selectedIndex);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final int? userId = authProvider.userId;
@@ -29,22 +32,38 @@ class _DashboardStudentState extends State<DashboardStudent> {
         try {
           final img = await ProfileService.fetchProfileImage(userId);
           if (mounted) setState(() => profileImageUrl = img);
-        } catch (_) {}
+        } catch (_) {}  
       }
     });
+  }
+
+  void changeTab(int index) {
+    setState(() => _selectedIndex = index);
+    _pageController.jumpToPage(index);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
-      body: _buildBody(),
+      body: PageView( 
+        controller: _pageController,
+        physics: const NeverScrollableScrollPhysics(),
+        children: [
+          _buildHomeTab(),                         // Index 0
+          _buildBookingsTab(),                     // Index 1
+          const InstantTutoringScreen(),           // Index 2 
+          const FavoriteTutorsScreen(showBottomNav: false), // Index 3
+          const ProfileScreen(showAppBar: false),  // Index 4
+        ],
+      ),
       bottomNavigationBar: StudentBottomNav(
         currentIndex: _selectedIndex,
         onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
+          changeTab(index);
+        },
+        onCenterTap: () {
+          changeTab(2);
         },
       ),
     );

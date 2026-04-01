@@ -12,7 +12,7 @@
 
 
     <application
-        android:label="ClassGo Dev"
+        android:label="ClassGo"
         android:name="${applicationName}"
         android:usesCleartextTraffic="true"
         android:enableOnBackInvokedCallback="true"

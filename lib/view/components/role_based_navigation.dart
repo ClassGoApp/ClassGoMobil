@@ -7,6 +7,7 @@ import 'package:flutter_projects/view/layout/main_shell.dart';
 import 'package:flutter_projects/view/student/dashboard_student.dart';
 
 class RoleBasedNavigation extends StatelessWidget {
+  const RoleBasedNavigation({super.key});
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
