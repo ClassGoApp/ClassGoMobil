@@ -3,6 +3,7 @@ import 'package:flutter_projects/config/firebase_options.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/provider/connectivity_provider.dart';
 import 'package:flutter_projects/provider/settings_provider.dart';
+import 'package:flutter_projects/services/notification_topic_service.dart';
 import 'package:flutter_projects/view/splash/splash_transicion.dart';
 import 'package:flutter_projects/view/tutor/features/agenda/providers/tutor_agenda_provider.dart';
 import 'package:flutter_projects/view/tutor/features/home/providers/tutor_home_provider.dart';
@@ -46,7 +47,7 @@ void main() async {
 
   // El resto de tu lógica de Messaging y Config...
   if (firebaseInitialized) {
-    await FirebaseMessagingService.initialize(navigatorKey: navigatorKey);
+    //await FirebaseMessagingService.initialize(navigatorKey: navigatorKey);
   }
 
   runApp(
@@ -81,7 +82,7 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     // Inicializar el servicio de deep links después de que el widget esté montado
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      FirebaseMessagingService.requestPermissionOnFirstLaunch();
+      NotificationTopicService.requestPermissionOnFirstLaunch();
       DeepLinkService().initialize(navigatorKey.currentContext!);
     });
   }
