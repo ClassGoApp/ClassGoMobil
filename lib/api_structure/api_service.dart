@@ -2693,3 +2693,31 @@ Future<Map<String, dynamic>> deleteFavourite(
     throw 'Failed to delete favourite: $e';
   }
 }
+
+Future<Map<String, dynamic>> tutorAceptWaitlist(
+    String token, String token_accept) async {
+  try {
+    final Uri uri = Uri.parse('$baseUrl/tutor/waitlist/accept');
+    final headers = <String, String>{
+      'Authorization': 'Bearer $token',
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
+    final body = jsonEncode({'t': token_accept, 'm': true});
+    print(body);
+    final response = await http.post(uri, headers: headers, body: body);
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return json.decode(response.body);
+    } else {
+      final decoded =
+          response.body.isNotEmpty ? json.decode(response.body) : null;
+      final message = (decoded is Map && decoded.containsKey('message'))
+          ? decoded['message']
+          : 'Failed to accept waitlist';
+      throw Exception(message);
+    }
+  } catch (e) {
+    print('Error accepting waitlist: $e');
+    throw 'Failed to check favourite: $e';
+  }
+}

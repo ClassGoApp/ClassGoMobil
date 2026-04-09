@@ -3,7 +3,9 @@ package com.neurasoft.classgo
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
@@ -17,6 +19,24 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     private val channelId = "classgo_alerts_v2"
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
+        val rolePrefs = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+        val currentRole = rolePrefs.getString("flutter.fcm_user_role", "unknown")?.lowercase()
+        val fromValue = remoteMessage.from?.lowercase() ?: ""
+        val screenValue = remoteMessage.data["screen"]?.lowercase() ?: ""
+
+        val isTutorPush =
+            fromValue.endsWith("/topics/tutor") ||
+            fromValue.endsWith("/topics/tutores") ||
+            screenValue == "solicitud_tutor"
+
+        if (isTutorPush && currentRole != "tutor") {
+            Log.w(
+                "MyFirebaseMsgService",
+                "Notificacion de tutor ignorada para rol actual: $currentRole"
+            )
+            return
+        }
+
         val iconName = remoteMessage.data["icon"] ?: "ic_stat_pendiente"
         Log.d("MyFirebaseMsgService", "Icon recibido desde backend: $iconName")
         val requestedIconResId = resources.getIdentifier(iconName, "drawable", packageName)
@@ -50,10 +70,34 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             }
         }
 
+        val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
+        if (launchIntent == null) {
+            Log.w("MyFirebaseMsgService", "No se pudo crear LaunchIntent para notificacion")
+            return
+        }
+
+        launchIntent.action = "FLUTTER_NOTIFICATION_CLICK"
+        launchIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+
+        for ((key, value) in remoteMessage.data) {
+            launchIntent.putExtra(key, value)
+        }
+
+        val pendingIntentFlags = PendingIntent.FLAG_UPDATE_CURRENT or
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
+
+        val contentIntent = PendingIntent.getActivity(
+            this,
+            0,
+            launchIntent,
+            pendingIntentFlags
+        )
+
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(iconResId)
             .setContentTitle(title)
             .setContentText(body)
+            .setContentIntent(contentIntent)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setAutoCancel(true)
