@@ -179,6 +179,13 @@ class AuthProvider with ChangeNotifier {
         if (_userData!.containsKey('user')) {
           print('DEBUG - user keys: ${_userData!['user'].keys}');
         }
+
+        final role = userRole;
+        if (role != null) {
+          await NotificationTopicService.configureTopics(role);
+          print(
+              'DEBUG - Topics FCM resincronizados al cargar sesión para rol: $role');
+        }
       }
     } else {
       print('DEBUG - No se encontró userData en SharedPreferences');

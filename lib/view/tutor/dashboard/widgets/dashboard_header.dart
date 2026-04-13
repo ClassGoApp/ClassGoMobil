@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/tutor/dashboard/widgets/theme_toggle_button.dart';
+import 'package:provider/provider.dart';
 
 class DashboardHeader extends StatelessWidget {
   // --- DATOS ---
@@ -307,8 +309,19 @@ class _HeaderActions extends StatelessWidget {
         _buildCircleButton(
           context,
           icon: Icons.logout_rounded,
-          onTap: onLogoutTap,
           isDestructive: true,
+          onTap: () async {
+            // 1. Obtenemos la instancia de tu AuthProvider
+            // Asegúrate de que el nombre de la clase sea el correcto
+            final authProvider =
+                Provider.of<AuthProvider>(context, listen: false);
+
+            // 2. Pasamos el token vacío
+            await authProvider.setAuthToken('');
+
+            // 3. Ejecutamos cualquier otra acción que hayas pasado por parámetro
+            onLogoutTap();
+          },
         ),
       ],
     );
@@ -335,7 +348,7 @@ class _HeaderActions extends StatelessWidget {
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             color: isDestructive
-                ? const Color(0xFFFF453A).withOpacity(0.1) // Rojo suave
+                ? const Color(0xFFFF453A).withOpacity(0.1)
                 : (isDark
                     ? Colors.white.withOpacity(0.05)
                     : Colors.black.withOpacity(0.05)),

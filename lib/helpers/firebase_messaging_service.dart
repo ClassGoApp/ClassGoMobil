@@ -4,6 +4,8 @@ import 'package:flutter_projects/view/student/favorite_tutor/favorite_tutors_scr
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_projects/view/detailPage/detail_screen.dart';
 
+// ESTE SERVICIO NO SE USA EN NINGUN LADO, VERIFICAR Y ELIMINAR
+
 class FirebaseMessagingService {
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   static const String _tutorTopic = 'tutor';
