@@ -9,7 +9,8 @@ final String baseUrl = 'https://classgoapp.com/api';
 final String storageBaseUrl = 'https://classgoapp.com/storage';
 
 class TokenExpiredException implements Exception {
-  final String message = "Tu sesión ha expirado. Por favor, inicia sesión de nuevo.";
+  final String message =
+      "Tu sesión ha expirado. Por favor, inicia sesión de nuevo.";
 }
 
 Future<Map<String, dynamic>> registerUser(Map<String, dynamic> userData) async {
@@ -2709,7 +2710,7 @@ Future<Map<String, dynamic>> getTutorQrMethod(String token, int userId) async {
       'Accept': 'application/json',
     };
     final response = await http.get(uri, headers: headers);
-  print(response.body);
+    print(response.body);
     if (response.statusCode == 200) {
       return json.decode(response.body);
     } else {
@@ -2722,8 +2723,9 @@ Future<Map<String, dynamic>> getTutorQrMethod(String token, int userId) async {
 }
 
 /// 2. SUBIR O ACTUALIZAR EL QR DEL TUTOR
-Future<Map<String, dynamic>> uploadTutorQrMethod(String token, int userId, File imageFile) async {
-  final Uri uri = Uri.parse('$baseUrl/qr-payout-methods'); 
+Future<Map<String, dynamic>> uploadTutorQrMethod(
+    String token, int userId, File imageFile) async {
+  final Uri uri = Uri.parse('$baseUrl/qr-payout-methods');
   try {
     var request = http.MultipartRequest('POST', uri);
     request.headers.addAll({
@@ -2735,10 +2737,10 @@ Future<Map<String, dynamic>> uploadTutorQrMethod(String token, int userId, File 
 
     String mimeType = lookupMimeType(imageFile.path) ?? 'image/jpeg';
     var mimeTypeData = mimeType.split('/');
-    
+
     request.files.add(
       await http.MultipartFile.fromPath(
-        'img_qr', 
+        'img_qr',
         imageFile.path,
         contentType: MediaType(mimeTypeData[0], mimeTypeData[1]),
       ),
@@ -2749,27 +2751,28 @@ Future<Map<String, dynamic>> uploadTutorQrMethod(String token, int userId, File 
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       return json.decode(response.body);
-    } 
-    else {
+    } else {
       if (response.body.trim().startsWith('<')) {
         throw Exception('Error del servidor: Código ${response.statusCode}');
       }
 
-      final decoded = response.body.isNotEmpty ? json.decode(response.body) : null;
+      final decoded =
+          response.body.isNotEmpty ? json.decode(response.body) : null;
       final message = (decoded is Map && decoded.containsKey('message'))
           ? decoded['message']
           : 'Error desconocido al subir QR';
       throw Exception(message);
     }
   } catch (e) {
-    throw Exception('Error de conexión: $e'); 
+    throw Exception('Error de conexión: $e');
   }
 }
 
 /// 3. ELIMINAR EL QR DEL TUTOR
-Future<Map<String, dynamic>> deleteTutorQrMethod(String token, int userId) async {
+Future<Map<String, dynamic>> deleteTutorQrMethod(
+    String token, int userId) async {
   final Uri uri = Uri.parse('$baseUrl/qr-payout-methods/$userId');
-  
+
   try {
     final response = await http.delete(
       uri,
@@ -2781,7 +2784,9 @@ Future<Map<String, dynamic>> deleteTutorQrMethod(String token, int userId) async
     );
 
     if (response.statusCode == 200) {
-      return response.body.isNotEmpty ? json.decode(response.body) : {'success': true};
+      return response.body.isNotEmpty
+          ? json.decode(response.body)
+          : {'success': true};
     } else {
       final error = response.body.isNotEmpty ? json.decode(response.body) : {};
       throw Exception(error['message'] ?? 'Error al eliminar el QR');
@@ -2792,7 +2797,8 @@ Future<Map<String, dynamic>> deleteTutorQrMethod(String token, int userId) async
 }
 
 /// 1. Iniciar búsqueda en el radar (Crear Batch)
-Future<Map<String, dynamic>> startRadarSearch(String subjectId, String token) async {
+Future<Map<String, dynamic>> startRadarSearch(
+    String subjectId, String token) async {
   try {
     final response = await http.post(
       Uri.parse('$baseUrl/start'),
@@ -2814,7 +2820,8 @@ Future<Map<String, dynamic>> startRadarSearch(String subjectId, String token) as
 }
 
 /// 2. Hacer Polling para ver qué tutores aceptaron
-Future<Map<String, dynamic>> pollAcceptedTutors(String batchId, String token) async {
+Future<Map<String, dynamic>> pollAcceptedTutors(
+    String batchId, String token) async {
   try {
     final response = await http.get(
       Uri.parse('$baseUrl/acceptedTutors/$batchId'),
@@ -2827,7 +2834,8 @@ Future<Map<String, dynamic>> pollAcceptedTutors(String batchId, String token) as
     if (response.statusCode == 200) {
       return json.decode(response.body);
     } else {
-      throw Exception('Error al buscar tutores. Código: ${response.statusCode}');
+      throw Exception(
+          'Error al buscar tutores. Código: ${response.statusCode}');
     }
   } catch (e) {
     throw Exception('Error de conexión al buscar tutores: $e');
@@ -2835,7 +2843,8 @@ Future<Map<String, dynamic>> pollAcceptedTutors(String batchId, String token) as
 }
 
 /// 3. Confirmar a un tutor específico (Bloquearlo)
-Future<Map<String, dynamic>> chooseTutor(String batchId, String  itemId, String token) async {
+Future<Map<String, dynamic>> chooseTutor(
+    String batchId, String itemId, String token) async {
   try {
     final response = await http.post(
       Uri.parse('$baseUrl/chooseTutor/$batchId'),
@@ -2844,12 +2853,12 @@ Future<Map<String, dynamic>> chooseTutor(String batchId, String  itemId, String 
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       },
-      body: jsonEncode({'item_id': itemId}), 
+      body: jsonEncode({'item_id': itemId}),
     );
 
-print("STATUS CHOOSE TUTOR: ${response.statusCode}");
+    print("STATUS CHOOSE TUTOR: ${response.statusCode}");
     print("BODY CHOOSE TUTOR: ${response.body}");
-    
+
     if (response.statusCode == 200) {
       return json.decode(response.body);
     } else {
@@ -2862,16 +2871,19 @@ print("STATUS CHOOSE TUTOR: ${response.statusCode}");
 }
 
 /// 4. Subir comprobante y crear la reserva (Recibe el link de Meet)
-Future<Map<String, dynamic>> submitInstantBooking(String batchId, String imagePath, String token) async {
+Future<Map<String, dynamic>> submitInstantBooking(
+    String batchId, String imagePath, String token) async {
   try {
-    var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/instantBooking/$batchId'));
+    var request = http.MultipartRequest(
+        'POST', Uri.parse('$baseUrl/instantBooking/$batchId'));
 
     request.headers.addAll({
       'Accept': 'application/json',
       'Authorization': 'Bearer $token',
     });
 
-    request.files.add(await http.MultipartFile.fromPath('comprobante', imagePath));
+    request.files
+        .add(await http.MultipartFile.fromPath('comprobante', imagePath));
 
     var streamedResponse = await request.send();
     var response = await http.Response.fromStream(streamedResponse);
@@ -2879,7 +2891,8 @@ Future<Map<String, dynamic>> submitInstantBooking(String batchId, String imagePa
     if (response.statusCode == 200 || response.statusCode == 201) {
       return json.decode(response.body);
     } else {
-      throw Exception('Error al subir comprobante. Código: ${response.statusCode}');
+      throw Exception(
+          'Error al subir comprobante. Código: ${response.statusCode}');
     }
   } catch (e) {
     throw Exception('Error de conexión al subir comprobante: $e');
@@ -2899,111 +2912,120 @@ Future<Map<String, dynamic>> getCategoriasMaterias() async {
     if (response.statusCode == 200) {
       return json.decode(response.body);
     } else {
-      throw Exception('Error al cargar categorías. Código: ${response.statusCode}');
+      throw Exception(
+          'Error al cargar categorías. Código: ${response.statusCode}');
     }
   } catch (e) {
     throw Exception('Error de conexión al cargar categorías: $e');
   }
 }
-  // FUNCIÓN PARA CREAR LA RESERVA (Paso 1)
-  Future<Map<String, dynamic>> crearReserva(int batchId, int itemId, String token) async {
-    // Fíjate que el batchId va en la URL, tal como lo pide Laravel
-    final String url = '$baseUrl/batches/$batchId/request-booking';
 
-    try {
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token', // El token del estudiante logueado
-        },
-        // El item_id va en el body, porque Laravel hace: $request->validate(['item_id' => ...])
-        body: jsonEncode({
-          'item_id': itemId,
-        }),
-      );
+// FUNCIÓN PARA CREAR LA RESERVA (Paso 1)
+Future<Map<String, dynamic>> crearReserva(
+    int batchId, int itemId, String token) async {
+  // Fíjate que el batchId va en la URL, tal como lo pide Laravel
+  final String url = '$baseUrl/batches/$batchId/request-booking';
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        
-        if (data['ok'] == true) {
-          return {
-            'success': true,
-            'booking_id': data['booking']['id'], 
-            'precio': data['booking']['session_fee']
-          };
-        } else {
-          return {'success': false, 'message': data['message']};
-        }
-      } else {
-        return {'success': false, 'message': 'Error en el servidor: ${response.statusCode}'};
-      }
-    } catch (e) {
-      return {'success': false, 'message': 'Error de conexión: $e'};
-    }
-  }
-
-  // FUNCIÓN PARA SUBIR EL COMPROBANTE (Paso 2)
-  Future<Map<String, dynamic>> subirComprobante(int bookingId, String imagePath, String token) async {
-    // Asegúrate de que esta URL coincida con tu api.php de Laravel
-    final String url = '$baseUrl/bookings/$bookingId/upload-receipt';
-
-    try {
-      var request = http.MultipartRequest('POST', Uri.parse(url));
-      
-      request.headers.addAll({
+  try {
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      });
+        'Authorization': 'Bearer $token', // El token del estudiante logueado
+      },
+      // El item_id va en el body, porque Laravel hace: $request->validate(['item_id' => ...])
+      body: jsonEncode({
+        'item_id': itemId,
+      }),
+    );
 
-      request.files.add(await http.MultipartFile.fromPath('comprobante', imagePath));
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
 
-      var streamedResponse = await request.send();
-      var response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data;
-      } else {
-        final errorData = jsonDecode(response.body);
-        return {
-          'ok': false, 
-          'message': errorData['message'] ?? 'Error en el servidor: ${response.statusCode}'
-        };
-      }
-    } catch (e) {
-      return {'ok': false, 'message': 'Error al subir la imagen: $e'};
-    }
-  }
-
-  // PASO 3: EL RADAR (Consulta si el tutor ya aceptó y generó el Meet)
-  Future<Map<String, dynamic>> consultarEstadoReserva(int bookingId, String token) async {
-    final String url = '$baseUrl/bookings/$bookingId/status';
-
-    try {
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+      if (data['ok'] == true) {
         return {
           'success': true,
-          'ui_state': data['ui_state'],
-          'meeting_link': data['booking'] != null ? data['booking']['meeting_link'] : null,
+          'booking_id': data['booking']['id'],
+          'precio': data['booking']['session_fee']
         };
       } else {
-        return {'success': false, 'message': 'Error: ${response.statusCode}'};
+        return {'success': false, 'message': data['message']};
       }
-    } catch (e) {
-      return {'success': false, 'message': 'Error de conexión: $e'};
+    } else {
+      return {
+        'success': false,
+        'message': 'Error en el servidor: ${response.statusCode}'
+      };
     }
+  } catch (e) {
+    return {'success': false, 'message': 'Error de conexión: $e'};
   }
+}
+
+// FUNCIÓN PARA SUBIR EL COMPROBANTE (Paso 2)
+Future<Map<String, dynamic>> subirComprobante(
+    int bookingId, String imagePath, String token) async {
+  // Asegúrate de que esta URL coincida con tu api.php de Laravel
+  final String url = '$baseUrl/bookings/$bookingId/upload-receipt';
+
+  try {
+    var request = http.MultipartRequest('POST', Uri.parse(url));
+
+    request.headers.addAll({
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $token',
+    });
+
+    request.files
+        .add(await http.MultipartFile.fromPath('comprobante', imagePath));
+
+    var streamedResponse = await request.send();
+    var response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data;
+    } else {
+      final errorData = jsonDecode(response.body);
+      return {
+        'ok': false,
+        'message': errorData['message'] ??
+            'Error en el servidor: ${response.statusCode}'
+      };
+    }
+  } catch (e) {
+    return {'ok': false, 'message': 'Error al subir la imagen: $e'};
+  }
+}
+
+// PASO 3: EL RADAR (Consulta si el tutor ya aceptó y generó el Meet)
+Future<Map<String, dynamic>> consultarEstadoReserva(
+    int bookingId, String token) async {
+  final String url = '$baseUrl/bookings/$bookingId/status';
+
+  try {
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return {
+        'success': true,
+        'ui_state': data['ui_state'],
+        'meeting_link':
+            data['booking'] != null ? data['booking']['meeting_link'] : null,
+      };
+    } else {
+      return {'success': false, 'message': 'Error: ${response.statusCode}'};
+    }
+  } catch (e) {
+    return {'success': false, 'message': 'Error de conexión: $e'};
   }
 }
 
