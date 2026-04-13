@@ -224,7 +224,10 @@ class _HeaderUserInfo extends StatelessWidget {
         const SizedBox(height: 6),
 
         // 2. RATING Y VERIFICACION
-        Row(
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             if (showRating)
               Container(
@@ -251,10 +254,8 @@ class _HeaderUserInfo extends StatelessWidget {
                   ],
                 ),
               ),
-            if (showRating) const SizedBox(width: 8),
             if (showVerified)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                     color: isVerified ? verifiedBg : unverifiedBg,
                     borderRadius: BorderRadius.circular(8),
@@ -262,6 +263,7 @@ class _HeaderUserInfo extends StatelessWidget {
                         ? null
                         : Border.all(color: Colors.grey.withOpacity(0.3))),
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       isVerified

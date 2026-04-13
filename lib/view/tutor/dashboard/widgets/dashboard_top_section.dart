@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 
 import 'package:flutter_projects/view/tutor/dashboard/widgets/dashboard_header.dart';
-import 'package:flutter_projects/view/tutor/dashboard/widgets/availability_capsule.dart';
+//import 'package:flutter_projects/view/tutor/dashboard/widgets/availability_capsule.dart';
 
 class DashboardTopSection extends StatelessWidget {
   // Datos
@@ -44,7 +44,7 @@ class DashboardTopSection extends StatelessWidget {
         statusBarColor: Colors.transparent,
       ),
       child: Padding(
-        padding: const EdgeInsets.only(bottom: 45),
+        padding: const EdgeInsets.only(bottom: 0),
         child: Stack(
           clipBehavior: Clip.none,
           alignment: Alignment.topCenter,
@@ -53,7 +53,7 @@ class DashboardTopSection extends StatelessWidget {
               width: double.infinity,
               padding: EdgeInsets.only(
                 top: statusBarHeight + 15,
-                bottom: 75,
+                bottom: 25,
               ),
               decoration: BoxDecoration(
                 color: backgroundColor,
@@ -87,6 +87,7 @@ class DashboardTopSection extends StatelessWidget {
               ),
             ),
 
+            /*
             // B. Availability Capsule
             Positioned(
               bottom: -35,
@@ -105,6 +106,7 @@ class DashboardTopSection extends StatelessWidget {
                 },
               ),
             ),
+            */
           ],
         ),
       ),
