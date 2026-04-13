@@ -109,8 +109,10 @@ class _RadarSearchScreenState extends State<RadarSearchScreen>
       if (_batchId == null) return;
 
       try {
-        final prefs = await SharedPreferences.getInstance();
-        final miToken = prefs.getString('token') ?? '';
+        // final prefs = await SharedPreferences.getInstance();
+        // final miToken = prefs.getString('token') ?? '';
+
+        final miToken = "7787|3jzHK0bqFZuRbtjRkzNo1F0GUD8rpdl5Hr10BAmz5d597a3e";
 
         final jsonResponse = await pollAcceptedTutors(_batchId!, miToken);
         final List<dynamic> candidatosNuevos = jsonResponse['data'] ?? [];
@@ -401,8 +403,10 @@ class _RadarSearchScreenState extends State<RadarSearchScreen>
                           duration: Duration(seconds: 1)),
                     );
 
-                    final prefs = await SharedPreferences.getInstance();
-                    final miToken = prefs.getString('auth_token') ?? '';
+                    // final prefs = await SharedPreferences.getInstance();
+                    // final miToken = prefs.getString('auth_token') ?? '';
+
+                    final miToken = "7787|3jzHK0bqFZuRbtjRkzNo1F0GUD8rpdl5Hr10BAmz5d597a3e";
                     final resultado = await crearReserva(
                         int.parse(_batchId!), tutor.id, miToken);
 

@@ -5,8 +5,11 @@ import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as path;
 
-final String baseUrl = 'https://classgoapp.com/api';
-final String storageBaseUrl = 'https://classgoapp.com/storage';
+// final String baseUrl = 'https://classgoapp.com/api';
+// final String storageBaseUrl = 'https://classgoapp.com/storage';
+
+final String baseUrl = 'http://192.168.0.145:8000/api';
+final String storageBaseUrl = 'http://192.168.0.145:8000/storage';
 
 class TokenExpiredException implements Exception {
   final String message = "Tu sesión ha expirado. Por favor, inicia sesión de nuevo.";
