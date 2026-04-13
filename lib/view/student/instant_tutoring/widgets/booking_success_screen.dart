@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 // Asegúrate de importar tu modelo
 import 'tutor_model.dart'; 
@@ -10,12 +11,23 @@ const String _kTitleFont = 'outfit';
 class BookingSuccessScreen extends StatelessWidget {
   final TutorResponse tutor;
   final String subjectName;
+  final String meetingLink;
 
   const BookingSuccessScreen({
     super.key,
     required this.tutor,
     required this.subjectName,
+    required this.meetingLink,
   });
+
+  Future<void> _abrirMeet(BuildContext context) async {
+    final Uri url = Uri.parse(meetingLink);
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo abrir el enlace de la clase')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -161,10 +173,7 @@ class BookingSuccessScreen extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () {
-                        print("🚀 Ir a la sala de espera o videollamada");
-                        // TODO: Navegar a la sala de chat/video
-                      },
+                      onPressed: () => _abrirMeet(context),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.brandBlue,
                         padding: const EdgeInsets.symmetric(vertical: 16),

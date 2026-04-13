@@ -1,8 +1,14 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_projects/api_structure/api_service.dart';
+import 'package:flutter_projects/view/student/instant_tutoring/widgets/waiting_room_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 // Importa tus modelos
 import 'tutor_model.dart';
@@ -14,13 +20,15 @@ const String _kBodyFont = 'manrope';
 class StudentPaymentScreen extends StatefulWidget {
   final TutorResponse tutor;
   final String subjectName;
-  final String companyQrUrl; // Puede ser 'http...' o 'assets/...'
+  final String companyQrUrl;
+  final int bookingId;
 
   const StudentPaymentScreen({
     Key? key,
     required this.tutor,
     required this.subjectName,
-    this.companyQrUrl = 'assets/images/descarga.png',
+    required this.bookingId,
+    this.companyQrUrl = 'assets/images/cobro.jpeg',
   }) : super(key: key);
 
   @override
@@ -32,9 +40,25 @@ class _StudentPaymentScreenState extends State<StudentPaymentScreen> {
   bool _isSubmitting = false;
   final ImagePicker _picker = ImagePicker();
 
-  // ==========================================
-  // ⚙️ LÓGICA: SELECCIÓN Y SUBIDA
-  // ==========================================
+  late PageController _pageController;
+  int _currentPage = 0;
+
+  bool _isWaitingForTutor = false;
+  Timer? _pollingTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _pollingTimer?.cancel();
+    super.dispose();
+  }
+
   Future<void> _pickImage() async {
     try {
       final XFile? image = await _picker.pickImage(
@@ -50,30 +74,97 @@ class _StudentPaymentScreenState extends State<StudentPaymentScreen> {
   }
 
   Future<void> _submitPayment() async {
-    if (_receiptImage == null) {
-      _showToast('Por favor, adjunta tu comprobante primero', isError: true);
-      return;
-    }
+    if (_receiptImage == null) return;
 
     setState(() => _isSubmitting = true);
 
-    // TODO: 🌐 LLAMADA A TU API AQUÍ
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final miToken = prefs.getString('token') ?? '';
+      
+      if (miToken.isEmpty) {
+        throw Exception("No tienes una sesión activa. Vuelve a iniciar sesión.");
+      }
 
-    if (!mounted) return;
-    setState(() => _isSubmitting = false);
+      final uploadResponse = await subirComprobante(
+        widget.bookingId, 
+        _receiptImage!.path, 
+        miToken
+      );
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => BookingSuccessScreen(
-          tutor: widget.tutor,
-          subjectName: widget.subjectName,
-        ),
-      ),
-    );
+      if (uploadResponse['ok'] == true || uploadResponse['success'] == true) {
+        
+        setState(() {
+          _isSubmitting = false; 
+          _isWaitingForTutor = true; 
+        });
+
+        // Radar para espiar al tutor
+        _iniciarPolling(miToken);
+
+      } else {
+        throw Exception(uploadResponse['message'] ?? 'Error al subir el comprobante');
+      }
+
+    } catch (e) {
+      print("Error al procesar el pago: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+      if (mounted) setState(() => _isSubmitting = false);
+    } 
   }
 
+  // EL RADAR QUE PREGUNTA POR EL ESTADO
+  void _iniciarPolling(String token) {
+    _pollingTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
+      try {
+        // Función suelta de tu api_service.dart
+        final estado = await consultarEstadoReserva(widget.bookingId, token);
+
+        if (estado['ok'] == true || estado['success'] == true) {
+          String uiState = estado['ui_state'];
+
+          if (uiState == 'accepted') {
+            timer.cancel(); 
+            
+            String linkGenerado = estado['booking']?['meeting_link'] ?? 'https://meet.google.com/';
+
+            if (mounted) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => BookingSuccessScreen(
+                    tutor: widget.tutor,
+                    subjectName: widget.subjectName,
+                    meetingLink: linkGenerado,
+                  ),
+                ),
+              );
+            }
+          } else if (uiState == 'rejected' || uiState == 'expired') {
+            timer.cancel();
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text("La tutoría fue cancelada o expiró el tiempo."),
+                  backgroundColor: Colors.redAccent,
+                ),
+              );
+              Navigator.pop(context); 
+            }
+          }
+        }
+      } catch (e) {
+        print("Error en el radar (polling): $e");
+      }
+    });
+  }
   void _showToast(String message, {bool isError = false}) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -86,7 +177,6 @@ class _StudentPaymentScreenState extends State<StudentPaymentScreen> {
     );
   }
 
-  // 🚀 FUNCIÓN INTELIGENTE PARA EL QR (Evita crasheos locales vs web)
   Widget _buildSafeImage(String path) {
     if (path.startsWith('http')) {
       return CachedNetworkImage(
@@ -104,9 +194,6 @@ class _StudentPaymentScreenState extends State<StudentPaymentScreen> {
     }
   }
 
-  // ==========================================
-  // 🔍 LÓGICA: EXPANDIR QR
-  // ==========================================
   void _showFullscreenQr() {
     showGeneralDialog(
       context: context,
@@ -130,7 +217,7 @@ class _StudentPaymentScreenState extends State<StudentPaymentScreen> {
                       color: Colors.white,
                       width: double.infinity,
                       padding: const EdgeInsets.all(24),
-                      child: _buildSafeImage(widget.companyQrUrl), // Usa la función segura
+                      child: _buildSafeImage(widget.companyQrUrl), 
                     ),
                   ),
                 ),
@@ -148,43 +235,184 @@ class _StudentPaymentScreenState extends State<StudentPaymentScreen> {
     );
   }
 
-  // ==========================================
-  // 🎨 CONSTRUCCIÓN DE LA VISTA
-  // ==========================================
   @override
   Widget build(BuildContext context) {
+    if (_isWaitingForTutor) {
+      return const Scaffold(
+        backgroundColor: AppColors.backgroundLight,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(color: AppColors.brandBlue, strokeWidth: 4),
+              SizedBox(height: 24),
+              Text(
+                "Comprobante enviado ✅", 
+                style: TextStyle(fontFamily: _kTitleFont, fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.primaryColor)
+              ),
+              SizedBox(height: 12),
+              Text(
+                "Esperando a que el tutor inicie el aula...", 
+                style: TextStyle(fontFamily: _kBodyFont, fontSize: 16, color: AppColors.brandOrange)
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        title: const Text('Finalizar Proceso', 
+          style: TextStyle(fontFamily: _kTitleFont, color: AppColors.brandBlue, fontWeight: FontWeight.bold)),
         centerTitle: true,
         iconTheme: const IconThemeData(color: AppColors.brandBlue),
-        title: const Text('Completar Reserva', style: TextStyle(fontFamily: _kTitleFont, color: AppColors.brandBlue, fontWeight: FontWeight.bold)),
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    _buildPaymentCard(), // El diseño de Ticket
-                    const SizedBox(height: 32),
-                    _buildUploadSection(),
-                  ],
-                ),
-              ),
+      body: Column(
+        children: [
+          _buildHeaderSteps(),
+          
+          Expanded(
+            child: PageView(
+              controller: _pageController,
+              onPageChanged: (index) => setState(() => _currentPage = index),
+              children: [
+                _buildQRPage(),      // Página 1
+                _buildReceiptPage(), // Página 2
+              ],
             ),
-            _buildBottomButton(),
-          ],
-        ),
+          ),
+          
+          _buildBottomButton(),
+        ],
       ),
     );
   }
 
+  Widget _buildQRPage() {
+    return Container(
+      margin: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.whiteColor,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20)],
+      ),
+      child: Column(
+        children: [
+          const Text("Escanea el QR de pago", 
+            style: TextStyle(fontFamily: _kTitleFont, fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.blackColor)),
+          const SizedBox(height: 8),
+          const Text("Realiza la transferencia por el monto exacto", 
+            style: TextStyle(fontFamily: _kBodyFont, fontSize: 14, color: AppColors.greyColor)),
+          const Spacer(),
+          GestureDetector(
+            onTap: _showFullscreenQr,
+            child: Hero(
+              tag: 'companyQrHero',
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.dividerColor),
+                  borderRadius: BorderRadius.circular(20)
+                ),
+                child: SizedBox(width: 200, height: 200, child: _buildSafeImage(widget.companyQrUrl)),
+              ),
+            ),
+          ),
+          const Spacer(),
+          TextButton.icon(
+            onPressed: () => _pageController.nextPage(duration: const Duration(milliseconds: 400), curve: Curves.easeInOut),
+            icon: const Icon(Icons.arrow_forward, color: AppColors.brandCyan),
+            label: const Text("Ya realicé el pago", style: TextStyle(color: AppColors.brandCyan, fontWeight: FontWeight.bold)),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReceiptPage() {
+    return Container(
+      margin: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.whiteColor,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20)],
+      ),
+      child: Column(
+        children: [
+          const Text("Sube tu comprobante", 
+            style: TextStyle(fontFamily: _kTitleFont, fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.blackColor)),
+          const SizedBox(height: 20),
+          Expanded(
+            child: GestureDetector(
+              onTap: _pickImage,
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: AppColors.fadeColor,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.brandCyan.withOpacity(0.3), width: 2, style: BorderStyle.solid),
+                ),
+                child: _receiptImage == null 
+                  ? Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Icon(Icons.add_a_photo_rounded, size: 40, color: AppColors.brandCyan),
+                        SizedBox(height: 12),
+                        Text("Toca para seleccionar captura", style: TextStyle(color: AppColors.brandBlue, fontWeight: FontWeight.bold)),
+                      ],
+                    )
+                  : ClipRRect(
+                      borderRadius: BorderRadius.circular(18),
+                      child: Image.file(_receiptImage!, fit: BoxFit.cover),
+                    ),
+              ),
+            ),
+          ),
+          if (_receiptImage != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: TextButton(
+                onPressed: () => setState(() => _receiptImage = null),
+                child: const Text("Cambiar imagen", style: TextStyle(color: Colors.redAccent)),
+              ),
+            )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeaderSteps() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _stepIcon(0, Icons.qr_code_2_rounded),
+          Container(width: 40, height: 2, color: AppColors.dividerColor),
+          _stepIcon(1, Icons.file_upload_outlined),
+        ],
+      ),
+    );
+  }
+
+  Widget _stepIcon(int index, IconData icon) {
+    bool isActive = _currentPage == index;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: isActive ? AppColors.brandCyan : AppColors.whiteColor,
+        shape: BoxShape.circle,
+        border: Border.all(color: isActive ? AppColors.brandCyan : AppColors.dividerColor),
+      ),
+      child: Icon(icon, color: isActive ? Colors.white : AppColors.greyColor, size: 20),
+    );
+  }
   // 🧩 Módulo 1: Diseño "Ticket" (Perfil + Monto + QR)
   Widget _buildPaymentCard() {
     return Container(
@@ -239,7 +467,6 @@ class _StudentPaymentScreenState extends State<StudentPaymentScreen> {
             child: Divider(height: 1, color: AppColors.dividerColor),
           ),
 
-          // 2. Monto a Pagar
           const Text("Total a transferir", style: TextStyle(fontFamily: _kBodyFont, color: AppColors.greyColor, fontSize: 14)),
           const SizedBox(height: 4),
           Text(

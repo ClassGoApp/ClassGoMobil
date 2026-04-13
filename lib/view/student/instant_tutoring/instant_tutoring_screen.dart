@@ -1,4 +1,7 @@
 import 'dart:convert';
+import 'package:flutter_projects/api_structure/api_service.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -117,29 +120,72 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
   //     if (mounted) setState(() => _isLoadingData = false);
   //   }
   // }
+  // Future<void> _loadJsonData() async {
+  //   final List<dynamic> hardcodedData = [
+  //     {"Subcategoría": "Primaria", "Materia": "Matemáticas para Primaria"},
+  //     {"Subcategoría": "Secundaria", "Materia": "Física para Secundaria"},
+  //     {"Subcategoría": "Idiomas", "Materia": "Inglés Básico"},
+  //     {"Subcategoría": "Ciencias Exactas", "Materia": "Cálculo I"},
+  //     {"Subcategoría": "Ingeniería Avanzada", "Materia": "Termodinámica"},
+  //   ];
+
+  //   final Map<String, List<dynamic>> grouped = {};
+  //   for (var item in hardcodedData) {
+  //     grouped.putIfAbsent(item['Subcategoría'], () => []).add(item);
+  //   }
+
+  //   if (mounted) {
+  //     setState(() {
+  //       _allSubjects = hardcodedData;
+  //       _subjectsByCategory = grouped;
+  //       _isLoadingData = false; // Apagamos el circulito de carga
+  //     });
+  //   }
+  // }
+
+
+  // Importa tu archivo de API arriba: 
+  // import 'ruta/hacia/tu/api_service.dart';
+
   Future<void> _loadJsonData() async {
-    final List<dynamic> hardcodedData = [
-      {"Subcategoría": "Primaria", "Materia": "Matemáticas para Primaria"},
-      {"Subcategoría": "Secundaria", "Materia": "Física para Secundaria"},
-      {"Subcategoría": "Idiomas", "Materia": "Inglés Básico"},
-      {"Subcategoría": "Ciencias Exactas", "Materia": "Cálculo I"},
-      {"Subcategoría": "Ingeniería Avanzada", "Materia": "Termodinámica"},
-    ];
+    try {
+      final jsonData = await getCategoriasMaterias();
+      
+      final List<dynamic> categoriasApi = jsonData['data'];
+      final Map<String, List<dynamic>> grouped = {};
+      final List<dynamic> allSubjectsFlat = [];
 
-    final Map<String, List<dynamic>> grouped = {};
-    for (var item in hardcodedData) {
-      grouped.putIfAbsent(item['Subcategoría'], () => []).add(item);
-    }
+      for (var cat in categoriasApi) {
+        String catName = cat['categoria'];
+        List<dynamic> materiasArray = cat['materias'];
+        List<dynamic> materiasAdaptadas = [];
 
-    if (mounted) {
-      setState(() {
-        _allSubjects = hardcodedData;
-        _subjectsByCategory = grouped;
-        _isLoadingData = false; // Apagamos el circulito de carga
-      });
+        for (var mat in materiasArray) {
+          var subjectAdapted = {
+            'Subcategoría': catName,
+            'Materia': mat['materia'], 
+            'id_materia': mat['id_materia'] 
+          };
+          materiasAdaptadas.add(subjectAdapted);
+          allSubjectsFlat.add(subjectAdapted);
+        }
+
+        grouped[catName] = materiasAdaptadas;
+      }
+
+      if (mounted) {
+        setState(() {
+          _allSubjects = allSubjectsFlat;
+          _subjectsByCategory = grouped;
+          _isLoadingData = false;
+        });
+      }
+    } catch (e) {
+      print("🔥 Error al cargar materias: $e");
+      
+      if (mounted) setState(() => _isLoadingData = false);
     }
   }
-
   // 🔍 BUSCADOR OPTIMIZADO CON DEBOUNCE (Evita trabar el teclado)
   void _onSearchChanged(String query) {
     if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
@@ -281,8 +327,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                                               builder: (context) =>
                                                   RadarSearchScreen(
                                                 subjectName: subject['Materia'],
-                                                // subjectId: subject['id'] ?? 0,
-                                                 // Asegúrate de tener el ID en tu JSON/Datos
+                                                subjectId: subject['id_materia'].toString(),
                                               ),
                                             ),
                                           );
