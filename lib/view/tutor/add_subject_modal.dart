@@ -193,11 +193,9 @@ class _AddSubjectModalState extends State<AddSubjectModal> {
           response['data']['data'] != null) {
         final List<dynamic> subjectsData = response['data']['data'];
         
-        // Obtener las materias que el tutor ya tiene
         final currentTutorSubjects = subjectsProvider.subjects;
         final currentSubjectIds = currentTutorSubjects.map((subject) => subject.subjectId).toSet();
         
-        // Filtrar las materias que el tutor ya tiene
         final filteredSubjects = subjectsData.where((subject) => 
           !currentSubjectIds.contains(subject['id'])
         ).toList();

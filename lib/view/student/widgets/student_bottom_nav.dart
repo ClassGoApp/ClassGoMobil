@@ -76,6 +76,7 @@ class StudentBottomNav extends StatelessWidget {
             Expanded(
               child: Center(
                 child: _CenterNavButton(
+                  isSelected: currentIndex == 2,
                   onTap: () {
                     HapticFeedback.selectionClick();
                     if (onCenterTap != null) {
@@ -97,9 +98,9 @@ class StudentBottomNav extends StatelessWidget {
               child: Center(
                 child: _AnimatedNavItem(
                   icon: Icons.favorite,
-                  label: "Favoritos",
-                  isSelected: currentIndex == 2,
-                  onTap: () => onTap(2),
+                  label: "FAVORITOS",
+                  isSelected: currentIndex == 3,
+                  onTap: () => onTap(3),
                 ),
               ),
             ),
@@ -108,8 +109,8 @@ class StudentBottomNav extends StatelessWidget {
                 child: _AnimatedNavItem(
                   icon: Icons.person_rounded,
                   label: "PERFIL",
-                  isSelected: currentIndex == 3,
-                  onTap: () => onTap(3),
+                  isSelected: currentIndex == 4,
+                  onTap: () => onTap(4),
                 ),
               ),
             ),
@@ -123,7 +124,7 @@ class StudentBottomNav extends StatelessWidget {
 class _CenterNavButton extends StatefulWidget {
   final VoidCallback onTap;
 
-  const _CenterNavButton({required this.onTap, super.key});
+  const _CenterNavButton({required this.onTap, super.key, required bool isSelected});
 
   @override
   State<_CenterNavButton> createState() => _CenterNavButtonState();

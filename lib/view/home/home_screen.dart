@@ -3,13 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/helpers/auth_helper.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
-import 'package:flutter_projects/view/home/widgets/alliance_card.dart';
 import 'package:flutter_projects/view/home/widgets/categories_carousel.dart';
 import 'package:flutter_projects/view/home/widgets/home_drawer.dart';
 import 'package:flutter_projects/view/home/widgets/home_header.dart';
 import 'package:flutter_projects/view/home/widgets/pet_banner.dart';
 import 'package:flutter_projects/view/home/widgets/quick_actions_section.dart';
 import 'package:flutter_projects/view/home/widgets/trust_actions_row.dart';
+import 'package:flutter_projects/view/profile/profile_screen.dart';
+import 'package:flutter_projects/view/student/profile_screen_student.dart' hide ProfileScreen; 
+import 'package:flutter_projects/view/student/serch_Tutor/search_tutors_screen.dart'; 
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -47,7 +49,12 @@ class _HomeScreenState extends State<HomeScreen> {
           HomeHeader(
             onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
             onProfileTap: () {
-              debugPrint("Perfil");
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ProfileScreen(),
+                ),
+              );
             },
           ),
           SliverToBoxAdapter(
@@ -64,9 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             'Para acceder a tutorías instantáneas, necesitas iniciar sesión en tu cuenta.')) {
                       return;
                     }
-
-                    debugPrint(
-                        "Usuario verificado. Abrir lógica de Tutor al Instante...");
+                    debugPrint("Usuario verificado. Abrir lógica de Tutor al Instante...");
                   },
                   onScheduleTap: () {
                     if (!AuthHelper.requireAuth(context,
@@ -77,17 +82,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     }
 
                     debugPrint("Usuario verificado. Navegando a Agendar...");
-                    // Navigator.push(...);
                   },
+                  
                   onExploreTap: () {
-                    if (!AuthHelper.requireAuth(context,
-                        customTitle: 'Explorar Tutores',
-                        customMessage:
-                            'Para ver perfiles completos y contactar tutores, inicia sesión.')) {
-                      return;
-                    }
-                    debugPrint("Usuario verificado. Navegando a Explorar...");
-                    // Navigator.push(...);
+                    debugPrint("Navegando a Explorar Tutores (Vista Pública)...");
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SearchTutorsScreen(),
+                      ),
+                    );
                   },
                 ),
                 const SizedBox(height: 25),
@@ -98,85 +102,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 const SizedBox(height: 35),
                 const TrustActionsRow(),
-                const SizedBox(height: 35),
-                _placeholderBloque('Lista de Tutores Destacados',
-                    height: 180, color: Colors.white),
-
-                const SizedBox(height: 30),
-
-                // Banner
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: _placeholderBloque('Banner: Gana dinero enseñando',
-                      height: 120, color: AppColors.brandBlue),
-                ),
-                const SizedBox(height: 20),
-
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Text(
-                    'Explorar Categorías',
-                    style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF113644)),
-                  ),
-                ),
-                const SizedBox(height: 15),
-                _placeholderBloque('Slider de Categorías (Matemáticas, etc)',
-                    height: 140, color: Colors.white),
-
-                const SizedBox(height: 30),
-                
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Text(
-                    'Tutores Destacados',
-                    style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF113644)),
-                  ),
-                ),
-                const SizedBox(height: 15),
-                // const TutorListPreview(),
-                _placeholderBloque('Lista de Tutores Destacados',
-                    height: 250, color: Colors.white),
-
+               
                 const SizedBox(height: 40),
               ],
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _placeholderBloque(String titulo,
-      {required double height, required Color color}) {
-    bool isDark =
-        color == AppColors.brandBlue || color == AppColors.brandOrange;
-    return Container(
-      height: height,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4))
-        ],
-      ),
-      child: Center(
-        child: Text(
-          titulo,
-          style: TextStyle(
-              fontFamily: 'outfit',
-              color: isDark ? Colors.white : Colors.grey.shade600,
-              fontWeight: FontWeight.bold,
-              fontSize: 16),
-        ),
       ),
     );
   }

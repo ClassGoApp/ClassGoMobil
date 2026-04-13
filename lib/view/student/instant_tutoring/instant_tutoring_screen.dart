@@ -1,23 +1,18 @@
+import 'dart:convert';
+import 'package:flutter_projects/api_structure/api_service.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/components/role_based_navigation.dart';
+import 'package:flutter_projects/view/student/instant_tutoring/widgets/radar_search_screen.dart';
 import 'package:flutter_projects/view/student/widgets/student_bottom_nav.dart';
 
 class InstantTutoringScreen extends StatefulWidget {
-  // Parámetros que pueden venir desde otros lugares (como desde Favoritos)
-  final String? tutorName;
-  final String? tutorImage;
-  final List<Map<String, dynamic>>? subjects;
-  final dynamic tutorId;
-  final int? subjectId;
-
   const InstantTutoringScreen({
     super.key,
-    this.tutorName,
-    this.tutorImage,
-    this.subjects,
-    this.tutorId,
-    this.subjectId,
   });
 
   @override
@@ -25,339 +20,600 @@ class InstantTutoringScreen extends StatefulWidget {
 }
 
 class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
-  String selectedCategory = 'TODAS';
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _debounceTimer;
 
-  final List<String> categories = [
-    'TODAS',
-    'CIENCIAS EXACTAS',
-    'INGENIERÍA AVANZADA',
-    'CIENCIAS SOCIALES',
+  // ==========================================
+  // ⚡ VARIABLES DE ALTO RENDIMIENTO
+  // ==========================================
+  bool _isLoadingData = true;
+  List<dynamic> _allSubjects = [];
+  List<dynamic> _searchResults = [];
+  Map<String, List<dynamic>> _subjectsByCategory = {}; // Búsqueda O(1)
+
+  // 🎨 TUS CATEGORÍAS EXACTAS CON DISEÑO PREMIUM
+  final List<Map<String, dynamic>> _uiCategories = [
+    {'name': 'Primaria', 'icon': Icons.backpack_rounded, 'color': 0xFFF59E0B},
+    {'name': 'Secundaria', 'icon': Icons.school_rounded, 'color': 0xFF3B82F6},
+    {
+      'name': 'Ciencias Exactas',
+      'icon': Icons.calculate_rounded,
+      'color': 0xFF10B981
+    },
+    {
+      'name': 'Ingeniería Avanzada',
+      'icon': Icons.precision_manufacturing_rounded,
+      'color': 0xFFEF4444
+    },
+    {
+      'name': 'Ciencias Sociales y Económicas',
+      'icon': Icons.public_rounded,
+      'color': 0xFF8B5CF6
+    },
+    {'name': 'Idiomas', 'icon': Icons.translate_rounded, 'color': 0xFFEC4899},
+    {
+      'name': 'Marketing y Comunicación Digital',
+      'icon': Icons.campaign_rounded,
+      'color': 0xFFF97316
+    },
+    {
+      'name': 'Arte y Diseño',
+      'icon': Icons.palette_rounded,
+      'color': 0xFF14B8A6
+    },
+    {
+      'name': 'Gastronomía y Repostería',
+      'icon': Icons.restaurant_rounded,
+      'color': 0xFFEAB308
+    },
+    {
+      'name': 'Ingeniería y Tecnología',
+      'icon': Icons.computer_rounded,
+      'color': 0xFF6366F1
+    },
+    {
+      'name': 'Psicología y Desarrollo Personal',
+      'icon': Icons.psychology_rounded,
+      'color': 0xFF06B6D4
+    },
+    {
+      'name': 'Deporte y Bienestar',
+      'icon': Icons.fitness_center_rounded,
+      'color': 0xFF84CC16
+    },
   ];
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            // Header con botón de volver
-            SliverAppBar(
-              backgroundColor: const Color(0xFFF8FAFC),
-              floating: true,
-              snap: true,
-              elevation: 0,
-              automaticallyImplyLeading: false,
-              title: const Text(
-                'Tutoría Instantánea',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF0F172A),
-                ),
-              ),
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back_rounded,
-                    color: Color(0xFF0F172A)),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.search_rounded,
-                      color: Color(0xFF64748B)),
-                  onPressed: () {
-                    // Puedes abrir búsqueda aquí en el futuro
-                  },
-                ),
-              ],
-            ),
+  void initState() {
+    super.initState();
+    _loadJsonData(); 
+  }
 
-            // Título principal
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
-                child: Text(
-                  '¿Qué necesitas aprender\nhoy?',
-                  style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF0F172A),
-                        height: 1.1,
-                      ),
-                ),
-              ),
-            ),
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _debounceTimer?.cancel();
+    super.dispose();
+  }
 
-            // Subtítulo
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                child: Text(
-                  'Más de 600 materias con las que un tutor puede ayudarte ahora',
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: Colors.grey.shade600,
-                    height: 1.4,
-                  ),
-                ),
-              ),
-            ),
+  // 🧠 CARGA Y PRE-INDEXACIÓN DEL JSON (Magia de rendimiento)
+  // Future<void> _loadJsonData() async {
+  //   try {
+  //     final String jsonString = await rootBundle.loadString('assets/materias.json');
+  //     final List<dynamic> jsonData = jsonDecode(jsonString);
+  //     final Map<String, List<dynamic>> grouped = {};
+  //     for (var item in jsonData) {
+  //       final cat = item['Subcategoría'];
+  //       if (cat != null) {
+  //         grouped.putIfAbsent(cat, () => []).add(item);
+  //       }
+  //     }
+  //     if (mounted) {
+  //       setState(() {
+  //         _allSubjects = jsonData;
+  //         _subjectsByCategory = grouped;
+  //         _isLoadingData = false;
+  //       });
+  //     }
+  //   } catch (e) {
+  //     print("🔥 Error cargando materias.json: $e");
+  //     if (mounted) setState(() => _isLoadingData = false);
+  //   }
+  // }
+  // Future<void> _loadJsonData() async {
+  //   final List<dynamic> hardcodedData = [
+  //     {"Subcategoría": "Primaria", "Materia": "Matemáticas para Primaria"},
+  //     {"Subcategoría": "Secundaria", "Materia": "Física para Secundaria"},
+  //     {"Subcategoría": "Idiomas", "Materia": "Inglés Básico"},
+  //     {"Subcategoría": "Ciencias Exactas", "Materia": "Cálculo I"},
+  //     {"Subcategoría": "Ingeniería Avanzada", "Materia": "Termodinámica"},
+  //   ];
 
-            // Barra de búsqueda
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Container(
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
-                        blurRadius: 15,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Buscar materia o tutor...',
-                      hintStyle: TextStyle(color: Colors.grey.shade400),
-                      prefixIcon: const Icon(Icons.search_rounded,
-                          color: Color(0xFF64748B)),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 18),
+  //   final Map<String, List<dynamic>> grouped = {};
+  //   for (var item in hardcodedData) {
+  //     grouped.putIfAbsent(item['Subcategoría'], () => []).add(item);
+  //   }
+
+  //   if (mounted) {
+  //     setState(() {
+  //       _allSubjects = hardcodedData;
+  //       _subjectsByCategory = grouped;
+  //       _isLoadingData = false; // Apagamos el circulito de carga
+  //     });
+  //   }
+  // }
+
+
+  // Importa tu archivo de API arriba: 
+  // import 'ruta/hacia/tu/api_service.dart';
+
+  Future<void> _loadJsonData() async {
+    try {
+      final jsonData = await getCategoriasMaterias();
+      
+      final List<dynamic> categoriasApi = jsonData['data'];
+      final Map<String, List<dynamic>> grouped = {};
+      final List<dynamic> allSubjectsFlat = [];
+
+      for (var cat in categoriasApi) {
+        String catName = cat['categoria'];
+        List<dynamic> materiasArray = cat['materias'];
+        List<dynamic> materiasAdaptadas = [];
+
+        for (var mat in materiasArray) {
+          var subjectAdapted = {
+            'Subcategoría': catName,
+            'Materia': mat['materia'], 
+            'id_materia': mat['id_materia'] 
+          };
+          materiasAdaptadas.add(subjectAdapted);
+          allSubjectsFlat.add(subjectAdapted);
+        }
+
+        grouped[catName] = materiasAdaptadas;
+      }
+
+      if (mounted) {
+        setState(() {
+          _allSubjects = allSubjectsFlat;
+          _subjectsByCategory = grouped;
+          _isLoadingData = false;
+        });
+      }
+    } catch (e) {
+      print("🔥 Error al cargar materias: $e");
+      
+      if (mounted) setState(() => _isLoadingData = false);
+    }
+  }
+  // 🔍 BUSCADOR OPTIMIZADO CON DEBOUNCE (Evita trabar el teclado)
+  void _onSearchChanged(String query) {
+    if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
+
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      if (!mounted) return;
+
+      setState(() {
+        if (query.trim().isEmpty) {
+          _searchResults = [];
+        } else {
+          final lowerQuery = query.toLowerCase();
+          _searchResults = _allSubjects.where((subject) {
+            final materia = subject['Materia']?.toString().toLowerCase() ?? '';
+            return materia.contains(lowerQuery);
+          }).toList();
+        }
+      });
+    });
+  }
+
+  // 💡 BOTTOM SHEET: CARGA INSTANTÁNEA GRACIAS A LA PRE-INDEXACIÓN O(1)
+  void _openCategoryBottomSheet(
+      BuildContext context, String categoryName, int colorHex) {
+    // Buscamos directo en el diccionario. Si no hay, devolvemos lista vacía.
+    final subjects = _subjectsByCategory[categoryName] ?? [];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.70, // 70% de pantalla
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+          ),
+          child: Column(
+            children: [
+              Container(
+                margin: const EdgeInsets.only(top: 12, bottom: 20),
+                width: 50,
+                height: 5,
+                decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(10)),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                          color: Color(colorHex).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12)),
+                      child:
+                          Icon(Icons.category_rounded, color: Color(colorHex)),
                     ),
-                  ),
+                    const SizedBox(width: 15),
+                    Expanded(
+                      child: Text(
+                        categoryName,
+                        style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0F172A)),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
+              const Divider(height: 30),
 
-            const SliverToBoxAdapter(child: SizedBox(height: 28)),
+              // LISTA DE MATERIAS DENTRO DE LA CATEGORÍA
+              Expanded(
+                child: subjects.isEmpty
+                    ? const Center(
+                        child: Text('Próximamente materias aquí...',
+                            style: TextStyle(color: Colors.grey)))
+                    : ListView.builder(
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: subjects.length,
+                        itemBuilder: (context, index) {
+                          final subject = subjects[index];
+                          return ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 4),
+                            title: Text(subject['Materia'],
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF334155))),
+                            trailing: const Icon(
+                                Icons.arrow_forward_ios_rounded,
+                                size: 16,
+                                color: Colors.grey),
+                            onTap: () {
+                              // 1. Cerramos el BottomSheet de categorías
+                              Navigator.pop(context);
 
-            // Chips de categorías
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: 42,
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  scrollDirection: Axis.horizontal,
-                  itemCount: categories.length,
-                  itemBuilder: (context, index) {
-                    final cat = categories[index];
-                    final isSelected = selectedCategory == cat;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 10),
-                      child: FilterChip(
-                        selected: isSelected,
-                        label: Text(
-                          cat,
-                          style: TextStyle(
-                            fontWeight:
-                                isSelected ? FontWeight.w600 : FontWeight.w500,
-                            color: isSelected
-                                ? Colors.white
-                                : const Color(0xFF334155),
-                          ),
-                        ),
-                        backgroundColor: Colors.white,
-                        selectedColor: const Color(0xFF1E40AF),
-                        elevation: isSelected ? 0 : 1,
-                        pressElevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                          side: BorderSide(
-                            color: isSelected
-                                ? Colors.transparent
-                                : Colors.grey.shade300,
-                          ),
-                        ),
-                        onSelected: (_) {
-                          setState(() => selectedCategory = cat);
+                              // 2. Mostramos el diálogo de confirmación de seguridad
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(20)),
+                                    title: const Text("Confirmar Búsqueda",
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold)),
+                                    content: Text(
+                                        "¿Deseas buscar un tutor disponible ahora mismo para la materia de ${subject['Materia']}?"),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(
+                                            context), // Cierra el diálogo sin hacer nada
+                                        child: const Text("Cancelar",
+                                            style:
+                                                TextStyle(color: Colors.grey)),
+                                      ),
+                                      ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color(
+                                              0xFF1E40AF), // Tu color azul premium
+                                          shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10)),
+                                        ),
+                                        onPressed: () {
+                                          Navigator.pop(
+                                              context); // Cierra el diálogo
+
+                                          // 3. ¡Ahora sí! Lanzamos la pantalla del Radar
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  RadarSearchScreen(
+                                                subjectName: subject['Materia'],
+                                                subjectId: subject['id_materia'].toString(),
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        child: const Text("Sí, Buscar Tutor",
+                                            style: TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold)),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            },
+                          );
                         },
                       ),
-                    );
-                  },
-                ),
               ),
-            ),
-
-            const SliverToBoxAdapter(child: SizedBox(height: 32)),
-
-            // Sección Ciencias Exactas
-            _buildSection(
-              context,
-              title: 'CIENCIAS EXACTAS',
-              items: [
-                _SubjectCard(letter: 'F', title: 'Física Aplicada'),
-                _SubjectCard(letter: 'M', title: 'Mecánica Aplicada'),
-                _SubjectCard(letter: 'T', title: 'Termodinámica Aplicada'),
-              ],
-            ),
-
-            const SliverToBoxAdapter(child: SizedBox(height: 40)),
-
-            // Sección Ingeniería Avanzada
-            _buildSection(
-              context,
-              title: 'INGENIERÍA AVANZADA',
-              items: [
-                _SubjectCard(letter: 'E', title: 'Electromagnetismo Avanzado'),
-                _SubjectCard(letter: 'C', title: 'Control y Automatización'),
-              ],
-              isExpanded: true,
-            ),
-
-            const SliverToBoxAdapter(child: SizedBox(height: 40)),
-
-            // Sección Ciencias Sociales
-            _buildSectionHeader('CIENCIAS SOCIALES Y ECONÓMICAS'),
-          ],
-        ),
-      ),
-      bottomNavigationBar: StudentBottomNav(
-        currentIndex: -1, // -1 porque no es ninguna pestaña principal
-        onTap: (index) {
-          // Navegación sin animación brusca
-          Navigator.of(context).pushAndRemoveUntil(
-            PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) =>
-                  RoleBasedNavigation(),
-              transitionDuration: Duration.zero,
-            ),
-            (route) => false,
-          );
-        },
-        onCenterTap: () {
-          // Ya estamos en Tutoría Instantánea → no hacer nada o vibrar
-          HapticFeedback.lightImpact();
-        },
-      ),
-    );
-  }
-
-  Widget _buildSection(
-    BuildContext context, {
-    required String title,
-    required List<_SubjectCard> items,
-    bool isExpanded = false,
-  }) {
-    return SliverToBoxAdapter(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF1E40AF),
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                if (isExpanded)
-                  const Icon(Icons.keyboard_arrow_up_rounded,
-                      color: Color(0xFF64748B)),
-              ],
-            ),
+            ],
           ),
-          const SizedBox(height: 16),
-          ...items,
-        ],
-      ),
+        );
+      },
     );
   }
-
-  Widget _buildSectionHeader(String title) {
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        child: Text(
-          title,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF334155),
-            letterSpacing: 0.5,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// Widget reutilizable para cada materia (sin cambios)
-class _SubjectCard extends StatelessWidget {
-  final String letter;
-  final String title;
-
-  const _SubjectCard({required this.letter, required this.title});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-      child: Material(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        elevation: 2,
-        shadowColor: Colors.black.withOpacity(0.08),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () {
-            // TODO: Navegar a detalle de materia o chat con tutor
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Abrir detalle de: $title')),
-            );
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-            child: Row(
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1E40AF),
-                    borderRadius: BorderRadius.circular(12),
+    final bool isSearching = _searchController.text.trim().isNotEmpty;
+
+    return Scaffold(
+      backgroundColor: AppColors.backgroundLight,
+      body: SafeArea(
+        child: _isLoadingData
+            ? const Center(
+                child: CircularProgressIndicator(color: Color(0xFF1E40AF)))
+            : CustomScrollView(
+                physics: const BouncingScrollPhysics(),
+                slivers: [
+                  // 1. HEADER
+                  SliverAppBar(
+                    backgroundColor: const Color(0xFFF8FAFC),
+                    floating: true,
+                    elevation: 0,
+                    automaticallyImplyLeading: false,
+                    title: const Text(
+                      'Tutor Instantáneo',
+                      style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF0F172A)),
+                    ),
+                    leading: IconButton(
+                      icon: const Icon(Icons.arrow_back_rounded,
+                          color: Color(0xFF0F172A)),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
                   ),
-                  child: Center(
-                    child: Text(
-                      letter,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+
+                  // 2. BUSCADOR
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '¿Qué quieres\naprender hoy?',
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineMedium!
+                                .copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  fontFamily: 'outfit',
+                                  color: const Color(0xFF0F172A),
+                                  height: 1.1,
+                                ),
+                          ),
+                          const SizedBox(height: 20),
+                          Container(
+                            height: 56,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                    color: Colors.black.withOpacity(0.04),
+                                    blurRadius: 15,
+                                    offset: const Offset(0, 5)),
+                              ],
+                            ),
+                            child: TextField(
+                              controller: _searchController,
+                              onChanged: _onSearchChanged,
+                              decoration: InputDecoration(
+                                hintText: 'Ej. Matemáticas, Inglés...',
+                                hintStyle:
+                                    TextStyle(color: Colors.grey.shade400),
+                                prefixIcon: const Icon(Icons.search_rounded,
+                                    color: Color(0xFF1E40AF)),
+                                suffixIcon: isSearching
+                                    ? IconButton(
+                                        icon: const Icon(Icons.clear,
+                                            color: Colors.grey, size: 20),
+                                        onPressed: () {
+                                          _searchController.clear();
+                                          _onSearchChanged('');
+                                          FocusScope.of(context).unfocus();
+                                        },
+                                      )
+                                    : null,
+                                border: InputBorder.none,
+                                contentPadding:
+                                    const EdgeInsets.symmetric(vertical: 18),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 18),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF0F172A),
+
+                  // 3. LÓGICA CONDICIONAL: ¿MUESTRA LISTA DE BÚSQUEDA O EL GRID DE CATEGORÍAS?
+                  if (isSearching) ...[
+                    // MODO BÚSQUEDA: Muestra los resultados limpios
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.only(
+                            left: 24, bottom: 10, top: 10),
+                        child: Text(
+                          "Resultados (${_searchResults.length})",
+                          style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                const Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 18,
-                  color: Colors.grey,
-                ),
-              ],
-            ),
-          ),
-        ),
+                    _searchResults.isEmpty
+                        ? const SliverToBoxAdapter(
+                            child: Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(40.0),
+                                child: Text("No se encontraron materias 😕",
+                                    style: TextStyle(color: Colors.grey)),
+                              ),
+                            ),
+                          )
+                        : SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                final subject = _searchResults[index];
+                                return ListTile(
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 24, vertical: 2),
+                                  title: Text(subject['Materia'],
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF334155))),
+                                  subtitle: Text(subject['Subcategoría'],
+                                      style: TextStyle(
+                                          color: Colors.grey.shade500,
+                                          fontSize: 12)),
+                                  trailing: const Icon(
+                                      Icons.arrow_forward_ios_rounded,
+                                      size: 16,
+                                      color: Colors.grey),
+                                  onTap: () {
+                                    FocusScope.of(context).unfocus();
+                                    print(
+                                        "🚀 BUSCAR TUTOR PARA: ${subject['Materia']}");
+                                    // TODO: Navegar al radar
+                                  },
+                                );
+                              },
+                              childCount: _searchResults.length,
+                            ),
+                          ),
+                  ] else ...[
+                    // MODO NORMAL: Muestra el Grid de Categorías
+                    const SliverToBoxAdapter(
+                      child: Padding(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        child: Text(
+                          'Explorar Categorías',
+                          style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF0F172A)),
+                        ),
+                      ),
+                    ),
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      sliver: SliverGrid(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 15,
+                          crossAxisSpacing: 15,
+                          childAspectRatio:
+                              1.15, // Tarjetas un poco más cuadradas y estéticas
+                        ),
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            final cat = _uiCategories[index];
+                            return GestureDetector(
+                              onTap: () {
+                                HapticFeedback.lightImpact();
+                                _openCategoryBottomSheet(
+                                    context, cat['name'], cat['color']);
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(24),
+                                  boxShadow: [
+                                    BoxShadow(
+                                        color: Colors.black.withOpacity(0.03),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4)),
+                                  ],
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: Color(cat['color'])
+                                              .withOpacity(0.1),
+                                          borderRadius:
+                                              BorderRadius.circular(14),
+                                        ),
+                                        child: Icon(cat['icon'],
+                                            color: Color(cat['color']),
+                                            size: 26),
+                                      ),
+                                      Text(
+                                        cat['name'],
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                            fontFamily: 'manrope',
+                                            fontSize: 14,
+                                            color: Color(0xFF0F172A),
+                                            height: 1.2),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                          childCount: _uiCategories.length,
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  const SliverToBoxAdapter(
+                      child: SizedBox(height: 100)), // Espacio para el navbar
+                ],
+              ),
       ),
+      // bottomNavigationBar: StudentBottomNav(
+      //   currentIndex: -1, // -1 porque no es ninguna pestaña principal
+      //   onTap: (index) {
+      //     Navigator.of(context).pushAndRemoveUntil(
+      //       PageRouteBuilder(
+      //         pageBuilder: (context, animation, secondaryAnimation) =>
+      //             const RoleBasedNavigation(),
+      //         transitionDuration: Duration.zero,
+      //       ),
+      //       (route) => false,
+      //     );
+      //   },
+      //   onCenterTap: () => HapticFeedback.lightImpact(),
+      // ),
+    
     );
   }
 }

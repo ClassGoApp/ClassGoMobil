@@ -7,6 +7,7 @@ import 'package:flutter_projects/view/layout/main_shell.dart';
 import 'package:flutter_projects/view/student/dashboard_student.dart';
 
 class RoleBasedNavigation extends StatelessWidget {
+  const RoleBasedNavigation({super.key});
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
@@ -32,7 +33,7 @@ class RoleBasedNavigation extends StatelessWidget {
         if (authProvider.isStudent) {
           return DashboardStudent();
         }
-        return const MainShell();
+        return const HomeScreen();
       },
     );
   }

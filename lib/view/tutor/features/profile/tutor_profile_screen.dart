@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_projects/view/tutor/features/profile/widgets/logout_section.dart';
 import 'package:flutter_projects/view/tutor/features/profile/widgets/payment_method_detail.dart';
+import 'package:flutter_projects/view/tutor/features/profile/widgets/qr_payment_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -400,14 +401,27 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
           ),
         ),
         const SizedBox(height: 24),
-        _buildListTile("MÉTODOS DE COBRO", Icons.credit_card_outlined,
-            mainTextColor, innerBgColor),
-        const SizedBox(height: 12),
-        _buildListTile("DIPLOMAS Y CERTIFICADOS",
-            Icons.workspace_premium_outlined, mainTextColor, innerBgColor),
-        const SizedBox(height: 12),
-        _buildListTile("AJUSTES AVANZADOS", Icons.settings_outlined,
-            Colors.grey, innerBgColor),
+        const SizedBox(height: 24),
+        _buildListTile(
+          "MÉTODO DE COBRO (QR)", 
+          Icons.qr_code_scanner_rounded,
+          mainTextColor, 
+          innerBgColor,
+          onTap: () {
+             Navigator.push(
+               context,
+               MaterialPageRoute(
+                 builder: (context) => const QrPaymentScreen(initialQrUrl: null),
+               ),
+             );
+          }
+        ),
+        // const SizedBox(height: 12),
+        // _buildListTile("DIPLOMAS Y CERTIFICADOS",
+        //     Icons.workspace_premium_outlined, mainTextColor, innerBgColor),
+        // const SizedBox(height: 12),
+        // _buildListTile("AJUSTES AVANZADOS", Icons.settings_outlined,
+        //     Colors.grey, innerBgColor),
         const SizedBox(height: 24),
         _buildChipsSection(
           title: "MATERIAS",
@@ -603,7 +617,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
   }
 
   Widget _buildListTile(
-      String title, IconData icon, Color textColor, Color bgColor) {
+      String title, IconData icon, Color textColor, Color bgColor, {VoidCallback? onTap}) {
     return Container(
       decoration: BoxDecoration(
           color: bgColor, borderRadius: BorderRadius.circular(20)),
@@ -618,7 +632,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                 fontWeight: FontWeight.w900,
                 letterSpacing: 0.5)),
         trailing: Icon(Icons.chevron_right_rounded, color: Colors.grey[400]),
-        onTap: () {},
+        onTap: onTap,
       ),
     );
   }

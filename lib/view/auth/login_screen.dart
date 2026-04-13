@@ -448,7 +448,7 @@ class _LoginScreenState extends State<LoginScreen>
                                 context,
                                 MaterialPageRoute(
                                     builder: (_) =>
-                                       const MainShell()),
+                                       const HomeScreen()),
                                 (Route<dynamic> route) => false,
                               );
                             },
