@@ -29,7 +29,7 @@ class RadarSearchScreen extends StatefulWidget {
     super.key,
     required this.subjectName,
     required this.subjectId,
-    this.timerSeconds = 120,
+    this.timerSeconds = 500,
   });
 
   @override
@@ -109,10 +109,8 @@ class _RadarSearchScreenState extends State<RadarSearchScreen>
       if (_batchId == null) return;
 
       try {
-        // final prefs = await SharedPreferences.getInstance();
-        // final miToken = prefs.getString('token') ?? '';
-
-        final miToken = "7787|3jzHK0bqFZuRbtjRkzNo1F0GUD8rpdl5Hr10BAmz5d597a3e";
+        final prefs = await SharedPreferences.getInstance();
+        final miToken = prefs.getString('token') ?? '';
 
         final jsonResponse = await pollAcceptedTutors(_batchId!, miToken);
         final List<dynamic> candidatosNuevos = jsonResponse['data'] ?? [];
@@ -125,11 +123,11 @@ class _RadarSearchScreenState extends State<RadarSearchScreen>
               _acceptedTutors = candidatosNuevos.map<TutorResponse>((json) {
               String imagenDelTutor = json['image'] ?? 'assets/images/default_avatar.png';
 
-              if (!imagenDelTutor.startsWith('https') && !imagenDelTutor.startsWith('assets')) {
+              if (!imagenDelTutor.startsWith('http') && !imagenDelTutor.startsWith('assets')) {
                 if (!imagenDelTutor.startsWith('/')) {
                   imagenDelTutor = '/$imagenDelTutor';
                 }
-                imagenDelTutor = '$storageBaseUrl$imagenDelTutor'; 
+                imagenDelTutor = '$storageBaseUrl$imagenDelTutor';
               }
                 return TutorResponse(
                   id: json['id'] ?? 0,
@@ -376,8 +374,6 @@ class _RadarSearchScreenState extends State<RadarSearchScreen>
           ),
         ),
 
-        // La Lista Flexible (Para 1 o 100 tutores)
-        // ... (resto de tu _buildFoundTutorsView)
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -403,10 +399,9 @@ class _RadarSearchScreenState extends State<RadarSearchScreen>
                           duration: Duration(seconds: 1)),
                     );
 
-                    // final prefs = await SharedPreferences.getInstance();
-                    // final miToken = prefs.getString('auth_token') ?? '';
+                    final prefs = await SharedPreferences.getInstance();
+                    final miToken = prefs.getString('token') ?? '';
 
-                    final miToken = "7787|3jzHK0bqFZuRbtjRkzNo1F0GUD8rpdl5Hr10BAmz5d597a3e";
                     final resultado = await crearReserva(
                         int.parse(_batchId!), tutor.id, miToken);
 

@@ -96,6 +96,44 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
     super.dispose();
   }
 
+  void _confirmarYNavegarAlRadar(BuildContext context, String materiaName, String materiaId) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text("Confirmar Búsqueda", style: TextStyle(fontWeight: FontWeight.bold)),
+          content: Text("¿Deseas buscar un tutor disponible ahora mismo para la materia de $materiaName?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancelar", style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1E40AF),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => RadarSearchScreen(
+                      subjectName: materiaName,
+                      subjectId: materiaId,
+                    ),
+                  ),
+                );
+              },
+              child: const Text("Sí, Buscar Tutor", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   // 🧠 CARGA Y PRE-INDEXACIÓN DEL JSON (Magia de rendimiento)
   // Future<void> _loadJsonData() async {
   //   try {
@@ -287,61 +325,11 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                               // 1. Cerramos el BottomSheet de categorías
                               Navigator.pop(context);
 
-                              // 2. Mostramos el diálogo de confirmación de seguridad
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return AlertDialog(
-                                    shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(20)),
-                                    title: const Text("Confirmar Búsqueda",
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold)),
-                                    content: Text(
-                                        "¿Deseas buscar un tutor disponible ahora mismo para la materia de ${subject['Materia']}?"),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(
-                                            context), // Cierra el diálogo sin hacer nada
-                                        child: const Text("Cancelar",
-                                            style:
-                                                TextStyle(color: Colors.grey)),
-                                      ),
-                                      ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(
-                                              0xFF1E40AF), // Tu color azul premium
-                                          shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(10)),
-                                        ),
-                                        onPressed: () {
-                                          Navigator.pop(
-                                              context); // Cierra el diálogo
-
-                                          // 3. ¡Ahora sí! Lanzamos la pantalla del Radar
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  RadarSearchScreen(
-                                                subjectName: subject['Materia'],
-                                                subjectId: subject['id_materia'].toString(),
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                        child: const Text("Sí, Buscar Tutor",
-                                            style: TextStyle(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.bold)),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              );
-                            },
+                              _confirmarYNavegarAlRadar(
+                                context, 
+                                subject['Materia'], 
+                                subject['id_materia'].toString()
+                              );},
                           );
                         },
                       ),
@@ -379,11 +367,11 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF0F172A)),
                     ),
-                    leading: IconButton(
-                      icon: const Icon(Icons.arrow_back_rounded,
-                          color: Color(0xFF0F172A)),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
+                    // leading: IconButton(
+                    //   icon: const Icon(Icons.arrow_back_rounded,
+                    //       color: Color(0xFF0F172A)),
+                    //   onPressed: () => Navigator.of(context).pop(),
+                    // ),
                   ),
 
                   // 2. BUSCADOR
@@ -495,10 +483,13 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                                       size: 16,
                                       color: Colors.grey),
                                   onTap: () {
-                                    FocusScope.of(context).unfocus();
-                                    print(
-                                        "🚀 BUSCAR TUTOR PARA: ${subject['Materia']}");
-                                    // TODO: Navegar al radar
+                                    FocusScope.of(context).unfocus(); 
+                                    
+                                    _confirmarYNavegarAlRadar(
+                                      context, 
+                                      subject['Materia'], 
+                                      subject['id_materia'].toString()
+                                    );
                                   },
                                 );
                               },

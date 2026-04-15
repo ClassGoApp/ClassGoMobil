@@ -5,11 +5,9 @@ import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as path;
 
-// final String baseUrl = 'https://classgoapp.com/api';
-// final String storageBaseUrl = 'https://classgoapp.com/storage';
+final String baseUrl = 'https://classgoapp.com/api';
+final String storageBaseUrl = 'https://classgoapp.com/storage';
 
-final String baseUrl = 'http://192.168.0.145:8000/api';
-final String storageBaseUrl = 'http://192.168.0.145:8000/storage';
 
 class TokenExpiredException implements Exception {
   final String message =
@@ -2873,34 +2871,6 @@ Future<Map<String, dynamic>> chooseTutor(
   }
 }
 
-/// 4. Subir comprobante y crear la reserva (Recibe el link de Meet)
-Future<Map<String, dynamic>> submitInstantBooking(
-    String batchId, String imagePath, String token) async {
-  try {
-    var request = http.MultipartRequest(
-        'POST', Uri.parse('$baseUrl/instantBooking/$batchId'));
-
-    request.headers.addAll({
-      'Accept': 'application/json',
-      'Authorization': 'Bearer $token',
-    });
-
-    request.files
-        .add(await http.MultipartFile.fromPath('comprobante', imagePath));
-
-    var streamedResponse = await request.send();
-    var response = await http.Response.fromStream(streamedResponse);
-
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      return json.decode(response.body);
-    } else {
-      throw Exception(
-          'Error al subir comprobante. Código: ${response.statusCode}');
-    }
-  } catch (e) {
-    throw Exception('Error de conexión al subir comprobante: $e');
-  }
-}
 
 /// Obtener lista de categorías y materias
 Future<Map<String, dynamic>> getCategoriasMaterias() async {

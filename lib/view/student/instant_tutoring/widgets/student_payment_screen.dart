@@ -99,7 +99,6 @@ class _StudentPaymentScreenState extends State<StudentPaymentScreen> {
           _isWaitingForTutor = true; 
         });
 
-        // Radar para espiar al tutor
         _iniciarPolling(miToken);
 
       } else {
@@ -133,7 +132,7 @@ class _StudentPaymentScreenState extends State<StudentPaymentScreen> {
           if (uiState == 'accepted') {
             timer.cancel(); 
             
-            String linkGenerado = estado['booking']?['meeting_link'] ?? 'https://meet.google.com/';
+            String linkGenerado = estado['booking']?['meeting_link'] ?? 'https://meet.google.com/upy-mxim-nrm';
 
             if (mounted) {
               Navigator.pushReplacement(

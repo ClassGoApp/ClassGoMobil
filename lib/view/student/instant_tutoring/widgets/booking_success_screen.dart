@@ -217,12 +217,26 @@ class BookingSuccessScreen extends StatelessWidget {
   // Widget de apoyo para las filas de detalles
   Widget _buildDetailRow(IconData icon, String title, String value) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start, 
       children: [
         Icon(icon, size: 20, color: AppColors.greyColor),
         const SizedBox(width: 12),
         Text(title, style: const TextStyle(fontFamily: _kFontFamily, fontSize: 14, color: AppColors.greyColor)),
-        const Spacer(),
-        Text(value, style: const TextStyle(fontFamily: _kTitleFont, fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.blackColor)),
+        
+        const SizedBox(width: 16),
+        
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: const TextStyle(
+              fontFamily: _kTitleFont, 
+              fontSize: 14, 
+              fontWeight: FontWeight.w700, 
+              color: AppColors.blackColor
+            ),
+          ),
+        ),
       ],
     );
   }
