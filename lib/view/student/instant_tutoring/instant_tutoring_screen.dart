@@ -9,6 +9,7 @@ import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/components/role_based_navigation.dart';
 import 'package:flutter_projects/view/student/instant_tutoring/widgets/radar_search_screen.dart';
 import 'package:flutter_projects/view/student/widgets/student_bottom_nav.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class InstantTutoringScreen extends StatefulWidget {
   const InstantTutoringScreen({
@@ -187,7 +188,12 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
 
   Future<void> _loadJsonData() async {
     try {
-      final jsonData = await getCategoriasMaterias();
+
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+
+      // Llama al api_service
+      final jsonData = await getCategoriasMaterias(token);
       
       final List<dynamic> categoriasApi = jsonData['data'];
       final Map<String, List<dynamic>> grouped = {};

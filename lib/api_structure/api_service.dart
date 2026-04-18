@@ -2802,7 +2802,7 @@ Future<Map<String, dynamic>> startRadarSearch(
     String subjectId, String token) async {
   try {
     final response = await http.post(
-      Uri.parse('$baseUrl/start'),
+      Uri.parse('$baseUrl/batches/start'),
       headers: {
         'Accept': 'application/json',
         'Authorization': 'Bearer $token',
@@ -2811,7 +2811,12 @@ Future<Map<String, dynamic>> startRadarSearch(
     );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
-      return json.decode(response.body);
+      final data = json.decode(response.body);
+      if (data['success'] == true) {
+        return data;
+      } else {
+        throw Exception('Backend rechazó la solicitud.');
+      }
     } else {
       throw Exception('Error al iniciar radar. Código: ${response.statusCode}');
     }
@@ -2820,12 +2825,83 @@ Future<Map<String, dynamic>> startRadarSearch(
   }
 }
 
-/// 2. Hacer Polling para ver qué tutores aceptaron
-Future<Map<String, dynamic>> pollAcceptedTutors(
-    String batchId, String token) async {
+/// 2. Disparar Emails y Notificaciones (FCM) a Tutores
+Future<void> sendRadarEmails(int batchId, String token) async {
+  try {
+    final response = await http.post(
+      Uri.parse('$baseUrl/batches/send-emails'),
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'batch_id': batchId,
+        'limit': 30,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      print("🚀 Emails/Notificaciones enviados correctamente");
+    } else {
+      print("❌ Error backend: ${response.body}");
+    }
+  } catch (e) {
+    print("⚠️ Error: $e");
+  }
+}
+
+// 3. Obtener estado del Radar (Polling para Cronómetro)
+Future<Map<String, dynamic>> getBatchStatus(int batchId, String token) async {
   try {
     final response = await http.get(
-      Uri.parse('$baseUrl/acceptedTutors/$batchId'),
+      Uri.parse('$baseUrl/batches/$batchId/status'),
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception(
+          'Error al obtener estado del batch. Código: ${response.statusCode}');
+    }
+  } catch (e) {
+    throw Exception('Error de conexión en status: $e');
+  }
+}
+
+/// 4. Verificar si el estudiante ya tiene un Radar activo (Recuperación de sesión)
+Future<Map<String, dynamic>> checkActiveBatch(String token) async {
+  try {
+    final response = await http.get(
+      Uri.parse('$baseUrl/batches/active'),
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception(
+          'Error al verificar radar activo. Código: ${response.statusCode}');
+    }
+  } catch (e) {
+    throw Exception('Error de conexión en active batch: $e');
+  }
+}
+
+/// 5. Hacer Polling para ver qué tutores aceptaron
+Future<Map<String, dynamic>> pollAcceptedTutors(String batchId, String token) async {
+  try {
+    final String urlExacta = '$baseUrl/batches/$batchId/accepted-tutors';
+    print("🕵️‍♂️ LLAMANDO A POLLING: $urlExacta"); 
+    final response = await http.get(
+      Uri.parse(urlExacta),
       headers: {
         'Accept': 'application/json',
         'Authorization': 'Bearer $token',
@@ -2843,104 +2919,143 @@ Future<Map<String, dynamic>> pollAcceptedTutors(
   }
 }
 
-/// 3. Confirmar a un tutor específico (Bloquearlo)
-Future<Map<String, dynamic>> chooseTutor(
-    String batchId, String itemId, String token) async {
+/// 6. Elegir a un tutor de la lista y crear la reserva (Checkout)
+Future<Map<String, dynamic>> reserveTutor(
+    int batchId, int itemId, String token) async {
   try {
     final response = await http.post(
-      Uri.parse('$baseUrl/chooseTutor/$batchId'),
+      Uri.parse('$baseUrl/batches/$batchId/reserve'), // Ruta oficial
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       },
+      // Laravel exige estrictamente 'item_id'
       body: jsonEncode({'item_id': itemId}),
     );
 
-    print("STATUS CHOOSE TUTOR: ${response.statusCode}");
-    print("BODY CHOOSE TUTOR: ${response.body}");
+    final data = json.decode(response.body);
 
+    // Código 200 (éxito)
     if (response.statusCode == 200) {
-      return json.decode(response.body);
-    } else {
-      final errorData = json.decode(response.body);
-      throw Exception(errorData['message'] ?? 'Error al elegir tutor');
-    }
-  } catch (e) {
-    throw Exception('Error de conexión al elegir tutor: $e');
-  }
-}
-
-
-/// Obtener lista de categorías y materias
-Future<Map<String, dynamic>> getCategoriasMaterias() async {
-  try {
-    final response = await http.get(
-      Uri.parse('$baseUrl/categoriasMaterias'),
-      headers: {
-        'Accept': 'application/json',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      return json.decode(response.body);
-    } else {
-      throw Exception(
-          'Error al cargar categorías. Código: ${response.statusCode}');
-    }
-  } catch (e) {
-    throw Exception('Error de conexión al cargar categorías: $e');
-  }
-}
-
-// FUNCIÓN PARA CREAR LA RESERVA (Paso 1)
-Future<Map<String, dynamic>> crearReserva(
-    int batchId, int itemId, String token) async {
-  // Fíjate que el batchId va en la URL, tal como lo pide Laravel
-  final String url = '$baseUrl/batches/$batchId/request-booking';
-
-  try {
-    final response = await http.post(
-      Uri.parse(url),
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token', // El token del estudiante logueado
-      },
-      // El item_id va en el body, porque Laravel hace: $request->validate(['item_id' => ...])
-      body: jsonEncode({
-        'item_id': itemId,
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-
-      if (data['ok'] == true) {
+      if (data['success'] == true) {
         return {
           'success': true,
-          'booking_id': data['booking']['id'],
-          'precio': data['booking']['session_fee']
+          'booking_id': data['booking_id'] ?? data['booking']['id'],
+          'precio': data['session_fee'] ?? data['booking']['session_fee'],
+          'ttlMinutes': data['ttlMinutes'],
+          'expiresAt': data['expiresAt'],
         };
       } else {
-        return {'success': false, 'message': data['message']};
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Error desconocido al reservar'
+        };
       }
+    }
+    // Errores controlados por Laravel (403, 404, 409)
+    else if (response.statusCode == 409) {
+      // Ej: "Batch expirado", "Solo se puede reservar un tutor aceptado", "Tutor ya reservado"
+      return {'success': false, 'message': data['message']};
     } else {
-      return {
-        'success': false,
-        'message': 'Error en el servidor: ${response.statusCode}'
-      };
+      throw Exception('Error en el servidor. Código: ${response.statusCode}');
     }
   } catch (e) {
-    return {'success': false, 'message': 'Error de conexión: $e'};
+    return {'success': false, 'message': 'Error de conexión al reservar: $e'};
   }
 }
 
-// FUNCIÓN PARA SUBIR EL COMPROBANTE (Paso 2)
-Future<Map<String, dynamic>> subirComprobante(
-    int bookingId, String imagePath, String token) async {
-  // Asegúrate de que esta URL coincida con tu api.php de Laravel
-  final String url = '$baseUrl/bookings/$bookingId/upload-receipt';
+/// Obtener lista de categorías y materias
+// Future<Map<String, dynamic>> getCategoriasMaterias() async {
+//   try {
+//     final response = await http.get(
+//       Uri.parse('$baseUrl/categoriasMaterias'),
+//       headers: {
+//         'Accept': 'application/json',
+//       },
+//     );
+
+//     if (response.statusCode == 200) {
+//       return json.decode(response.body);
+//     } else {
+//       throw Exception(
+//           'Error al cargar categorías. Código: ${response.statusCode}');
+//     }
+//   } catch (e) {
+//     throw Exception('Error de conexión al cargar categorías: $e');
+//   }
+// }
+
+
+  /// Obtener la lista de categorías y sus materias disponibles
+  Future<Map<String, dynamic>> getCategoriasMaterias(String token) async {
+    try {
+      final response = await http.get(
+        // URL idéntica a la que dicta la Web
+        Uri.parse('$baseUrl/subject-groups/categorias-materias'), 
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token', 
+        },
+      );
+
+      if (response.statusCode == 200) {
+        // Devuelve exactamente el formato: { "data": [ { "id_categoria": 1, ... } ] }
+        return json.decode(response.body); 
+      } else {
+        throw Exception('Error al cargar categorías. Código: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión al cargar categorías: $e');
+    }
+  }
+
+// FUNCIÓN PARA CREAR LA RESERVA (Paso 1)
+// Future<Map<String, dynamic>> crearReserva(
+//     int batchId, int itemId, String token) async {
+//   // Fíjate que el batchId va en la URL, tal como lo pide Laravel
+//   final String url = '$baseUrl/batches/$batchId/request-booking';
+
+//   try {
+//     final response = await http.post(
+//       Uri.parse(url),
+//       headers: {
+//         'Content-Type': 'application/json',
+//         'Accept': 'application/json',
+//         'Authorization': 'Bearer $token', // El token del estudiante logueado
+//       },
+//       // El item_id va en el body, porque Laravel hace: $request->validate(['item_id' => ...])
+//       body: jsonEncode({
+//         'item_id': itemId,
+//       }),
+//     );
+
+//     if (response.statusCode == 200) {
+//       final data = jsonDecode(response.body);
+
+//       if (data['ok'] == true) {
+//         return {
+//           'success': true,
+//           'booking_id': data['booking']['id'],
+//           'precio': data['booking']['session_fee']
+//         };
+//       } else {
+//         return {'success': false, 'message': data['message']};
+//       }
+//     } else {
+//       return {
+//         'success': false,
+//         'message': 'Error en el servidor: ${response.statusCode}'
+//       };
+//     }
+//   } catch (e) {
+//     return {'success': false, 'message': 'Error de conexión: $e'};
+//   }
+// }
+
+/// 7. Subir el comprobante de pago (Voucher/QR)
+Future<Map<String, dynamic>> subirComprobante(int bookingId, String imagePath, String token) async {
+  final String url = '$baseUrl/bookings/$bookingId/receipt';
 
   try {
     var request = http.MultipartRequest('POST', Uri.parse(url));
@@ -2955,16 +3070,15 @@ Future<Map<String, dynamic>> subirComprobante(
 
     var streamedResponse = await request.send();
     var response = await http.Response.fromStream(streamedResponse);
+    final data = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
       return data;
     } else {
-      final errorData = jsonDecode(response.body);
       return {
         'ok': false,
-        'message': errorData['message'] ??
-            'Error en el servidor: ${response.statusCode}'
+        'message':
+            data['message'] ?? 'Error en el servidor: ${response.statusCode}'
       };
     }
   } catch (e) {
@@ -2972,9 +3086,8 @@ Future<Map<String, dynamic>> subirComprobante(
   }
 }
 
-// PASO 3: EL RADAR (Consulta si el tutor ya aceptó y generó el Meet)
-Future<Map<String, dynamic>> consultarEstadoReserva(
-    int bookingId, String token) async {
+/// 8. Consultar el estado del pago y obtener el link (Polling final)
+Future<Map<String, dynamic>> consultarEstadoReserva(int bookingId, String token) async {
   final String url = '$baseUrl/bookings/$bookingId/status';
 
   try {
@@ -2985,17 +3098,19 @@ Future<Map<String, dynamic>> consultarEstadoReserva(
         'Authorization': 'Bearer $token',
       },
     );
-
+    
+    final data = jsonDecode(response.body);
+    
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       return {
         'success': true,
         'ui_state': data['ui_state'],
-        'meeting_link':
-            data['booking'] != null ? data['booking']['meeting_link'] : null,
+        'meeting_link': data['booking']['meeting_link'],
+        'has_receipt': data['payment']['has_receipt']
       };
     } else {
-      return {'success': false, 'message': 'Error: ${response.statusCode}'};
+      return {'success': false, 'message': data['message'] ?? 'Error en el servidor: ${response.statusCode}'};
     }
   } catch (e) {
     return {'success': false, 'message': 'Error de conexión: $e'};
