@@ -98,7 +98,7 @@ class StudentBottomNav extends StatelessWidget {
               child: Center(
                 child: _AnimatedNavItem(
                   icon: Icons.favorite,
-                  label: "FAVORITOS",
+                  label: "FAVORITO",
                   isSelected: currentIndex == 3,
                   onTap: () => onTap(3),
                 ),

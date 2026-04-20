@@ -1,14 +1,10 @@
-import 'dart:convert';
 import 'package:flutter_projects/api_structure/api_service.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
-import 'package:flutter_projects/view/components/role_based_navigation.dart';
 import 'package:flutter_projects/view/student/instant_tutoring/widgets/radar_search_screen.dart';
-import 'package:flutter_projects/view/student/widgets/student_bottom_nav.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class InstantTutoringScreen extends StatefulWidget {
   const InstantTutoringScreen({
@@ -23,15 +19,13 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounceTimer;
 
-  // ==========================================
-  // ⚡ VARIABLES DE ALTO RENDIMIENTO
-  // ==========================================
   bool _isLoadingData = true;
+  bool _isCheckingActive = false;
+  Map<String, dynamic>? _activeBatch;
   List<dynamic> _allSubjects = [];
   List<dynamic> _searchResults = [];
-  Map<String, List<dynamic>> _subjectsByCategory = {}; // Búsqueda O(1)
+  Map<String, List<dynamic>> _subjectsByCategory = {};
 
-  // 🎨 TUS CATEGORÍAS EXACTAS CON DISEÑO PREMIUM
   final List<Map<String, dynamic>> _uiCategories = [
     {'name': 'Primaria', 'icon': Icons.backpack_rounded, 'color': 0xFFF59E0B},
     {'name': 'Secundaria', 'icon': Icons.school_rounded, 'color': 0xFF3B82F6},
@@ -86,7 +80,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
   @override
   void initState() {
     super.initState();
-    _loadJsonData(); 
+    _initFlow();
   }
 
   @override
@@ -96,60 +90,87 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
     super.dispose();
   }
 
-  // 🧠 CARGA Y PRE-INDEXACIÓN DEL JSON (Magia de rendimiento)
-  // Future<void> _loadJsonData() async {
-  //   try {
-  //     final String jsonString = await rootBundle.loadString('assets/materias.json');
-  //     final List<dynamic> jsonData = jsonDecode(jsonString);
-  //     final Map<String, List<dynamic>> grouped = {};
-  //     for (var item in jsonData) {
-  //       final cat = item['Subcategoría'];
-  //       if (cat != null) {
-  //         grouped.putIfAbsent(cat, () => []).add(item);
-  //       }
-  //     }
-  //     if (mounted) {
-  //       setState(() {
-  //         _allSubjects = jsonData;
-  //         _subjectsByCategory = grouped;
-  //         _isLoadingData = false;
-  //       });
-  //     }
-  //   } catch (e) {
-  //     print("🔥 Error cargando materias.json: $e");
-  //     if (mounted) setState(() => _isLoadingData = false);
-  //   }
-  // }
-  // Future<void> _loadJsonData() async {
-  //   final List<dynamic> hardcodedData = [
-  //     {"Subcategoría": "Primaria", "Materia": "Matemáticas para Primaria"},
-  //     {"Subcategoría": "Secundaria", "Materia": "Física para Secundaria"},
-  //     {"Subcategoría": "Idiomas", "Materia": "Inglés Básico"},
-  //     {"Subcategoría": "Ciencias Exactas", "Materia": "Cálculo I"},
-  //     {"Subcategoría": "Ingeniería Avanzada", "Materia": "Termodinámica"},
-  //   ];
+  Future<void> _initFlow() async {
+    await _loadJsonData();
+    await _checkActiveSession();
 
-  //   final Map<String, List<dynamic>> grouped = {};
-  //   for (var item in hardcodedData) {
-  //     grouped.putIfAbsent(item['Subcategoría'], () => []).add(item);
-  //   }
+    if (_activeBatch != null && mounted) {
+      final subjectId = _activeBatch!['subject_id'].toString();
+      final subjectName = _getSubjectNameFromId(subjectId);
 
-  //   if (mounted) {
-  //     setState(() {
-  //       _allSubjects = hardcodedData;
-  //       _subjectsByCategory = grouped;
-  //       _isLoadingData = false; // Apagamos el circulito de carga
-  //     });
-  //   }
-  // }
+      _navegarAlRadar(subjectName, subjectId, _activeBatch!['seconds_left'] ?? 300);
+    }
+  }
 
+  Future<void> _checkActiveSession() async {
+    if (!mounted) return;
+    setState(() => _isCheckingActive = true);
 
-  // Importa tu archivo de API arriba: 
-  // import 'ruta/hacia/tu/api_service.dart';
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+      
+      final result = await checkActiveBatch(token);
+      if (result['active'] == true) {
+        _activeBatch = result;
+      } else {
+        _activeBatch = null;
+      }
+    } catch (e) {
+      _activeBatch = null;
+    } finally {
+      if (mounted) {
+        setState(() => _isCheckingActive = false); 
+      }
+    }
+  }
+
+  String _getSubjectNameFromId(String subjectId) {
+    for (var subject in _allSubjects) {
+      if (subject['id_materia'].toString() == subjectId) {
+        return subject['Materia'];
+      }
+    }
+    return "Tutoría Activa";
+  }
+
+  void _confirmarYNavegarAlRadar(BuildContext context, String materiaName, String materiaId) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text("Confirmar Búsqueda", style: TextStyle(fontWeight: FontWeight.bold)),
+          content: Text("¿Deseas buscar un tutor disponible ahora mismo para la materia de $materiaName?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancelar", style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1E40AF),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+                _navegarAlRadar(materiaName, materiaId, 300);
+              },
+              child: const Text("Sí, Buscar Tutor", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   Future<void> _loadJsonData() async {
     try {
-      final jsonData = await getCategoriasMaterias();
+
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+
+      final jsonData = await getCategoriasMaterias(token);
       
       final List<dynamic> categoriasApi = jsonData['data'];
       final Map<String, List<dynamic>> grouped = {};
@@ -186,7 +207,45 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
       if (mounted) setState(() => _isLoadingData = false);
     }
   }
-  // 🔍 BUSCADOR OPTIMIZADO CON DEBOUNCE (Evita trabar el teclado)
+
+  void _procesarToqueMateria(String materiaName, String materiaId) {
+    FocusScope.of(context).unfocus();
+
+    if (_isCheckingActive) return;
+
+    if (_activeBatch != null) {
+      final activeSubjectId = _activeBatch!['subject_id'].toString();
+      final activeSubjectName = _getSubjectNameFromId(activeSubjectId);
+
+      // 💡 CIRUGÍA 1: Conversión segura para evitar el crasheo de Double a Int
+      final rawSeconds = _activeBatch!['seconds_left'];
+      final int secondsToPass = (rawSeconds is num) ? rawSeconds.toInt() : 300;
+
+      // Usamos la variable convertida "secondsToPass"
+      _navegarAlRadar(activeSubjectName, activeSubjectId, secondsToPass, isRecovered: true);
+    } else {
+      _confirmarYNavegarAlRadar(context, materiaName, materiaId);
+    }
+  }
+
+  // 💡 Le agregamos el parámetro opcional "isRecovered"
+  void _navegarAlRadar(String name, String id, int seconds, {bool isRecovered = false}) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => RadarSearchScreen(
+          subjectName: name,
+          subjectId: id,
+          timerSeconds: seconds,
+          isRecovered: isRecovered, // 💡 Se lo pasamos al Radar
+        ),
+      ),
+    ).then((_) {
+      _checkActiveSession();
+    });
+  }
+
+  // BUSCADOR OPTIMIZADO CON DEBOUNCE (Evita trabar el teclado)
   void _onSearchChanged(String query) {
     if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
 
@@ -207,10 +266,9 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
     });
   }
 
-  // 💡 BOTTOM SHEET: CARGA INSTANTÁNEA GRACIAS A LA PRE-INDEXACIÓN O(1)
-  void _openCategoryBottomSheet(
-      BuildContext context, String categoryName, int colorHex) {
-    // Buscamos directo en el diccionario. Si no hay, devolvemos lista vacía.
+  // CARGA INSTANTÁNEA GRACIAS A LA PRE-INDEXACIÓN O(1)
+  void _openCategoryBottomSheet(BuildContext context, String categoryName, int colorHex) {
+    FocusScope.of(context).unfocus();
     final subjects = _subjectsByCategory[categoryName] ?? [];
 
     showModalBottomSheet(
@@ -219,7 +277,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) {
         return Container(
-          height: MediaQuery.of(context).size.height * 0.70, // 70% de pantalla
+          height: MediaQuery.of(context).size.height * 0.70,
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
@@ -265,7 +323,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
               Expanded(
                 child: subjects.isEmpty
                     ? const Center(
-                        child: Text('Próximamente materias aquí...',
+                        child: Text('Error de conexión.',
                             style: TextStyle(color: Colors.grey)))
                     : ListView.builder(
                         physics: const BouncingScrollPhysics(),
@@ -284,64 +342,12 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                                 size: 16,
                                 color: Colors.grey),
                             onTap: () {
-                              // 1. Cerramos el BottomSheet de categorías
                               Navigator.pop(context);
 
-                              // 2. Mostramos el diálogo de confirmación de seguridad
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return AlertDialog(
-                                    shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(20)),
-                                    title: const Text("Confirmar Búsqueda",
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold)),
-                                    content: Text(
-                                        "¿Deseas buscar un tutor disponible ahora mismo para la materia de ${subject['Materia']}?"),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(
-                                            context), // Cierra el diálogo sin hacer nada
-                                        child: const Text("Cancelar",
-                                            style:
-                                                TextStyle(color: Colors.grey)),
-                                      ),
-                                      ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(
-                                              0xFF1E40AF), // Tu color azul premium
-                                          shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(10)),
-                                        ),
-                                        onPressed: () {
-                                          Navigator.pop(
-                                              context); // Cierra el diálogo
-
-                                          // 3. ¡Ahora sí! Lanzamos la pantalla del Radar
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  RadarSearchScreen(
-                                                subjectName: subject['Materia'],
-                                                subjectId: subject['id_materia'].toString(),
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                        child: const Text("Sí, Buscar Tutor",
-                                            style: TextStyle(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.bold)),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              );
-                            },
+                              _procesarToqueMateria(
+                                subject['Materia'], 
+                                subject['id_materia'].toString()
+                              );},
                           );
                         },
                       ),
@@ -363,257 +369,252 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
         child: _isLoadingData
             ? const Center(
                 child: CircularProgressIndicator(color: Color(0xFF1E40AF)))
-            : CustomScrollView(
-                physics: const BouncingScrollPhysics(),
-                slivers: [
-                  // 1. HEADER
-                  SliverAppBar(
-                    backgroundColor: const Color(0xFFF8FAFC),
-                    floating: true,
-                    elevation: 0,
-                    automaticallyImplyLeading: false,
-                    title: const Text(
-                      'Tutor Instantáneo',
-                      style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF0F172A)),
-                    ),
-                    leading: IconButton(
-                      icon: const Icon(Icons.arrow_back_rounded,
-                          color: Color(0xFF0F172A)),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ),
-
-                  // 2. BUSCADOR
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '¿Qué quieres\naprender hoy?',
-                            style: Theme.of(context)
-                                .textTheme
-                                .headlineMedium!
-                                .copyWith(
-                                  fontWeight: FontWeight.w800,
-                                  fontFamily: 'outfit',
-                                  color: const Color(0xFF0F172A),
-                                  height: 1.1,
-                                ),
-                          ),
-                          const SizedBox(height: 20),
-                          Container(
-                            height: 56,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                    color: Colors.black.withOpacity(0.04),
-                                    blurRadius: 15,
-                                    offset: const Offset(0, 5)),
-                              ],
-                            ),
-                            child: TextField(
-                              controller: _searchController,
-                              onChanged: _onSearchChanged,
-                              decoration: InputDecoration(
-                                hintText: 'Ej. Matemáticas, Inglés...',
-                                hintStyle:
-                                    TextStyle(color: Colors.grey.shade400),
-                                prefixIcon: const Icon(Icons.search_rounded,
-                                    color: Color(0xFF1E40AF)),
-                                suffixIcon: isSearching
-                                    ? IconButton(
-                                        icon: const Icon(Icons.clear,
-                                            color: Colors.grey, size: 20),
-                                        onPressed: () {
-                                          _searchController.clear();
-                                          _onSearchChanged('');
-                                          FocusScope.of(context).unfocus();
-                                        },
-                                      )
-                                    : null,
-                                border: InputBorder.none,
-                                contentPadding:
-                                    const EdgeInsets.symmetric(vertical: 18),
-                              ),
-                            ),
-                          ),
-                        ],
+            : Stack(
+              children: [
+                CustomScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  slivers: [
+                    // 1. HEADER
+                    SliverAppBar(
+                      backgroundColor: const Color(0xFFF8FAFC),
+                      floating: true,
+                      elevation: 0,
+                      automaticallyImplyLeading: false,
+                      title: const Text(
+                        'Tutor Instantáneo',
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF0F172A)),
                       ),
+                      // leading: IconButton(
+                      //   icon: const Icon(Icons.arrow_back_rounded,
+                      //       color: Color(0xFF0F172A)),
+                      //   onPressed: () => Navigator.of(context).pop(),
+                      // ),
                     ),
-                  ),
-
-                  // 3. LÓGICA CONDICIONAL: ¿MUESTRA LISTA DE BÚSQUEDA O EL GRID DE CATEGORÍAS?
-                  if (isSearching) ...[
-                    // MODO BÚSQUEDA: Muestra los resultados limpios
+              
+                    // 2. BUSCADOR
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.only(
-                            left: 24, bottom: 10, top: 10),
-                        child: Text(
-                          "Resultados (${_searchResults.length})",
-                          style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey),
-                        ),
-                      ),
-                    ),
-                    _searchResults.isEmpty
-                        ? const SliverToBoxAdapter(
-                            child: Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(40.0),
-                                child: Text("No se encontraron materias 😕",
-                                    style: TextStyle(color: Colors.grey)),
+                        padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '¿Qué quieres\naprender hoy?',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineMedium!
+                                  .copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    fontFamily: 'outfit',
+                                    color: const Color(0xFF0F172A),
+                                    height: 1.1,
+                                  ),
+                            ),
+                            const SizedBox(height: 20),
+                            Container(
+                              height: 56,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                      color: Colors.black.withOpacity(0.04),
+                                      blurRadius: 15,
+                                      offset: const Offset(0, 5)),
+                                ],
+                              ),
+                              child: TextField(
+                                controller: _searchController,
+                                onChanged: _onSearchChanged,
+                                autofocus: false,
+                                decoration: InputDecoration(
+                                  hintText: 'Ej. Matemáticas, Inglés...',
+                                  hintStyle:
+                                      TextStyle(color: Colors.grey.shade400),
+                                  prefixIcon: const Icon(Icons.search_rounded,
+                                      color: Color(0xFF1E40AF)),
+                                  suffixIcon: isSearching
+                                      ? IconButton(
+                                          icon: const Icon(Icons.clear,
+                                              color: Colors.grey, size: 20),
+                                          onPressed: () {
+                                            _searchController.clear();
+                                            _onSearchChanged('');
+                                            FocusScope.of(context).unfocus();
+                                          },
+                                        )
+                                      : null,
+                                  border: InputBorder.none,
+                                  contentPadding:
+                                      const EdgeInsets.symmetric(vertical: 18),
+                                ),
                               ),
                             ),
-                          )
-                        : SliverList(
-                            delegate: SliverChildBuilderDelegate(
-                              (context, index) {
-                                final subject = _searchResults[index];
-                                return ListTile(
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 24, vertical: 2),
-                                  title: Text(subject['Materia'],
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          color: Color(0xFF334155))),
-                                  subtitle: Text(subject['Subcategoría'],
-                                      style: TextStyle(
-                                          color: Colors.grey.shade500,
-                                          fontSize: 12)),
-                                  trailing: const Icon(
-                                      Icons.arrow_forward_ios_rounded,
-                                      size: 16,
-                                      color: Colors.grey),
-                                  onTap: () {
-                                    FocusScope.of(context).unfocus();
-                                    print(
-                                        "🚀 BUSCAR TUTOR PARA: ${subject['Materia']}");
-                                    // TODO: Navegar al radar
-                                  },
-                                );
-                              },
-                              childCount: _searchResults.length,
-                            ),
-                          ),
-                  ] else ...[
-                    // MODO NORMAL: Muestra el Grid de Categorías
-                    const SliverToBoxAdapter(
-                      child: Padding(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                        child: Text(
-                          'Explorar Categorías',
-                          style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF0F172A)),
+                          ],
                         ),
                       ),
                     ),
-                    SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      sliver: SliverGrid(
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 15,
-                          crossAxisSpacing: 15,
-                          childAspectRatio:
-                              1.15, // Tarjetas un poco más cuadradas y estéticas
+              
+                    if (isSearching) ...[
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.only(
+                              left: 24, bottom: 10, top: 10),
+                          child: Text(
+                            "Resultados (${_searchResults.length})",
+                            style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey),
+                          ),
                         ),
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            final cat = _uiCategories[index];
-                            return GestureDetector(
-                              onTap: () {
-                                HapticFeedback.lightImpact();
-                                _openCategoryBottomSheet(
-                                    context, cat['name'], cat['color']);
-                              },
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(24),
-                                  boxShadow: [
-                                    BoxShadow(
-                                        color: Colors.black.withOpacity(0.03),
-                                        blurRadius: 10,
-                                        offset: const Offset(0, 4)),
-                                  ],
-                                ),
+                      ),
+                      _searchResults.isEmpty
+                          ? const SliverToBoxAdapter(
+                              child: Center(
                                 child: Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(10),
-                                        decoration: BoxDecoration(
-                                          color: Color(cat['color'])
-                                              .withOpacity(0.1),
-                                          borderRadius:
-                                              BorderRadius.circular(14),
-                                        ),
-                                        child: Icon(cat['icon'],
-                                            color: Color(cat['color']),
-                                            size: 26),
-                                      ),
-                                      Text(
-                                        cat['name'],
+                                  padding: EdgeInsets.all(40.0),
+                                  child: Text("No se encontraron materias.",
+                                      style: TextStyle(color: Colors.grey)),
+                                ),
+                              ),
+                            )
+                          : SliverList(
+                              delegate: SliverChildBuilderDelegate(
+                                (context, index) {
+                                  final subject = _searchResults[index];
+                                  return ListTile(
+                                    contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 24, vertical: 2),
+                                    title: Text(subject['Materia'],
                                         style: const TextStyle(
-                                            fontWeight: FontWeight.w700,
-                                            fontFamily: 'manrope',
-                                            fontSize: 14,
-                                            color: Color(0xFF0F172A),
-                                            height: 1.2),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF334155))),
+                                    subtitle: Text(subject['Subcategoría'],
+                                        style: TextStyle(
+                                            color: Colors.grey.shade500,
+                                            fontSize: 12)),
+                                    trailing: const Icon(
+                                        Icons.arrow_forward_ios_rounded,
+                                        size: 16,
+                                        color: Colors.grey),
+                                    onTap: () {
+                                      FocusScope.of(context).unfocus(); 
+                                      
+                                      _procesarToqueMateria(
+                                        subject['Materia'], 
+                                        subject['id_materia'].toString()
+                                      );
+                                    },
+                                  );
+                                },
+                                childCount: _searchResults.length,
+                              ),
+                            ),
+                    ] else ...[
+                      const SliverToBoxAdapter(
+                        child: Padding(
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          child: Text(
+                            'Explorar Categorías',
+                            style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF0F172A)),
+                          ),
+                        ),
+                      ),
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        sliver: SliverGrid(
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            mainAxisSpacing: 15,
+                            crossAxisSpacing: 15,
+                            childAspectRatio:
+                                1.15,
+                          ),
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final cat = _uiCategories[index];
+                              return GestureDetector(
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  _openCategoryBottomSheet(
+                                      context, cat['name'], cat['color']);
+                                },
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(24),
+                                    boxShadow: [
+                                      BoxShadow(
+                                          color: Colors.black.withOpacity(0.03),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 4)),
                                     ],
                                   ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(10),
+                                          decoration: BoxDecoration(
+                                            color: Color(cat['color'])
+                                                .withOpacity(0.1),
+                                            borderRadius:
+                                                BorderRadius.circular(14),
+                                          ),
+                                          child: Icon(cat['icon'],
+                                              color: Color(cat['color']),
+                                              size: 26),
+                                        ),
+                                        Text(
+                                          cat['name'],
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                              fontFamily: 'manrope',
+                                              fontSize: 14,
+                                              color: Color(0xFF0F172A),
+                                              height: 1.2),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
-                          childCount: _uiCategories.length,
+                              );
+                            },
+                            childCount: _uiCategories.length,
+                          ),
                         ),
                       ),
-                    ),
+                    ],
+              
+                    const SliverToBoxAdapter(
+                        child: SizedBox(height: 100)), // Espacio para el navbar
+                    
                   ],
-
-                  const SliverToBoxAdapter(
-                      child: SizedBox(height: 100)), // Espacio para el navbar
-                ],
-              ),
+                ),
+                if (_isCheckingActive)
+                  const Positioned(
+                    top: 0, left: 0, right: 0,
+                    child: LinearProgressIndicator(color: Color(0xFF1E40AF), minHeight: 3),
+                  ),
+              ]
+            ),
       ),
-      // bottomNavigationBar: StudentBottomNav(
-      //   currentIndex: -1, // -1 porque no es ninguna pestaña principal
-      //   onTap: (index) {
-      //     Navigator.of(context).pushAndRemoveUntil(
-      //       PageRouteBuilder(
-      //         pageBuilder: (context, animation, secondaryAnimation) =>
-      //             const RoleBasedNavigation(),
-      //         transitionDuration: Duration.zero,
-      //       ),
-      //       (route) => false,
-      //     );
-      //   },
-      //   onCenterTap: () => HapticFeedback.lightImpact(),
-      // ),
-    
     );
   }
 }

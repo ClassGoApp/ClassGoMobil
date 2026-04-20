@@ -111,4 +111,33 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
+  Widget _placeholderBloque(String titulo,
+      {required double height, required Color color}) {
+    bool isDark =
+        color == AppColors.brandBlue || color == AppColors.brandOrange;
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4))
+        ],
+      ),
+      child: Center(
+        child: Text(
+          titulo,
+          style: TextStyle(
+              fontFamily: 'outfit',
+              color: isDark ? Colors.white : Colors.grey.shade600,
+              fontWeight: FontWeight.bold,
+              fontSize: 16),
+        ),
+      ),
+    );
+  }
 }

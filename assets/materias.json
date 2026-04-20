@@ -1,0 +1,3354 @@
+[
+ {
+  "Subcategoría": "Básico",
+  "Materia": "Básico"
+ },
+ {
+  "Subcategoría": "Primaria",
+  "Materia": "Matemáticas para Primaria"
+ },
+ {
+  "Subcategoría": "Primaria",
+  "Materia": "Lenguaje y Literatura para Primaria"
+ },
+ {
+  "Subcategoría": "Primaria",
+  "Materia": "Ciencias Naturales para Primaria"
+ },
+ {
+  "Subcategoría": "Primaria",
+  "Materia": "Estudios Sociales para Primaria"
+ },
+ {
+  "Subcategoría": "Primaria",
+  "Materia": "Educación Cívica"
+ },
+ {
+  "Subcategoría": "Primaria",
+  "Materia": "Música - Instrumentos"
+ },
+ {
+  "Subcategoría": "Primaria",
+  "Materia": "Psicología"
+ },
+ {
+  "Subcategoría": "Secundaria",
+  "Materia": "Matemáticas para Secundaria"
+ },
+ {
+  "Subcategoría": "Secundaria",
+  "Materia": "Lenguaje y Literatura para Secundaria"
+ },
+ {
+  "Subcategoría": "Secundaria",
+  "Materia": "Ciencias Naturales para Secundaria"
+ },
+ {
+  "Subcategoría": "Secundaria",
+  "Materia": "Estudios Sociales para Secundaria"
+ },
+ {
+  "Subcategoría": "Secundaria",
+  "Materia": "Física para Secundaria"
+ },
+ {
+  "Subcategoría": "Secundaria",
+  "Materia": "Química para Secundaria"
+ },
+ {
+  "Subcategoría": "Secundaria",
+  "Materia": "Historia Universal para Secundaria"
+ },
+ {
+  "Subcategoría": "Secundaria",
+  "Materia": "Historia de Bolivia para Secundaria"
+ },
+ {
+  "Subcategoría": "Secundaria",
+  "Materia": "Geografía para Secundaria"
+ },
+ {
+  "Subcategoría": "Secundaria",
+  "Materia": "Preparación para el Bachillerato"
+ },
+ {
+  "Subcategoría": "Secundaria",
+  "Materia": "Educación Cívica"
+ },
+ {
+  "Subcategoría": "Secundaria",
+  "Materia": "Música - Instrumentos"
+ },
+ {
+  "Subcategoría": "Secundaria",
+  "Materia": "Filosofía"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Física Aplicada"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Mecánica Aplicada"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Termodinámica Aplicada"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Electromagnetismo Aplicado"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Física de Materiales"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Física de Semiconductores"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Física Óptica Aplicada"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Vibraciones y Ondas Aplicadas"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Física Cuántica Aplicada"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Acústica y Ultrasonido"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Física Nuclear y de Radiaciones"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Energías Renovables y Física"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Física de Fluidos"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Instrumentación y Medición Física"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Física de Sistemas Complejos"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Aplicaciones Industriales de la Física"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Fenómenos de Transferencia"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Fenómenos de Transporte"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Física Básica"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Cinemática"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Dinámica"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Estática"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Fluidos"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Ondas y Vibraciones"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Óptica Básica"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Óptica Geométrica y Física"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Electrostática"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Corriente Eléctrica y Circuitos"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Magnetismo"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Termodinámica"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Electricidad y Magnetismo Básicos"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Gravitación"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Medición y Análisis de Datos"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Electromagnetismo"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Mecánica Racional"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Física General"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Leyes de Newton"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Trabajo, Energía y Potencia"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Momento Lineal y Colisiones"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Movimiento Rotacional"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Gravitación Universal"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Física Moderna (Relatividad y Física Cuántica)"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Teoría de Ondas y Propagación"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Teoría de Circuitos"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Elasticidad y Plasticidad"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Hidráulica"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Energías Alternativas"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Turbomáquinas Térmicas"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Física Técnica"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Mecánica de Fluidos"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Mecánica de los Materiales"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Mecánica de Suelos"
+ },
+ {
+  "Subcategoría": "Ciencias Exactas",
+  "Materia": "Mecánica del Sólido"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Introducción a la Química Analítica"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Análisis Gravimétrico"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Análisis Volumétrico"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Química de Soluciones"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Métodos Instrumentales de Análisis"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Cromatografía"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Espectrofotometría"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Electroquímica Analítica"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Análisis Cualitativo"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Análisis Cuantitativo"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Validación de Métodos Analíticos"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Control de Calidad en Análisis Químico"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Preparación y Manejo de Muestras"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Estadística Aplicada a la Química Analítica"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Química Analítica Instrumental"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Química Analítica Orgánica e Instrumental"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Química de Alimentos"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Composición de Alimentos"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Proteínas en Alimentos"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Carbohidratos en Alimentos"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Lípidos en Alimentos"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Vitaminas y Minerales"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Aditivos Alimentarios"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Reacciones Químicas en Alimentos"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Química de Pigmentos y Colorantes Naturales"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Análisis Químico de Alimentos"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Conservación y Estabilización de Alimentos"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Propiedades Funcionales de los Alimentos"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Química de Sabores y Aromas"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Química de Procesos de Cocción"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Seguridad Química en Alimentos"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Tecnología de Envasado y Química de Materiales"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Regulaciones Químicas en Alimentos"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Fisicoquímica de Alimentos"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Toxicología de Alimentos"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Microbiología de Alimentos"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Química General"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Introducción a la Química"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Estructura Atómica"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Tabla Periódica y Propiedades Periódicas"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Enlace Químico"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Estequiometría"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Reacciones Químicas"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Gases y Leyes de los Gases"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Líquidos y Sólidos"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Soluciones y Concentración"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Termoquímica"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Equilibrio Químico"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Ácidos y Bases"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Química Redox"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Cinética Química"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Química Nuclear"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Métodos de Medición y Análisis Químico Básico"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Química Inorgánica"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Fisicoquímica"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Química Industrial"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Procesos Químicos de Fabricación"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Reactores Químicos"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Procesos de Hidrocarburos"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Procesos de Cerámica, Cemento y Vidrio"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Procesos Siderúrgicos"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Química Aplicada"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Fundamentos de Química General"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Estructura Atómica y Enlace Químico"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Termodinámica Química"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Cinética Química"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Equilibrio Químico"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Química Orgánica"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Química Inorgánica"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Análisis Químico Cualitativo y Cuantitativo"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Electroquímica"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Química de Materiales"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Química Ambiental"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Química Industrial"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Polímeros y Materiales Compuestos"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Química de Soluciones"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Aplicaciones de la Química en la Industria y la Tecnología"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Química Agrícola"
+ },
+ {
+  "Subcategoría": "Química",
+  "Materia": "Toxicología General"
+ },
+ {
+  "Subcategoría": "Econometría",
+  "Materia": "Introducción a la Econometría"
+ },
+ {
+  "Subcategoría": "Econometría",
+  "Materia": "Modelos de Regresión Lineal"
+ },
+ {
+  "Subcategoría": "Econometría",
+  "Materia": "Supuestos del Modelo Clásico"
+ },
+ {
+  "Subcategoría": "Econometría",
+  "Materia": "Estimación por Mínimos Cuadrados Ordinarios (MCO)"
+ },
+ {
+  "Subcategoría": "Econometría",
+  "Materia": "Multicolinealidad"
+ },
+ {
+  "Subcategoría": "Econometría",
+  "Materia": "Heterocedasticidad"
+ },
+ {
+  "Subcategoría": "Econometría",
+  "Materia": "Autocorrelación"
+ },
+ {
+  "Subcategoría": "Econometría",
+  "Materia": "Modelos de Regresión Múltiple"
+ },
+ {
+  "Subcategoría": "Econometría",
+  "Materia": "Pruebas de Hipótesis en Econometría"
+ },
+ {
+  "Subcategoría": "Econometría",
+  "Materia": "Variables Dependientes Cualitativas"
+ },
+ {
+  "Subcategoría": "Econometría",
+  "Materia": "Series Temporales y Modelos ARIMA"
+ },
+ {
+  "Subcategoría": "Econometría",
+  "Materia": "Modelos de Corrección de Errores (VECM)"
+ },
+ {
+  "Subcategoría": "Econometría",
+  "Materia": "Análisis de Cointegración"
+ },
+ {
+  "Subcategoría": "Econometría",
+  "Materia": "Econometría Aplicada"
+ },
+ {
+  "Subcategoría": "Econometría",
+  "Materia": "Modelos No Lineales"
+ },
+ {
+  "Subcategoría": "Econometría",
+  "Materia": "Métodos Econométricos Avanzados"
+ },
+ {
+  "Subcategoría": "Econometría",
+  "Materia": "Software para Econometría (e.g., STATA, EViews, R)"
+ },
+ {
+  "Subcategoría": "Finanzas",
+  "Materia": "Matemáticas Financieras"
+ },
+ {
+  "Subcategoría": "Finanzas",
+  "Materia": "Modelación Financiera"
+ },
+ {
+  "Subcategoría": "Finanzas",
+  "Materia": "Economía Financiera"
+ },
+ {
+  "Subcategoría": "Finanzas",
+  "Materia": "Aplicaciones Financieras"
+ },
+ {
+  "Subcategoría": "Finanzas",
+  "Materia": "Matemáticas Aplicadas a la Economía"
+ },
+ {
+  "Subcategoría": "Finanzas",
+  "Materia": "Análisis de Estados Financieros"
+ },
+ {
+  "Subcategoría": "Finanzas",
+  "Materia": "Finanzas Corporativas"
+ },
+ {
+  "Subcategoría": "Finanzas",
+  "Materia": "Finanzas a Corto Plazo"
+ },
+ {
+  "Subcategoría": "Finanzas",
+  "Materia": "Finanzas Estratégicas"
+ },
+ {
+  "Subcategoría": "Finanzas",
+  "Materia": "Finanzas Empresariales"
+ },
+ {
+  "Subcategoría": "Finanzas",
+  "Materia": "Finanzas Internacionales"
+ },
+ {
+  "Subcategoría": "Economía Cuantitativa",
+  "Materia": "Introducción a la Economía Cuantitativa"
+ },
+ {
+  "Subcategoría": "Economía Cuantitativa",
+  "Materia": "Álgebra Aplicada a la Economía"
+ },
+ {
+  "Subcategoría": "Economía Cuantitativa",
+  "Materia": "Cálculo Diferencial e Integral en Economía"
+ },
+ {
+  "Subcategoría": "Economía Cuantitativa",
+  "Materia": "Optimización Económica"
+ },
+ {
+  "Subcategoría": "Economía Cuantitativa",
+  "Materia": "Modelos Matemáticos en Economía"
+ },
+ {
+  "Subcategoría": "Economía Cuantitativa",
+  "Materia": "Programación Lineal y No Lineal"
+ },
+ {
+  "Subcategoría": "Economía Cuantitativa",
+  "Materia": "Análisis Input-Output"
+ },
+ {
+  "Subcategoría": "Economía Cuantitativa",
+  "Materia": "Métodos Estadísticos para Economía"
+ },
+ {
+  "Subcategoría": "Economía Cuantitativa",
+  "Materia": "Análisis de Regresión y Correlación"
+ },
+ {
+  "Subcategoría": "Economía Cuantitativa",
+  "Materia": "Modelos de Series Temporales"
+ },
+ {
+  "Subcategoría": "Economía Cuantitativa",
+  "Materia": "Economía Computacional"
+ },
+ {
+  "Subcategoría": "Economía Cuantitativa",
+  "Materia": "Econometría Básica y Avanzada"
+ },
+ {
+  "Subcategoría": "Economía Cuantitativa",
+  "Materia": "Modelos de Equilibrio General"
+ },
+ {
+  "Subcategoría": "Economía Cuantitativa",
+  "Materia": "Simulación Económica"
+ },
+ {
+  "Subcategoría": "Economía Cuantitativa",
+  "Materia": "Modelos Dinámicos y Estocásticos"
+ },
+ {
+  "Subcategoría": "Economía Cuantitativa",
+  "Materia": "Métodos Cuantitativos Aplicados a Políticas Públicas"
+ },
+ {
+  "Subcategoría": "Economía Cuantitativa",
+  "Materia": "Análisis de Datos Económicos"
+ },
+ {
+  "Subcategoría": "Economía Cuantitativa",
+  "Materia": "Software para Análisis Cuantitativo (e.g., MATLAB, R, Python)"
+ },
+ {
+  "Subcategoría": "Contabilidad",
+  "Materia": "Contabilidad Básica"
+ },
+ {
+  "Subcategoría": "Contabilidad",
+  "Materia": "Contabilidad Intermedia"
+ },
+ {
+  "Subcategoría": "Contabilidad",
+  "Materia": "Contabilidad de Sociedades"
+ },
+ {
+  "Subcategoría": "Contabilidad",
+  "Materia": "Contabilidad Agropecuaria"
+ },
+ {
+  "Subcategoría": "Contabilidad",
+  "Materia": "Contabilidad Especiales"
+ },
+ {
+  "Subcategoría": "Contabilidad",
+  "Materia": "Contabilidad Fiscal"
+ },
+ {
+  "Subcategoría": "Contabilidad",
+  "Materia": "Contabilidad Gubernamental"
+ },
+ {
+  "Subcategoría": "Contabilidad",
+  "Materia": "Contabilidad Nacional"
+ },
+ {
+  "Subcategoría": "Contabilidad",
+  "Materia": "Contabilidad Tributaria"
+ },
+ {
+  "Subcategoría": "Contabilidad",
+  "Materia": "Contabilidad de Costos"
+ },
+ {
+  "Subcategoría": "Presupuesto y Criptoactivos",
+  "Materia": "Introducción al Presupuesto"
+ },
+ {
+  "Subcategoría": "Presupuesto y Criptoactivos",
+  "Materia": "Ciclo Presupuestario"
+ },
+ {
+  "Subcategoría": "Presupuesto y Criptoactivos",
+  "Materia": "Elaboración de Presupuestos"
+ },
+ {
+  "Subcategoría": "Presupuesto y Criptoactivos",
+  "Materia": "Clasificación del Presupuesto"
+ },
+ {
+  "Subcategoría": "Presupuesto y Criptoactivos",
+  "Materia": "Presupuesto Público y Privado"
+ },
+ {
+  "Subcategoría": "Presupuesto y Criptoactivos",
+  "Materia": "Presupuesto de Ingresos y Egresos"
+ },
+ {
+  "Subcategoría": "Presupuesto y Criptoactivos",
+  "Materia": "Control y Seguimiento Presupuestario"
+ },
+ {
+  "Subcategoría": "Presupuesto y Criptoactivos",
+  "Materia": "Análisis de Desviaciones Presupuestarias"
+ },
+ {
+  "Subcategoría": "Presupuesto y Criptoactivos",
+  "Materia": "Herramientas para la Gestión Presupuestaria"
+ },
+ {
+  "Subcategoría": "Presupuesto y Criptoactivos",
+  "Materia": "Software de Presupuestación (e.g., Excel, SAP)"
+ },
+ {
+  "Subcategoría": "Presupuesto y Criptoactivos",
+  "Materia": "Presupuesto"
+ },
+ {
+  "Subcategoría": "Presupuesto y Criptoactivos",
+  "Materia": "Criptoactivos y Criptomonedas"
+ },
+ {
+  "Subcategoría": "Métodos Cuantitativos",
+  "Materia": "Investigación de Operaciones"
+ },
+ {
+  "Subcategoría": "Métodos Cuantitativos",
+  "Materia": "Métodos Cuantitativos para la Gestión"
+ },
+ {
+  "Subcategoría": "Gestión de Contenidos Digitales",
+  "Materia": "Gestión de Contenidos Digitales"
+ },
+ {
+  "Subcategoría": "Gestión de Redes Sociales",
+  "Materia": "Gestión de Redes Sociales"
+ },
+ {
+  "Subcategoría": "Community Management",
+  "Materia": "Community Management"
+ },
+ {
+  "Subcategoría": "Estrategias de Monetización",
+  "Materia": "Estrategias de Monetización en Redes Sociales"
+ },
+ {
+  "Subcategoría": "Edición Multimedia",
+  "Materia": "Edición de Fotos con Adobe Photoshop"
+ },
+ {
+  "Subcategoría": "Edición Multimedia",
+  "Materia": "Edición de Videos con Adobe Premiere"
+ },
+ {
+  "Subcategoría": "Edición Multimedia",
+  "Materia": "Edición de Fotos y Videos en Dispositivos Móviles"
+ },
+ {
+  "Subcategoría": "Diseño y Herramientas Visuales",
+  "Materia": "Fundamentos de Fotografía Digital"
+ },
+ {
+  "Subcategoría": "Diseño y Herramientas Visuales",
+  "Materia": "Diseño Gráfico para Redes Sociales"
+ },
+ {
+  "Subcategoría": "Diseño y Herramientas Visuales",
+  "Materia": "Herramientas Digitales para la Creación de Contenidos Visuales"
+ },
+ {
+  "Subcategoría": "Creación de Contenidos",
+  "Materia": "Creación de Video para Redes Sociales"
+ },
+ {
+  "Subcategoría": "Creación de Contenidos",
+  "Materia": "Creación de Contenidos Digitales"
+ },
+ {
+  "Subcategoría": "Producción Audiovisual",
+  "Materia": "Producción Audiovisual para Plataformas Digitales"
+ },
+ {
+  "Subcategoría": "Publicidad en Facebook Ads",
+  "Materia": "Configuración y Estructura de Campañas"
+ },
+ {
+  "Subcategoría": "Publicidad en Facebook Ads",
+  "Materia": "Audiencias Personalizadas y Similares"
+ },
+ {
+  "Subcategoría": "Publicidad en Facebook Ads",
+  "Materia": "Diseño de Creatividades Efectivas"
+ },
+ {
+  "Subcategoría": "Publicidad en Facebook Ads",
+  "Materia": "Métricas y Análisis en Facebook Ads"
+ },
+ {
+  "Subcategoría": "Publicidad en Instagram",
+  "Materia": "Publicidad en Stories y Reels"
+ },
+ {
+  "Subcategoría": "Publicidad en Instagram",
+  "Materia": "Branding Visual en Instagram"
+ },
+ {
+  "Subcategoría": "Publicidad en Instagram",
+  "Materia": "Influencers y Colaboraciones Pagadas"
+ },
+ {
+  "Subcategoría": "Publicidad en Instagram",
+  "Materia": "Analítica en Instagram Ads"
+ },
+ {
+  "Subcategoría": "Publicidad en TikTok",
+  "Materia": "Algoritmo de TikTok y Engagement"
+ },
+ {
+  "Subcategoría": "Publicidad en TikTok",
+  "Materia": "Creación de Contenido Nativo y Viral"
+ },
+ {
+  "Subcategoría": "Publicidad en TikTok",
+  "Materia": "Segmentación y Tendencias en TikTok"
+ },
+ {
+  "Subcategoría": "Publicidad en TikTok",
+  "Materia": "TikTok Business Manager"
+ },
+ {
+  "Subcategoría": "Marketing y Publicidad en YouTube",
+  "Materia": "Anuncios TrueView y Bumper Ads"
+ },
+ {
+  "Subcategoría": "Marketing y Publicidad en YouTube",
+  "Materia": "Estrategias de Contenido de Video"
+ },
+ {
+  "Subcategoría": "Marketing y Publicidad en YouTube",
+  "Materia": "Optimización de SEO para YouTube"
+ },
+ {
+  "Subcategoría": "Marketing y Publicidad en YouTube",
+  "Materia": "Analítica de Campañas en YouTube"
+ },
+ {
+  "Subcategoría": "Publicidad en LinkedIn para Negocios",
+  "Materia": "LinkedIn Ads Manager"
+ },
+ {
+  "Subcategoría": "Publicidad en LinkedIn para Negocios",
+  "Materia": "Estrategias para B2B en LinkedIn"
+ },
+ {
+  "Subcategoría": "Publicidad en LinkedIn para Negocios",
+  "Materia": "Creación de Contenido Profesional"
+ },
+ {
+  "Subcategoría": "Publicidad en LinkedIn para Negocios",
+  "Materia": "Análisis de Campañas en LinkedIn"
+ },
+ {
+  "Subcategoría": "Publicidad en Snapchat Ads",
+  "Materia": "Formatos de Anuncios en Snapchat"
+ },
+ {
+  "Subcategoría": "Publicidad en Snapchat Ads",
+  "Materia": "Filtros y Lentes Patrocinados"
+ },
+ {
+  "Subcategoría": "Publicidad en Snapchat Ads",
+  "Materia": "Estrategias de Segmentación Juvenil"
+ },
+ {
+  "Subcategoría": "Publicidad en Snapchat Ads",
+  "Materia": "Métricas en Snapchat Ads"
+ },
+ {
+  "Subcategoría": "Optimización de Campañas Publicitarias",
+  "Materia": "Pruebas A\/B en Publicidad Digital"
+ },
+ {
+  "Subcategoría": "Optimización de Campañas Publicitarias",
+  "Materia": "Retargeting y Remarketing"
+ },
+ {
+  "Subcategoría": "Optimización de Campañas Publicitarias",
+  "Materia": "Optimización de Presupuesto"
+ },
+ {
+  "Subcategoría": "Optimización de Campañas Publicitarias",
+  "Materia": "Automatización en Plataformas Publicitarias"
+ },
+ {
+  "Subcategoría": "Multiplataformas en Redes Sociales",
+  "Materia": "Estrategias Integradas para Redes Sociales"
+ },
+ {
+  "Subcategoría": "Multiplataformas en Redes Sociales",
+  "Materia": "Herramientas de Gestión Multiplataforma"
+ },
+ {
+  "Subcategoría": "Multiplataformas en Redes Sociales",
+  "Materia": "Análisis de Datos Cruzados"
+ },
+ {
+  "Subcategoría": "Multiplataformas en Redes Sociales",
+  "Materia": "Creación de Contenido Omnicanal"
+ },
+ {
+  "Subcategoría": "Matemática Aplicada a la Ingeniería Ambiental",
+  "Materia": "Modelos matemáticos en procesos ambientales"
+ },
+ {
+  "Subcategoría": "Matemática Aplicada a la Ingeniería Ambiental",
+  "Materia": "Estadística aplicada a problemas ambientales"
+ },
+ {
+  "Subcategoría": "Matemática Aplicada a la Ingeniería Ambiental",
+  "Materia": "Optimización de recursos naturales"
+ },
+ {
+  "Subcategoría": "Matemática Aplicada a la Ingeniería Ambiental",
+  "Materia": "Simulación matemática en ingeniería ambiental"
+ },
+ {
+  "Subcategoría": "Estadística",
+  "Materia": "Estadística probabilidades"
+ },
+ {
+  "Subcategoría": "Estadística",
+  "Materia": "Estadística Descriptiva"
+ },
+ {
+  "Subcategoría": "Estadística",
+  "Materia": "Estadística Inferencial"
+ },
+ {
+  "Subcategoría": "Estadística",
+  "Materia": "Estadística Social"
+ },
+ {
+  "Subcategoría": "Cálculo",
+  "Materia": "Cálculo Diferencial "
+ },
+ {
+  "Subcategoría": "Cálculo",
+  "Materia": "Cálculo Aplicado"
+ },
+ {
+  "Subcategoría": "Cálculo",
+  "Materia": "Cálculo Integral "
+ },
+ {
+  "Subcategoría": "Cálculo",
+  "Materia": "Cálculo Numérico\n\n"
+ },
+ {
+  "Subcategoría": "Ecuaciones Diferenciales",
+  "Materia": "Introducción a las ecuaciones diferenciales"
+ },
+ {
+  "Subcategoría": "Ecuaciones Diferenciales",
+  "Materia": "Ecuaciones diferenciales de primer orden"
+ },
+ {
+  "Subcategoría": "Ecuaciones Diferenciales",
+  "Materia": "Métodos de resolución para ecuaciones de primer orden"
+ },
+ {
+  "Subcategoría": "Ecuaciones Diferenciales",
+  "Materia": "Ecuaciones lineales de orden superior"
+ },
+ {
+  "Subcategoría": "Ecuaciones Diferenciales",
+  "Materia": "Soluciones particulares y generales"
+ },
+ {
+  "Subcategoría": "Ecuaciones Diferenciales",
+  "Materia": "Métodos de coeficientes indeterminados"
+ },
+ {
+  "Subcategoría": "Ecuaciones Diferenciales",
+  "Materia": "Variación de parámetros"
+ },
+ {
+  "Subcategoría": "Ecuaciones Diferenciales",
+  "Materia": "Sistemas de ecuaciones diferenciales"
+ },
+ {
+  "Subcategoría": "Ecuaciones Diferenciales",
+  "Materia": "Transformada de Laplace y su aplicación"
+ },
+ {
+  "Subcategoría": "Ecuaciones Diferenciales",
+  "Materia": "Series de Fourier y ecuaciones diferenciales"
+ },
+ {
+  "Subcategoría": "Ecuaciones Diferenciales",
+  "Materia": "Ecuaciones diferenciales parciales"
+ },
+ {
+  "Subcategoría": "Ecuaciones Diferenciales",
+  "Materia": "Modelado matemático con ecuaciones diferenciales"
+ },
+ {
+  "Subcategoría": "Ecuaciones Diferenciales",
+  "Materia": "Estabilidad y análisis de sistemas dinámicos"
+ },
+ {
+  "Subcategoría": "Ecuaciones Diferenciales",
+  "Materia": "Aplicaciones en física e ingeniería"
+ },
+ {
+  "Subcategoría": "Ecuaciones Diferenciales",
+  "Materia": "Métodos numéricos para ecuaciones diferenciales"
+ },
+ {
+  "Subcategoría": "Fundamentos",
+  "Materia": "Sistemas de Ecuaciones Lineales"
+ },
+ {
+  "Subcategoría": "Fundamentos",
+  "Materia": "Vectores y Espacios Vectoriales"
+ },
+ {
+  "Subcategoría": "Fundamentos",
+  "Materia": "Matrices y Determinantes"
+ },
+ {
+  "Subcategoría": "Fundamentos",
+  "Materia": "Transformaciones Lineales"
+ },
+ {
+  "Subcategoría": "Fundamentos",
+  "Materia": "Valores y Vectores Propios"
+ },
+ {
+  "Subcategoría": "Fundamentos",
+  "Materia": "Diagonalización de Matrices"
+ },
+ {
+  "Subcategoría": "Fundamentos",
+  "Materia": "Subespacios Vectoriales"
+ },
+ {
+  "Subcategoría": "Fundamentos",
+  "Materia": "Bases y Dimensiones"
+ },
+ {
+  "Subcategoría": "Fundamentos",
+  "Materia": "Productos Escalares y Normas"
+ },
+ {
+  "Subcategoría": "Fundamentos",
+  "Materia": "Espacios Ortogonales"
+ },
+ {
+  "Subcategoría": "Fundamentos",
+  "Materia": "Descomposición en Valores Singulares (SVD)"
+ },
+ {
+  "Subcategoría": "Fundamentos",
+  "Materia": "Aplicaciones de Álgebra Lineal en Computación"
+ },
+ {
+  "Subcategoría": "Fundamentos",
+  "Materia": "Teoría de Matrices"
+ },
+ {
+  "Subcategoría": "Fundamentos",
+  "Materia": "Geometría de Espacios Vectoriales"
+ },
+ {
+  "Subcategoría": "Fundamentos",
+  "Materia": "Álgebra Lineal Numérica"
+ },
+ {
+  "Subcategoría": "Fundamentos",
+  "Materia": "Álgebra Lineal Teoría Matricial"
+ },
+ {
+  "Subcategoría": "Métodos Numéricos",
+  "Materia": "Introducción a los métodos numéricos"
+ },
+ {
+  "Subcategoría": "Métodos Numéricos",
+  "Materia": "Resolución de ecuaciones no lineales"
+ },
+ {
+  "Subcategoría": "Métodos Numéricos",
+  "Materia": "Interpolación y aproximación de funciones"
+ },
+ {
+  "Subcategoría": "Métodos Numéricos",
+  "Materia": "Derivación e integración numérica"
+ },
+ {
+  "Subcategoría": "Métodos Numéricos",
+  "Materia": "Solución de sistemas de ecuaciones lineales"
+ },
+ {
+  "Subcategoría": "Métodos Numéricos",
+  "Materia": "Métodos de mínimos cuadrados"
+ },
+ {
+  "Subcategoría": "Métodos Numéricos",
+  "Materia": "Solución numérica de ecuaciones diferenciales"
+ },
+ {
+  "Subcategoría": "Programación",
+  "Materia": "Programación en MATLAB"
+ },
+ {
+  "Subcategoría": "Programación",
+  "Materia": "Implementación en Python para métodos numéricos"
+ },
+ {
+  "Subcategoría": "Mètodos Numèricos",
+  "Materia": "Optimización numérica"
+ },
+ {
+  "Subcategoría": "Modelado y Simulación de Sistemas",
+  "Materia": "Introducción al modelado de sistemas"
+ },
+ {
+  "Subcategoría": "Modelado y Simulación de Sistemas",
+  "Materia": "Dinámica de sistemas"
+ },
+ {
+  "Subcategoría": "Modelado y Simulación de Sistemas",
+  "Materia": "Simulación discreta y continua"
+ },
+ {
+  "Subcategoría": "Modelado y Simulación de Sistemas",
+  "Materia": "Modelos matemáticos de fenómenos físicos"
+ },
+ {
+  "Subcategoría": "Modelado y Simulación de Sistemas",
+  "Materia": "Uso de herramientas como Simulink y Arena"
+ },
+ {
+  "Subcategoría": "Modelado y Simulación de Sistemas",
+  "Materia": "Validación y verificación de modelos"
+ },
+ {
+  "Subcategoría": "Modelado y Simulación de Sistemas",
+  "Materia": "Análisis de sensibilidad y escenarios"
+ },
+ {
+  "Subcategoría": "Modelado y Simulación de Sistemas",
+  "Materia": "Aplicaciones en ingeniería y economía"
+ },
+ {
+  "Subcategoría": "Modelado y Simulación de Sistemas",
+  "Materia": "Sistemas dinámicos y teoría de control"
+ },
+ {
+  "Subcategoría": "Modelado y Simulación de Sistemas",
+  "Materia": "Simulación basada en agentes"
+ },
+ {
+  "Subcategoría": "Edición y Diseño",
+  "Materia": "Principios del diseño gráfico"
+ },
+ {
+  "Subcategoría": "Edición y Diseño",
+  "Materia": "Herramientas de edición gráfica (e.g., Photoshop, Illustrator)"
+ },
+ {
+  "Subcategoría": "Edición y Diseño",
+  "Materia": "Diseño de interfaces y experiencia de usuario (UI\/UX)"
+ },
+ {
+  "Subcategoría": "Edición y Diseño",
+  "Materia": "Edición de video y animación (e.g., Premiere Pro, After Effects)"
+ },
+ {
+  "Subcategoría": "Edición y Diseño",
+  "Materia": "Producción de contenido audiovisual"
+ },
+ {
+  "Subcategoría": "Edición y Diseño",
+  "Materia": "Diseño 3D y modelado (e.g., Blender, Maya)"
+ },
+ {
+  "Subcategoría": "Edición y Diseño",
+  "Materia": "Tipografía y composición visual"
+ },
+ {
+  "Subcategoría": "Edición y Diseño",
+  "Materia": "Colorimetría y teoría del color"
+ },
+ {
+  "Subcategoría": "Edición y Diseño",
+  "Materia": "Narrativa visual y storytelling"
+ },
+ {
+  "Subcategoría": "Edición y Diseño",
+  "Materia": "Optimización de multimedia para plataformas digitales"
+ },
+ {
+  "Subcategoría": "Fundamentos",
+  "Materia": "Fundamentos de Electricidad"
+ },
+ {
+  "Subcategoría": "Fundamentos",
+  "Materia": "Circuitos Eléctricos"
+ },
+ {
+  "Subcategoría": "Fundamentos",
+  "Materia": "Electrónica Básica"
+ },
+ {
+  "Subcategoría": "Fundamentos",
+  "Materia": "Electrónica Digital"
+ },
+ {
+  "Subcategoría": "Fundamentos",
+  "Materia": "Sistemas de Potencia"
+ },
+ {
+  "Subcategoría": "Fundamentos",
+  "Materia": "Máquinas Eléctricas"
+ },
+ {
+  "Subcategoría": "Fundamentos",
+  "Materia": "Electrónica Analógica"
+ },
+ {
+  "Subcategoría": "Fundamentos",
+  "Materia": "Control Automático"
+ },
+ {
+  "Subcategoría": "Fundamentos",
+  "Materia": "Instrumentación y Medición"
+ },
+ {
+  "Subcategoría": "Aplicaciones",
+  "Materia": "Energías Renovables"
+ },
+ {
+  "Subcategoría": "Aplicaciones",
+  "Materia": "Electrónica de Potencia"
+ },
+ {
+  "Subcategoría": "Aplicaciones",
+  "Materia": "Instalaciones Eléctricas"
+ },
+ {
+  "Subcategoría": "Aplicaciones",
+  "Materia": "Microcontroladores y Sistemas Embebidos"
+ },
+ {
+  "Subcategoría": "Aplicaciones",
+  "Materia": "Diseño de Circuitos Impresos (PCB)"
+ },
+ {
+  "Subcategoría": "Aplicaciones",
+  "Materia": "Robótica y Automatización"
+ },
+ {
+  "Subcategoría": "Técnicas Básicas",
+  "Materia": "Carpintería y Ebanistería"
+ },
+ {
+  "Subcategoría": "Técnicas Básicas",
+  "Materia": "Mecánica Automotriz Básica"
+ },
+ {
+  "Subcategoría": "Técnicas Básicas",
+  "Materia": "Soldadura"
+ },
+ {
+  "Subcategoría": "Técnicas Básicas",
+  "Materia": "Plomería Básica"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Introducción a la maquinaria pesada"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Tipos de maquinaria pesada y sus usos"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Seguridad industrial y normativa aplicable"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Mantenimiento preventivo de maquinaria"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Operación de excavadoras"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Manejo de retroexcavadoras"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Uso de cargadores frontales"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Operación de motoniveladoras"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Técnicas para el manejo de grúas"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Operación de compactadoras y rodillos"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Sistemas hidráulicos y eléctricos en maquinaria"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Interpretación de planos y trabajos en obra"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Técnicas de excavación y movimiento de tierra"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Gestión de combustible y eficiencia operativa"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Diagnóstico y solución de problemas comunes"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Uso de simuladores de maquinaria pesada"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Normas de medio ambiente y sostenibilidad en operación"
+ },
+ {
+  "Subcategoría": "Redes y Conectividad",
+  "Materia": "Conceptos básicos de redes"
+ },
+ {
+  "Subcategoría": "Redes y Conectividad",
+  "Materia": "Tipos de redes (LAN, WAN, MAN, WLAN)"
+ },
+ {
+  "Subcategoría": "Redes y Conectividad",
+  "Materia": "Componentes de redes (switches, routers, access points)"
+ },
+ {
+  "Subcategoría": "Redes y Conectividad",
+  "Materia": "Cableado estructurado"
+ },
+ {
+  "Subcategoría": "Redes y Conectividad",
+  "Materia": "Protocolos de red (TCP\/IP, UDP, DHCP, DNS)"
+ },
+ {
+  "Subcategoría": "Redes y Conectividad",
+  "Materia": "Configuración de redes inalámbricas"
+ },
+ {
+  "Subcategoría": "Redes y Conectividad",
+  "Materia": "Seguridad en redes"
+ },
+ {
+  "Subcategoría": "Redes y Conectividad",
+  "Materia": "Redes privadas virtuales (VPN)"
+ },
+ {
+  "Subcategoría": "Redes y Conectividad",
+  "Materia": "Diagnóstico y resolución de problemas en redes"
+ },
+ {
+  "Subcategoría": "Redes y Conectividad",
+  "Materia": "Instalación y configuración de servidores"
+ },
+ {
+  "Subcategoría": "Redes y Conectividad",
+  "Materia": "Implementación de redes de alta disponibilidad"
+ },
+ {
+  "Subcategoría": "Redes y Conectividad",
+  "Materia": "Herramientas de monitoreo de redes"
+ },
+ {
+  "Subcategoría": "Redes y Conectividad",
+  "Materia": "Planificación y diseño de infraestructura de redes"
+ },
+ {
+  "Subcategoría": "Redes y Conectividad",
+  "Materia": "Introducción a redes SDN (Software Defined Networking)"
+ },
+ {
+  "Subcategoría": "Redes y Conectividad",
+  "Materia": "Conectividad IoT (Internet de las cosas)"
+ },
+ {
+  "Subcategoría": "Redes y Comunicaciones",
+  "Materia": "Gestión de Redes"
+ },
+ {
+  "Subcategoría": "Redes y Comunicaciones",
+  "Materia": "Seguridad en Redes y Transmisión de Datos"
+ },
+ {
+  "Subcategoría": "Redes y Comunicaciones",
+  "Materia": "Criptografía y Seguridad"
+ },
+ {
+  "Subcategoría": "Redes y Comunicaciones",
+  "Materia": "Redes de Comunicación"
+ },
+ {
+  "Subcategoría": "Redes y Comunicaciones",
+  "Materia": "Redes Inalámbricas y Comunicaciones Móviles"
+ },
+ {
+  "Subcategoría": "Fundamentos",
+  "Materia": "Administración de Empresas Básica"
+ },
+ {
+  "Subcategoría": "Fundamentos",
+  "Materia": "Habilidades de Ventas y Atención al Cliente"
+ },
+ {
+  "Subcategoría": "Fundamentos",
+  "Materia": "Emprendimiento y Gestión de Pequeñas Empresas"
+ },
+ {
+  "Subcategoría": "Comunicación",
+  "Materia": "Comunicación y herramientas digitales"
+ },
+ {
+  "Subcategoría": "Comunicación",
+  "Materia": "Mecanografía y Redacción Comercial"
+ },
+ {
+  "Subcategoría": "Comunicación",
+  "Materia": "Herramientas de Ofimática (Word, Excel, PowerPoint)"
+ },
+ {
+  "Subcategoría": "Programación ",
+  "Materia": "Programación Python"
+ },
+ {
+  "Subcategoría": "Programación ",
+  "Materia": "Programación de Aplicaciones de Tiempo Real"
+ },
+ {
+  "Subcategoría": "Programación ",
+  "Materia": "Programación Ensamblador"
+ },
+ {
+  "Subcategoría": "Programación ",
+  "Materia": "Lenguajes Formales"
+ },
+ {
+  "Subcategoría": "Programación ",
+  "Materia": "Algoritmos y Lógica"
+ },
+ {
+  "Subcategoría": "Programación ",
+  "Materia": "Estructura de Datos"
+ },
+ {
+  "Subcategoría": "Programación ",
+  "Materia": "Teoría de la Computación"
+ },
+ {
+  "Subcategoría": "Programación ",
+  "Materia": "Interacción Hombre-Computador"
+ },
+ {
+  "Subcategoría": "Sistemas y Tecnologías de la Información",
+  "Materia": "Sistemas de Información"
+ },
+ {
+  "Subcategoría": "Sistemas y Tecnologías de la Información",
+  "Materia": "Sistemas Operativos"
+ },
+ {
+  "Subcategoría": "Sistemas y Tecnologías de la Información",
+  "Materia": "Sistemas Administrativos"
+ },
+ {
+  "Subcategoría": "Sistemas y Tecnologías de la Información",
+  "Materia": "Sistemas de Información Gerencial"
+ },
+ {
+  "Subcategoría": "Sistemas y Tecnologías de la Información",
+  "Materia": "Sistemas Distribuidos"
+ },
+ {
+  "Subcategoría": "Sistemas y Tecnologías de la Información",
+  "Materia": "Sistemas de Ingeniería"
+ },
+ {
+  "Subcategoría": "Sistemas y Tecnologías de la Información",
+  "Materia": "Sistemas Expertos"
+ },
+ {
+  "Subcategoría": "Sistemas y Tecnologías de la Información",
+  "Materia": "Desarrollo de Sistemas de Información"
+ },
+ {
+  "Subcategoría": "Sistemas y Tecnologías de la Información",
+  "Materia": "Inteligencia Artificial"
+ },
+ {
+  "Subcategoría": "Sistemas y Tecnologías de la Información",
+  "Materia": "Inteligencia de Software"
+ },
+ {
+  "Subcategoría": "Sistemas y Tecnologías de la Información",
+  "Materia": "Gestión de la Tecnología de la Información"
+ },
+ {
+  "Subcategoría": "Bases de Datos",
+  "Materia": "Introducción a las Bases de Datos"
+ },
+ {
+  "Subcategoría": "Bases de Datos",
+  "Materia": "Modelado de Datos y Diagramas Entidad-Relación"
+ },
+ {
+  "Subcategoría": "Bases de Datos",
+  "Materia": "Diseño de Bases de Datos Relacionales"
+ },
+ {
+  "Subcategoría": "Bases de Datos",
+  "Materia": "Lenguaje SQL: Consultas Básicas y Avanzadas"
+ },
+ {
+  "Subcategoría": "Bases de Datos",
+  "Materia": "Gestión de Transacciones y Concurrencia"
+ },
+ {
+  "Subcategoría": "Bases de Datos",
+  "Materia": "Normalización y Desnormalización de Datos"
+ },
+ {
+  "Subcategoría": "Bases de Datos",
+  "Materia": "Bases de Datos No Relacionales (NoSQL)"
+ },
+ {
+  "Subcategoría": "Bases de Datos",
+  "Materia": "Seguridad en Bases de Datos"
+ },
+ {
+  "Subcategoría": "Bases de Datos",
+  "Materia": "Administración de Bases de Datos (e.g., MySQL, PostgreSQL, Oracle)"
+ },
+ {
+  "Subcategoría": "Bases de Datos",
+  "Materia": "Optimización y Tuning de Bases de Datos"
+ },
+ {
+  "Subcategoría": "Bases de Datos",
+  "Materia": "Copias de Seguridad y Recuperación de Datos"
+ },
+ {
+  "Subcategoría": "Bases de Datos",
+  "Materia": "Integridad Referencial y Reglas de Negocio"
+ },
+ {
+  "Subcategoría": "Bases de Datos",
+  "Materia": "Almacenamiento de Datos y Big Data"
+ },
+ {
+  "Subcategoría": "Bases de Datos",
+  "Materia": "Herramientas para Bases de Datos Distribuidas"
+ },
+ {
+  "Subcategoría": "Auditoría",
+  "Materia": "Fundamentos de Auditoría"
+ },
+ {
+  "Subcategoría": "Auditoría",
+  "Materia": "Normas Internacionales de Auditoría (ISA)"
+ },
+ {
+  "Subcategoría": "Auditoría",
+  "Materia": "Auditoría de Sistemas de Información"
+ },
+ {
+  "Subcategoría": "Auditoría",
+  "Materia": "Evaluación de Riesgos y Controles Internos"
+ },
+ {
+  "Subcategoría": "Auditoría",
+  "Materia": "Técnicas de Muestreo en Auditoría"
+ },
+ {
+  "Subcategoría": "Auditoría",
+  "Materia": "Auditoría de Bases de Datos"
+ },
+ {
+  "Subcategoría": "Auditoría",
+  "Materia": "Seguridad Informática y Auditoría de Redes"
+ },
+ {
+  "Subcategoría": "Auditoría",
+  "Materia": "Informes y Recomendaciones de Auditoría"
+ },
+ {
+  "Subcategoría": "Auditoría",
+  "Materia": "Auditoría de Cumplimiento Legal"
+ },
+ {
+  "Subcategoría": "Auditoría",
+  "Materia": "Herramientas Automatizadas de Auditoría"
+ },
+ {
+  "Subcategoría": "Auditoría",
+  "Materia": "Control y Evaluación de Proyectos Tecnológicos"
+ },
+ {
+  "Subcategoría": "Auditoría",
+  "Materia": "Análisis de Evidencias Digitales"
+ },
+ {
+  "Subcategoría": "Auditoría",
+  "Materia": "Planificación y Ejecución de Auditorías Internas"
+ },
+ {
+  "Subcategoría": "Auditoría",
+  "Materia": "Ética Profesional en la Auditoría"
+ },
+ {
+  "Subcategoría": "Tecnologías Web",
+  "Materia": "Fundamentos de Desarrollo Web"
+ },
+ {
+  "Subcategoría": "Tecnologías Web",
+  "Materia": "Frameworks y Bibliotecas Web"
+ },
+ {
+  "Subcategoría": "Tecnologías Web",
+  "Materia": "Tecnologías Backend"
+ },
+ {
+  "Subcategoría": "Tecnologías Web y Multimedia",
+  "Materia": "Herramientas Multimedia"
+ },
+ {
+  "Subcategoría": "Tecnologías Web ",
+  "Materia": "Diseño Responsive y UX\/UI"
+ },
+ {
+  "Subcategoría": "Tecnologías Web y Multimedia",
+  "Materia": "Gestión de Contenidos"
+ },
+ {
+  "Subcategoría": "Tecnologías Web ",
+  "Materia": "Desarrollo de Aplicaciones Web"
+ },
+ {
+  "Subcategoría": "Tecnologías Web y Multimedia",
+  "Materia": "Tecnologías Multimedia"
+ },
+ {
+  "Subcategoría": "Tecnologías Web ",
+  "Materia": "Seguridad y Rendimiento Web"
+ },
+ {
+  "Subcategoría": "Tecnologías Web ",
+  "Materia": "Tendencias y Nuevas Tecnologías"
+ },
+ {
+  "Subcategoría": "Tecnologías Web ",
+  "Materia": "Tecnologías Web"
+ },
+ {
+  "Subcategoría": "Tecnologías Web ",
+  "Materia": "Modelado y Simulacion de Sistemas"
+ },
+ {
+  "Subcategoría": "Computación y Automatización",
+  "Materia": "Computación"
+ },
+ {
+  "Subcategoría": "Computación y Automatización",
+  "Materia": "Instrumentación y Control Automático"
+ },
+ {
+  "Subcategoría": "Computación y Automatización",
+  "Materia": "Automatización Industrial"
+ },
+ {
+  "Subcategoría": "Diseño Electrónico y Circuitos",
+  "Materia": "Diseño de Circuitos Impresos (PCB)"
+ },
+ {
+  "Subcategoría": "Diseño Electrónico y Circuitos",
+  "Materia": "Diseño Eléctrico Computarizado"
+ },
+ {
+  "Subcategoría": "Herramientas ofimàticas",
+  "Materia": "Microsoft Word"
+ },
+ {
+  "Subcategoría": "Herramientas ofimàticas",
+  "Materia": "Microsoft Excel"
+ },
+ {
+  "Subcategoría": "Herramientas ofimàticas",
+  "Materia": "Microsoft PowerPoint"
+ },
+ {
+  "Subcategoría": "Herramientas ofimàticas",
+  "Materia": "Microsoft Outlook"
+ },
+ {
+  "Subcategoría": "Herramientas ofimàticas",
+  "Materia": "Microsoft Access"
+ },
+ {
+  "Subcategoría": "Herramientas ofimàticas",
+  "Materia": "Microsoft OneNote"
+ },
+ {
+  "Subcategoría": "Herramientas ofimàticas",
+  "Materia": "Microsoft Publisher"
+ },
+ {
+  "Subcategoría": "Herramientas ofimàticas",
+  "Materia": "Microsoft Teams"
+ },
+ {
+  "Subcategoría": "Diseño de Sistemas Financieros",
+  "Materia": "Fundamentos de Sistemas Financieros"
+ },
+ {
+  "Subcategoría": "Diseño de Sistemas Financieros",
+  "Materia": "Arquitectura de Sistemas Financieros"
+ },
+ {
+  "Subcategoría": "Diseño de Sistemas Financieros",
+  "Materia": "Regulaciones y Normativas Financieras"
+ },
+ {
+  "Subcategoría": "Diseño de Sistemas Financieros",
+  "Materia": "Diseño de Bases de Datos Financieras"
+ },
+ {
+  "Subcategoría": "Diseño de Sistemas Financieros",
+  "Materia": "Análisis y Gestión de Riesgos Financieros"
+ },
+ {
+  "Subcategoría": "Diseño de Sistemas Financieros",
+  "Materia": "Modelado y Simulación de Flujos Financieros"
+ },
+ {
+  "Subcategoría": "Diseño de Sistemas Financieros",
+  "Materia": "Implementación de Sistemas de Pago"
+ },
+ {
+  "Subcategoría": "Diseño de Sistemas Financieros",
+  "Materia": "Seguridad y Ciberseguridad en Sistemas Financieros"
+ },
+ {
+  "Subcategoría": "Diseño de Sistemas Financieros",
+  "Materia": "Tecnologías Financieras (FinTech)"
+ },
+ {
+  "Subcategoría": "Diseño de Sistemas Financieros",
+  "Materia": "Integración de Blockchain en Sistemas Financieros"
+ },
+ {
+  "Subcategoría": "Diseño de Sistemas Financieros",
+  "Materia": "Diseño de Interfaces de Usuario (UI\/UX) para Plataformas Financieras"
+ },
+ {
+  "Subcategoría": "Diseño de Sistemas Financieros",
+  "Materia": "Automatización de Procesos Financieros (RPA)"
+ },
+ {
+  "Subcategoría": "Diseño de Sistemas Financieros",
+  "Materia": "Evaluación de Costos y Beneficios en Sistemas Financieros"
+ },
+ {
+  "Subcategoría": "Diseño de Sistemas Financieros",
+  "Materia": "Escalabilidad y Sostenibilidad de Sistemas Financieros"
+ },
+ {
+  "Subcategoría": "Diseño de Sistemas Financieros",
+  "Materia": "Pruebas y Validación de Sistemas Financieros"
+ },
+ {
+  "Subcategoría": "Diseño de Sistemas Financieros",
+  "Materia": "Monitoreo y Mantenimiento de Sistemas Financieros"
+ },
+ {
+  "Subcategoría": "Diseño de Sistemas Financieros",
+  "Materia": "Herramientas y Software para el Diseño de Sistemas Financieros"
+ },
+ {
+  "Subcategoría": "Diseño de Sistemas Financieros",
+  "Materia": "Big Data y Analítica en Finanzas"
+ },
+ {
+  "Subcategoría": "Diseño de Sistemas Financieros",
+  "Materia": "Innovación y Tendencias en Sistemas Financieros Digitales"
+ },
+ {
+  "Subcategoría": "Interpretación y Traducción de Idiomas",
+  "Materia": "Introducción a la Interpretación"
+ },
+ {
+  "Subcategoría": "Interpretación y Traducción de Idiomas",
+  "Materia": "Tipos de Interpretación (Simultánea, Consecutiva, Susurrada)"
+ },
+ {
+  "Subcategoría": "Interpretación y Traducción de Idiomas",
+  "Materia": "Técnicas de Toma de Notas para Interpretación Consecutiva"
+ },
+ {
+  "Subcategoría": "Interpretación y Traducción de Idiomas",
+  "Materia": "Interpretación en Conferencias y Eventos"
+ },
+ {
+  "Subcategoría": "Interpretación y Traducción de Idiomas",
+  "Materia": "Interpretación Telefónica y en Línea"
+ },
+ {
+  "Subcategoría": "Interpretación y Traducción de Idiomas",
+  "Materia": "Desarrollo de Habilidades Auditivas y Retentivas"
+ },
+ {
+  "Subcategoría": "Interpretación y Traducción de Idiomas",
+  "Materia": "Práctica de Interpretación en Contextos Específicos (Médico, Legal, Empresarial)"
+ },
+ {
+  "Subcategoría": "Interpretación y Traducción de Idiomas",
+  "Materia": "Ética y Profesionalismo en Interpretación"
+ },
+ {
+  "Subcategoría": "Interpretación y Traducción de Idiomas",
+  "Materia": "Uso de Tecnología en Interpretación"
+ },
+ {
+  "Subcategoría": "Traducción",
+  "Materia": "Fundamentos de la Traducción"
+ },
+ {
+  "Subcategoría": "Traducción",
+  "Materia": "Tipos de Traducción (Literaria, Técnica, Jurídica, Audiovisual)"
+ },
+ {
+  "Subcategoría": "Traducción",
+  "Materia": "Estrategias de Traducción y Adaptación Cultural"
+ },
+ {
+  "Subcategoría": "Traducción",
+  "Materia": "Herramientas de Traducción Asistida (CAT Tools)"
+ },
+ {
+  "Subcategoría": "Traducción",
+  "Materia": "Gestión Terminológica y Creación de Glosarios"
+ },
+ {
+  "Subcategoría": "Traducción",
+  "Materia": "Traducción de Documentos Especializados"
+ },
+ {
+  "Subcategoría": "Traducción",
+  "Materia": "Revisión y Edición de Traducciones"
+ },
+ {
+  "Subcategoría": "Traducción",
+  "Materia": "Localización de Contenido Digital"
+ },
+ {
+  "Subcategoría": "Traducción",
+  "Materia": "Normas de Calidad en Traducción"
+ },
+ {
+  "Subcategoría": "Traducción",
+  "Materia": "Lingüística Aplicada a la Traducción e Interpretación"
+ },
+ {
+  "Subcategoría": "Traducción",
+  "Materia": "Desarrollo de Habilidades Bilingües Avanzadas"
+ },
+ {
+  "Subcategoría": "Traducción",
+  "Materia": "Análisis de Errores Comunes en Traducción e Interpretación"
+ },
+ {
+  "Subcategoría": "Traducción",
+  "Materia": "Formación en Contextos Multiculturales"
+ },
+ {
+  "Subcategoría": "Traducción",
+  "Materia": "Uso de Inteligencia Artificial y Herramientas de Traducción Automática"
+ },
+ {
+  "Subcategoría": "Traducción",
+  "Materia": "Ética Profesional en la Traducción e Interpretación"
+ },
+ {
+  "Subcategoría": "Traducción",
+  "Materia": "Traducción de Textos"
+ },
+ {
+  "Subcategoría": "Traducción",
+  "Materia": "Traducción de Contratos"
+ },
+ {
+  "Subcategoría": "Inglés Profesional Jurídico",
+  "Materia": "Terminología Legal en Inglés"
+ },
+ {
+  "Subcategoría": "Inglés Profesional Jurídico",
+  "Materia": "Redacción de Contratos en Inglés"
+ },
+ {
+  "Subcategoría": "Inglés Profesional Jurídico",
+  "Materia": "Traducción Jurídica y Legal"
+ },
+ {
+  "Subcategoría": "Inglés Profesional Jurídico",
+  "Materia": "Inglés para Juicios y Arbitrajes"
+ },
+ {
+  "Subcategoría": "Inglés Profesional Jurídico",
+  "Materia": "Interpretación Legal en Inglés"
+ },
+ {
+  "Subcategoría": "Inglés Profesional Jurídico",
+  "Materia": "Lectura de Documentos Legales Internacionales"
+ },
+ {
+  "Subcategoría": "Inglés Profesional Jurídico",
+  "Materia": "Correspondencia Jurídica en Inglés"
+ },
+ {
+  "Subcategoría": "Inglés Profesional Jurídico",
+  "Materia": "Negociación y Mediación en Inglés"
+ },
+ {
+  "Subcategoría": "Inglés Profesional Jurídico",
+  "Materia": "Derecho Comparado (Sistemas Legales en Inglés)"
+ },
+ {
+  "Subcategoría": "Inglés Profesional Jurídico",
+  "Materia": "Ética Profesional en Contextos Legales Internacionales"
+ },
+ {
+  "Subcategoría": "Inglés Avanzado (CBA y Otros Institutos)",
+  "Materia": "Perfeccionamiento Gramatical Avanzado"
+ },
+ {
+  "Subcategoría": "Inglés Avanzado (CBA y Otros Institutos)",
+  "Materia": "Expresiones Idiomáticas y Phrasal Verbs"
+ },
+ {
+  "Subcategoría": "Inglés Avanzado (CBA y Otros Institutos)",
+  "Materia": "Pronunciación y Reducción de Acento"
+ },
+ {
+  "Subcategoría": "Inglés Avanzado (CBA y Otros Institutos)",
+  "Materia": "Escritura Académica Avanzada"
+ },
+ {
+  "Subcategoría": "Inglés Avanzado (CBA y Otros Institutos)",
+  "Materia": "Comprensión Auditiva en Contextos Formales e Informales"
+ },
+ {
+  "Subcategoría": "Inglés Avanzado (CBA y Otros Institutos)",
+  "Materia": "Inglés para Presentaciones y Oratoria"
+ },
+ {
+  "Subcategoría": "Inglés Avanzado (CBA y Otros Institutos)",
+  "Materia": "Análisis de Textos Literarios y Técnicos"
+ },
+ {
+  "Subcategoría": "Inglés Avanzado (CBA y Otros Institutos)",
+  "Materia": "Preparación para Exámenes Internacionales (TOEFL, IELTS, CAE)"
+ },
+ {
+  "Subcategoría": "Inglés Avanzado (CBA y Otros Institutos)",
+  "Materia": "Inglés en Contextos Empresariales"
+ },
+ {
+  "Subcategoría": "Inglés Avanzado (CBA y Otros Institutos)",
+  "Materia": "Debate y Argumentación en Inglés"
+ },
+ {
+  "Subcategoría": "Francés Avanzado",
+  "Materia": "Gramática y Sintaxis Avanzada en Francés"
+ },
+ {
+  "Subcategoría": "Francés Avanzado",
+  "Materia": "Análisis de Textos Literarios y Filosóficos"
+ },
+ {
+  "Subcategoría": "Francés Avanzado",
+  "Materia": "Francés para Negocios y Comercio"
+ },
+ {
+  "Subcategoría": "Francés Avanzado",
+  "Materia": "Correspondencia Formal en Francés"
+ },
+ {
+  "Subcategoría": "Francés Avanzado",
+  "Materia": "Traducción Técnica y Literaria"
+ },
+ {
+  "Subcategoría": "Francés Avanzado",
+  "Materia": "Francés para Turismo y Hotelería"
+ },
+ {
+  "Subcategoría": "Francés Avanzado",
+  "Materia": "Fonética y Pronunciación Avanzada"
+ },
+ {
+  "Subcategoría": "Francés Avanzado",
+  "Materia": "Preparación para Exámenes Internacionales (DALF C1\/C2)"
+ },
+ {
+  "Subcategoría": "Francés Avanzado",
+  "Materia": "Cultura y Civilización Francófona"
+ },
+ {
+  "Subcategoría": "Francés Avanzado",
+  "Materia": "Conversación y Debate en Francés"
+ },
+ {
+  "Subcategoría": "Alemán Avanzado",
+  "Materia": "Gramática Avanzada del Alemán"
+ },
+ {
+  "Subcategoría": "Alemán Avanzado",
+  "Materia": "Escritura Técnica y Académica en Alemán"
+ },
+ {
+  "Subcategoría": "Alemán Avanzado",
+  "Materia": "Lectura y Análisis de Textos Especializados"
+ },
+ {
+  "Subcategoría": "Alemán Avanzado",
+  "Materia": "Alemán para el Ámbito Científico y Tecnológico"
+ },
+ {
+  "Subcategoría": "Alemán Avanzado",
+  "Materia": "Pronunciación y Acentuación Avanzada"
+ },
+ {
+  "Subcategoría": "Alemán Avanzado",
+  "Materia": "Preparación para Exámenes Internacionales (Goethe C1\/C2, TestDaF)"
+ },
+ {
+  "Subcategoría": "Alemán Avanzado",
+  "Materia": "Cultura y Tradiciones Germanas"
+ },
+ {
+  "Subcategoría": "Alemán Avanzado",
+  "Materia": "Alemán en Contextos Laborales y Empresariales"
+ },
+ {
+  "Subcategoría": "Alemán Avanzado",
+  "Materia": "Traducción Profesional Alemán-Español"
+ },
+ {
+  "Subcategoría": "Alemán Avanzado",
+  "Materia": "Expresión Oral en Debates y Presentaciones Formales"
+ },
+ {
+  "Subcategoría": "Español",
+  "Materia": "Introducción al Español"
+ },
+ {
+  "Subcategoría": "Español",
+  "Materia": "Gramática Española"
+ },
+ {
+  "Subcategoría": "Español",
+  "Materia": "Vocabulario en Español"
+ },
+ {
+  "Subcategoría": "Español",
+  "Materia": "Conversación en Español"
+ },
+ {
+  "Subcategoría": "Español",
+  "Materia": "Lectura y Escritura en Español"
+ },
+ {
+  "Subcategoría": "Español",
+  "Materia": "Cultura y Tradición Hispánica"
+ },
+ {
+  "Subcategoría": "Español",
+  "Materia": "Preparación para Exámenes Internacionales (DELE, SIELE)"
+ },
+ {
+  "Subcategoría": "Italiano",
+  "Materia": "Introducción al Italiano"
+ },
+ {
+  "Subcategoría": "Italiano",
+  "Materia": "Gramática Italiana"
+ },
+ {
+  "Subcategoría": "Italiano",
+  "Materia": "Vocabulario Italiano"
+ },
+ {
+  "Subcategoría": "Italiano",
+  "Materia": "Conversación en Italiano"
+ },
+ {
+  "Subcategoría": "Italiano",
+  "Materia": "Lectura y Escritura en Italiano"
+ },
+ {
+  "Subcategoría": "Italiano",
+  "Materia": "Cultura y Tradición Italiana"
+ },
+ {
+  "Subcategoría": "Italiano",
+  "Materia": "Preparación para Exámenes Internacionales (CILS, CELI)"
+ },
+ {
+  "Subcategoría": "Portugués",
+  "Materia": "Introducción al Portugués"
+ },
+ {
+  "Subcategoría": "Portugués",
+  "Materia": "Gramática Portuguesa"
+ },
+ {
+  "Subcategoría": "Portugués",
+  "Materia": "Vocabulario en Portugués"
+ },
+ {
+  "Subcategoría": "Portugués",
+  "Materia": "Conversación en Portugués"
+ },
+ {
+  "Subcategoría": "Portugués",
+  "Materia": "Lectura y Escritura en Portugués"
+ },
+ {
+  "Subcategoría": "Portugués",
+  "Materia": "Cultura y Tradición Lusófona"
+ },
+ {
+  "Subcategoría": "Portugués",
+  "Materia": "Preparación para Exámenes Internacionales (CELPE-Bras)"
+ },
+ {
+  "Subcategoría": "Ruso",
+  "Materia": "Introducción al Ruso"
+ },
+ {
+  "Subcategoría": "Ruso",
+  "Materia": "Gramática Rusa"
+ },
+ {
+  "Subcategoría": "Ruso",
+  "Materia": "Vocabulario en Ruso"
+ },
+ {
+  "Subcategoría": "Ruso",
+  "Materia": "Conversación en Ruso"
+ },
+ {
+  "Subcategoría": "Ruso",
+  "Materia": "Lectura y Escritura en Ruso (Cirílico)"
+ },
+ {
+  "Subcategoría": "Ruso",
+  "Materia": "Cultura y Sociedad Rusa"
+ },
+ {
+  "Subcategoría": "Ruso",
+  "Materia": "Preparación para Exámenes Internacionales (TRKI\/TORFL)"
+ },
+ {
+  "Subcategoría": "Quechua",
+  "Materia": "Introducción al Quechua"
+ },
+ {
+  "Subcategoría": "Quechua",
+  "Materia": "Gramática del Quechua"
+ },
+ {
+  "Subcategoría": "Quechua",
+  "Materia": "Vocabulario del Quechua"
+ },
+ {
+  "Subcategoría": "Quechua",
+  "Materia": "Conversación en Quechua"
+ },
+ {
+  "Subcategoría": "Quechua",
+  "Materia": "Lectura y Escritura en Quechua"
+ },
+ {
+  "Subcategoría": "Quechua",
+  "Materia": "Cultura y Tradición en Quechua"
+ },
+ {
+  "Subcategoría": "Aymara",
+  "Materia": "Introducción al Aymara"
+ },
+ {
+  "Subcategoría": "Aymara",
+  "Materia": "Gramática del Aymara"
+ },
+ {
+  "Subcategoría": "Aymara",
+  "Materia": "Vocabulario del Aymara"
+ },
+ {
+  "Subcategoría": "Aymara",
+  "Materia": "Conversación en Aymara"
+ },
+ {
+  "Subcategoría": "Aymara",
+  "Materia": "Lectura y Escritura en Aymara"
+ },
+ {
+  "Subcategoría": "Aymara",
+  "Materia": "Cultura y Tradición en Aymara"
+ },
+ {
+  "Subcategoría": "Guaraní",
+  "Materia": "Introducción al Guaraní"
+ },
+ {
+  "Subcategoría": "Guaraní",
+  "Materia": "Gramática del Guaraní"
+ },
+ {
+  "Subcategoría": "Guaraní",
+  "Materia": "Vocabulario del Guaraní"
+ },
+ {
+  "Subcategoría": "Guaraní",
+  "Materia": "Conversación en Guaraní"
+ },
+ {
+  "Subcategoría": "Guaraní",
+  "Materia": "Lectura y Escritura en Guaraní"
+ },
+ {
+  "Subcategoría": "Oficios Técnicos",
+  "Materia": "Carpintería y Ebanistería"
+ },
+ {
+  "Subcategoría": "Oficios Técnicos",
+  "Materia": "Mecánica Automotriz Básica"
+ },
+ {
+  "Subcategoría": "Oficios Técnicos",
+  "Materia": "Soldadura"
+ },
+ {
+  "Subcategoría": "Oficios Técnicos",
+  "Materia": "Plomería Básica"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Introducción a la Maquinaria Pesada"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Tipos de Maquinaria Pesada y Sus Usos"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Seguridad Industrial y Normativa Aplicable"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Mantenimiento Preventivo de Maquinaria"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Operación de Excavadoras"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Manejo de Retroexcavadoras"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Uso de Cargadores Frontales"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Operación de Motoniveladoras"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Técnicas para el Manejo de Grúas"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Operación de Compactadoras y Rodillos"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Sistemas Hidráulicos y Eléctricos en Maquinaria"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Interpretación de Planos y Trabajos en Obra"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Técnicas de Excavación y Movimiento de Tierra"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Gestión de Combustible y Eficiencia Operativa"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Diagnóstico y Solución de Problemas Comunes"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Uso de Simuladores de Maquinaria Pesada"
+ },
+ {
+  "Subcategoría": "Operador de Maquinaria Pesada",
+  "Materia": "Normas de Medio Ambiente y Sostenibilidad en Operación"
+ },
+ {
+  "Subcategoría": "Instalación de Redes y Conectividad",
+  "Materia": "Conceptos Básicos de Redes"
+ },
+ {
+  "Subcategoría": "Instalación de Redes y Conectividad",
+  "Materia": "Tipos de Redes (LAN, WAN, MAN, WLAN)"
+ },
+ {
+  "Subcategoría": "Instalación de Redes y Conectividad",
+  "Materia": "Componentes de Redes (Switches, Routers, Access Points)"
+ },
+ {
+  "Subcategoría": "Instalación de Redes y Conectividad",
+  "Materia": "Cableado Estructurado"
+ },
+ {
+  "Subcategoría": "Instalación de Redes y Conectividad",
+  "Materia": "Protocolos de Red (TCP\/IP, UDP, DHCP, DNS)"
+ },
+ {
+  "Subcategoría": "Instalación de Redes y Conectividad",
+  "Materia": "Configuración de Redes Inalámbricas"
+ },
+ {
+  "Subcategoría": "Instalación de Redes y Conectividad",
+  "Materia": "Seguridad en Redes"
+ },
+ {
+  "Subcategoría": "Instalación de Redes y Conectividad",
+  "Materia": "Redes Privadas Virtuales (VPN)"
+ },
+ {
+  "Subcategoría": "Instalación de Redes y Conectividad",
+  "Materia": "Diagnóstico y Resolución de Problemas en Redes"
+ },
+ {
+  "Subcategoría": "Instalación de Redes y Conectividad",
+  "Materia": "Instalación y Configuración de Servidores"
+ },
+ {
+  "Subcategoría": "Instalación de Redes y Conectividad",
+  "Materia": "Implementación de Redes de Alta Disponibilidad"
+ },
+ {
+  "Subcategoría": "Instalación de Redes y Conectividad",
+  "Materia": "Herramientas de Monitoreo de Redes"
+ },
+ {
+  "Subcategoría": "Instalación de Redes y Conectividad",
+  "Materia": "Planificación y Diseño de Infraestructura de Redes"
+ },
+ {
+  "Subcategoría": "Instalación de Redes y Conectividad",
+  "Materia": "Introducción a Redes SDN (Software Defined Networking)"
+ },
+ {
+  "Subcategoría": "Instalación de Redes y Conectividad",
+  "Materia": "Conectividad IoT (Internet de las Cosas)"
+ },
+ {
+  "Subcategoría": "Fundamentos de Repostería",
+  "Materia": "Introducción a la repostería"
+ },
+ {
+  "Subcategoría": "Fundamentos de Repostería",
+  "Materia": "Herramientas y utensilios básicos"
+ },
+ {
+  "Subcategoría": "Fundamentos de Repostería",
+  "Materia": "Técnicas de horneado"
+ },
+ {
+  "Subcategoría": "Ingredientes y Química de Alimentos",
+  "Materia": "Composición de alimentos (Proteínas, carbohidratos y lípidos)"
+ },
+ {
+  "Subcategoría": "Ingredientes y Química de Alimentos",
+  "Materia": "Reacciones químicas en alimentos (e.g., fermentación, caramelización)"
+ },
+ {
+  "Subcategoría": "Ingredientes y Química de Alimentos",
+  "Materia": "Aditivos alimentarios y su uso en repostería"
+ },
+ {
+  "Subcategoría": "Ingredientes y Química de Alimentos",
+  "Materia": "Química de sabores y aromas"
+ },
+ {
+  "Subcategoría": "Técnicas de Repostería",
+  "Materia": "Elaboración de masas básicas (hojaldre, quebrada, esponjosa)"
+ },
+ {
+  "Subcategoría": "Técnicas de Repostería",
+  "Materia": "Técnicas de batido, amasado y laminado"
+ },
+ {
+  "Subcategoría": "Técnicas de Repostería",
+  "Materia": "Preparación de rellenos y coberturas (cremas, ganaches, glaseados)"
+ },
+ {
+  "Subcategoría": "Pastelería Creativa",
+  "Materia": "Decoración de pasteles"
+ },
+ {
+  "Subcategoría": "Pastelería Creativa",
+  "Materia": "Uso de fondant y glaseado real"
+ },
+ {
+  "Subcategoría": "Pastelería Creativa",
+  "Materia": "Técnicas de aerografía y modelado de figuras"
+ },
+ {
+  "Subcategoría": "Postres Internacionales",
+  "Materia": "Repostería francesa (macarons, éclairs, croissants)"
+ },
+ {
+  "Subcategoría": "Postres Internacionales",
+  "Materia": "Postres italianos (tiramisú, cannoli, panna cotta)"
+ },
+ {
+  "Subcategoría": "Postres Internacionales",
+  "Materia": "Repostería americana (cheesecake, brownies, cupcakes)"
+ },
+ {
+  "Subcategoría": "Dietas Especiales y Saludables",
+  "Materia": "Postres sin gluten"
+ },
+ {
+  "Subcategoría": "Dietas Especiales y Saludables",
+  "Materia": "Repostería vegana"
+ },
+ {
+  "Subcategoría": "Dietas Especiales y Saludables",
+  "Materia": "Uso de edulcorantes naturales y alternativos"
+ },
+ {
+  "Subcategoría": "Gestión de Negocios de Repostería",
+  "Materia": "Planificación y gestión de costos en repostería"
+ },
+ {
+  "Subcategoría": "Gestión de Negocios de Repostería",
+  "Materia": "Marketing para negocios de repostería"
+ },
+ {
+  "Subcategoría": "Gestión de Negocios de Repostería",
+  "Materia": "Estrategias de ventas y atención al cliente"
+ },
+ {
+  "Subcategoría": "Seguridad e Higiene en Repostería",
+  "Materia": "Manipulación segura de alimentos"
+ },
+ {
+  "Subcategoría": "Seguridad e Higiene en Repostería",
+  "Materia": "Normas de higiene en la cocina"
+ },
+ {
+  "Subcategoría": "Seguridad e Higiene en Repostería",
+  "Materia": "Conservación y almacenamiento de productos reposteros"
+ },
+ {
+  "Subcategoría": "Psicología General",
+  "Materia": "Introducción a la Psicología"
+ },
+ {
+  "Subcategoría": "Psicología General",
+  "Materia": "Historia y Enfoques de la Psicología"
+ },
+ {
+  "Subcategoría": "Psicología General",
+  "Materia": "Psicología Experimental"
+ },
+ {
+  "Subcategoría": "Psicología General",
+  "Materia": "Neurociencia y Psicología"
+ },
+ {
+  "Subcategoría": "Psicología del Desarrollo",
+  "Materia": "Psicología Infantil"
+ },
+ {
+  "Subcategoría": "Psicología del Desarrollo",
+  "Materia": "Psicología Adolescente"
+ },
+ {
+  "Subcategoría": "Psicología del Desarrollo",
+  "Materia": "Psicología del Adulto y Envejecimiento"
+ },
+ {
+  "Subcategoría": "Psicología Clínica",
+  "Materia": "Trastornos Mentales y Psicopatología"
+ },
+ {
+  "Subcategoría": "Psicología Clínica",
+  "Materia": "Evaluación Psicológica"
+ },
+ {
+  "Subcategoría": "Psicología Clínica",
+  "Materia": "Terapias Cognitivo-Conductuales"
+ },
+ {
+  "Subcategoría": "Psicología Clínica",
+  "Materia": "Psicoterapia Humanista"
+ },
+ {
+  "Subcategoría": "Psicología Clínica",
+  "Materia": "Psicoanálisis y Terapia Psicodinámica"
+ },
+ {
+  "Subcategoría": "Psicología Educativa",
+  "Materia": "Aprendizaje y Desarrollo Cognitivo"
+ },
+ {
+  "Subcategoría": "Psicología Educativa",
+  "Materia": "Psicología del Aprendizaje"
+ },
+ {
+  "Subcategoría": "Psicología Educativa",
+  "Materia": "Intervención Psicopedagógica"
+ },
+ {
+  "Subcategoría": "Psicología Organizacional",
+  "Materia": "Recursos Humanos y Comportamiento Organizacional"
+ },
+ {
+  "Subcategoría": "Psicología Organizacional",
+  "Materia": "Liderazgo y Motivación Laboral"
+ },
+ {
+  "Subcategoría": "Psicología Organizacional",
+  "Materia": "Gestión del Estrés y Bienestar Organizacional"
+ },
+ {
+  "Subcategoría": "Psicología Social y Comunitaria",
+  "Materia": "Psicología de Grupos"
+ },
+ {
+  "Subcategoría": "Psicología Social y Comunitaria",
+  "Materia": "Psicología del Comportamiento Colectivo"
+ },
+ {
+  "Subcategoría": "Psicología Social y Comunitaria",
+  "Materia": "Intervención Psicosocial"
+ },
+ {
+  "Subcategoría": "Psicología Forense",
+  "Materia": "Psicología Criminal"
+ },
+ {
+  "Subcategoría": "Psicología Forense",
+  "Materia": "Evaluación Psicológica en el Sistema Judicial"
+ },
+ {
+  "Subcategoría": "Psicología Forense",
+  "Materia": "Perfilación Criminal"
+ },
+ {
+  "Subcategoría": "Dibujo y Técnicas Básicas",
+  "Materia": "Dibujo Artístico"
+ },
+ {
+  "Subcategoría": "Dibujo y Técnicas Básicas",
+  "Materia": "Dibujo Técnico"
+ },
+ {
+  "Subcategoría": "Dibujo y Técnicas Básicas",
+  "Materia": "Perspectiva y Proporción"
+ },
+ {
+  "Subcategoría": "Pintura y Color",
+  "Materia": "Técnicas de Pintura (Óleo, Acuarela, Acrílico)"
+ },
+ {
+  "Subcategoría": "Pintura y Color",
+  "Materia": "Teoría del Color"
+ },
+ {
+  "Subcategoría": "Pintura y Color",
+  "Materia": "Estilos Pictóricos y Corrientes Artísticas"
+ },
+ {
+  "Subcategoría": "Escultura y Modelado",
+  "Materia": "Escultura en Arcilla y Cerámica"
+ },
+ {
+  "Subcategoría": "Escultura y Modelado",
+  "Materia": "Modelado en 3D y Digital"
+ },
+ {
+  "Subcategoría": "Escultura y Modelado",
+  "Materia": "Técnicas Mixtas en Escultura"
+ },
+ {
+  "Subcategoría": "Arte y Diseño Gráfico",
+  "Materia": "Ilustración Digital"
+ },
+ {
+  "Subcategoría": "Arte y Diseño Gráfico",
+  "Materia": "Diseño Editorial y Publicidad"
+ },
+ {
+  "Subcategoría": "Arte y Diseño Gráfico",
+  "Materia": "Tipografía y Composición Visual"
+ },
+ {
+  "Subcategoría": "Historia del Arte",
+  "Materia": "Historia del Arte Clásico y Contemporáneo"
+ },
+ {
+  "Subcategoría": "Historia del Arte",
+  "Materia": "Movimientos Artísticos del Siglo XX y XXI"
+ },
+ {
+  "Subcategoría": "Historia del Arte",
+  "Materia": "Grandes Maestros del Arte"
+ },
+ {
+  "Subcategoría": "Técnicas Experimentales y Nuevas Tendencias",
+  "Materia": "Instalaciones Artísticas"
+ },
+ {
+  "Subcategoría": "Técnicas Experimentales y Nuevas Tendencias",
+  "Materia": "Performance y Arte Conceptual"
+ },
+ {
+  "Subcategoría": "Técnicas Experimentales y Nuevas Tendencias",
+  "Materia": "Arte Digital e Inteligencia Artificial en el Arte"
+ },
+ {
+  "Subcategoría": "Fundamentos de la Colorimetría",
+  "Materia": "Introducción a la Colorimetría"
+ },
+ {
+  "Subcategoría": "Fundamentos de la Colorimetría",
+  "Materia": "Propiedades del Color"
+ },
+ {
+  "Subcategoría": "Fundamentos de la Colorimetría",
+  "Materia": "Percepción Visual y Psicología del Color"
+ },
+ {
+  "Subcategoría": "Colorimetría Aplicada",
+  "Materia": "Colorimetría en la Moda y el Diseño"
+ },
+ {
+  "Subcategoría": "Colorimetría Aplicada",
+  "Materia": "Colorimetría en la Estética y Belleza"
+ },
+ {
+  "Subcategoría": "Colorimetría Aplicada",
+  "Materia": "Colorimetría en la Publicidad y el Marketing"
+ },
+ {
+  "Subcategoría": "Técnicas y Herramientas de Colorimetría",
+  "Materia": "Medición de Color con Herramientas Digitales"
+ },
+ {
+  "Subcategoría": "Técnicas y Herramientas de Colorimetría",
+  "Materia": "Gestión del Color en la Impresión y la Fotografía"
+ },
+ {
+  "Subcategoría": "Técnicas y Herramientas de Colorimetría",
+  "Materia": "Paletas de Color y Tendencias Cromáticas"
+ },
+ {
+  "Subcategoría": "Colorimetría en la Industria",
+  "Materia": "Colorimetría en la Industria Textil"
+ },
+ {
+  "Subcategoría": "Colorimetría en la Industria",
+  "Materia": "Colorimetría en la Industria de Alimentos"
+ },
+ {
+  "Subcategoría": "Colorimetría en la Industria",
+  "Materia": "Colorimetría en la Arquitectura y el Diseño de Interiores"
+ },
+ {
+  "Subcategoría": "Color y Combinación Cromática",
+  "Materia": "Armonía y Contraste de Colores"
+ },
+ {
+  "Subcategoría": "Color y Combinación Cromática",
+  "Materia": "Teoría del Color Avanzada"
+ },
+ {
+  "Subcategoría": "Color y Combinación Cromática",
+  "Materia": "Aplicaciones de Colorimetría en Branding y Identidad Visual"
+ },
+ {
+  "Subcategoría": "Community Management",
+  "Materia": "Introducción a la Gestión de Comunidades Digitales"
+ },
+ {
+  "Subcategoría": "Community Management",
+  "Materia": "Herramientas para Community Managers"
+ },
+ {
+  "Subcategoría": "Community Management",
+  "Materia": "Creación de Estrategias de Contenido para Redes"
+ },
+ {
+  "Subcategoría": "Community Management",
+  "Materia": "Atención al Cliente en Redes Sociales"
+ },
+ {
+  "Subcategoría": "Community Management",
+  "Materia": "Análisis de Métricas y Reportes de Engagement"
+ },
+ {
+  "Subcategoría": "Publicidad y Branding",
+  "Materia": "Introducción a la Publicidad y Medios Digitales"
+ },
+ {
+  "Subcategoría": "Publicidad y Branding",
+  "Materia": "Psicología del Consumidor y Comportamiento de Compra"
+ },
+ {
+  "Subcategoría": "Publicidad y Branding",
+  "Materia": "Creación de Campañas Publicitarias Digitales"
+ },
+ {
+  "Subcategoría": "Publicidad y Branding",
+  "Materia": "Branding y Posicionamiento de Marca"
+ },
+ {
+  "Subcategoría": "Publicidad y Branding",
+  "Materia": "Neuromarketing y Estrategias de Venta"
+ },
+ {
+  "Subcategoría": "Marketing en Redes Sociales",
+  "Materia": "Publicidad en Facebook e Instagram Ads"
+ },
+ {
+  "Subcategoría": "Marketing en Redes Sociales",
+  "Materia": "TikTok Marketing y Creación de Contenido Viral"
+ },
+ {
+  "Subcategoría": "Marketing en Redes Sociales",
+  "Materia": "LinkedIn para Negocios y Marca Personal"
+ },
+ {
+  "Subcategoría": "Marketing en Redes Sociales",
+  "Materia": "Email Marketing y Automatización"
+ },
+ {
+  "Subcategoría": "Marketing en Redes Sociales",
+  "Materia": "SEO y Estrategias de Posicionamiento Web"
+ },
+ {
+  "Subcategoría": "Emprendimiento y Gestión de Negocios",
+  "Materia": "Modelos de Negocio y Planificación Estratégica"
+ },
+ {
+  "Subcategoría": "Emprendimiento y Gestión de Negocios",
+  "Materia": "Finanzas para Emprendedores"
+ },
+ {
+  "Subcategoría": "Emprendimiento y Gestión de Negocios",
+  "Materia": "Marketing para Startups y Negocios Digitales"
+ },
+ {
+  "Subcategoría": "Emprendimiento y Gestión de Negocios",
+  "Materia": "Gestión de Proyectos y Liderazgo Empresarial"
+ },
+ {
+  "Subcategoría": "Emprendimiento y Gestión de Negocios",
+  "Materia": "Innovación y Desarrollo de Productos"
+ },
+ {
+  "Subcategoría": "Diseño y Comunicación Visual",
+  "Materia": "Fundamentos del Diseño Gráfico para Redes"
+ },
+ {
+  "Subcategoría": "Diseño y Comunicación Visual",
+  "Materia": "Creación de Contenido Visual con Canva y Photoshop"
+ },
+ {
+  "Subcategoría": "Diseño y Comunicación Visual",
+  "Materia": "Tipografía y Composición Visual"
+ },
+ {
+  "Subcategoría": "Diseño y Comunicación Visual",
+  "Materia": "Diseño de Identidad Corporativa"
+ },
+ {
+  "Subcategoría": "Diseño y Comunicación Visual",
+  "Materia": "Edición de Imágenes y Diseño de Publicidad"
+ },
+ {
+  "Subcategoría": "Fotografía Digital y Edición",
+  "Materia": "Introducción a la Fotografía Digital"
+ },
+ {
+  "Subcategoría": "Fotografía Digital y Edición",
+  "Materia": "Técnicas de Iluminación y Composición Fotográfica"
+ },
+ {
+  "Subcategoría": "Fotografía Digital y Edición",
+  "Materia": "Edición de Fotos con Lightroom y Photoshop"
+ },
+ {
+  "Subcategoría": "Fotografía Digital y Edición",
+  "Materia": "Fotografía de Productos y Moda"
+ },
+ {
+  "Subcategoría": "Fotografía Digital y Edición",
+  "Materia": "Fotografía para Redes Sociales y Publicidad"
+ },
+ {
+  "Subcategoría": "Creación de Contenido Digital",
+  "Materia": "Creación y Edición de Videos para Redes Sociales"
+ },
+ {
+  "Subcategoría": "Creación de Contenido Digital",
+  "Materia": "Producción de Contenido para TikTok y YouTube"
+ },
+ {
+  "Subcategoría": "Creación de Contenido Digital",
+  "Materia": "Técnicas de Storytelling para Creadores de Contenido"
+ },
+ {
+  "Subcategoría": "Creación de Contenido Digital",
+  "Materia": "Monetización de Canales Digitales y Estrategias de Crecimiento"
+ },
+ {
+  "Subcategoría": "Creación de Contenido Digital",
+  "Materia": "Técnicas de Guionismo para Video y Publicidad"
+ },
+ {
+  "Subcategoría": "Artes Visuales y Diseño",
+  "Materia": "Ilustración Digital y Creación de Personajes"
+ },
+ {
+  "Subcategoría": "Artes Visuales y Diseño",
+  "Materia": "Diseño de Moda y Creación de Estilos"
+ },
+ {
+  "Subcategoría": "Artes Visuales y Diseño",
+  "Materia": "Dibujo Artístico y Perspectiva"
+ },
+ {
+  "Subcategoría": "Artes Visuales y Diseño",
+  "Materia": "Técnicas de Pintura y Acuarela"
+ },
+ {
+  "Subcategoría": "Artes Visuales y Diseño",
+  "Materia": "Edición de Videos con Premiere Pro y After Effects"
+ },
+ {
+  "Subcategoría": "Expresión Artística y Cultura",
+  "Materia": "Historia y Evolución del Arte Urbano"
+ },
+ {
+  "Subcategoría": "Expresión Artística y Cultura",
+  "Materia": "Técnicas de Graffiti y Muralismo"
+ },
+ {
+  "Subcategoría": "Expresión Artística y Cultura",
+  "Materia": "Arte Digital e Inteligencia Artificial en el Diseño"
+ },
+ {
+  "Subcategoría": "Expresión Artística y Cultura",
+  "Materia": "Diseño de Merchandising y Estampado Textil"
+ },
+ {
+  "Subcategoría": "Expresión Artística y Cultura",
+  "Materia": "Técnicas de Tatuaje y Diseño Corporal"
+ },
+ {
+  "Subcategoría": "Filosofía y Desarrollo del Pensamiento",
+  "Materia": "Introducción a la Filosofía y Pensamiento Crítico"
+ },
+ {
+  "Subcategoría": "Filosofía y Desarrollo del Pensamiento",
+  "Materia": "Lógica y Argumentación: Cómo Desarrollar un Razonamiento Sólido"
+ },
+ {
+  "Subcategoría": "Filosofía y Desarrollo del Pensamiento",
+  "Materia": "Ética y Moral en el Mundo Moderno"
+ },
+ {
+  "Subcategoría": "Filosofía y Desarrollo del Pensamiento",
+  "Materia": "Filosofía Política y Modelos de Sociedad"
+ },
+ {
+  "Subcategoría": "Filosofía y Desarrollo del Pensamiento",
+  "Materia": "Filosofía del Lenguaje y su Impacto en la Comunicación"
+ },
+ {
+  "Subcategoría": "Formación Pedagógica y Didáctica",
+  "Materia": "Métodos de Enseñanza y Aprendizaje Innovadores"
+ },
+ {
+  "Subcategoría": "Formación Pedagógica y Didáctica",
+  "Materia": "Estrategias Pedagógicas para la Educación en Línea"
+ },
+ {
+  "Subcategoría": "Formación Pedagógica y Didáctica",
+  "Materia": "Evaluación y Diseño de Material Educativo"
+ },
+ {
+  "Subcategoría": "Formación Pedagógica y Didáctica",
+  "Materia": "Psicología del Aprendizaje y Desarrollo Cognitivo"
+ },
+ {
+  "Subcategoría": "Formación Pedagógica y Didáctica",
+  "Materia": "Educación Inclusiva y Enseñanza Adaptada"
+ },
+ {
+  "Subcategoría": "Traducción e Interpretación Profesional",
+  "Materia": "Técnicas de Traducción y Adaptación de Textos"
+ },
+ {
+  "Subcategoría": "Traducción e Interpretación Profesional",
+  "Materia": "Introducción a la Interpretación Simultánea y Consecutiva"
+ },
+ {
+  "Subcategoría": "Traducción e Interpretación Profesional",
+  "Materia": "Localización de Contenidos Digitales y Audiovisuales"
+ },
+ {
+  "Subcategoría": "Traducción e Interpretación Profesional",
+  "Materia": "Uso de Herramientas de Traducción Asistida"
+ },
+ {
+  "Subcategoría": "Traducción e Interpretación Profesional",
+  "Materia": "Traducción Jurídica, Técnica y Literaria"
+ },
+ {
+  "Subcategoría": "Ingeniería y Medio Ambiente",
+  "Materia": "Introducción a la Ingeniería Ambiental y Sostenibilidad"
+ },
+ {
+  "Subcategoría": "Ingeniería y Medio Ambiente",
+  "Materia": "Gestión de Residuos y Reciclaje Urbano"
+ },
+ {
+  "Subcategoría": "Ingeniería y Medio Ambiente",
+  "Materia": "Cambio Climático y Energías Renovables"
+ },
+ {
+  "Subcategoría": "Ingeniería y Medio Ambiente",
+  "Materia": "Evaluación de Impacto Ambiental y Regulaciones"
+ },
+ {
+  "Subcategoría": "Ingeniería y Medio Ambiente",
+  "Materia": "Agricultura Sostenible y Producción Ecológica"
+ },
+ {
+  "Subcategoría": "Análisis de Datos y Estadística",
+  "Materia": "Fundamentos de Estadística Descriptiva e Inferencial"
+ },
+ {
+  "Subcategoría": "Análisis de Datos y Estadística",
+  "Materia": "Análisis de Datos con Excel y Power BI"
+ },
+ {
+  "Subcategoría": "Análisis de Datos y Estadística",
+  "Materia": "Métodos Estadísticos Aplicados a Negocios"
+ },
+ {
+  "Subcategoría": "Análisis de Datos y Estadística",
+  "Materia": "Programación en R y Python para Ciencia de Datos"
+ },
+ {
+  "Subcategoría": "Análisis de Datos y Estadística",
+  "Materia": "Diseño de Encuestas y Métodos de Muestreo"
+ },
+ {
+  "Subcategoría": "Construcción y Mantenimiento",
+  "Materia": "Técnicas Básicas de Carpintería y Mobiliario"
+ },
+ {
+  "Subcategoría": "Construcción y Mantenimiento",
+  "Materia": "Instalaciones Eléctricas Residenciales y Comerciales"
+ },
+ {
+  "Subcategoría": "Construcción y Mantenimiento",
+  "Materia": "Fontanería y Reparación de Tuberías"
+ },
+ {
+  "Subcategoría": "Construcción y Mantenimiento",
+  "Materia": "Albañilería y Construcción con Materiales Modernos"
+ },
+ {
+  "Subcategoría": "Construcción y Mantenimiento",
+  "Materia": "Mantenimiento de Sistemas de Climatización"
+ },
+ {
+  "Subcategoría": "Mecánica y Reparaciones",
+  "Materia": "Mecánica Automotriz: Diagnóstico y Reparación"
+ },
+ {
+  "Subcategoría": "Mecánica y Reparaciones",
+  "Materia": "Mantenimiento y Reparación de Motocicletas"
+ },
+ {
+  "Subcategoría": "Mecánica y Reparaciones",
+  "Materia": "Introducción a la Electricidad Automotriz"
+ },
+ {
+  "Subcategoría": "Mecánica y Reparaciones",
+  "Materia": "Reparación de Bicicletas y Mantenimiento de Frenos"
+ },
+ {
+  "Subcategoría": "Mecánica y Reparaciones",
+  "Materia": "Diagnóstico de Fallas en Sistemas de Combustión"
+ },
+ {
+  "Subcategoría": "Gastronomía y Repostería",
+  "Materia": "Repostería Clásica y Moderna"
+ },
+ {
+  "Subcategoría": "Gastronomía y Repostería",
+  "Materia": "Panadería Artesanal y Uso de Harinas Alternativas"
+ },
+ {
+  "Subcategoría": "Gastronomía y Repostería",
+  "Materia": "Decoración de Tortas y Postres de Alta Cocina"
+ },
+ {
+  "Subcategoría": "Gastronomía y Repostería",
+  "Materia": "Chocolatería y Bombonería Profesional"
+ },
+ {
+  "Subcategoría": "Gastronomía y Repostería",
+  "Materia": "Gestión y Administración de un Negocio de Repostería"
+ },
+ {
+  "Subcategoría": "Estética y Moda",
+  "Materia": "Técnicas de Corte y Peinado Profesional"
+ },
+ {
+  "Subcategoría": "Estética y Moda",
+  "Materia": "Colorimetría y Tintes para el Cabello"
+ },
+ {
+  "Subcategoría": "Estética y Moda",
+  "Materia": "Maquillaje Profesional y Estilos de Belleza"
+ },
+ {
+  "Subcategoría": "Estética y Moda",
+  "Materia": "Confección de Prendas y Diseño de Moda"
+ },
+ {
+  "Subcategoría": "Estética y Moda",
+  "Materia": "Creación y Personalización de Accesorios"
+ },
+ {
+  "Subcategoría": "Entrenamiento Físico y Bienestar",
+  "Materia": "Fundamentos del Entrenamiento Funcional"
+ },
+ {
+  "Subcategoría": "Entrenamiento Físico y Bienestar",
+  "Materia": "Nutrición para Atletas y Deportistas"
+ },
+ {
+  "Subcategoría": "Entrenamiento Físico y Bienestar",
+  "Materia": "Psicología del Deporte y Motivación"
+ },
+ {
+  "Subcategoría": "Entrenamiento Físico y Bienestar",
+  "Materia": "Prevención de Lesiones y Rehabilitación Deportiva"
+ },
+ {
+  "Subcategoría": "Entrenamiento Físico y Bienestar",
+  "Materia": "Técnicas de Respiración y Relajación para Deportistas"
+ },
+ {
+  "Subcategoría": "Turismo y Naturaleza",
+  "Materia": "Pesca Deportiva y Conservación de Ecosistemas"
+ },
+ {
+  "Subcategoría": "Turismo y Naturaleza",
+  "Materia": "Técnicas de Supervivencia y Campismo"
+ },
+ {
+  "Subcategoría": "Turismo y Naturaleza",
+  "Materia": "Planificación de Viajes y Turismo de Aventura"
+ },
+ {
+  "Subcategoría": "Turismo y Naturaleza",
+  "Materia": "Ecoturismo y Gestión de Áreas Naturales"
+ },
+ {
+  "Subcategoría": "Turismo y Naturaleza",
+  "Materia": "Fotografía de Paisajes y Vida Silvestre"
+ },
+ {
+  "Subcategoría": "Desarrollo Personal y Espiritualidad",
+  "Materia": "Introducción a la Meditación y Mindfulness"
+ },
+ {
+  "Subcategoría": "Desarrollo Personal y Espiritualidad",
+  "Materia": "Astrología y Análisis de Cartas Astrales"
+ },
+ {
+  "Subcategoría": "Desarrollo Personal y Espiritualidad",
+  "Materia": "Filosofía del Yoga y Técnicas de Relajación"
+ },
+ {
+  "Subcategoría": "Desarrollo Personal y Espiritualidad",
+  "Materia": "Técnicas de Visualización y Programación Mental"
+ },
+ {
+  "Subcategoría": "Desarrollo Personal y Espiritualidad",
+  "Materia": "Inteligencia Emocional y Control del Estrés"
+ },
+ {
+  "Subcategoría": "Artes Escénicas y Actuación",
+  "Materia": "Fundamentos de Actuación para Cine y Teatro"
+ },
+ {
+  "Subcategoría": "Artes Escénicas y Actuación",
+  "Materia": "Expresión Corporal y Técnicas de Improvisación"
+ },
+ {
+  "Subcategoría": "Artes Escénicas y Actuación",
+  "Materia": "Producción y Dirección de Espectáculos"
+ },
+ {
+  "Subcategoría": "Artes Escénicas y Actuación",
+  "Materia": "Creación de Personajes y Técnica Vocal"
+ },
+ {
+  "Subcategoría": "Artes Escénicas y Actuación",
+  "Materia": "Historia del Teatro y el Cine"
+ },
+ {
+  "Subcategoría": "Diseño y Producción de Videojuegos",
+  "Materia": "Introducción al Diseño de Videojuegos"
+ },
+ {
+  "Subcategoría": "Diseño y Producción de Videojuegos",
+  "Materia": "Creación de Personajes y Narrativa Interactiva"
+ },
+ {
+  "Subcategoría": "Diseño y Producción de Videojuegos",
+  "Materia": "Programación en Unity y Unreal Engine"
+ },
+ {
+  "Subcategoría": "Diseño y Producción de Videojuegos",
+  "Materia": "Diseño de Niveles y Experiencia del Usuario"
+ },
+ {
+  "Subcategoría": "Diseño y Producción de Videojuegos",
+  "Materia": "Gamificación y Monetización de Juegos"
+ }
+]
