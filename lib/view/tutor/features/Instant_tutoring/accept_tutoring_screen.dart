@@ -4,6 +4,7 @@ import 'package:flutter_projects/api_structure/api_service.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/tutor/features/Instant_tutoring/model/tutor.dart';
+import 'package:flutter_projects/view/tutor/features/home/providers/tutor_home_provider.dart';
 import 'package:provider/provider.dart';
 
 class AcceptTutoringScreen extends StatefulWidget {
@@ -110,7 +111,12 @@ class _AcceptTutoringScreenState extends State<AcceptTutoringScreen>
       // 3. Llamar a tu función HTTP
       await tutorAceptWaitlist(tokenAuth, tokenAccept.toString());
 
-      // 4. Si todo sale bien, ejecutamos la redirección
+      // 4. Registrar la hora de inicio de la confirmación para evitar reinicios del contador
+      final homeProvider =
+          Provider.of<TutorHomeProvider>(context, listen: false);
+      homeProvider.setConfirmationStartTime(DateTime.now());
+
+      // 5. Si todo sale bien, ejecutamos la redirección
       widget.onEnterWaitingRoom();
     } catch (e) {
       // Si hay un error (ej. el backend devuelve 400 o 500), mostramos un mensaje

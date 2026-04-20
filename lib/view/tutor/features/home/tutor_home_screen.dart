@@ -9,6 +9,7 @@ import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/view/tutor/dashboard/widgets/quick_access_section.dart';
 import 'package:flutter_projects/view/tutor/dashboard/widgets/dashboard_top_section.dart';
 import 'package:flutter_projects/view/tutor/dashboard/widgets/next_appointment_section.dart';
+import 'package:flutter_projects/view/tutor/features/home/widgets/solicitud_tutoria_card.dart';
 
 class TutorHomeScreen extends StatefulWidget {
   final Function(int) onNavigate;
@@ -65,7 +66,6 @@ class _TutorHomeScreenState extends State<TutorHomeScreen> {
           onAvailabilityToggle: (newState) =>
               homeProvider.handleAvailabilityToggle(context, newState),
         ),
-
         Expanded(
           child: RefreshIndicator(
             color: AppColors.brandCyan,
@@ -79,13 +79,29 @@ class _TutorHomeScreenState extends State<TutorHomeScreen> {
               padding: const EdgeInsets.only(bottom: 120),
               child: Column(
                 children: [
-                  if (!isProfileComplete) ...[
-                    const SizedBox(height: 10),
-                    _buildOnboardingBanner(context),
-                    const SizedBox(height: 20),
-                  ] else ...[
-                    const SizedBox(height: 25),
+                  // CARROUSEL DE BANNERS
+                  if (homeProvider.pendingTutoringRequest != null ||
+                      !isProfileComplete) ...[
+                    const SizedBox(height: 15),
+                    SizedBox(
+                      height: 250,
+                      child: PageView(
+                        physics: const BouncingScrollPhysics(),
+                        controller: PageController(viewportFraction: 0.92),
+                        children: [
+                          if (homeProvider.pendingTutoringRequest != null)
+                            SolicitudTutoriaCard(
+                                data: homeProvider.pendingTutoringRequest!),
+                          if (!isProfileComplete)
+                            _buildOnboardingBanner(context),
+                        ],
+                      ),
+                    ),
                   ],
+
+                  if (homeProvider.pendingTutoringRequest == null &&
+                      isProfileComplete)
+                    const SizedBox(height: 25),
 
                   // SECCIONES LIBRES
                   QuickAccessSection(onNavigate: widget.onNavigate),
@@ -94,7 +110,7 @@ class _TutorHomeScreenState extends State<TutorHomeScreen> {
 
                   NextAppointmentSection(
                     isAvailable: homeProvider.isAvailable,
-                    appointments:homeProvider.nextBooking!.map((booking) {
+                    appointments: homeProvider.nextBooking!.map((booking) {
                       final start =
                           DateTime.tryParse(booking['start_time'] ?? '') ??
                               DateTime.now();

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -14,6 +15,92 @@ class TutorHomeProvider extends ChangeNotifier {
   
   String? profileImageUrl;
   bool isLoadingProfileImage = false;
+
+  // NUEVO: Estado para solicitudes de tutoría pendientes (desde notificaciones)
+  Map<String, dynamic>? pendingTutoringRequest;
+  DateTime? requestTime;
+  DateTime? confirmationStartTime;
+  DateTime? tutoringTimerStartTime; // Global timer start time
+  bool isRequestRejected = false; // Nueva flag para tutor_rechazado
+  bool isRequestChosen = false; // Nueva flag para tutor_aceptado
+  bool isTutoringReady = false; // Nueva flag para tutoria_lista
+  String? activeMeetLink; // Enlace para unirse a la clase
+  Timer? _expirationTimer;
+
+  bool get isRequestExpired {
+    if (requestTime == null) return false;
+    final difference = DateTime.now().difference(requestTime!);
+    return difference.inMinutes >= 5;
+  }
+
+  void setConfirmationStartTime(DateTime? time) {
+    confirmationStartTime = time;
+    notifyListeners();
+  }
+
+  void startTutoringTimer() {
+    tutoringTimerStartTime = DateTime.now();
+    notifyListeners();
+  }
+
+  void resetTutoringTimer() {
+    tutoringTimerStartTime = DateTime.now();
+    notifyListeners();
+  }
+
+  void setPendingTutoringRequest(Map<String, dynamic>? data) {
+    _expirationTimer?.cancel();
+    pendingTutoringRequest = data;
+    requestTime = DateTime.now();
+    
+    // Iniciamos un temporizador que refresca cada minuto para actualizar el estado "Expirado"
+    // y finalmente limpia la solicitud a los 7 minutos
+    _expirationTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      if (pendingTutoringRequest == null) {
+        timer.cancel();
+        return;
+      }
+      
+      final difference = DateTime.now().difference(requestTime!);
+      if (difference.inMinutes >= 7) {
+        clearPendingRequest();
+        timer.cancel();
+      } else {
+        notifyListeners(); // Actualiza la UI para mostrar "Expirado" si ya pasaron 5 min
+      }
+    });
+
+    notifyListeners();
+  }
+
+  void clearPendingRequest() {
+    _expirationTimer?.cancel();
+    pendingTutoringRequest = null;
+    requestTime = null;
+    confirmationStartTime = null;
+    isRequestRejected = false;
+    isRequestChosen = false;
+    isTutoringReady = false;
+    activeMeetLink = null;
+    notifyListeners();
+  }
+
+  void setRequestRejected(bool rejected) {
+    isRequestRejected = rejected;
+    notifyListeners();
+  }
+
+  void setRequestChosen(bool chosen) {
+    isRequestChosen = chosen;
+    notifyListeners();
+  }
+
+  void setTutoringReady(String? link) {
+    activeMeetLink = link;
+    isTutoringReady = true;
+    isRequestChosen = false; // Ya no es solo "elegido", ahora está lista
+    notifyListeners();
+  }
 
   // 1. CARGA INICIAL (Ahora carga la foto también)
   Future<void> loadHomeData(BuildContext context) async {

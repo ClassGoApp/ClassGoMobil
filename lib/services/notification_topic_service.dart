@@ -1,9 +1,14 @@
+import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_projects/main.dart';
 import 'package:flutter_projects/view/tutor/features/Instant_tutoring/accept_tutoring_screen.dart';
 import 'package:flutter_projects/view/tutor/features/Instant_tutoring/confirmation_tutoring_screen.dart';
+import 'package:flutter_projects/view/tutor/features/Instant_tutoring/ready_tutoring_screen.dart';
+import 'package:flutter_projects/view/tutor/features/Instant_tutoring/view_wait_tutoring_screen.dart';
+import 'package:flutter_projects/view/tutor/features/home/providers/tutor_home_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationTopicService {
@@ -50,6 +55,92 @@ class NotificationTopicService {
         print(
             'Rol no reconocido para topics: $rol. Se dejaron todos los topics desuscritos.');
       }
+
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        print('🔔 Notificación en primer plano recibida: ${message.data}');
+
+        final data = message.data;
+        if (data['screen'] == 'solicitud_tutor') {
+          final context = navigatorKey.currentContext;
+          if (context != null) {
+            try {
+              // Actualizamos el provider de la Home del tutor
+              final homeProvider =
+                  Provider.of<TutorHomeProvider>(context, listen: false);
+              homeProvider.setPendingTutoringRequest(data);
+              homeProvider.startTutoringTimer(); // Inicia el cronómetro global
+            } catch (e) {
+              print(
+                  'Error al actualizar TutorHomeProvider desde notificación: $e');
+            }
+          }
+        } else if (data['screen'] == 'tutor_aceptado') {
+          final context = navigatorKey.currentContext;
+          if (context != null) {
+            try {
+              final homeProvider =
+                  Provider.of<TutorHomeProvider>(context, listen: false);
+              homeProvider
+                  .resetTutoringTimer(); // Reinicia el cronómetro a 5 min
+              homeProvider.setRequestRejected(
+                  false); // Por si acaso estaba en rechazado
+              homeProvider.setRequestChosen(true); // Marca como elegido
+
+              // Navegamos directamente a la pantalla de espera reemplazando la actual
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const VistaFuisteElegido()),
+              );
+            } catch (e) {
+              print('Error al procesar tutor_aceptado en primer plano: $e');
+            }
+          }
+        } else if (data['screen'] == 'tutor_rechazado') {
+          final context = navigatorKey.currentContext;
+          if (context != null) {
+            try {
+              final homeProvider =
+                  Provider.of<TutorHomeProvider>(context, listen: false);
+              homeProvider.setRequestRejected(true);
+            } catch (e) {
+              print('Error al actualizar estado rechazado: $e');
+            }
+          }
+        } else if (data['screen'] == 'tutoria_lista') {
+          final context = navigatorKey.currentContext;
+          if (context != null) {
+            try {
+              final homeProvider =
+                  Provider.of<TutorHomeProvider>(context, listen: false);
+
+              String link = '';
+              var decodificado = data['data_tutor'];
+              if (decodificado != null) {
+                if (decodificado is String) {
+                  decodificado = jsonDecode(decodificado);
+                  if (decodificado is String) {
+                    decodificado = jsonDecode(decodificado);
+                  }
+                }
+                if (decodificado is Map) {
+                  link = decodificado['meet_link'] ??
+                      decodificado['meeting_link'] ??
+                      '';
+                }
+              }
+
+              homeProvider.setTutoringReady(link);
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => VistaTutoriaLista(meetLink: link)),
+              );
+            } catch (e) {
+              print('Error al procesar tutoria_lista: $e');
+            }
+          }
+        }
+      });
 
       FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
         _handleNavigation(message, navigatorKey);
@@ -170,7 +261,7 @@ class NotificationTopicService {
               builder: (_) => AcceptTutoringScreen(
                     data_tutor: data['data_tutor'],
                     onEnterWaitingRoom: () {
-                      Navigator.push(
+                      Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
                               builder: (_) => const VistaConfirmacion()));
@@ -181,12 +272,56 @@ class NotificationTopicService {
 
       case 'tutor_rechazado':
         // Cambiar el estado de la vista de confirmación para mostrar que alguien ya acepto la solicitud
-        print('Push chat recibida, pero no existe vista de chat configurada');
+        print('Notificación de tutor rechazado (ya tomada)');
+        break;
+
+      case 'tutor_aceptado':
+        try {
+          final homeProvider =
+              Provider.of<TutorHomeProvider>(context, listen: false);
+          homeProvider.setRequestChosen(true);
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const VistaFuisteElegido()),
+          );
+        } catch (e) {
+          print('Error en navegación tutor_aceptado: $e');
+        }
         break;
 
       case 'detalle_solicitud':
         print(
             'Push detalle recibida, pero no existe vista de chat configurada');
+        break;
+
+      case 'tutoria_lista':
+        try {
+          final homeProvider =
+              Provider.of<TutorHomeProvider>(context, listen: false);
+          String link = '';
+          var decodificado = data['data_tutor'];
+          if (decodificado != null) {
+            if (decodificado is String) {
+              decodificado = jsonDecode(decodificado);
+              if (decodificado is String) {
+                decodificado = jsonDecode(decodificado);
+              }
+            }
+            if (decodificado is Map) {
+              link = decodificado['meet_link'] ??
+                  decodificado['meeting_link'] ??
+                  '';
+            }
+          }
+          homeProvider.setTutoringReady(link);
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+                builder: (_) => VistaTutoriaLista(meetLink: link)),
+          );
+        } catch (e) {
+          print('Error en navegación tutoria_lista (background): $e');
+        }
         break;
 
       default:

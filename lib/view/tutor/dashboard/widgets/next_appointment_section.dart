@@ -34,11 +34,9 @@ class NextAppointmentSection extends StatefulWidget {
   final List<AppointmentModel> appointments;
   final bool isAvailable;
 
-  const NextAppointmentSection({
-    Key? key,
-    required this.appointments,
-    required this.isAvailable
-  }) : super(key: key);
+  const NextAppointmentSection(
+      {Key? key, required this.appointments, required this.isAvailable})
+      : super(key: key);
 
   @override
   State<NextAppointmentSection> createState() => _NextAppointmentSectionState();
@@ -81,7 +79,7 @@ class _NextAppointmentSectionState extends State<NextAppointmentSection> {
 
         // EMPTY STATE
         SizedBox(
-          height: 200,
+          height: 250,
           child: widget.appointments.isEmpty
               ? _EmptyStateCard(isAvailable: widget.isAvailable)
               : PageView.builder(
@@ -142,7 +140,7 @@ class _AppointmentCard extends StatelessWidget {
     final statusColor = _getStatusColor(data.status);
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF151A24) : Colors.white,
         borderRadius: BorderRadius.circular(32),
@@ -165,116 +163,31 @@ class _AppointmentCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // FILA SUPERIOR: Texto y Badge
+          // PARTE SUPERIOR: Título y Badge en una fila, el resto abajo
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      data.title,
-                      style: TextStyle(
-                        color: isDark ? Colors.white : AppColors.brandBlue,
-                        fontSize: 24,
-                        fontFamily: _kTitleFont,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -0.5,
-                        height: 1.3,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 8),
-
-                    // Estudiante
-                    Row(
-                      // crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(
-                          Icons.person_outline_rounded,
-                          size: 16,
-                          color: isDark ? Colors.grey : Colors.grey[600],
-                        ),
-                        
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            "con ${data.studentName}",
-                            style: TextStyle(
-                              color: isDark ? Colors.grey : Colors.grey[700],
-                              fontSize: 16,
-                              fontFamily: _kBodyFont,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 7),
-                    Row(
-                      children: [
-                        // Capsula de Fecha
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: isDark ? Colors.white10 : AppColors.brandBlue.withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(7),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.calendar_today_rounded, size: 12, color: AppColors.brandCyan),
-                              const SizedBox(width: 4),
-                              Text(
-                                data.date,
-                                style: TextStyle(
-                                  color: isDark ? Colors.white70 : AppColors.brandBlue,
-                                  fontSize: 12,
-                                  fontFamily: _kBodyFont,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(width: 8),
-                        // Cápsula de Rango de Horas
-
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: isDark ? Colors.white10 : AppColors.brandBlue.withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(7),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.access_time_rounded, size: 12, color: AppColors.brandOrange),
-                              const SizedBox(width: 4),
-                              Text(
-                                "${data.time} - ${data.endTime}",
-                                style: TextStyle(
-                                  color: isDark ? Colors.white70 : AppColors.brandBlue,
-                                  fontSize: 12,
-                                  fontFamily: _kBodyFont,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    )
-                  ],
+                child: Text(
+                  data.title,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : AppColors.brandBlue,
+                    fontSize: 24,
+                    fontFamily: _kTitleFont,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.5,
+                    height: 1.3,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const SizedBox(width: 8),
               // BADGE "ESTADO"
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: statusColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
@@ -283,6 +196,7 @@ class _AppointmentCard extends StatelessWidget {
                   ),
                 ),
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       data.status.toLowerCase().contains('cursando')
@@ -307,12 +221,105 @@ class _AppointmentCard extends StatelessWidget {
               ),
             ],
           ),
-          
+
+          const SizedBox(height: 8),
+
+          // Subtítulo Estudiante
+          Row(
+            children: [
+              Icon(
+                Icons.person_outline_rounded,
+                size: 16,
+                color: isDark ? Colors.grey : Colors.grey[600],
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  "con ${data.studentName}",
+                  style: TextStyle(
+                    color: isDark ? Colors.grey : Colors.grey[700],
+                    fontSize: 16,
+                    fontFamily: _kBodyFont,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // Cápsulas de Fecha y Hora (ahora con el ancho total de la tarjeta)
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            children: [
+              // Capsula de Fecha
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? Colors.white10
+                      : AppColors.brandBlue.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(7),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.calendar_today_rounded,
+                        size: 12, color: AppColors.brandCyan),
+                    const SizedBox(width: 4),
+                    Text(
+                      data.date,
+                      style: TextStyle(
+                        color: isDark ? Colors.white70 : AppColors.brandBlue,
+                        fontSize: 12,
+                        fontFamily: _kBodyFont,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Cápsula de Rango de Horas
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? Colors.white10
+                      : AppColors.brandBlue.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(7),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.access_time_rounded,
+                        size: 12, color: AppColors.brandOrange),
+                    const SizedBox(width: 4),
+                    Text(
+                      "${data.time} - ${data.endTime}",
+                      style: TextStyle(
+                        color: isDark ? Colors.white70 : AppColors.brandBlue,
+                        fontSize: 12,
+                        fontFamily: _kBodyFont,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
           const SizedBox(height: 20),
 
           // FILA INFERIOR: Botones de Acción
           Builder(builder: (context) {
-            final provider = Provider.of<TutorHomeProvider>(context, listen: false);
+            final provider =
+                Provider.of<TutorHomeProvider>(context, listen: false);
             final s = data.status.toLowerCase();
             final isCursando = s.contains('cursando');
 
@@ -330,7 +337,8 @@ class _AppointmentCard extends StatelessWidget {
                           date: data.date,
                           time: data.time,
                           endTime: data.endTime,
-                          message: "Hola, necesito ayuda con este tema. ¡Gracias!",
+                          message:
+                              "Hola, necesito ayuda con este tema. ¡Gracias!",
                         ),
                       );
                     },
@@ -347,11 +355,14 @@ class _AppointmentCard extends StatelessWidget {
                     ),
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(
-                        color: isDark ? Colors.white24 : AppColors.brandBlue.withOpacity(0.2),
+                        color: isDark
+                            ? Colors.white24
+                            : AppColors.brandBlue.withOpacity(0.2),
                         width: 1.5,
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
                     ),
                   ),
                 ),
@@ -368,7 +379,9 @@ class _AppointmentCard extends StatelessWidget {
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('El enlace de Meet aún no está disponible.', style: TextStyle(fontFamily: _kBodyFont)),
+                              content: Text(
+                                  'El enlace de Meet aún no está disponible.',
+                                  style: TextStyle(fontFamily: _kBodyFont)),
                               backgroundColor: Colors.orange,
                             ),
                           );
@@ -379,14 +392,19 @@ class _AppointmentCard extends StatelessWidget {
                           builder: (ctx) => StartSessionDialog(
                             studentName: data.studentName,
                             onConfirm: () async {
-                              bool success = await provider.changeBookingStatusToCursando(context, data.id);
+                              bool success =
+                                  await provider.changeBookingStatusToCursando(
+                                      context, data.id);
                               if (success) {
                                 if (data.meetLink.isNotEmpty) {
                                   provider.openMeetLink(context, data.meetLink);
                                 } else {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      content: Text('Reunión iniciada, esperando enlace...', style: TextStyle(fontFamily: _kBodyFont)),
+                                      content: Text(
+                                          'Reunión iniciada, esperando enlace...',
+                                          style: TextStyle(
+                                              fontFamily: _kBodyFont)),
                                       backgroundColor: Colors.green,
                                     ),
                                   );
@@ -398,7 +416,9 @@ class _AppointmentCard extends StatelessWidget {
                       }
                     },
                     icon: Icon(
-                      isCursando ? Icons.video_call_rounded : Icons.play_arrow_rounded,
+                      isCursando
+                          ? Icons.video_call_rounded
+                          : Icons.play_arrow_rounded,
                       size: 20,
                       color: Colors.white,
                     ),
@@ -411,10 +431,12 @@ class _AppointmentCard extends StatelessWidget {
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: isCursando ? Colors.redAccent : AppColors.brandOrange,
+                      backgroundColor:
+                          isCursando ? Colors.redAccent : AppColors.brandOrange,
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
                     ),
                   ),
                 ),
@@ -429,7 +451,8 @@ class _AppointmentCard extends StatelessWidget {
 
 class _EmptyStateCard extends StatelessWidget {
   final bool isAvailable;
-  const _EmptyStateCard({Key? key, required this.isAvailable}) : super(key: key);
+  const _EmptyStateCard({Key? key, required this.isAvailable})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -453,13 +476,15 @@ class _EmptyStateCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              isAvailable ? Icons.weekend_rounded : Icons.visibility_off_rounded,
+              isAvailable
+                  ? Icons.weekend_rounded
+                  : Icons.visibility_off_rounded,
               size: 40,
               color: isDark ? Colors.white24 : Colors.grey[300],
             ),
             const SizedBox(height: 12),
             Text(
-              isAvailable ? "¡Todo despejado!":"Modo offline" ,
+              isAvailable ? "¡Todo despejado!" : "Modo offline",
               style: TextStyle(
                 color: isDark ? Colors.white : AppColors.brandBlue,
                 fontSize: 18,
@@ -468,8 +493,10 @@ class _EmptyStateCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-            Text( isAvailable ?
-              "No tienes citas programadas para hoy.": "Activa tu disponibilidad para que los alumnos te vean.",
+            Text(
+              isAvailable
+                  ? "No tienes citas programadas para hoy."
+                  : "Activa tu disponibilidad para que los alumnos te vean.",
               style: TextStyle(
                 color: isDark ? Colors.grey : Colors.grey[500],
                 fontSize: 14,
