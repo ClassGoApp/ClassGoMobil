@@ -5,11 +5,11 @@ import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as path;
 
-// final String baseUrl = 'https://classgoapp.com/api';
-// final String storageBaseUrl = 'https://classgoapp.com/storage';
+final String baseUrl = 'https://classgoapp.com/api';
+final String storageBaseUrl = 'https://classgoapp.com/storage';
 
-final String baseUrl = 'http://192.168.1.12:8000/api';
-final String storageBaseUrl = 'http://192.168.1.12:8000/storage';
+// final String baseUrl = 'http://192.168.1.12:8000/api';
+// final String storageBaseUrl = 'http://192.168.1.12:8000/storage';
 
 class TokenExpiredException implements Exception {
   final String message =
@@ -2898,10 +2898,11 @@ Future<Map<String, dynamic>> checkActiveBatch(String token) async {
 }
 
 /// 5. Hacer Polling para ver qué tutores aceptaron
-Future<Map<String, dynamic>> pollAcceptedTutors(String batchId, String token) async {
+Future<Map<String, dynamic>> pollAcceptedTutors(
+    String batchId, String token) async {
   try {
     final String urlExacta = '$baseUrl/batches/$batchId/accepted-tutors';
-    print("🕵️‍♂️ LLAMANDO A POLLING: $urlExacta"); 
+    print("🕵️‍♂️ LLAMANDO A POLLING: $urlExacta");
     final response = await http.get(
       Uri.parse(urlExacta),
       headers: {
@@ -2988,29 +2989,29 @@ Future<Map<String, dynamic>> reserveTutor(
 //   }
 // }
 
+/// Obtener la lista de categorías y sus materias disponibles
+Future<Map<String, dynamic>> getCategoriasMaterias(String token) async {
+  try {
+    final response = await http.get(
+      // URL idéntica a la que dicta la Web
+      Uri.parse('$baseUrl/subject-groups/categorias-materias'),
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
 
-  /// Obtener la lista de categorías y sus materias disponibles
-  Future<Map<String, dynamic>> getCategoriasMaterias(String token) async {
-    try {
-      final response = await http.get(
-        // URL idéntica a la que dicta la Web
-        Uri.parse('$baseUrl/subject-groups/categorias-materias'), 
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token', 
-        },
-      );
-
-      if (response.statusCode == 200) {
-        // Devuelve exactamente el formato: { "data": [ { "id_categoria": 1, ... } ] }
-        return json.decode(response.body); 
-      } else {
-        throw Exception('Error al cargar categorías. Código: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error de conexión al cargar categorías: $e');
+    if (response.statusCode == 200) {
+      // Devuelve exactamente el formato: { "data": [ { "id_categoria": 1, ... } ] }
+      return json.decode(response.body);
+    } else {
+      throw Exception(
+          'Error al cargar categorías. Código: ${response.statusCode}');
     }
+  } catch (e) {
+    throw Exception('Error de conexión al cargar categorías: $e');
   }
+}
 
 // FUNCIÓN PARA CREAR LA RESERVA (Paso 1)
 // Future<Map<String, dynamic>> crearReserva(
@@ -3056,7 +3057,8 @@ Future<Map<String, dynamic>> reserveTutor(
 // }
 
 /// 7. Subir el comprobante de pago (Voucher/QR)
-Future<Map<String, dynamic>> subirComprobante(int bookingId, String imagePath, String token) async {
+Future<Map<String, dynamic>> subirComprobante(
+    int bookingId, String imagePath, String token) async {
   final String url = '$baseUrl/bookings/$bookingId/receipt';
 
   try {
@@ -3089,7 +3091,8 @@ Future<Map<String, dynamic>> subirComprobante(int bookingId, String imagePath, S
 }
 
 /// 8. Consultar el estado del pago y obtener el link (Polling final)
-Future<Map<String, dynamic>> consultarEstadoReserva(int bookingId, String token) async {
+Future<Map<String, dynamic>> consultarEstadoReserva(
+    int bookingId, String token) async {
   final String url = '$baseUrl/bookings/$bookingId/status';
 
   try {
@@ -3119,7 +3122,11 @@ Future<Map<String, dynamic>> consultarEstadoReserva(int bookingId, String token)
       };
     } else {
       print("🔴 ERROR BACKEND: ${data['message']}");
-      return {'success': false, 'message': data['message'] ?? 'Error en el servidor: ${response.statusCode}'};
+      return {
+        'success': false,
+        'message':
+            data['message'] ?? 'Error en el servidor: ${response.statusCode}'
+      };
     }
   } catch (e) {
     print("🔴 ERROR CONEXIÓN: $e");
@@ -3127,7 +3134,8 @@ Future<Map<String, dynamic>> consultarEstadoReserva(int bookingId, String token)
   }
 }
 
-Future<Map<String, dynamic>> tutorAceptWaitlist(String token, String token_accept) async {
+Future<Map<String, dynamic>> tutorAceptWaitlist(
+    String token, String token_accept) async {
   try {
     final Uri uri = Uri.parse('$baseUrl/tutor/waitlist/accept');
     final headers = <String, String>{
@@ -3136,7 +3144,7 @@ Future<Map<String, dynamic>> tutorAceptWaitlist(String token, String token_accep
       'Content-Type': 'application/json',
     };
     final body = jsonEncode({'t': token_accept, 'm': true});
-    
+
     // 🔍 1. Vemos qué estamos enviando
     print('🚀 [API TUTOR] Enviando petición a: $uri');
     print('🚀 [API TUTOR] Body enviado: $body');
@@ -3152,7 +3160,8 @@ Future<Map<String, dynamic>> tutorAceptWaitlist(String token, String token_accep
       return json.decode(response.body);
     } else {
       print('❌ [API TUTOR] Laravel devolvió un error de status');
-      final decoded = response.body.isNotEmpty ? json.decode(response.body) : null;
+      final decoded =
+          response.body.isNotEmpty ? json.decode(response.body) : null;
       final message = (decoded is Map && decoded.containsKey('message'))
           ? decoded['message']
           : 'Failed to accept waitlist';
