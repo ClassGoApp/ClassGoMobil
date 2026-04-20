@@ -64,6 +64,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     // 🔒 MODO INVITADO (NO LOGUEADO)
     if (!authProvider.isLoggedIn) {
@@ -72,20 +74,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (widget.showAppBar) {
       return Scaffold(
-        backgroundColor: AppColors.backgroundColor,
+        backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
-          backgroundColor: AppColors.backgroundColor,
+          backgroundColor: theme.scaffoldBackgroundColor,
           elevation: 0,
           leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: AppColors.blackColor),
+            icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface),
             onPressed: () => Navigator.pop(context),
           ),
           title: Text(
             'Mi Perfil',
             style: TextStyle(
-              color: AppColors.blackColor,
+              color: theme.colorScheme.onSurface,
               fontSize: 20,
               fontWeight: FontWeight.bold,
+              fontFamily: 'outfit',
             ),
           ),
         ),
@@ -111,6 +114,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ? userData['user']['email']
         : null;
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return SingleChildScrollView(
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 20,
@@ -125,15 +131,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
             width: double.infinity,
             padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.cardTheme.color,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 8,
-                  offset: Offset(0, 2),
-                ),
+                if (!isDark)
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
               ],
+              border: isDark ? Border.all(color: Colors.white10) : null,
             ),
             child: Column(
               children: [
@@ -191,14 +199,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.blackColor,
+                    color: theme.textTheme.titleLarge?.color ?? AppColors.blackColor,
                   ),
                 ),
                 SizedBox(height: 4),
                 Text(
                   email ?? 'email@ejemplo.com',
                   style: TextStyle(
-                    color: AppColors.greyColor,
+                    color: isDark ? Colors.white54 : AppColors.greyColor,
                     fontSize: 16,
                   ),
                 ),
@@ -281,18 +289,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required VoidCallback onTap,
     Color? color,
   }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       margin: EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
+          if (!isDark)
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
         ],
+        border: isDark ? Border.all(color: Colors.white10) : null,
       ),
       child: ListTile(
         leading: Container(
@@ -312,19 +325,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: AppColors.blackColor,
+            color: theme.textTheme.bodyLarge?.color ?? AppColors.blackColor,
           ),
         ),
         subtitle: Text(
           subtitle,
           style: TextStyle(
             fontSize: 14,
-            color: AppColors.greyColor,
+            color: isDark ? Colors.white54 : AppColors.greyColor,
           ),
         ),
         trailing: Icon(
           Icons.arrow_forward_ios,
-          color: AppColors.greyColor,
+          color: isDark ? Colors.white38 : AppColors.greyColor,
           size: 16,
         ),
         onTap: onTap,

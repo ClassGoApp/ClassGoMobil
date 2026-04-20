@@ -63,18 +63,23 @@ class _TutorCardState extends State<TutorCard> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(20.0),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 12,
-            offset: Offset(0, 4),
-          ),
+          if (!isDark)
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 12,
+              offset: Offset(0, 4),
+            ),
         ],
+        border: isDark ? Border.all(color: Colors.white10) : null,
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -137,7 +142,7 @@ class _TutorCardState extends State<TutorCard> {
                                     style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
-                                      color: AppColors.blackColor,
+                                      color: theme.textTheme.titleLarge?.color ?? AppColors.blackColor,
                                     ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -163,7 +168,7 @@ class _TutorCardState extends State<TutorCard> {
                             child: Container(
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: isDark ? theme.cardTheme.color : Colors.white,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Icon(
@@ -191,7 +196,7 @@ class _TutorCardState extends State<TutorCard> {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.blackColor,
+                              color: theme.textTheme.titleMedium?.color ?? AppColors.blackColor,
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -250,7 +255,7 @@ class _TutorCardState extends State<TutorCard> {
                     child: Text(
                       'Ver Perfil',
                       style: TextStyle(
-                        color: AppColors.blackColor,
+                        color: theme.textTheme.bodyLarge?.color ?? AppColors.blackColor,
                         fontWeight: FontWeight.w600,
                         fontSize: 15,
                       ),

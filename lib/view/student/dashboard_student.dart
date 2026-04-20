@@ -44,8 +44,11 @@ class _DashboardStudentState extends State<DashboardStudent> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: PageView( 
         controller: _pageController,
         physics: const NeverScrollableScrollPhysics(),
@@ -142,7 +145,7 @@ class _DashboardStudentState extends State<DashboardStudent> {
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: AppColors.blackColor,
+            color: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.blackColor,
           ),
         ),
         SizedBox(height: 16),
@@ -174,9 +177,7 @@ class _DashboardStudentState extends State<DashboardStudent> {
               subtitle: 'Ver sesiones',
               color: AppColors.lightBlueColor,
               onTap: () {
-                setState(() {
-                  _selectedIndex = 1;
-                });
+                changeTab(1);
               },
             ),
             _buildActionCard(
@@ -185,11 +186,7 @@ class _DashboardStudentState extends State<DashboardStudent> {
               subtitle: 'Tutores favoritos',
               color: const Color.fromARGB(255, 255, 100, 88),
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => FavoriteTutorsScreen()),
-                );
+                changeTab(3);
               },
             ),
             _buildActionCard(
@@ -198,9 +195,7 @@ class _DashboardStudentState extends State<DashboardStudent> {
               subtitle: 'Ajustes del perfil',
               color: Colors.purple,
               onTap: () {
-                setState(() {
-                  _selectedIndex = 3;
-                });
+                changeTab(4);
               },
             ),
           ],
@@ -216,20 +211,25 @@ class _DashboardStudentState extends State<DashboardStudent> {
     required Color color,
     required VoidCallback onTap,
   }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardTheme.color,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 8,
-              offset: Offset(0, 2),
-            ),
+            if (!isDark)
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: Offset(0, 2),
+              ),
           ],
+          border: isDark ? Border.all(color: Colors.white10) : null,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -252,7 +252,7 @@ class _DashboardStudentState extends State<DashboardStudent> {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: AppColors.blackColor,
+                color: theme.textTheme.bodyLarge?.color ?? AppColors.blackColor,
               ),
               textAlign: TextAlign.center,
             ),
@@ -272,6 +272,9 @@ class _DashboardStudentState extends State<DashboardStudent> {
   }
 
   Widget _buildRecentBookings() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -280,22 +283,24 @@ class _DashboardStudentState extends State<DashboardStudent> {
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: AppColors.blackColor,
+            color: isDark ? Colors.white : AppColors.blackColor,
           ),
         ),
         SizedBox(height: 16),
         Container(
           padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: theme.cardTheme.color,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 8,
-                offset: Offset(0, 2),
-              ),
+              if (!isDark)
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                ),
             ],
+            border: isDark ? Border.all(color: Colors.white10) : null,
           ),
           child: Column(
             children: [
@@ -303,14 +308,14 @@ class _DashboardStudentState extends State<DashboardStudent> {
                 children: [
                   Icon(
                     Icons.info_outline,
-                    color: AppColors.greyColor,
+                    color: isDark ? Colors.white54 : AppColors.greyColor,
                     size: 20,
                   ),
                   SizedBox(width: 8),
                   Text(
                     'No tienes reservas recientes',
                     style: TextStyle(
-                      color: AppColors.greyColor,
+                      color: isDark ? Colors.white54 : AppColors.greyColor,
                       fontSize: 14,
                     ),
                   ),
@@ -363,6 +368,9 @@ class _DashboardStudentState extends State<DashboardStudent> {
   }
 
   Widget _buildSubjectsTab() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Column(
       children: [
         SizedBox(height: MediaQuery.of(context).padding.top + 20),
@@ -382,14 +390,14 @@ class _DashboardStudentState extends State<DashboardStudent> {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.blackColor,
+                    color: theme.textTheme.titleLarge?.color ?? AppColors.blackColor,
                   ),
                 ),
                 SizedBox(height: 8),
                 Text(
                   'Aquí verás todas las materias que estás estudiando',
                   style: TextStyle(
-                    color: AppColors.greyColor,
+                    color: isDark ? Colors.white54 : AppColors.greyColor,
                     fontSize: 16,
                   ),
                   textAlign: TextAlign.center,

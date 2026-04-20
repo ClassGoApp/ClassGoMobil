@@ -34,10 +34,12 @@ class NotificationTopicService {
 
       final normalizedRole = rol.trim().toLowerCase();
 
-      // Siempre limpiamos primero para evitar suscripciones obsoletas.
-      await _messaging.unsubscribeFromTopic(_tutorTopic);
-      await _messaging.unsubscribeFromTopic(_tutorLegacyTopic);
-      await _messaging.unsubscribeFromTopic(_studentTopic);
+      // Siempre limpiamos primero para evitar suscripciones obsoletas en paralelo
+      await Future.wait([
+        _messaging.unsubscribeFromTopic(_tutorTopic),
+        _messaging.unsubscribeFromTopic(_tutorLegacyTopic),
+        _messaging.unsubscribeFromTopic(_studentTopic),
+      ]);
 
       if (normalizedRole == 'tutor') {
         await _messaging.subscribeToTopic(_tutorTopic);
@@ -158,11 +160,15 @@ class NotificationTopicService {
   /// Desuscribir de todos (por ejemplo al hacer logout)
   static Future<void> unsubscribeAll() async {
     try {
-      await _messaging.unsubscribeFromTopic(_tutorTopic);
-      await _messaging.unsubscribeFromTopic(_tutorLegacyTopic);
-      await _messaging.unsubscribeFromTopic(_studentTopic);
+      // Ejecutar desuscripciones en paralelo para no bloquear el flujo
+      await Future.wait([
+        _messaging.unsubscribeFromTopic(_tutorTopic),
+        _messaging.unsubscribeFromTopic(_tutorLegacyTopic),
+        _messaging.unsubscribeFromTopic(_studentTopic),
+      ]).timeout(const Duration(seconds: 2), onTimeout: () => []);
+
       await _persistCurrentRole('none');
-      print('Desuscrito de todos los topics');
+      print('Desuscrito de todos los topics (paralelo)');
     } catch (e) {
       print('Error al desuscribirse: $e');
     }

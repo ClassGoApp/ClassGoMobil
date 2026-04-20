@@ -11,6 +11,7 @@ class InstantTutoringScreen extends StatefulWidget {
   final Map<String, dynamic>? selectedSubject;
   final int tutorId;
   final int subjectId;
+  final double? price;
   // ✅ NUEVO: Parámetros para reserva programada
   final DateTime? scheduledDate;
   final String? scheduledTime;
@@ -30,6 +31,7 @@ class InstantTutoringScreen extends StatefulWidget {
     this.scheduledTime,
     this.isScheduledBooking = false,
     this.slotId,
+    this.price,
   }) : super(key: key);
 
   @override
@@ -481,6 +483,8 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                         : 'Tutor de ClassGo',
                                     style: AppTextStyles.body
                                         .copyWith(color: Colors.white70),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ],
                               ),
@@ -542,6 +546,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                           key: _subjectSelectorKey,
                           onTap: _toggleDropdown,
                           child: Container(
+                            width: double.infinity,
                             padding: EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 14),
                             decoration: BoxDecoration(
@@ -950,7 +955,9 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                         tutorImage: widget.tutorImage,
                                         selectedSubject: _displaySubjectName(
                                             _selectedSubject),
-                                        amount: "15 Bs",
+                                        amount: widget.price != null
+                                            ? "${widget.price!.toInt()} Bs"
+                                            : "20 Bs",
                                         sessionDuration: "20 min",
                                         tutorId: widget.tutorId,
                                         subjectId: _selectedSubjectId ??

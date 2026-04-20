@@ -683,7 +683,7 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
                                             style: TextStyle(
                                                 color: Colors.white70,
                                                 fontSize: 16)),
-                                        Text('15 Bs',
+                                        Text(widget.amount,
                                             style: TextStyle(
                                                 color: AppColors.lightBlueColor,
                                                 fontSize: 24,
@@ -699,7 +699,7 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
                                             style: TextStyle(
                                                 color: Colors.white70,
                                                 fontSize: 16)),
-                                        Text('20 min',
+                                        Text(widget.sessionDuration,
                                             style: TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 16)),

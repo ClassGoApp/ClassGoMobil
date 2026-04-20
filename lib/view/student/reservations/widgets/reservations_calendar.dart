@@ -153,8 +153,14 @@ class _ReservationsCalendarState extends State<ReservationsCalendar> {
         "${toBeginningOfSentenceCase(DateFormat('MMMM', 'es').format(_focusedDay))} ${DateFormat('yyyy').format(_focusedDay)}";
 
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 2,
+      color: Theme.of(context).cardTheme.color,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: isDark
+            ? const BorderSide(color: Colors.white10)
+            : BorderSide.none,
+      ),
+      elevation: isDark ? 0 : 2,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Column(
@@ -214,7 +220,9 @@ class _ReservationsCalendarState extends State<ReservationsCalendar> {
                         decoration: BoxDecoration(
                             color: Colors.grey.withOpacity(0.08),
                             shape: BoxShape.circle),
-                        child: const Icon(Icons.calendar_today_outlined,
+                        child: Icon(Icons.calendar_today_outlined,
+                            color:
+                                isDark ? Colors.white70 : AppColors.blackColor,
                             size: 16))),
               ],
             ),
@@ -399,7 +407,9 @@ class _ReservationsCalendarState extends State<ReservationsCalendar> {
             const SizedBox(height: 8),
             Text(
               'Fecha Seleccionada: ${_selectedDate.toLocal().toString().split(' ')[0]}',
-              style: TextStyle(color: AppColors.greyColor),
+              style: TextStyle(
+                  color: isDark ? Colors.white54 : AppColors.greyColor,
+                  fontSize: 13),
             ),
           ],
         ),

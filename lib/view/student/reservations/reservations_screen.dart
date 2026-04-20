@@ -26,13 +26,15 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text('Reservaciones'),
-        backgroundColor: AppColors.primaryGreen,
+        title: Text('Reservaciones', style: TextStyle(fontFamily: 'outfit', fontWeight: FontWeight.bold)),
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
+        centerTitle: true,
       ),
-      backgroundColor: AppColors.backgroundColor,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -144,7 +146,7 @@ class _ReservationsContentState extends State<ReservationsContent> {
                 child: _selectedEvents.isEmpty
                     ? Center(
                         child: Text('No hay reservas para esta fecha',
-                            style: TextStyle(color: AppColors.greyColor)))
+                            style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.white54 : AppColors.greyColor)))
                     : ListView.separated(
                         itemCount: _selectedEvents.length,
                         separatorBuilder: (_, __) => Divider(),

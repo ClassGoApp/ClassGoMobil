@@ -26,22 +26,24 @@ class FavoriteTutorsScreen extends StatefulWidget {
 
 class _FavoriteTutorsScreenState extends State<FavoriteTutorsScreen> {
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: AppColors.backgroundColor,
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         centerTitle: true,
         automaticallyImplyLeading: false,
         title: Text(
           'Tutores Favoritos',
           style: TextStyle(
-            color: AppColors.blackColor,
+            color: theme.colorScheme.onSurface,
             fontSize: 20,
             fontWeight: FontWeight.bold,
+            fontFamily: 'outfit',
           ),
         ),
       ),
-      backgroundColor: AppColors.backgroundColor,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -228,6 +230,8 @@ class _FavoriteTutorsContentState extends State<FavoriteTutorsContent> {
   }
 
   Widget _buildEmptyState() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -240,14 +244,16 @@ class _FavoriteTutorsContentState extends State<FavoriteTutorsContent> {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: AppColors.blackColor,
+                color: isDark ? Colors.white : AppColors.blackColor,
               ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               'Guarda tutores que te gusten para encontrarlos rápidamente.',
-              style: TextStyle(color: AppColors.greyColor, fontSize: 14),
+              style: TextStyle(
+                  color: isDark ? Colors.white54 : AppColors.greyColor,
+                  fontSize: 14),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),

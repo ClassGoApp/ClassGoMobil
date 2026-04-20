@@ -718,50 +718,52 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  /// Cierra la sesión del usuario
+  /// Cierra la sesión del usuario de forma instantánea
   Future<void> logout() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+    print('DEBUG - Iniciando logout instantáneo');
 
-    await NotificationTopicService.unsubscribeAll();
-
-    // Limpiar token
+    // 1. Limpiar datos en memoria de inmediato
     _token = null;
-    await prefs.remove('token');
-
-    // Limpiar datos del usuario
     _userData = null;
-    await prefs.remove('userData');
-
-    // Limpiar listas
+    // Mantener _isSessionLoaded = true; para que el Router no se quede en "cargando"
+    
     _educationList.clear();
     _experienceList.clear();
     _certificateList.clear();
-    await prefs.remove('educationList');
-    await prefs.remove('experienceList');
 
-    // Limpiar datos del perfil
-    _firstName = null;
-    _lastName = null;
-    _email = null;
-    _phone = null;
-    _country = null;
-    _state = null;
-    _city = null;
-    _zipCode = null;
-    _description = null;
-    _company = null;
-
-    await prefs.remove('firstName');
-    await prefs.remove('lastName');
-    await prefs.remove('email');
-    await prefs.remove('phone');
-    await prefs.remove('country');
-    await prefs.remove('state');
-    await prefs.remove('city');
-    await prefs.remove('zipCode');
-    await prefs.remove('description');
-    await prefs.remove('company');
-
+    // Notificar a los listeners DE INMEDIATO para redirigir al HomeScreen
     notifyListeners();
+
+    // 2. Ejecutar limpieza pesada en segundo plano SIN esperar el resultado
+    _performBackgroundCleanup();
+  }
+
+  /// Realiza la limpieza de persistencia en segundo plano
+  Future<void> _performBackgroundCleanup() async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      
+      await Future.wait([
+        NotificationTopicService.unsubscribeAll(),
+        prefs.remove('token'),
+        prefs.remove('userData'),
+        prefs.remove('educationList'),
+        prefs.remove('experienceList'),
+        prefs.remove('certificateList'),
+        prefs.remove('firstName'),
+        prefs.remove('lastName'),
+        prefs.remove('email'),
+        prefs.remove('phone'),
+        prefs.remove('country'),
+        prefs.remove('state'),
+        prefs.remove('city'),
+        prefs.remove('zipCode'),
+        prefs.remove('description'),
+        prefs.remove('company'),
+      ]);
+      print('DEBUG - Limpieza de segundo plano completada');
+    } catch (e) {
+      print('ERROR - Falló la limpieza de segundo plano: $e');
+    }
   }
 }

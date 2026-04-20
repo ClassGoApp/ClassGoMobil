@@ -9,6 +9,7 @@ class ConfirmBookingModal extends StatelessWidget {
   final int? subjectId;
   final int tutorId;
   final String? tagline;
+  final double? price;
 
   const ConfirmBookingModal({
     Key? key,
@@ -18,6 +19,7 @@ class ConfirmBookingModal extends StatelessWidget {
     required this.tutorId,
     required this.subjectId,
     this.tagline = '',
+    this.price,
   }) : super(key: key);
 
   @override
@@ -35,6 +37,7 @@ class ConfirmBookingModal extends StatelessWidget {
         tagline: tagline,
         tutorId: tutorId,
         subjectId: subjectId,
+        price: price,
       ),
     );
   }

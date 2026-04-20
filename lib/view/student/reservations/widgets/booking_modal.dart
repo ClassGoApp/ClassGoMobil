@@ -16,6 +16,7 @@ class BookingModal extends StatefulWidget {
   final int? subjectId;
   final int tutorId;
   final String? tagline;
+  final double? price;
 
   const BookingModal({
     required this.tutorName,
@@ -24,6 +25,7 @@ class BookingModal extends StatefulWidget {
     required this.tutorId,
     required this.subjectId,
     this.tagline = '',
+    this.price,
   });
 
   @override
@@ -406,6 +408,7 @@ class BookingModalState extends State<BookingModal> {
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<Map<String, dynamic>>(
+              isExpanded: true,
               value: selectedSubject,
               dropdownColor: AppColors.darkBlue,
               borderRadius: BorderRadius.circular(12),
@@ -419,6 +422,8 @@ class BookingModalState extends State<BookingModal> {
                   child: Text(
                     _displaySubjectName(subject),
                     style: const TextStyle(color: Colors.white),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                 );
               }).toList(),
@@ -781,16 +786,29 @@ class BookingModalState extends State<BookingModal> {
                           final isToday = isSameDay(selectedDay, todayBolivia);
 
                           final List<Map<String, dynamic>> expandedBlocks = [];
+                          final Set<String> seenStarts = {};
 
                           for (final slot in slotsForDay) {
-                            expandedBlocks.addAll(
-                              _expandSlotTo20MinBlocks(
-                                slot,
-                                nowBolivia: nowBolivia,
-                                isToday: isToday,
-                              ),
+                            final List<Map<String, dynamic>> blocks =
+                                _expandSlotTo20MinBlocks(
+                              slot,
+                              nowBolivia: nowBolivia,
+                              isToday: isToday,
                             );
+
+                            for (final b in blocks) {
+                              final String start = b['start'];
+                              // Solo añadimos si no hemos visto esta hora de inicio antes
+                              if (seenStarts.add(start)) {
+                                expandedBlocks.add(b);
+                              }
+                            }
                           }
+
+                          // Opcional: Asegurar que estén ordenados por hora por si el API
+                          // mandó rangos desordenados o solapados
+                          expandedBlocks.sort((a, b) =>
+                              (a['start'] as String).compareTo(b['start']));
 
                           if (expandedBlocks.isEmpty) {
                             return Container(
@@ -952,6 +970,7 @@ class BookingModalState extends State<BookingModal> {
                               scheduledTime: selectedHour,
                               isScheduledBooking: true,
                               slotId: _buildSlotIdFormatted(),
+                              price: widget.price,
                             ),
                           ),
                         );

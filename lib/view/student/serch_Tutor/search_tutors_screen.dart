@@ -164,13 +164,16 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   }
 
   void _showSortOptions() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) {
         return Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: theme.cardTheme.color,
             borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
           ),
           padding: EdgeInsets.symmetric(vertical: 12),
@@ -178,7 +181,10 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                title: Text('Sin ordenar'),
+                title: Text(
+                  'Sin ordenar',
+                  style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+                ),
                 trailing: _selectedSortOption == null ||
                         _selectedSortOption == 'Sin ordenar'
                     ? Icon(Icons.check, color: AppColors.primaryGreen)
@@ -193,7 +199,10 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                 },
               ),
               ..._sortOptions.map((opt) => ListTile(
-                    title: Text(opt),
+                    title: Text(
+                      opt,
+                      style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+                    ),
                     trailing: _selectedSortOption == opt
                         ? Icon(Icons.check, color: AppColors.primaryGreen)
                         : null,
@@ -810,6 +819,9 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   }
 
   Widget _buildFiltrosYBuscador() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     double searchHeight = 60.0;
     double counterHeight = 50.0;
     double filtersHeight = 55.0;
@@ -896,20 +908,24 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                           ? 'Busca por tutor...'
                           : 'Busca por materia...',
                       hintStyle: AppTextStyles.body.copyWith(
-                          color: AppColors.greyColor.withOpacity(0.7)),
+                          color: isDark
+                              ? Colors.white54
+                              : AppColors.greyColor.withOpacity(0.7)),
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 20.0, vertical: 15),
                       prefixIcon: Icon(Icons.search,
-                          color: AppColors.greyColor.withOpacity(0.7)),
+                          color: isDark
+                              ? Colors.white54
+                              : AppColors.greyColor.withOpacity(0.7)),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(25.0),
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
-                      fillColor: Colors.white,
+                      fillColor: isDark ? Colors.white10 : Colors.white,
                     ),
-                    style: AppTextStyles.body
-                        .copyWith(color: AppColors.blackColor),
+                    style: AppTextStyles.body.copyWith(
+                        color: isDark ? Colors.white : AppColors.blackColor),
                   ),
                 ),
               ),
@@ -1053,7 +1069,10 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   }
 
   Widget _buildModeChip(String mode, String label) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final bool isSelected = selectedMode == mode;
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -1083,7 +1102,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.lightBlueColor
-              : Colors.white.withOpacity(0.2),
+              : (isDark ? Colors.white10 : Colors.white.withOpacity(0.2)),
           borderRadius: BorderRadius.circular(16),
           border: isSelected
               ? Border.all(
@@ -1126,6 +1145,9 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   }
 
   Widget _buildFilterChip(String label, bool isSelected) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return GestureDetector(
       onTap: () {
         // Implementar lógica de filtrado según el chip seleccionado
@@ -1133,13 +1155,17 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.white : Colors.white.withOpacity(0.2),
+          color: isSelected
+              ? (isDark ? AppColors.primaryGreen : Colors.white)
+              : (isDark ? Colors.white10 : Colors.white.withOpacity(0.2)),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? AppColors.primaryGreen : Colors.white,
+            color: isSelected
+                ? (isDark ? Colors.white : AppColors.primaryGreen)
+                : (isDark ? Colors.white70 : Colors.white),
             fontWeight: FontWeight.w600,
             fontSize: 13,
           ),
@@ -1149,6 +1175,9 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   }
 
   Widget _buildTutoresList() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     if (isInitialLoading) {
       return AnimationLimiter(
         child: ListView.builder(
@@ -1173,11 +1202,13 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     } else if (tutors.isEmpty) {
       return Center(
         child: Text(
-          "No tutors available",
+          "No hay tutores disponibles",
           style: TextStyle(
-            fontSize: FontSize.scale(context, 18),
+            fontSize: 18,
             fontWeight: FontWeight.w500,
-            color: AppColors.greyColor,
+            color: theme.brightness == Brightness.dark
+                ? Colors.white54
+                : AppColors.greyColor,
             fontFamily: 'SF-Pro-Text',
           ),
         ),
@@ -1528,7 +1559,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
         resizeToAvoidBottomInset:
             false, // Evita que la barra suba con el teclado
         key: _scaffoldKey,
-        backgroundColor: AppColors.backgroundColor,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: Stack(
           children: [
             Column(

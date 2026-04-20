@@ -1090,6 +1090,7 @@ class _ReservationTutorProfileScreenState
                                         tutorId:
                                             int.tryParse(widget.tutorId) ?? 1,
                                         subjectId: 1,
+                                        price: widget.price,
                                       ),
                                     ),
                                   );
@@ -1154,6 +1155,7 @@ class _ReservationTutorProfileScreenState
                                 tagline: widget.tagline,
                                 tutorId: int.tryParse(widget.tutorId) ?? 1,
                                 subjectId: 1,
+                                price: widget.price,
                               ),
                             );
                           },
