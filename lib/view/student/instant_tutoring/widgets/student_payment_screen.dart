@@ -302,7 +302,6 @@ class _StudentPaymentScreenState extends State<StudentPaymentScreen> {
             : () {
                 _logicController.submitPayment(
                   bookingId: widget.bookingId,
-                  // ÉXITO: El tutor aprobó y nos dio el Link
                   onTutorAccepted: (meetLink) {
                     if (mounted) {
                       Navigator.pushReplacement(

@@ -5,9 +5,11 @@ import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as path;
 
-final String baseUrl = 'https://classgoapp.com/api';
-final String storageBaseUrl = 'https://classgoapp.com/storage';
+// final String baseUrl = 'https://classgoapp.com/api';
+// final String storageBaseUrl = 'https://classgoapp.com/storage';
 
+final String baseUrl = 'http://192.168.1.12:8000/api';
+final String storageBaseUrl = 'http://192.168.1.12:8000/storage';
 
 class TokenExpiredException implements Exception {
   final String message =
@@ -3098,11 +3100,17 @@ Future<Map<String, dynamic>> consultarEstadoReserva(int bookingId, String token)
         'Authorization': 'Bearer $token',
       },
     );
-    
+
+    print("🔵 STATUS CODE: ${response.statusCode}");
+    print("🔵 BODY RAW: ${response.body}");
+
     final data = jsonDecode(response.body);
-    
+
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
+      print("🟢 ui_state BACKEND: ${data['ui_state']}");
+      print("🟢 meeting_link: ${data['booking']?['meeting_link']}");
+      print("🟢 has_receipt: ${data['payment']?['has_receipt']}");
+
       return {
         'success': true,
         'ui_state': data['ui_state'],
@@ -3110,15 +3118,16 @@ Future<Map<String, dynamic>> consultarEstadoReserva(int bookingId, String token)
         'has_receipt': data['payment']['has_receipt']
       };
     } else {
+      print("🔴 ERROR BACKEND: ${data['message']}");
       return {'success': false, 'message': data['message'] ?? 'Error en el servidor: ${response.statusCode}'};
     }
   } catch (e) {
+    print("🔴 ERROR CONEXIÓN: $e");
     return {'success': false, 'message': 'Error de conexión: $e'};
   }
 }
 
-Future<Map<String, dynamic>> tutorAceptWaitlist(
-    String token, String token_accept) async {
+Future<Map<String, dynamic>> tutorAceptWaitlist(String token, String token_accept) async {
   try {
     final Uri uri = Uri.parse('$baseUrl/tutor/waitlist/accept');
     final headers = <String, String>{
@@ -3127,20 +3136,30 @@ Future<Map<String, dynamic>> tutorAceptWaitlist(
       'Content-Type': 'application/json',
     };
     final body = jsonEncode({'t': token_accept, 'm': true});
-    print(body);
+    
+    // 🔍 1. Vemos qué estamos enviando
+    print('🚀 [API TUTOR] Enviando petición a: $uri');
+    print('🚀 [API TUTOR] Body enviado: $body');
+
     final response = await http.post(uri, headers: headers, body: body);
+
+    // 🚨 2. AQUÍ ESTÁ LA VERDAD: Vemos qué responde Laravel exactamente 🚨
+    print('🔴 [API TUTOR] STATUS CODE RECIBIDO: ${response.statusCode}');
+    print('🔴 [API TUTOR] BODY RAW RECIBIDO: ${response.body}');
+
     if (response.statusCode == 200 || response.statusCode == 201) {
+      print('✅ [API TUTOR] Petición exitosa');
       return json.decode(response.body);
     } else {
-      final decoded =
-          response.body.isNotEmpty ? json.decode(response.body) : null;
+      print('❌ [API TUTOR] Laravel devolvió un error de status');
+      final decoded = response.body.isNotEmpty ? json.decode(response.body) : null;
       final message = (decoded is Map && decoded.containsKey('message'))
           ? decoded['message']
           : 'Failed to accept waitlist';
       throw Exception(message);
     }
   } catch (e) {
-    print('Error accepting waitlist: $e');
-    throw 'Failed to check favourite: $e';
+    print('💥 [API TUTOR] Explotó en el catch: $e');
+    throw 'Failed to accept waitlist: $e';
   }
 }

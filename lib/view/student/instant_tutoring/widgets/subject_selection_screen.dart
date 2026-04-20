@@ -22,20 +22,19 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
 
   Future<void> _init() async {
     await _controller.initialize();
-    
-    // Si al cargar detectamos un batch activo, redirigimos de inmediato
+
     if (_controller.activeBatch != null && mounted) {
       final batch = _controller.activeBatch!;
-      _navigateToRadar(
-        batch['subject_id'].toString(), 
-        "Recuperando tutoría...", // Podrías buscar el nombre real si quisieras
-        batch['seconds_left'] ?? 300
-      );
-      _controller.clearActiveBatch();
+      final subjectId = batch['subject_id'].toString();
+      final subjectName = _controller.getSubjectName(subjectId);
+
+      _navigateToRadar(subjectId, subjectName, batch['seconds_left'] ?? 300,
+          isRecovered: true);
     }
   }
 
-  void _navigateToRadar(String id, String name, int seconds) {
+  void _navigateToRadar(String id, String name, int seconds,
+      {bool isRecovered = false}) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -43,9 +42,13 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
           subjectId: id,
           subjectName: name,
           timerSeconds: seconds,
+          isRecovered: isRecovered,
         ),
       ),
-    );
+    ).then((_) {
+      // 💡 Cuando regresa, pregunta al backend (esto activa la barrita)
+      _controller.checkActiveSession();
+    });
   }
 
   @override
@@ -53,8 +56,11 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
       appBar: AppBar(
-        title: const Text("Tutoría al Instante", 
-          style: TextStyle(fontFamily: 'outfit', fontWeight: FontWeight.bold, color: AppColors.brandBlue)),
+        title: const Text("Tutoría al Instante",
+            style: TextStyle(
+                fontFamily: 'outfit',
+                fontWeight: FontWeight.bold,
+                color: AppColors.brandBlue)),
         elevation: 0,
         backgroundColor: Colors.transparent,
       ),
@@ -62,16 +68,30 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
         listenable: _controller,
         builder: (context, _) {
           if (_controller.isLoading) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.brandBlue));
+            return const Center(
+                child: CircularProgressIndicator(color: AppColors.brandBlue));
           }
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(20),
-            itemCount: _controller.categories.length,
-            itemBuilder: (context, index) {
-              final category = _controller.categories[index];
-              return _buildCategoryGroup(category);
-            },
+          return Stack(
+            children: [
+              ListView.builder(
+                padding: const EdgeInsets.all(20),
+                itemCount: _controller.categories.length,
+                itemBuilder: (context, index) {
+                  final category = _controller.categories[index];
+                  return _buildCategoryGroup(category);
+                },
+              ),
+
+              if (_controller.isCheckingActive)
+                const Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: LinearProgressIndicator(
+                      color: AppColors.brandBlue, minHeight: 3),
+                ),
+            ],
           );
         },
       ),
@@ -87,29 +107,49 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
           child: Text(
             category['name'].toString().toUpperCase(),
             style: const TextStyle(
-              fontSize: 13, fontWeight: FontWeight.w800, 
-              color: AppColors.greyColor, letterSpacing: 1.2
-            ),
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                color: AppColors.greyColor,
+                letterSpacing: 1.2),
           ),
         ),
         Card(
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-            side: BorderSide(color: AppColors.dividerColor.withOpacity(0.5))
-          ),
+              borderRadius: BorderRadius.circular(20),
+              side: BorderSide(color: AppColors.dividerColor.withOpacity(0.5))),
           child: Column(
             children: (category['subjects'] as List).map((subject) {
               return ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-                title: Text(subject['name'], 
-                  style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.primaryColor)),
-                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.brandCyan),
-                onTap: () => _navigateToRadar(
-                  subject['id'].toString(), 
-                  subject['name'], 
-                  300
-                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                title: Text(subject['name'],
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primaryColor)),
+                trailing: const Icon(Icons.arrow_forward_ios_rounded,
+                    size: 14, color: AppColors.brandCyan),
+                onTap: () {
+                  if (_controller.isCheckingActive) return;
+                  print(  "Materia seleccionada: ${subject['name']} (ID: ${subject['id']})");
+                  final activeBatch = _controller.activeBatch;
+
+                  if (activeBatch != null) {
+                    final activeSubjectId =
+                        activeBatch['subject_id'].toString();
+                    final activeSubjectName =
+                        _controller.getSubjectName(activeSubjectId);
+
+                    _navigateToRadar(activeSubjectId, activeSubjectName,
+                        activeBatch['seconds_left'] ?? 300,
+                        isRecovered:
+                            true
+                        );
+                  } else {
+                    _navigateToRadar(
+                        subject['id'].toString(), subject['name'], 300);
+                  }
+                },
               );
             }).toList(),
           ),

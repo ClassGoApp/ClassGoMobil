@@ -4,20 +4,20 @@ import 'package:flutter_projects/api_structure/api_service.dart';
 
 class SubjectSelectionController extends ChangeNotifier {
   bool isLoading = true;
-  bool isCheckingActive = true;
+  bool isCheckingActive = false;
   List<dynamic> categories = [];
   Map<String, dynamic>? activeBatch;
 
-  // 1. CARGA INICIAL
   Future<void> initialize() async {
+    await fetchSubjects(); 
     await checkActiveSession();
-    await fetchSubjects();
     isLoading = false;
     notifyListeners();
   }
 
-  // 2. VERIFICAR SI YA HAY UN RADAR GIRANDO
   Future<void> checkActiveSession() async {
+    isCheckingActive = true;
+    notifyListeners(); 
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token') ?? '';
@@ -25,31 +25,37 @@ class SubjectSelectionController extends ChangeNotifier {
       final result = await checkActiveBatch(token);
       if (result['active'] == true) {
         activeBatch = result;
+      } else {
+        activeBatch = null;
       }
     } catch (e) {
-      print("Error revisando sesión activa: $e");
+      activeBatch = null; 
     } finally {
       isCheckingActive = false;
       notifyListeners();
     }
   }
 
-  // 3. OBTENER MATERIAS DEL BACKEND
   Future<void> fetchSubjects() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token') ?? '';
-
       final data = await getCategoriasMaterias(token);
       categories = data['data'] ?? [];
-    } catch (e) {
-      print("Error cargando materias: $e");
-    }
+    } catch (e) {}
   }
 
-  // Limpiar el estado del batch activo una vez recuperado
-  void clearActiveBatch() {
-    activeBatch = null;
-    notifyListeners();
+  String getSubjectName(String subjectId) {
+    if (categories.isEmpty) return "Tutoría Activa";
+    for (var category in categories) {
+      if (category['subjects'] != null) {
+        for (var subject in category['subjects']) {
+          if (subject['id'].toString() == subjectId) {
+            return subject['name'];
+          }
+        }
+      }
+    }
+    return "Tutoría Activa"; 
   }
 }

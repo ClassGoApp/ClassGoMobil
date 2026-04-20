@@ -76,25 +76,37 @@ class PaymentController extends ChangeNotifier {
   // 4. POLLING: PREGUNTAR SI EL TUTOR YA ACEPTÓ EL PAGO
   void _iniciarPolling(int bookingId, String token, Function(String) onTutorAccepted, VoidCallback onTutorRejected) {
     _pollingTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
-      try {
-        final estado = await consultarEstadoReserva(bookingId, token);
+  try {
+    final estado = await consultarEstadoReserva(bookingId, token);
 
-        if (estado['ok'] == true || estado['success'] == true) {
-          String uiState = estado['ui_state'];
+    print("🟡 RESPUESTA POLLING: $estado");
 
-          if (uiState == 'accepted') {
-            timer.cancel();
-            String linkGenerado = estado['meeting_link'] ?? estado['booking']?['meeting_link'] ?? 'https://meet.google.com/upy-mxim-nrm';
-            onTutorAccepted(linkGenerado);
-          } else if (uiState == 'rejected' || uiState == 'expired' || uiState == 'completed') {
-            timer.cancel();
-            onTutorRejected();
-          }
-        }
-      } catch (e) {
-        print("Error silencioso en el polling de pago: $e");
+    if (estado['success'] == true) {
+      String uiState = estado['ui_state'];
+
+      print("🟣 uiState evaluado: $uiState");
+
+      if (uiState == 'accepted') {
+        print("✅ ENTRÓ A ACCEPTED");
+
+        timer.cancel();
+        String linkGenerado = estado['meeting_link'] ?? 'https://meet.google.com/...';
+        onTutorAccepted(linkGenerado);
+
+      } else if (uiState == 'rejected' || uiState == 'expired' || uiState == 'completed') {
+        print("❌ RECHAZADO / EXPIRADO");
+
+        timer.cancel();
+        onTutorRejected();
       }
-    });
+    } else {
+      print("🔴 FALLÓ RESPUESTA: ${estado['message']}");
+    }
+
+  } catch (e) {
+    print("💥 ERROR POLLING: $e");
+  }
+});
   }
 
   @override
