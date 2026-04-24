@@ -1,0 +1,365 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_projects/view/tutor/features/widgets/tutor_header.dart';
+import 'package:flutter_projects/styles/app_styles.dart';
+
+class EditProfileView extends StatelessWidget {
+  final GlobalKey<FormState> formKey;
+  final TextEditingController firstNameController;
+  final TextEditingController lastNameController;
+  final TextEditingController phoneController;
+  final TextEditingController descriptionController;
+
+  final bool isLoading;
+  final bool isVideoLoading;
+  final String? profileImageUrl;
+  final String? profileVideoUrl;
+  final String userName;
+
+  final Widget profileImageWidget;
+  final Widget videoPlayerWidget;
+  final Widget videoPlaceholderWidget;
+
+  final VoidCallback onClose;
+  final VoidCallback onPickImage;
+  final VoidCallback onSelectVideo;
+  final VoidCallback onDeleteVideo; 
+  final VoidCallback onSave;
+  final Function(String) onPhoneChanged;
+
+  const EditProfileView({
+    Key? key,
+    required this.formKey,
+    required this.firstNameController,
+    required this.lastNameController,
+    required this.phoneController,
+    required this.descriptionController,
+    required this.isLoading,
+    required this.isVideoLoading,
+    required this.profileImageUrl,
+    required this.profileVideoUrl,
+    required this.userName,
+    required this.profileImageWidget,
+    required this.videoPlayerWidget,
+    required this.videoPlaceholderWidget,
+    required this.onClose,
+    required this.onPickImage,
+    required this.onSelectVideo,
+    required this.onDeleteVideo,
+    required this.onSave,
+    required this.onPhoneChanged,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    final scaffoldBg = isDark ? AppColors.blackColor : AppColors.whiteColor; 
+    final cardBgColor = isDark ? const Color(0xFF1E222A) : const Color(0xFFF4F6F9);
+    final mainTextColor = isDark ? AppColors.whiteColor : AppColors.brandBlue;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        backgroundColor: scaffoldBg,
+        body: SafeArea(
+          top: false, 
+          child: Column(
+            children: [
+              TutorHeader(
+                title: "EDITAR PERFIL",
+                subtitle: "ACTUALIZA TUS DATOS",
+                onBackTap: onClose,
+              ),
+
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.only(bottom: 40),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 20),
+
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: isDark 
+                                  ? [const Color(0xFF16181D), const Color(0xFF232833)] 
+                                  : [AppColors.brandBlue, const Color(0xFF1A5A7A)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(30),
+                            boxShadow: [BoxShadow(color: (isDark ? Colors.black : AppColors.brandBlue).withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8))],
+                          ),
+                          child: Row(
+                            children: [
+                              GestureDetector(
+                                onTap: onPickImage,
+                                child: Stack(
+                                  clipBehavior: Clip.none,
+                                  alignment: Alignment.bottomRight,
+                                  children: [
+                                    Container(
+                                      width: 85, height: 85,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.rectangle,
+                                        borderRadius: BorderRadius.circular(22),
+                                        border: Border.all(color: Colors.white, width: 2),
+                                      ),
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(20),
+                                        child: profileImageWidget,
+                                      ),
+                                    ),
+                                    Positioned(
+                                      bottom: -5, right: -5,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.brandOrange,
+                                          borderRadius: BorderRadius.circular(10),
+                                          border: Border.all(color: Colors.white, width: 2),
+                                        ),
+                                        child: const Icon(Icons.camera_alt, color: Colors.white, size: 14),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 20),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      userName.toUpperCase(),
+                                      style: const TextStyle(fontFamily: 'outfit', color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900, height: 1.1),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.15),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(Icons.verified_rounded, color: AppColors.brandCyan, size: 12),
+                                          const SizedBox(width: 4),
+                                          const Text(
+                                            "TUTOR VERIFICADO",
+                                            style: TextStyle(fontFamily: 'manrope', color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: isDark ? AppColors.blackColor : AppColors.whiteColor,
+                            borderRadius: BorderRadius.circular(30),
+                            boxShadow: [
+                              BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 10)),
+                            ],
+                          ),
+                          child: Form(
+                            key: formKey,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildTextField(
+                                  controller: firstNameController,
+                                  label: 'NOMBRE',
+                                  hint: 'Tu nombre',
+                                  icon: Icons.person_outline,
+                                  fillColor: cardBgColor,
+                                  textColor: mainTextColor,
+                                  validator: (value) => value == null || value.trim().isEmpty ? 'Requerido' : null,
+                                ),
+                                const SizedBox(height: 16),
+                                
+                                _buildTextField(
+                                  controller: lastNameController,
+                                  label: 'APELLIDO',
+                                  hint: 'Tu apellido',
+                                  icon: Icons.person_outline,
+                                  fillColor: cardBgColor,
+                                  textColor: mainTextColor,
+                                  validator: (value) => value == null || value.trim().isEmpty ? 'Requerido' : null,
+                                ),
+                                const SizedBox(height: 16),
+                                
+                                _buildTextField(
+                                  controller: phoneController,
+                                  label: 'CELULAR',
+                                  hint: 'Ingresa tu número de celular',
+                                  icon: Icons.phone_outlined,
+                                  keyboardType: TextInputType.phone,
+                                  fillColor: cardBgColor,
+                                  textColor: mainTextColor,
+                                  onChanged: onPhoneChanged,
+                                  validator: (value) {
+                                    if (value == null || value.trim().isEmpty) return 'Requerido';
+                                    return null; 
+                                  },
+                                ),
+                                const SizedBox(height: 16),
+
+                                _buildTextField(
+                                  controller: descriptionController,
+                                  label: 'DESCRIPCIÓN',
+                                  hint: 'Cuéntanos algo sobre ti ...',
+                                  icon: Icons.description_outlined,
+                                  maxLines: 4,
+                                  fillColor: cardBgColor,
+                                  textColor: mainTextColor,
+                                ),
+
+                                const SizedBox(height: 30),
+
+                                Text("VIDEO DE PRESENTACIÓN", style: TextStyle(fontFamily: 'outfit', color: mainTextColor, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                                const SizedBox(height: 12),
+                            
+                                if (profileVideoUrl != null && profileVideoUrl!.isNotEmpty)
+                                  videoPlayerWidget
+                                else
+                                  videoPlaceholderWidget,
+                                
+                                const SizedBox(height: 12),
+                                
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: SizedBox(
+                                        height: 50,
+                                        child: OutlinedButton.icon(
+                                          onPressed: isVideoLoading ? null : onSelectVideo,
+                                          icon: isVideoLoading 
+                                            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                                            : const Icon(Icons.video_library, size: 18),
+                                          label: Text(isVideoLoading ? 'Actualizando...' : 'Cambiar Video'),
+                                          style: OutlinedButton.styleFrom(
+                                            foregroundColor: AppColors.brandCyan,
+                                            side: const BorderSide(color: AppColors.brandCyan),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    if (profileVideoUrl != null && profileVideoUrl!.isNotEmpty) ...[
+                                      const SizedBox(width: 12),
+                                      SizedBox(
+                                        height: 50,
+                                        width: 50,
+                                        child: OutlinedButton(
+                                          onPressed: isVideoLoading ? null : onDeleteVideo,
+                                          style: OutlinedButton.styleFrom(
+                                            padding: EdgeInsets.zero,
+                                            foregroundColor: Colors.redAccent,
+                                            side: const BorderSide(color: Colors.redAccent),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                          ),
+                                          child: const Icon(Icons.delete_outline, size: 22),
+                                        ),
+                                      ),
+                                    ]
+                                  ],
+                                ),
+
+                                const SizedBox(height: 20),
+
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 55,
+                                  child: ElevatedButton.icon(
+                                    onPressed: isLoading ? null : onSave,
+                                    icon: isLoading 
+                                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                      : const Icon(Icons.save_outlined, color: Colors.white, size: 20),
+                                    label: Text(isLoading ? "GUARDANDO..." : "GUARDAR CAMBIOS", style: const TextStyle(fontFamily: 'outfit', color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.brandCyan,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                      elevation: 0,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    required Color fillColor,
+    required Color textColor,
+    String? Function(String?)? validator,
+    TextInputType? keyboardType,
+    int maxLines = 1,
+    Function(String)? onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 8, bottom: 8),
+          child: Text(label, style: const TextStyle(fontFamily: 'manrope', color: Colors.grey, fontSize: 10, fontWeight: FontWeight.w800)),
+        ),
+        TextFormField(
+          controller: controller,
+          validator: validator,
+          keyboardType: keyboardType,
+          maxLines: maxLines,
+          onChanged: onChanged,
+          style: TextStyle(fontFamily: 'manrope', color: textColor, fontSize: 13, fontWeight: FontWeight.w600),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(color: Colors.grey.withOpacity(0.5)),
+            filled: true,
+            fillColor: fillColor, 
+            prefixIcon: Icon(icon, color: Colors.grey, size: 18),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            errorStyle: const TextStyle(fontSize: 10),
+          ),
+        ),
+      ],
+    );
+  }
+}

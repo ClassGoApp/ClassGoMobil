@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:flutter_projects/view/home/home_screen.dart';
-import 'package:flutter_projects/view/tutor/search_tutors_screen.dart';
+import 'package:flutter_projects/view/student/serch_Tutor/search_tutors_screen.dart';
 import 'package:flutter_projects/view/tutor/student_calendar_screen.dart';
 import 'package:flutter_projects/view/tutor/student_history_screen.dart';
 import 'package:flutter_projects/view/profile/profile_screen.dart';
@@ -48,26 +48,23 @@ class _MainShellState extends State<MainShell> {
           ProfileScreen(),
         ],
       ),
-      
-
       floatingActionButton: FloatingActionButton(
         onPressed: () => (),
         backgroundColor: const Color.fromARGB(255, 251, 133, 0),
         shape: const CircleBorder(),
         child: const Icon(Icons.flash_on, color: Colors.white, size: 30),
-
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-
-      
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: const Color.fromARGB(255, 2, 48, 71),
         currentIndex: _currentIndex,
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
 
-        selectedItemColor: const Color.fromARGB(255, 251, 133, 0), // 👈 COLOR ACTIVO
-        unselectedItemColor: const Color.fromARGB(255, 255, 255, 255), // 👈 COLOR INACTIVO
+        selectedItemColor:
+            const Color.fromARGB(255, 251, 133, 0), // 👈 COLOR ACTIVO
+        unselectedItemColor:
+            const Color.fromARGB(255, 255, 255, 255), // 👈 COLOR INACTIVO
         selectedFontSize: 12,
         unselectedFontSize: 12,
         items: const [
@@ -75,11 +72,11 @@ class _MainShellState extends State<MainShell> {
           BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Buscar'),
 
           BottomNavigationBarItem(
-            icon: Padding(
-              padding: EdgeInsets.only(top: 24), 
-              child: SizedBox.shrink(),
-            ),
-            label: 'Tutoría Ya!'),
+              icon: Padding(
+                padding: EdgeInsets.only(top: 24),
+                child: SizedBox.shrink(),
+              ),
+              label: 'Tutoría Ya!'),
           // BottomNavigationBarItem(
           //     icon: Icon(Icons.calendar_month), label: 'Agenda'),
           BottomNavigationBarItem(

@@ -7,18 +7,21 @@ import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/auth/login_screen.dart';
 import 'package:flutter_projects/view/components/login_required_alert.dart';
 import 'package:flutter_projects/view/components/skeleton/tutor_card_skeleton.dart';
-import 'package:flutter_projects/view/components/tutor_card.dart';
-import 'package:flutter_projects/view/profile/profile_screen.dart';
+import 'package:flutter_projects/view/student/serch_Tutor/widgets/tutor_card.dart';
+import 'package:flutter_projects/view/student/profile_screen_student.dart';
 import 'package:flutter_projects/view/tutor/component/filter_turtor_bottom_sheet.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/view/tutor/tutor_profile_screen.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import 'package:flutter_projects/view/tutor/instant_tutoring_screen.dart';
+import 'package:flutter_projects/view/student/reservations/instant-reservation/instant_tutoring_screen.dart';
 import 'package:flutter_projects/view/tutor/student_calendar_screen.dart';
 import 'package:flutter_projects/view/tutor/student_history_screen.dart';
 import 'package:flutter_projects/view/components/main_header.dart';
+import 'package:flutter_projects/view/tutor/dashboard/widgets/tutor_bottom_nav.dart';
+import 'package:table_calendar/table_calendar.dart';
+import 'package:flutter_projects/view/student/reservations/services/reservations_service.dart';
 // removed unused imports
 
 class SearchTutorsScreen extends StatefulWidget {
@@ -110,6 +113,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   void _onSearchChanged(String value) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
+      if (!mounted) return; // Evitar setState después de disposed
       if (keyword != value) {
         setState(() {
           keyword = value;
@@ -198,6 +202,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
 
   @override
   void dispose() {
+    // Cancelar debounce timer para evitar setState después de dispose
+    _debounce?.cancel();
     _searchController.dispose();
     _searchFocusNode.dispose();
     _scrollController.dispose();
@@ -246,11 +252,13 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
       final response = await getSubjects(token);
 
       if (response.containsKey('data') && response['data'] is List) {
-        setState(() {
-          subjects = (response['data'] as List<dynamic>)
-              .map((subject) => subject['name'].toString())
-              .toList();
-        });
+        if (mounted) {
+          setState(() {
+            subjects = (response['data'] as List<dynamic>)
+                .map((subject) => subject['name'].toString())
+                .toList();
+          });
+        }
       }
     } catch (error) {}
   }
@@ -263,14 +271,16 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
       final response = await getCountries(token);
       final countriesData = response['data'];
 
-      setState(() {
-        countries = countriesData.map<Map<String, dynamic>>((country) {
-          return {
-            'id': country['id'],
-            'name': country['name'],
-          };
-        }).toList();
-      });
+      if (mounted) {
+        setState(() {
+          countries = countriesData.map<Map<String, dynamic>>((country) {
+            return {
+              'id': country['id'],
+              'name': country['name'],
+            };
+          }).toList();
+        });
+      }
     } catch (e) {}
   }
 
@@ -282,11 +292,13 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
       final response = await getLanguages(token);
 
       if (response.containsKey('data') && response['data'] is List) {
-        setState(() {
-          languages = (response['data'] as List<dynamic>)
-              .map((language) => language['name'].toString())
-              .toList();
-        });
+        if (mounted) {
+          setState(() {
+            languages = (response['data'] as List<dynamic>)
+                .map((language) => language['name'].toString())
+                .toList();
+          });
+        }
       }
     } catch (error) {}
   }
@@ -299,11 +311,13 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
       final response = await getSubjectsGroup(token);
 
       if (response.containsKey('data') && response['data'] is List) {
-        setState(() {
-          subjectGroups = (response['data'] as List<dynamic>)
-              .map((group) => group['name'].toString())
-              .toList();
-        });
+        if (mounted) {
+          setState(() {
+            subjectGroups = (response['data'] as List<dynamic>)
+                .map((group) => group['name'].toString())
+                .toList();
+          });
+        }
       }
     } catch (error) {}
   }
@@ -325,27 +339,31 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     double? minRating,
   }) async {
     if (isLoading) return;
-    setState(() {
-      isInitialLoading = true;
-      if (tutors.isEmpty) {
+    if (mounted) {
+      setState(() {
         isInitialLoading = true;
-      }
-    });
+        if (tutors.isEmpty) {
+          isInitialLoading = true;
+        }
+      });
+    }
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final token = authProvider.token;
 
-      print('DEBUG - Llamando a la API ${selectedMode == 'instantanea' ? 'availableTutors' : 'verifiedTutors'} para la página inicial');
+      print(
+          'DEBUG - Llamando a la API ${selectedMode == 'instantanea' ? 'availableTutors' : 'verifiedTutors'} para la página inicial');
       print('DEBUG - keyword (materia): $keyword');
       print('DEBUG - Modo seleccionado: $selectedMode');
-      
-            final response = selectedMode == 'instantanea' 
+
+      final response = selectedMode == 'instantanea'
           ? await getAvailableTutors(
               token,
               page: currentPage,
               keyword: keyword, // Usar keyword para buscar por materia
-              tutorName: tutorName, // Usar tutorName para buscar por nombre del tutor
+              tutorName:
+                  tutorName, // Usar tutorName para buscar por nombre del tutor
               maxPrice: maxPrice,
               country: country,
               groupId: groupId,
@@ -359,7 +377,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
               token,
               page: currentPage,
               keyword: keyword, // Usar keyword para buscar por materia
-              tutorName: tutorName, // Usar tutorName para buscar por nombre del tutor
+              tutorName:
+                  tutorName, // Usar tutorName para buscar por nombre del tutor
               maxPrice: maxPrice,
               country: country,
               groupId: groupId,
@@ -412,28 +431,30 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
               'DEBUG - Subjects count: ${fetchedTutors.first['subjects'].length}');
         }
 
-        setState(() {
-          tutors = fetchedTutors
-              .map((tutor) => tutor as Map<String, dynamic>)
-              .toList();
+        if (mounted) {
+          setState(() {
+            tutors = fetchedTutors
+                .map((tutor) => tutor as Map<String, dynamic>)
+                .toList();
 
-          // Manejar paginación
-          int total = 0;
-          int totalPages = 1;
+            // Manejar paginación
+            int total = 0;
+            int totalPages = 1;
 
-          if (response['data'] is Map) {
-            final paginationData =
-                response['data']['pagination'] ?? response['data'];
-            total = paginationData['total'] ?? fetchedTutors.length;
-            totalPages = paginationData['totalPages'] ?? 1;
-          }
+            if (response['data'] is Map) {
+              final paginationData =
+                  response['data']['pagination'] ?? response['data'];
+              total = paginationData['total'] ?? fetchedTutors.length;
+              totalPages = paginationData['totalPages'] ?? 1;
+            }
 
-          this.totalTutors = total;
-          this.totalPages = totalPages;
-          currentPage = 1;
-          print(
-              'DEBUG - Paginación inicial: Total tutores: $totalTutors, Total páginas: $totalPages, Tutores cargados: ${tutors.length}');
-        });
+            this.totalTutors = total;
+            this.totalPages = totalPages;
+            currentPage = 1;
+            print(
+                'DEBUG - Paginación inicial: Total tutores: $totalTutors, Total páginas: $totalPages, Tutores cargados: ${tutors.length}');
+          });
+        }
       } else {
         print('DEBUG - No se encontraron tutores en la respuesta');
         print('DEBUG - response[\'data\']: ${response['data']}');
@@ -444,23 +465,29 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     } catch (e) {
       print('Error fetching tutors: $e');
     } finally {
-      setState(() {
-        isInitialLoading = false;
-        isRefreshing = false;
-      });
+      if (mounted) {
+        setState(() {
+          isInitialLoading = false;
+          isRefreshing = false;
+        });
+      }
     }
   }
 
   Future<void> _onRefresh() async {
-    setState(() {
-      isRefreshing = true;
-      currentPage = 1;
-      tutors.clear();
-    });
+    if (mounted) {
+      setState(() {
+        isRefreshing = true;
+        currentPage = 1;
+        tutors.clear();
+      });
+    }
     await fetchInitialTutors();
-    setState(() {
-      isRefreshing = false;
-    });
+    if (mounted) {
+      setState(() {
+        isRefreshing = false;
+      });
+    }
   }
 
   void _loadMoreTutors() async {
@@ -468,9 +495,11 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
         'DEBUG - Intentando cargar más tutores. Página actual: $currentPage, Total páginas: $totalPages, Tutores actuales: ${tutors.length}');
 
     if (!isLoading && tutors.length < 100) {
-      setState(() {
-        isLoading = true;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = true;
+        });
+      }
 
       try {
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -478,7 +507,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
 
         print(
             'DEBUG - Llamando a la API ${selectedMode == 'instantanea' ? 'availableTutors' : 'verifiedTutors'} para la página ${currentPage + 1}');
-                final response = selectedMode == 'instantanea'
+        final response = selectedMode == 'instantanea'
             ? await getAvailableTutors(
                 token,
                 page: currentPage + 1,
@@ -526,17 +555,19 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
               'DEBUG - API devolvió ${tutorsList.length} tutores para la página ${currentPage + 1}');
 
           if (tutorsList.isNotEmpty) {
-            setState(() {
-              tutors.addAll(tutorsList
-                  .map((item) => item as Map<String, dynamic>)
-                  .toList());
-              final paginationData = data['pagination'] ?? data;
-              currentPage = paginationData['currentPage'] ?? currentPage + 1;
-              totalPages = paginationData['totalPages'] ?? totalPages;
-              totalTutors = paginationData['total'] ?? totalTutors;
-              print(
-                  'DEBUG - Tutores cargados exitosamente. Nuevo total: ${tutors.length} de $totalTutors');
-            });
+            if (mounted) {
+              setState(() {
+                tutors.addAll(tutorsList
+                    .map((item) => item as Map<String, dynamic>)
+                    .toList());
+                final paginationData = data['pagination'] ?? data;
+                currentPage = paginationData['currentPage'] ?? currentPage + 1;
+                totalPages = paginationData['totalPages'] ?? totalPages;
+                totalTutors = paginationData['total'] ?? totalTutors;
+                print(
+                    'DEBUG - Tutores cargados exitosamente. Nuevo total: ${tutors.length} de $totalTutors');
+              });
+            }
           } else {
             print(
                 'DEBUG - No se encontraron más tutores en la página ${currentPage + 1}');
@@ -545,9 +576,11 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
       } catch (e) {
         print('Error loading more tutors: $e');
       } finally {
-        setState(() {
-          isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            isLoading = false;
+          });
+        }
       }
     } else {
       print(
@@ -602,16 +635,18 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
             String? tutorName,
             int? minCourses,
             double? minRating}) {
-          setState(() {
-            this.selectedGroupId = groupId;
-            this.tutorName = tutorName;
-            this._minCourses = minCourses;
-            this._minRating = minRating;
+          if (mounted) {
+            setState(() {
+              this.selectedGroupId = groupId;
+              this.tutorName = tutorName;
+              this._minCourses = minCourses;
+              this._minRating = minRating;
 
-            currentPage = 1;
-            tutors.clear();
-            isInitialLoading = true;
-          });
+              currentPage = 1;
+              tutors.clear();
+              isInitialLoading = true;
+            });
+          }
           fetchInitialTutors(
             maxPrice: maxPrice,
             country: selectedCountryId,
@@ -634,13 +669,17 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
 
     // Lógica simplificada para mostrar/ocultar la barra de navegación
     if (direction == ScrollDirection.reverse && _showBottomBar) {
-      setState(() {
-        _showBottomBar = false;
-      });
+      if (mounted) {
+        setState(() {
+          _showBottomBar = false;
+        });
+      }
     } else if (direction == ScrollDirection.forward && !_showBottomBar) {
-      setState(() {
-        _showBottomBar = true;
-      });
+      if (mounted) {
+        setState(() {
+          _showBottomBar = true;
+        });
+      }
     }
 
     // Mantener la lógica para la animación de los filtros superiores
@@ -691,7 +730,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     }
 
     if (needsUpdate) {
-      setState(() {});
+      if (mounted) setState(() {});
     }
 
     _lastScrollOffset = offset;
@@ -715,19 +754,18 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
       child: Container(
         padding: const EdgeInsets.only(bottom: 10),
         decoration: BoxDecoration(
-          color: AppColors.blurprimary.withOpacity(0.5),
+          color: AppColors.primaryGreen,
           borderRadius: const BorderRadius.only(
             bottomLeft: Radius.circular(30.0),
             bottomRight: Radius.circular(30.0),
           ),
-          border: Border(
-            bottom: BorderSide(
-                color: AppColors.navbar.withOpacity(0.3), width: 1.5),
-            left: BorderSide(
-                color: AppColors.navbar.withOpacity(0.3), width: 1.5),
-            right: BorderSide(
-                color: AppColors.navbar.withOpacity(0.3), width: 1.5),
-          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
         ),
         child: Column(
           key: _searchFilterContentKey,
@@ -749,22 +787,22 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                     focusNode: _searchFocusNode,
                     onChanged: _onSearchChanged,
                     decoration: InputDecoration(
-                      hintText: 'Busca por materia...',
+                      hintText: 'Busca por materia o tutor...',
                       hintStyle: AppTextStyles.body.copyWith(
-                          color: AppColors.whiteColor.withOpacity(0.7)),
+                          color: AppColors.greyColor.withOpacity(0.7)),
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 20.0, vertical: 12),
+                          horizontal: 20.0, vertical: 15),
                       prefixIcon: Icon(Icons.search,
-                          color: AppColors.whiteColor.withOpacity(0.7)),
+                          color: AppColors.greyColor.withOpacity(0.7)),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15.0),
+                        borderRadius: BorderRadius.circular(25.0),
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
-                      fillColor: Colors.black.withOpacity(0.2),
+                      fillColor: Colors.white,
                     ),
                     style: AppTextStyles.body
-                        .copyWith(color: AppColors.whiteColor),
+                        .copyWith(color: AppColors.blackColor),
                   ),
                 ),
               ),
@@ -780,19 +818,49 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                 opacity: _counterOpacity,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 20.0, vertical: 2.0),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      (keyword != null && keyword!.isNotEmpty)
-                          ? '${totalTutors} tutores para "${keyword!}"'
-                          : '${totalTutors} Tutores Encontrados',
-                      style: AppTextStyles.body.copyWith(
-                        color: AppColors.whiteColor.withOpacity(0.9),
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                      horizontal: 20.0, vertical: 8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        (keyword != null && keyword!.isNotEmpty)
+                            ? '${totalTutors} tutores para "${keyword!}"'
+                            : '${totalTutors} tutores encontrados',
+                        style: AppTextStyles.body.copyWith(
+                          color: AppColors.whiteColor.withOpacity(0.9),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
                       ),
-                    ),
+                      GestureDetector(
+                        onTap: () {
+                          // Implementar lógica de ordenamiento
+                        },
+                        child: Container(
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.sort, color: Colors.white, size: 16),
+                              SizedBox(width: 4),
+                              Text(
+                                'Ordenar',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -808,93 +876,23 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                 opacity: _filtersOpacity,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                  child: Row(
-                    children: [
-                      // Scroll horizontal para chips y dropdown
-                      Expanded(
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: [
-                              _buildModeChip('agendar', 'Agendar'),
-                              SizedBox(width: 4),
-                              _buildModeChip(
-                                  'instantanea', 'Tutoría instantánea'),
-                              SizedBox(width: 4),
-                              Container(
-                                width: 90,
-                                height: 32,
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 4.0),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: DropdownButtonHideUnderline(
-                                  child: DropdownButton<String>(
-                                    value: _selectedSortOption,
-                                    hint: Text('Ordenar',
-                                        style: AppTextStyles.body.copyWith(
-                                            color: AppColors.whiteColor
-                                                .withOpacity(0.7),
-                                            fontSize: 11)),
-                                    icon: Icon(Icons.arrow_drop_down,
-                                        color: AppColors.whiteColor
-                                            .withOpacity(0.7),
-                                        size: 15),
-                                    dropdownColor: AppColors.blurprimary,
-                                    borderRadius: BorderRadius.circular(12.0),
-                                    style: AppTextStyles.body.copyWith(
-                                        color: AppColors.whiteColor,
-                                        fontSize: 11),
-                                    isExpanded: true,
-                                    items: _sortOptions.map((String value) {
-                                      return DropdownMenuItem<String>(
-                                        value: value,
-                                        child: Text(value),
-                                      );
-                                    }).toList(),
-                                    onChanged: (newValue) {
-                                      setState(() {
-                                        _selectedSortOption = newValue;
-                                        _sortTutors(newValue);
-                                      });
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                  child: Container(
+                    height: 45,
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      padding: EdgeInsets.symmetric(horizontal: 20),
+                      child: Row(
+                        children: [
+                          _buildFilterChip('Todos', true),
+                          SizedBox(width: 8),
+                          _buildFilterChip('Disponible', true),
+                          SizedBox(width: 8),
+                          _buildFilterChip('Mejor Valorado', false),
+                          SizedBox(width: 8),
+                          _buildFilterChip('Precio', false),
+                        ],
                       ),
-                      SizedBox(width: 6),
-                      // Botón de filtro fijo a la derecha
-                      Container(
-                        width: 28,
-                        height: 28,
-                        decoration: BoxDecoration(
-                          color: AppColors.orangeprimary,
-                          borderRadius: BorderRadius.circular(10),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.orangeprimary.withOpacity(0.3),
-                              blurRadius: 5,
-                              spreadRadius: 0.5,
-                            ),
-                          ],
-                        ),
-                        child: IconButton(
-                          padding: EdgeInsets.zero,
-                          icon: SvgPicture.asset(
-                            AppImages.filterIcon,
-                            color: AppColors.whiteColor,
-                            width: 13,
-                            height: 13,
-                          ),
-                          onPressed: openFilterBottomSheet,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -934,7 +932,9 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
         curve: Curves.easeInOut,
         padding: EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.lightBlueColor : AppColors.darkBlue,
+          color: isSelected
+              ? AppColors.lightBlueColor
+              : Colors.white.withOpacity(0.2),
           borderRadius: BorderRadius.circular(16),
           border: isSelected
               ? Border.all(
@@ -949,22 +949,50 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
             children: [
               if (mode == 'agendar')
                 Icon(Icons.calendar_today,
-                    color: isSelected ? Colors.white : AppColors.lightBlueColor,
+                    color: isSelected
+                        ? Colors.white
+                        : Colors.white.withOpacity(0.9),
                     size: 16),
               if (mode == 'instantanea')
                 Icon(Icons.flash_on,
-                    color: isSelected ? Colors.white : AppColors.lightBlueColor,
+                    color: isSelected
+                        ? Colors.white
+                        : Colors.white.withOpacity(0.9),
                     size: 16),
               SizedBox(width: 6),
               Text(
                 label,
                 style: TextStyle(
-                  color: isSelected ? Colors.white : AppColors.lightBlueColor,
+                  color:
+                      isSelected ? Colors.white : Colors.white.withOpacity(0.9),
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String label, bool isSelected) {
+    return GestureDetector(
+      onTap: () {
+        // Implementar lógica de filtrado según el chip seleccionado
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.white.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? AppColors.primaryGreen : Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
           ),
         ),
       ),
@@ -1029,7 +1057,12 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                   .where((subject) =>
                       subject['status'] == 'active' &&
                       subject['deleted_at'] == null)
-                  .map((subject) => subject['name'] as String)
+                  .whereType<Map>()
+                  .map((subject) => Map<String, dynamic>.from(subject))
+                  .toList();
+              final validSubjectNames = validSubjects
+                  .map((subject) => (subject['name'] ?? '').toString())
+                  .where((name) => name.isNotEmpty)
                   .toList();
 
               // Obtener el primer subject válido para el ID
@@ -1188,8 +1221,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                     ),
                                   );
                                 },
-                          tutorProfession: validSubjects.isNotEmpty
-                              ? validSubjects.first
+                          tutorProfession: validSubjectNames.isNotEmpty
+                              ? validSubjectNames.first
                               : 'Profesión no disponible',
                           sessionDuration: 'Clases de 20 minutos',
                           isFavoriteInitial: tutor['is_favorite'] ?? false,
@@ -1197,7 +1230,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                             print(
                                 'Tutor ${profile['full_name'] ?? ''} es favorito: $isFavorite');
                           },
-                          subjectsString: validSubjects.join(', '),
+                          subjectsString: validSubjectNames.join(', '),
                           description: profile['description'] ??
                               'No hay descripción disponible.',
                           isVerified: true,
@@ -1222,13 +1255,15 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
       final response = await getVerifiedTutorsPhotos(token);
       if (response.containsKey('data') && response['data'] is List) {
         final List<dynamic> data = response['data'];
-        setState(() {
-          highResTutorImages = {
-            for (var item in data)
-              if (item['id'] != null && item['profile_image'] != null)
-                item['id'] as int: item['profile_image'] as String
-          };
-        });
+        if (mounted) {
+          setState(() {
+            highResTutorImages = {
+              for (var item in data)
+                if (item['id'] != null && item['profile_image'] != null)
+                  item['id'] as int: item['profile_image'] as String
+            };
+          });
+        }
       }
     } catch (e) {
       print('Error fetching high-res tutor images: $e');
@@ -1256,7 +1291,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
         resizeToAvoidBottomInset:
             false, // Evita que la barra suba con el teclado
         key: _scaffoldKey,
-        backgroundColor: AppColors.primaryGreen,
+        backgroundColor: AppColors.backgroundColor,
         body: Stack(
           children: [
             Column(
@@ -1292,35 +1327,13 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                       ),
                       StudentCalendarScreen(),
                       StudentHistoryScreen(),
-                      ProfileScreen(),
+                      ProfileScreen(showAppBar: true),
                     ],
                   ),
                 ),
               ],
             ),
-            // Barra flotante
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: AnimatedSlide(
-                duration: const Duration(milliseconds: 400),
-                curve: Curves.easeInOut,
-                offset: _showBottomBar ? Offset(0, 0) : Offset(0, 1),
-                child: AnimatedOpacity(
-                  duration: const Duration(milliseconds: 400),
-                  curve: Curves.easeInOut,
-                  opacity: _showBottomBar ? 1.0 : 0.0,
-                  child: SizedBox(
-                    height: 80,
-                    child: _ModernNavBar(
-                      currentIndex: selectedIndex,
-                      onTap: _onItemTapped,
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            // Barra de navegación gestionada por el scaffold padre (duplicado eliminado)
           ],
         ),
       ),
@@ -1396,7 +1409,7 @@ class _ModernNavBar extends StatelessWidget {
 class BookingModal extends StatefulWidget {
   final String tutorName;
   final String tutorImage;
-  final List<String> subjects;
+  final List<Map<String, dynamic>> subjects;
   final int tutorId;
   final int subjectId;
 
@@ -1413,7 +1426,7 @@ class BookingModal extends StatefulWidget {
 }
 
 class BookingModalState extends State<BookingModal> {
-  String? selectedSubject;
+  Map<String, dynamic>? selectedSubject;
   DateTime? selectedDay;
   String? selectedHour;
 
@@ -1456,15 +1469,14 @@ class BookingModalState extends State<BookingModal> {
   /// lo que causaba que se mostraran días incorrectos. Ahora se usa la fecha completa
   /// como clave (millisecondsSinceEpoch) para evitar conflictos entre meses.
   Future<void> _loadTutorAvailableSlots() async {
-    try {
-      setState(() {
-        isLoading = true;
-        errorMessage = null;
-      });
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
 
+    try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final token = authProvider.token;
-
       if (token == null) {
         setState(() {
           errorMessage = 'No se pudo autenticar';
@@ -1473,81 +1485,41 @@ class BookingModalState extends State<BookingModal> {
         return;
       }
 
-      final response =
-          await getTutorAvailableSlots(token, widget.tutorId.toString());
+      final parsed = await ReservationsService.loadTutorAvailableSlots(
+          token, widget.tutorId.toString());
 
-      final Map<int, List<String>> newAvailableDays = {};
+      print('[BookingModal] availableDays keys: ${parsed.keys.toList()}');
 
-      // ✅ CAMBIO: Procesar la respuesta del nuevo endpoint
-      // La API devuelve directamente una lista de slots
-      dynamic data;
-
-      if (response.containsKey('data')) {
-        data = response['data'];
-      } else {
-        data = response;
-      }
-
-      // ✅ SIMPLIFICADO: Solo procesar la lista de slots
-      if (data is List) {
-        for (var slot in data) {
+      // Convertir Map<int, List<Map>> a Map<int, List<String>> (rangos)
+      final Map<int, List<String>> mapped = {};
+      try {
+        parsed.forEach((key, list) {
           try {
-            // Verificar que el slot tenga los campos necesarios
-            if (slot['start_time'] == null ||
-                slot['end_time'] == null ||
-                slot['date'] == null) {
-              continue;
-            }
+            final List<String> ranges = (list as List)
+                .map<String>((slot) {
+                  if (slot is Map) {
+                    final s = slot['start24']?.toString();
+                    final e = slot['end24']?.toString();
+                    if (s != null && e != null) return '$s-$e';
+                    final rawRange = slot['range']?.toString();
+                    if (rawRange != null && rawRange.isNotEmpty) {
+                      return rawRange
+                          .replaceAll(' ', '')
+                          .replaceAll('\u2013', '-');
+                    }
+                  }
+                  return slot.toString();
+                })
+                .where((r) => r.isNotEmpty)
+                .toList();
 
-            // ✅ CAMBIO: Usar el campo 'date' para determinar el día
-            final dateStr = slot['date'].toString().trim();
-            final slotDate = DateTime.parse(dateStr);
-
-            // ✅ CAMBIO: Solo filtrar por fecha futura, no por mes actual
-            if (slotDate.isAfter(DateTime.now().subtract(Duration(days: 1)))) {
-              // ✅ SOLUCIÓN: Usar fecha completa como clave
-              final dateKey =
-                  DateTime(slotDate.year, slotDate.month, slotDate.day);
-
-              // ✅ CAMBIO: Usar start_time y end_time para las horas
-              // ✅ CORRECCIÓN: Ajustar zona horaria de UTC a Bolivia (UTC-4)
-              final startTimeUTC =
-                  DateTime.parse(slot['start_time'].toString().trim());
-              final endTimeUTC =
-                  DateTime.parse(slot['end_time'].toString().trim());
-
-              // Convertir a hora local de Bolivia (UTC-4)
-              // Los horarios de la base de datos están en UTC, restamos 4 horas para Bolivia
-              final startTime = startTimeUTC.subtract(Duration(hours: 4));
-              final endTime = endTimeUTC.subtract(Duration(hours: 4));
-
-              // ✅ DEBUG: Verificar conversión de zona horaria
-              print(
-                  '[BookingModal] 🔍 DEBUG - Zona horaria: UTC ${_formatTime(startTimeUTC)}-${_formatTime(endTimeUTC)} -> Bolivia ${_formatTime(startTime)}-${_formatTime(endTime)}');
-
-              final timeRange =
-                  '${_formatTime(startTime)}-${_formatTime(endTime)}';
-
-              if (!newAvailableDays
-                  .containsKey(dateKey.millisecondsSinceEpoch)) {
-                newAvailableDays[dateKey.millisecondsSinceEpoch] = [];
-              }
-
-              // Evitar duplicados
-              if (!newAvailableDays[dateKey.millisecondsSinceEpoch]!
-                  .contains(timeRange)) {
-                newAvailableDays[dateKey.millisecondsSinceEpoch]!
-                    .add(timeRange);
-              }
-            }
-          } catch (e) {
-            // Error parsing slot
-          }
-        }
-      }
+            mapped[key as int] = ranges;
+          } catch (_) {}
+        });
+      } catch (_) {}
 
       setState(() {
-        availableDays = newAvailableDays;
+        availableDays = mapped;
         isLoading = false;
       });
     } catch (e) {
@@ -1629,7 +1601,8 @@ class BookingModalState extends State<BookingModal> {
     }
   }
 
-  List<String> _generateTimeSlots(String range) {
+  List<String> _generateTimeSlots(String range,
+      {DateTime? nowBolivia, bool isToday = false}) {
     final parts = range.split('-');
     if (parts.length != 2) return [];
     final start = _parseTime(parts[0]);
@@ -1644,6 +1617,14 @@ class BookingModalState extends State<BookingModal> {
         slot.isAtSameMomentAs(end.subtract(Duration(minutes: 20)))) {
       slots.add(_formatTime(slot));
       slot = slot.add(Duration(minutes: 20));
+    }
+    if (isToday && nowBolivia != null) {
+      final ref = DateTime(0, 1, 1, nowBolivia.hour, nowBolivia.minute);
+      slots = slots.where((h) {
+        final parsed = _parseTime(h);
+        if (parsed == null) return false;
+        return parsed.isAtSameMomentAs(ref) || parsed.isAfter(ref);
+      }).toList();
     }
     return slots;
   }
@@ -1831,7 +1812,7 @@ class BookingModalState extends State<BookingModal> {
                                   : [],
                             ),
                             child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
+                              child: DropdownButton<Map<String, dynamic>>(
                                 value: selectedSubject,
                                 dropdownColor: AppColors.darkBlue,
                                 borderRadius: BorderRadius.circular(12),
@@ -1841,7 +1822,8 @@ class BookingModalState extends State<BookingModal> {
                                 items: widget.subjects
                                     .map((s) => DropdownMenuItem(
                                           value: s,
-                                          child: Text(s,
+                                          child: Text(
+                                              (s['name'] ?? '').toString(),
                                               style: TextStyle(
                                                   color: Colors.white)),
                                         ))
@@ -2055,7 +2037,8 @@ class BookingModalState extends State<BookingModal> {
                                         crossAxisCount: 7,
                                         mainAxisSpacing: 2,
                                         crossAxisSpacing: 2,
-                                        childAspectRatio: 1.1,
+                                        // Ajustado para dar más altura a las celdas y evitar overflow
+                                        childAspectRatio: 0.85,
                                       ),
                                       itemCount: daysInMonth + firstWeekday - 1,
                                       itemBuilder: (context, i) {
@@ -2082,66 +2065,100 @@ class BookingModalState extends State<BookingModal> {
                                                 selectedDay!.year ==
                                                     currentMonth.year;
                                         return GestureDetector(
-                                          onTap: isAvailable
-                                              ? () {
-                                                  setState(() {
-                                                    selectedDay = DateTime(
-                                                        currentMonth.year,
-                                                        currentMonth.month,
-                                                        day);
-                                                    selectedHour = null;
-                                                  });
-                                                  print(
-                                                      '[BookingModal] selectedDay=$day/${currentMonth.month}/${currentMonth.year}');
-                                                  Future.delayed(
-                                                      Duration(
-                                                          milliseconds: 100),
-                                                      () {
-                                                    if (_sheetScrollController !=
-                                                        null) {
-                                                      _sheetScrollController!
-                                                          .animateTo(
+                                            onTap: isAvailable
+                                                ? () {
+                                                    setState(() {
+                                                      selectedDay = DateTime(
+                                                          currentMonth.year,
+                                                          currentMonth.month,
+                                                          day);
+                                                      selectedHour = null;
+                                                    });
+                                                    print(
+                                                        '[BookingModal] selectedDay=$day/${currentMonth.month}/${currentMonth.year}');
+                                                    Future.delayed(
+                                                        Duration(
+                                                            milliseconds: 100),
+                                                        () {
+                                                      if (_sheetScrollController !=
+                                                          null) {
                                                         _sheetScrollController!
-                                                            .position
-                                                            .maxScrollExtent,
-                                                        duration: Duration(
-                                                            milliseconds: 400),
-                                                        curve: Curves.easeOut,
-                                                      );
-                                                    }
-                                                  });
-                                                }
-                                              : null,
-                                          child: Container(
-                                            margin: EdgeInsets.all(2),
-                                            decoration: BoxDecoration(
-                                              color: isSelected
-                                                  ? AppColors.lightBlueColor
-                                                  : isAvailable
-                                                      ? AppColors.lightBlueColor
-                                                          .withOpacity(0.18)
-                                                      : Colors.transparent,
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                              border: isSelected
-                                                  ? Border.all(
-                                                      color: Colors.white,
-                                                      width: 2)
-                                                  : null,
-                                            ),
-                                            child: Center(
-                                              child: Text(
-                                                '$day',
-                                                style: TextStyle(
-                                                  color: isAvailable
-                                                      ? Colors.white
-                                                      : Colors.white24,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
+                                                            .animateTo(
+                                                          _sheetScrollController!
+                                                              .position
+                                                              .maxScrollExtent,
+                                                          duration: Duration(
+                                                              milliseconds:
+                                                                  400),
+                                                          curve: Curves.easeOut,
+                                                        );
+                                                      }
+                                                    });
+                                                  }
+                                                : null,
+                                            child: Container(
+                                              margin: EdgeInsets.all(2),
+                                              padding: EdgeInsets.symmetric(
+                                                  vertical: 4, horizontal: 2),
+                                              decoration: BoxDecoration(
+                                                color: isSelected
+                                                    ? AppColors.lightBlueColor
+                                                    : isAvailable
+                                                        ? AppColors
+                                                            .lightBlueColor
+                                                            .withOpacity(0.22)
+                                                        : Colors.transparent,
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                                border: isSelected
+                                                    ? Border.all(
+                                                        color: Colors.white,
+                                                        width: 2)
+                                                    : isAvailable
+                                                        ? Border.all(
+                                                            color: AppColors
+                                                                .lightBlueColor
+                                                                .withOpacity(
+                                                                    0.35),
+                                                            width: 1)
+                                                        : null,
                                               ),
-                                            ),
-                                          ),
-                                        );
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  Text(
+                                                    '$day',
+                                                    style: TextStyle(
+                                                      color: isAvailable
+                                                          ? Colors.white
+                                                          : Colors.white24,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                  SizedBox(height: 4),
+                                                  if (isAvailable)
+                                                    Container(
+                                                      width: 5,
+                                                      height: 5,
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.white,
+                                                        shape: BoxShape.circle,
+                                                        boxShadow: [
+                                                          BoxShadow(
+                                                            color: Colors.black
+                                                                .withOpacity(
+                                                                    0.25),
+                                                            blurRadius: 4,
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                ],
+                                              ),
+                                            ));
                                       },
                                     ),
                                   ],
@@ -2189,8 +2206,17 @@ class BookingModalState extends State<BookingModal> {
                                   for (final slot in slotsOrRanges) {
                                     if (slot.contains('-')) {
                                       hasRange = true;
-                                      final intervals =
-                                          _generateTimeSlots(slot);
+                                      final nowBolivia = DateTime.now()
+                                          .toUtc()
+                                          .subtract(Duration(hours: 4));
+                                      final isToday = selectedDay != null &&
+                                          isSameDay(
+                                              selectedDay!,
+                                              DateTime.now().toUtc().subtract(
+                                                  Duration(hours: 4)));
+                                      final intervals = _generateTimeSlots(slot,
+                                          nowBolivia: nowBolivia,
+                                          isToday: isToday);
                                       chips.addAll(intervals.map((h) =>
                                           ChoiceChip(
                                             label: Text(h,

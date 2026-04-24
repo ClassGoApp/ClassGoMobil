@@ -1507,7 +1507,12 @@ class _TutorDetailScreenState extends State<TutorDetailScreen> {
                         0.0,
                 subjects: (tutorDetails?['data']?['profile']?['subjects']
                             as List<dynamic>?)
-                        ?.map((e) => e['name']?.toString() ?? '')
+                        ?.whereType<Map>()
+                        ?.map((e) => <String, dynamic>{
+                              'id': e['id'],
+                              'name': (e['name'] ?? '').toString(),
+                            })
+                        .where((e) => (e['name'] as String).isNotEmpty)
                         .toList() ??
                     [],
                 completedCourses: int.tryParse(
@@ -1519,8 +1524,8 @@ class _TutorDetailScreenState extends State<TutorDetailScreen> {
         }
       },
       style: ButtonStyle(
-        backgroundColor: WidgetStateProperty.resolveWith<Color>(
-            (Set<WidgetState> states) {
+        backgroundColor:
+            WidgetStateProperty.resolveWith<Color>((Set<WidgetState> states) {
           if (states.contains(WidgetState.disabled)) {
             return AppColors.orangeprimary;
           }
