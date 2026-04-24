@@ -113,7 +113,7 @@ class _SubjectListItemState extends State<SubjectListItem> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          "ESPECIALIDAD",
+                          "MATERIA",
                           style: TextStyle(color: isDark ? Colors.white70 : AppColors.brandBlue.withOpacity(0.6), fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5, fontFamily: kFontFamily),
                         ),
                       ),

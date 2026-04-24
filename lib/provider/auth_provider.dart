@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_projects/view/tutor/education/education_details.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_projects/services/notification_topic_service.dart';
 
 class AuthProvider with ChangeNotifier {
   String? _token;
@@ -177,6 +178,13 @@ class AuthProvider with ChangeNotifier {
         print('DEBUG - userData keys: ${_userData!.keys}');
         if (_userData!.containsKey('user')) {
           print('DEBUG - user keys: ${_userData!['user'].keys}');
+        }
+
+        final role = userRole;
+        if (role != null) {
+          await NotificationTopicService.configureTopics(role);
+          print(
+              'DEBUG - Topics FCM resincronizados al cargar sesión para rol: $role');
         }
       }
     } else {
@@ -397,13 +405,25 @@ class AuthProvider with ChangeNotifier {
 
   Future<void> setUserData(Map<String, dynamic> userData) async {
     print('setUserData llamado con datos: $userData');
+
     _userData = userData;
-    print('Datos de usuario guardados en memoria: $_userData');
+
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('userData', jsonEncode(userData));
-    print('Datos de usuario guardados en SharedPreferences');
+
+    print('Datos de usuario guardados en memoria');
+
+    // 🔥 NUEVO: Configurar topics según rol
+    String? role = userRole;
+
+    if (role != null) {
+      print('Configurando topics para rol: $role');
+      await NotificationTopicService.configureTopics(role);
+    } else {
+      print('No se pudo detectar el rol para topics');
+    }
+
     notifyListeners();
-    print('setUserData completado y notificados los listeners');
   }
 
   Future<void> clearToken() async {
@@ -524,13 +544,15 @@ class AuthProvider with ChangeNotifier {
   Future<void> updateUserProfiles(Map<String, dynamic>? updatedProfile) async {
     if (updatedProfile != null && _userData != null) {
       // Construir full_name si tenemos first_name y last_name
-      if (updatedProfile['first_name'] != null && updatedProfile['last_name'] != null) {
-        updatedProfile['full_name'] = '${updatedProfile['first_name']} ${updatedProfile['last_name']}';
+      if (updatedProfile['first_name'] != null &&
+          updatedProfile['last_name'] != null) {
+        updatedProfile['full_name'] =
+            '${updatedProfile['first_name']} ${updatedProfile['last_name']}';
       }
-      
+
       // Actualizar _userData['user']['profile']
       _userData!['user']['profile'] = updatedProfile;
-      
+
       // Actualizar los campos individuales para mantener sincronizados los datos
       if (updatedProfile['first_name'] != null) {
         _firstName = updatedProfile['first_name'];
@@ -544,17 +566,17 @@ class AuthProvider with ChangeNotifier {
       if (updatedProfile['description'] != null) {
         _description = updatedProfile['description'];
       }
-      
+
       // Guardar en SharedPreferences
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setString('userData', jsonEncode(_userData));
-      
+
       // Guardar los campos individuales también
       await prefs.setString('firstName', _firstName ?? '');
       await prefs.setString('lastName', _lastName ?? '');
       await prefs.setString('phone', _phone ?? '');
       await prefs.setString('description', _description ?? '');
-      
+
       notifyListeners();
     } else {}
   }
@@ -565,16 +587,16 @@ class AuthProvider with ChangeNotifier {
       if (_userData!['user']['profile'] == null) {
         _userData!['user']['profile'] = {};
       }
-      
+
       // Limpiar y normalizar la URL
       final cleanedUrl = _cleanUrl(newImageUrl);
-      
+
       // Actualizar la imagen de perfil
       _userData!['user']['profile']['image'] = cleanedUrl;
-      
+
       // También actualizar profile_image si existe
       _userData!['user']['profile']['profile_image'] = cleanedUrl;
-      
+
       SharedPreferences.getInstance().then((prefs) {
         prefs.setString('userData', jsonEncode(_userData));
         notifyListeners();
@@ -587,12 +609,12 @@ class AuthProvider with ChangeNotifier {
     if (url.startsWith('http://') || url.startsWith('https://')) {
       return url;
     }
-    
+
     // Si la URL es relativa, construir la URL completa
     if (url.startsWith('/')) {
       return '${AppConfig.mediaBaseUrl}${url.substring(1)}';
     }
-    
+
     // Si la URL no tiene slash inicial, agregarlo
     return '${AppConfig.mediaBaseUrl}$url';
   }
@@ -696,48 +718,52 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  /// Cierra la sesión del usuario
+  /// Cierra la sesión del usuario de forma instantánea
   Future<void> logout() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+    print('DEBUG - Iniciando logout instantáneo');
 
-    // Limpiar token
+    // 1. Limpiar datos en memoria de inmediato
     _token = null;
-    await prefs.remove('token');
-
-    // Limpiar datos del usuario
     _userData = null;
-    await prefs.remove('userData');
-
-    // Limpiar listas
+    // Mantener _isSessionLoaded = true; para que el Router no se quede en "cargando"
+    
     _educationList.clear();
     _experienceList.clear();
     _certificateList.clear();
-    await prefs.remove('educationList');
-    await prefs.remove('experienceList');
 
-    // Limpiar datos del perfil
-    _firstName = null;
-    _lastName = null;
-    _email = null;
-    _phone = null;
-    _country = null;
-    _state = null;
-    _city = null;
-    _zipCode = null;
-    _description = null;
-    _company = null;
-
-    await prefs.remove('firstName');
-    await prefs.remove('lastName');
-    await prefs.remove('email');
-    await prefs.remove('phone');
-    await prefs.remove('country');
-    await prefs.remove('state');
-    await prefs.remove('city');
-    await prefs.remove('zipCode');
-    await prefs.remove('description');
-    await prefs.remove('company');
-
+    // Notificar a los listeners DE INMEDIATO para redirigir al HomeScreen
     notifyListeners();
+
+    // 2. Ejecutar limpieza pesada en segundo plano SIN esperar el resultado
+    _performBackgroundCleanup();
+  }
+
+  /// Realiza la limpieza de persistencia en segundo plano
+  Future<void> _performBackgroundCleanup() async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      
+      await Future.wait([
+        NotificationTopicService.unsubscribeAll(),
+        prefs.remove('token'),
+        prefs.remove('userData'),
+        prefs.remove('educationList'),
+        prefs.remove('experienceList'),
+        prefs.remove('certificateList'),
+        prefs.remove('firstName'),
+        prefs.remove('lastName'),
+        prefs.remove('email'),
+        prefs.remove('phone'),
+        prefs.remove('country'),
+        prefs.remove('state'),
+        prefs.remove('city'),
+        prefs.remove('zipCode'),
+        prefs.remove('description'),
+        prefs.remove('company'),
+      ]);
+      print('DEBUG - Limpieza de segundo plano completada');
+    } catch (e) {
+      print('ERROR - Falló la limpieza de segundo plano: $e');
+    }
   }
 }

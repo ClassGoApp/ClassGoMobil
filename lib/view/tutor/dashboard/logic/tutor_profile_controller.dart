@@ -7,7 +7,6 @@ class TutorProfileController extends ChangeNotifier {
   String? profileImageUrl;
   bool isLoadingProfileImage = false;
 
-  // Tu método original para limpiar URLs de imagen duplicadas
   String cleanImageUrl(String url) {
     if (url.contains('https://classgoapp.com/storagehttps://classgoapp.com')) {
       return url.replaceFirst(
@@ -20,7 +19,6 @@ class TutorProfileController extends ChangeNotifier {
     return url;
   }
 
-  // Tu método original para sincronizar la imagen del AuthProvider
   void syncProfileImageFromAuthProvider(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final authImageUrl = authProvider.userData?['user']?['profile']?['image'] ??
@@ -30,11 +28,10 @@ class TutorProfileController extends ChangeNotifier {
         authImageUrl.isNotEmpty &&
         authImageUrl != profileImageUrl) {
       profileImageUrl = cleanImageUrl(authImageUrl);
-      notifyListeners(); // Avisa a la vista que la imagen cambió
+      notifyListeners();
     }
   }
 
-  // Tu método original para cargar la imagen de perfil desde la API
   Future<void> loadProfileImage(BuildContext context) async {
     isLoadingProfileImage = true;
     notifyListeners();
@@ -44,7 +41,6 @@ class TutorProfileController extends ChangeNotifier {
       final token = authProvider.token;
       final userId = authProvider.userId;
 
-      // Primero verificar si ya tenemos una imagen en el AuthProvider
       final cachedImageUrl = authProvider.userData?['user']?['profile']?['image'] ??
           authProvider.userData?['user']?['profile']?['profile_image'];
           

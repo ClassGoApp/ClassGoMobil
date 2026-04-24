@@ -1,5 +1,8 @@
 {
   "java.compile.nullAnalysis.mode": "automatic",
   "java.configuration.updateBuildConfiguration": "interactive",
-  "dart.flutterSdkPath": ".fvm/versions/3.27.0"
+  "dart.flutterSdkPath": ".fvm/versions/3.27.0",
+  "java.project.sourcePaths": [
+    "build/app/outputs/flutter-apk"
+  ]
 }

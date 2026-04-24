@@ -6,9 +6,8 @@ class AuthRequiredModal {
   static void show(
     BuildContext context, {
     String title = 'Iniciar sesión requerido',
-    String message =
-        'Para acceder a esta función, necesitas iniciar sesión en tu cuenta.',
-    String buttonText = 'Iniciar sesión',
+    String message = 'Para acceder a esta función, necesitas iniciar sesión en tu cuenta.',
+    String buttonText = 'Ingresar',
   }) {
     showDialog(
       context: context,
@@ -16,128 +15,118 @@ class AuthRequiredModal {
       builder: (BuildContext context) {
         return Dialog(
           backgroundColor: Colors.transparent,
+          elevation: 0,
           child: Container(
-            margin: EdgeInsets.symmetric(horizontal: 24),
-            padding: EdgeInsets.all(24),
+            margin: const EdgeInsets.symmetric(horizontal: 10),
+            padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: AppColors.darkBlue,
-              borderRadius: BorderRadius.circular(20),
+              color: AppColors.cardLight,
+              borderRadius: BorderRadius.circular(24), 
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.25),
-                  blurRadius: 20,
-                  offset: Offset(0, 10),
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 30,
+                  offset: const Offset(0, 15),
                 ),
               ],
-              border: Border.all(
-                color: AppColors.lightBlueColor.withOpacity(0.3),
-                width: 1,
-              ),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Icono de candado
                 Container(
-                  width: 60,
-                  height: 60,
+                  width: 70,
+                  height: 70,
                   decoration: BoxDecoration(
-                    color: AppColors.lightBlueColor.withOpacity(0.15),
+                    color: AppColors.brandOrange.withOpacity(0.1), // Fondo naranja muy transparente
                     shape: BoxShape.circle,
-                    border: Border.all(
-                      color: AppColors.lightBlueColor,
-                      width: 2,
-                    ),
                   ),
-                  child: Icon(
-                    Icons.lock_outline,
-                    color: AppColors.lightBlueColor,
-                    size: 28,
+                  child: const Icon(
+                    Icons.lock_rounded,
+                    color: AppColors.brandOrange,
+                    size: 34,
                   ),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 24),
 
-                // Título
                 Text(
                   title,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                  style: const TextStyle(
+                    fontFamily: 'outfit',
+                    color: AppColors.brandBlue,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
 
-                // Mensaje
                 Text(
                   message,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.85),
-                    fontSize: 16,
+                  style: const TextStyle(
+                    fontFamily: 'manrope',
+                    color: AppColors.textLightSecondary,
+                    fontSize: 15,
                     height: 1.4,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 28),
+                const SizedBox(height: 32),
 
-                // Botón de iniciar sesión
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).pop(); // Cierra el modal
-                      Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(
-                          builder: (context) => LoginScreen(),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                         ),
-                        (Route<dynamic> route) =>
-                            false, // Limpia el stack de navegación
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.orangeprimary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      elevation: 0,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.login,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          buttonText,
+                        child: const Text(
+                          'Cancelar',
                           style: TextStyle(
+                            fontFamily: 'outfit',
+                            color: AppColors.lightGreyColor,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop(); // Cierra el modal
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(
+                              builder: (context) => LoginScreen(),
+                            ),
+                            (Route<dynamic> route) => false,
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.brandCyan, 
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: Text(
+                          buttonText,
+                          style: const TextStyle(
+                            fontFamily: 'outfit',
                             color: Colors.white,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
-                SizedBox(height: 12),
-
-                // Botón de cancelar
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: Text(
-                    'Cancelar',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
-                      fontSize: 14,
-                    ),
-                  ),
+                  ],
                 ),
               ],
             ),

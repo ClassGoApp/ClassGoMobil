@@ -15,6 +15,7 @@
 -keep class com.google.android.gms.** { *; }
 -dontwarn com.google.firebase.**
 -dontwarn com.google.android.gms.**
+-dontwarn com.google.android.play.core.**
 
 # Pusher
 -keep class com.pusher.** { *; }
@@ -63,6 +64,7 @@
 # OkHttp
 -dontwarn okhttp3.**
 -dontwarn okio.**
+-dontwarn org.slf4j.**
 -keepnames class okhttp3.internal.publicsuffix.PublicSuffixDatabase
 
 # Multidex

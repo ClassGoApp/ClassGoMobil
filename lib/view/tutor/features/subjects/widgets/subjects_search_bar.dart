@@ -26,10 +26,10 @@ class SubjectsSearchBar extends StatelessWidget {
         controller: controller,
         style: TextStyle(color: isDark ? Colors.white : AppColors.brandBlue, fontWeight: FontWeight.w600, fontFamily: kFontFamily),
         decoration: InputDecoration(
-          hintText: "Encuentra tu próxima especialidad...",
+          hintText: "Agrega tu próxima materia...",
           hintStyle: TextStyle(color: isDark ? Colors.white30 : Colors.grey[400], fontWeight: FontWeight.normal, fontFamily: kFontFamily),
           border: InputBorder.none,
-          prefixIcon: Icon(Icons.search_rounded, color: AppColors.brandCyan, size: 22),
+          prefixIcon: Icon(Icons.search_rounded, color: AppColors.brandCyan, size: 26),
           contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
         ),
       ),

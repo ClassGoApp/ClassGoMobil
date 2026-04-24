@@ -30,17 +30,15 @@ class TutorSubjectsProvider with ChangeNotifier {
       );
 
       if (response['status'] == 200 && response['data'] != null) {
-        final List<dynamic> subjectsData = response['data'];
-        print('🔍 DEBUG - Datos crudos de materias recibidos:');
-
-        for (int i = 0; i < subjectsData.length; i++) {
-          final subject = subjectsData[i];
-          print(
-              '   Materia $i: ID=${subject['id']}, Subject ID=${subject['subject_id']}, Nombre=${subject['subject']?['name'] ?? 'N/A'}');
+        final data = response['data'];
+        
+        if (data is List) {
+          print('🔍 DEBUG - Materias recibidas correctamente: ${data.length}');
+          _subjects = data.map((json) => TutorSubject.fromJson(json)).toList();
+        } else {
+          _subjects = [];
+          _error = 'Formato de datos inesperado del servidor';
         }
-
-        _subjects =
-            subjectsData.map((json) => TutorSubject.fromJson(json)).toList();
       } else {
         _subjects = [];
         _error = response['message'] ?? 'Error al cargar las materias';
@@ -49,10 +47,10 @@ class TutorSubjectsProvider with ChangeNotifier {
       _subjects = [];
       _error = 'Error de conexión: $e';
       print('Error loading tutor subjects: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
-
-    _isLoading = false;
-    notifyListeners();
   }
 
   Future<bool> addTutorSubjectToApi(
@@ -71,8 +69,7 @@ class TutorSubjectsProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // final response = 
-      await addTutorSubject(
+      final response = await addTutorSubject(
         authProvider.token!,
         authProvider.userId!,
         subjectId,
@@ -80,21 +77,20 @@ class TutorSubjectsProvider with ChangeNotifier {
         imagePath,
       );
 
-      // if (response['status'] == 200 ||
-      //     response['status'] == 201 ||
-      //     response['success'] == true ||
-      //     response['message'] == 'Materia agregada correctamente' ||
-      //     response['data'] != null) {
-      //   // await loadTutorSubjects(authProvider);
+      if ((response['status'] == 200 || response['status'] == 201 || response['success'] == true)) {
+        
+        await loadTutorSubjects(authProvider);
         return true;
-      // } else {
-      //   _error = response['message'] ?? 'Error al agregar la materia';
-      //   print('🔍 DEBUG - Falso error al agregar: $response'); 
-      //   return false;
-      // }
+      } else {
+        _error = response['message'] ?? 'Error al agregar la materia';
+        print('🔍 DEBUG - Error del servidor al agregar: $response'); 
+        notifyListeners();
+        return false;
+      }
     } catch (e) {
       _error = 'Error de conexión: $e';
       print('Error adding tutor subject: $e');
+      notifyListeners();
       return false;
     }
   }
@@ -105,7 +101,7 @@ class TutorSubjectsProvider with ChangeNotifier {
   ) async {
     print('🚀 DEBUG - Iniciando proceso de eliminación de materia...');
 
-    if (authProvider.token == null) {
+    if (authProvider.token == null || authProvider.userId == null) {
       _error = 'No hay token de autenticación';
       notifyListeners();
       return false;
@@ -115,28 +111,17 @@ class TutorSubjectsProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      print('🔍 DEBUG - Eliminando materia con ID: $subjectId');
-      print('🔍 DEBUG - ID del tutor: ${authProvider.userId}');
+      final subjectIndex = _subjects.indexWhere((s) => s.id == subjectId);
+      
+      if (subjectIndex == -1) {
+        _error = 'La materia no se encontró localmente';
+        notifyListeners();
+        return false;
+      }
 
-      final subjectToDelete = _subjects.firstWhere(
-        (subject) => subject.id == subjectId,
-        orElse: () => TutorSubject(
-          id: 0,
-          userId: 0,
-          subjectId: 0,
-          description: '',
-          status: 'unknown',
-          subject: Subject(
-            id: 0,
-            name: 'Desconocida',
-            subjectGroupId: 0,
-          ),
-        ),
-      );
-      print(
-          '🔍 DEBUG - Materia a eliminar: "${subjectToDelete.subject.name}" (ID: $subjectId)');
-      print(
-          '🔍 DEBUG - ID de relación: $subjectId, ID de materia base: ${subjectToDelete.subjectId}');
+      final subjectToDelete = _subjects[subjectIndex];
+
+      print('🔍 DEBUG - Materia a eliminar: "${subjectToDelete.subject.name}" (ID relación: $subjectId, ID base: ${subjectToDelete.subjectId})');
 
       final response = await deleteTutorSubject(
         authProvider.token!,
@@ -146,33 +131,32 @@ class TutorSubjectsProvider with ChangeNotifier {
 
       print('🔍 DEBUG - Respuesta de eliminación: $response');
 
-      if (response['success'] == true) {
-        print('🔍 DEBUG - Eliminación exitosa, recargando materias...');
+      if ((response['success'] == true || response['status'] == 200)) {
+        print('🔍 DEBUG - Eliminación exitosa');
 
-        _subjects.removeWhere((s) =>
-            s.id == subjectId || s.subjectId == subjectToDelete.subjectId);
+        _subjects.removeAt(subjectIndex);
         notifyListeners();
 
         await loadTutorSubjects(authProvider);
-        print('🔍 DEBUG - Materias recargadas después de eliminar');
         return true;
       } else {
         _error = response['message'] ?? 'Error al eliminar la materia';
         print('🔍 DEBUG - Error en eliminación: $_error');
+        notifyListeners();
         return false;
       }
     } catch (e) {
       _error = 'Error de conexión: $e';
       print('Error deleting tutor subject: $e');
-      return false;
-    } finally {
-      _isLoading = false;
       notifyListeners();
+      return false;
     }
   }
 
   void clearError() {
-    _error = null;
-    notifyListeners();
+    if (_error != null) {
+      _error = null;
+      notifyListeners();
+    }
   }
 }

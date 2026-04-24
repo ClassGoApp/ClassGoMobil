@@ -448,7 +448,7 @@ class _LoginScreenState extends State<LoginScreen>
                                 context,
                                 MaterialPageRoute(
                                     builder: (_) =>
-                                       const MainShell()),
+                                       const HomeScreen()),
                                 (Route<dynamic> route) => false,
                               );
                             },
@@ -683,27 +683,27 @@ class _LoginScreenState extends State<LoginScreen>
                                   ),
                                 ),
                                 SizedBox(height: height * 0.02),
-                                ElevatedButton.icon(
-                                  icon: Image.asset(
-                                    'assets/images/google_logo.png', // Asegúrate de tener el logo de Google en assets/images
-                                    width: 24,
-                                    height: 24,
-                                  ),
-                                  label: Text('Iniciar sesión con Google'),
-                                  onPressed: () => signInWithGoogle(context),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: Colors.black,
-                                    shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(12)),
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 18, vertical: 12),
-                                    textStyle:
-                                        TextStyle(fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ],
+                              //   ElevatedButton.icon(
+                              //     icon: Image.asset(
+                              //       'assets/images/google_logo.png', // Asegúrate de tener el logo de Google en assets/images
+                              //       width: 24,
+                              //       height: 24,
+                              //     ),
+                              //     label: Text('Iniciar sesión con Google'),
+                              //     onPressed: () => signInWithGoogle(context),
+                              //     style: ElevatedButton.styleFrom(
+                              //       backgroundColor: Colors.white,
+                              //       foregroundColor: Colors.black,
+                              //       shape: RoundedRectangleBorder(
+                              //           borderRadius:
+                              //               BorderRadius.circular(12)),
+                              //       padding: EdgeInsets.symmetric(
+                              //           horizontal: 18, vertical: 12),
+                              //       textStyle:
+                              //           TextStyle(fontWeight: FontWeight.bold),
+                              //     ),
+                              //   ),
+                              ]
                             ),
                           ),
                         ),

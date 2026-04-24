@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_projects/styles/app_styles.dart';
 
 class ThemeProvider extends ChangeNotifier {
   ThemeMode _themeMode = ThemeMode.light;
@@ -26,7 +25,7 @@ class ThemeProvider extends ChangeNotifier {
     final isDark = _themeMode == ThemeMode.dark;
     
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      statusBarColor: isDark ? AppColors.deepDarkBg : AppColors.softWhiteBg,
+      statusBarColor: Colors.transparent, 
       statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
       statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
     ));

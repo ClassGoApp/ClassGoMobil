@@ -1,221 +1,143 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_projects/helpers/auth_helper.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
-import 'package:flutter_projects/view/home/presentation/widgets/search_modal.dart';
-import 'presentation/widgets/tutor_card.dart';
-import 'presentation/widgets/buscador.dart';
-import 'package:provider/provider.dart';
-import 'package:flutter_projects/provider/auth_provider.dart';
+import 'package:flutter_projects/view/home/widgets/categories_carousel.dart';
+import 'package:flutter_projects/view/home/widgets/home_drawer.dart';
+import 'package:flutter_projects/view/home/widgets/home_header.dart';
+import 'package:flutter_projects/view/home/widgets/pet_banner.dart';
+import 'package:flutter_projects/view/home/widgets/quick_actions_section.dart';
+import 'package:flutter_projects/view/home/widgets/trust_actions_row.dart';
+import 'package:flutter_projects/view/profile/profile_screen.dart';
+import 'package:flutter_projects/view/student/profile_screen_student.dart' hide ProfileScreen; 
+import 'package:flutter_projects/view/student/serch_Tutor/search_tutors_screen.dart'; 
 
-
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarDatosEnSegundoPlano();
+  }
+
+  Future<void> _cargarDatosEnSegundoPlano() async {
+    try {
+      // Carga silenciosa
+    } catch (e) {
+      debugPrint("Error: $e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: Container(
-              color: AppColors.primaryColor, 
-            ),
+      key: _scaffoldKey,
+      backgroundColor: AppColors.backgroundLight,
+      drawer: const HomeDrawer(),
+      body: CustomScrollView(
+        physics: const ClampingScrollPhysics(),
+        slivers: [
+          HomeHeader(
+            onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
+            onProfileTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ProfileScreen(),
+                ),
+              );
+            },
           ),
-          Positioned.fill(
-            child: Image.asset(
-              'assets/images/home/Elipse.png', 
-              fit: BoxFit.cover,
-            ),
-          ),
+          SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 25),
 
-          SafeArea(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(height: 20),
+                QuickActionsRow(
+                  onInstantTutorTap: () {
+                    if (!AuthHelper.requireAuth(context,
+                        customTitle: 'Acceso a Tutor al Instante',
+                        customMessage:
+                            'Para acceder a tutorías instantáneas, necesitas iniciar sesión en tu cuenta.')) {
+                      return;
+                    }
+                    debugPrint("Usuario verificado. Abrir lógica de Tutor al Instante...");
+                  },
+                  onScheduleTap: () {
+                    if (!AuthHelper.requireAuth(context,
+                        customTitle: 'Agendar Tutoría',
+                        customMessage:
+                            'Para agendar una clase con un tutor, necesitas iniciar sesión.')) {
+                      return;
+                    }
+
+                    debugPrint("Usuario verificado. Navegando a Agendar...");
+                  },
                   
-                        // --- LOGO (Imagen) ---
-                        Center(
-                          child: Image.asset(
-                            'assets/images/logo_classgo.png',
-                            height: 38,
-                          ),
-                        ),
-                        
-                        const SizedBox(height: 40),
-              
-                        // --- SI INICIÓ SESIÓN SE MOSTRARÁ EL NOMBRE DEL PERFIL O EL TITULO POR DEFECTO ---
-                        Row(
-                          children: [
-                            const CircleAvatar(
-                              radius: 30,
-                              backgroundColor: Colors.white24,
-                              child: Icon(Icons.person, color: Colors.white, size: 35),
-                            ),
-                            const SizedBox(width: 15),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
-                                Text(
-                                  'Hola, Aron!',//Extraer del usario Logeado 
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Text(
-                                  'Estudiante', 
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-
-                        // const Text(
-                        //   'Aprende con\nTutorías en Línea',
-                        //   style: TextStyle(
-                        //     color: Colors.white,
-                        //     fontSize: 28,
-                        //     fontWeight: FontWeight.bold,
-                        //     height: 1.2,
-                        //   ),
-                        // ),
-              
-                        const SizedBox(height: 30),
-
-                        // --- BARRA DE BÚSQUEDA -----
-                        Buscador(
-                          onTap: () {
-                            final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                            if (authProvider.token == null) {
-                              _showLoginRequiredDialog(context);
-                              return;
-                            }
-                            showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.transparent,
-                              builder: (context) => SearchSubjectModal(
-                                initialSubjects: [],
-                                onSearch: (keyword) async {
-                                  //Llamar a Api
-                                  return [];
-                                },
-                                onSubjectSelected: (subject) {
-                                  // Lógica cuando el usuario selecciona una materia
-                                },
-                              ),
-                            );
-                          },
-                        ),
-                      ]
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 40),
-        
-                  // Mascota/Ilustración animada (GIF)
-                  // Padding(
-                  //   padding: const EdgeInsets.symmetric(vertical: 16.0),
-                  //   child: Center(
-                  //     child: SizedBox(
-                  //       height: 300, // Más grande
-                  //       child: Image.asset(
-                  //         'assets/images/ave_animada.gif',
-                  //         fit: BoxFit.contain,
-                  //       ),
-                  //     ),
-                  //   ),
-                  // ),
-              
-                  // --- TÍTULO SECCIÓN ---
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: const Text(
-                      'Tutores destacados',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
+                  onExploreTap: () {
+                    debugPrint("Navegando a Explorar Tutores (Vista Pública)...");
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SearchTutorsScreen(),
                       ),
-                    ),
-                  ),
-              
-                  const SizedBox(height: 20,),
-              
-                  // LISTA TUTORES DESTACADOS
-                  SizedBox(
-                    height: 350,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      itemCount: 5, // Número de tutores a mostrar
-                      itemBuilder: (context, index) {
-                        return const TutorCard();
-                      },
-                    ),
-                  ),
-        
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: const Text(
-                      'Tutores de Matemáticas',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20,),
-                  SizedBox(
-                    height: 250,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      itemCount: 5, // Número de tutores a mostrar
-                      itemBuilder: (context, index) {
-                        return const TutorCard();
-                      },
-                    ),
-                  ),
-                  
-                ],
-              ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 25),
+                const MascotBanner(),
+
+                const SizedBox(height: 35),
+                const CategoriesCarousel(),
+
+                const SizedBox(height: 35),
+                const TrustActionsRow(),
+               
+                const SizedBox(height: 40),
+              ],
             ),
           ),
-
         ],
       ),
     );
   }
 
-  void _showLoginRequiredDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Inicio de sesión requerido'),
-          content: const Text('Debes iniciar sesión para acceder a esta función.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cerrar'),
-            ),
-          ],
-        );
-      },
+  Widget _placeholderBloque(String titulo,
+      {required double height, required Color color}) {
+    bool isDark =
+        color == AppColors.brandBlue || color == AppColors.brandOrange;
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4))
+        ],
+      ),
+      child: Center(
+        child: Text(
+          titulo,
+          style: TextStyle(
+              fontFamily: 'outfit',
+              color: isDark ? Colors.white : Colors.grey.shade600,
+              fontWeight: FontWeight.bold,
+              fontSize: 16),
+        ),
+      ),
     );
   }
 }

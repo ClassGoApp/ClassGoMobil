@@ -41,7 +41,7 @@ class AddSubjectButton extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               const Text(
-                "AÑADIR ESPECIALIDAD",
+                "AÑADIR MATERIA",
                 style: TextStyle(
                   color: AppColors.brandCyan,
                   fontSize: 12,

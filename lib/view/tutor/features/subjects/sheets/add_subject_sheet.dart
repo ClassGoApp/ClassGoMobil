@@ -1,16 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'dart:async';
 
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/provider/tutor_subjects_provider.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
 
-const String kFontFamily = 'outfit';
+const String _kFontFamily = 'manrope';
+const String _kTitleFont = 'outfit';
 
 class AddSubjectSheet extends StatefulWidget {
-  const AddSubjectSheet({Key? key}) : super(key: key);
+  final bool isRegistration;
+  final Function(List<int>)? onRegistrationComplete;
+
+  const AddSubjectSheet({
+    Key? key, 
+    this.isRegistration = false, 
+    this.onRegistrationComplete,
+  }) : super(key: key);
 
   @override
   State<AddSubjectSheet> createState() => _AddSubjectSheetState();
@@ -18,144 +27,149 @@ class AddSubjectSheet extends StatefulWidget {
 
 class _AddSubjectSheetState extends State<AddSubjectSheet> {
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   
   List<Map<String, dynamic>> _availableSubjects = [];
-  List<Map<String, dynamic>> _filteredSubjects = [];
   final Set<int> _selectedSubjectIds = {};
   
+  int _currentPage = 1;
+  int _lastPage = 1;
   bool _isLoading = true;
+  bool _isLoadingMore = false;
   bool _isSaving = false;
+  Timer? _debounceTimer;
 
   @override
   void initState() {
     super.initState();
-    _loadAvailableSubjects();
-    _searchController.addListener(_onSearchChanged);
+    _loadAvailableSubjects(reset: true);
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
+    _debounceTimer?.cancel();
     super.dispose();
   }
 
-  void _onSearchChanged() {
-    final query = _searchController.text.toLowerCase();
-    setState(() {
-      _filteredSubjects = _availableSubjects.where((subject) {
-        return subject['name'].toString().toLowerCase().contains(query);
-      }).toList();
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200 &&
+        !_isLoadingMore &&
+        _currentPage < _lastPage) {
+      _loadAvailableSubjects(reset: false);
+    }
+  }
+
+  void _onSearchChanged(String query) {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 600), () {
+      _loadAvailableSubjects(reset: true);
     });
   }
 
-  // 1. CARGAMOS LAS MATERIAS DISPONIBLES
-  Future<void> _loadAvailableSubjects() async {
+  Future<void> _loadAvailableSubjects({required bool reset}) async {
+    if (reset) {
+      if (mounted) setState(() { _isLoading = true; _currentPage = 1; });
+    } else {
+      if (mounted) setState(() { _isLoadingMore = true; });
+    }
+
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final subjectsProvider = Provider.of<TutorSubjectsProvider>(context, listen: false);
       
-      if (authProvider.token == null) return;
+      final query = _searchController.text.trim();
+      
+      String? tokenToUse;
+      if (!widget.isRegistration) {
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        tokenToUse = authProvider.token;
+      }
 
-      final response = await getAllSubjects(authProvider.token!, page: 1, perPage: 100);
+      final response = await getAllSubjects(
+        authProvider.token!, 
+        page: reset ? 1 : _currentPage + 1, 
+        perPage: 20,
+        keyword: query.isEmpty ? null : query
+      );
 
       if (!mounted) return;
 
-      if (response['status'] == 200 && response['data'] != null && response['data']['data'] != null) {
+      if (response['status'] == 200 && response['data'] != null) {
         final List<dynamic> subjectsData = response['data']['data'];
+        List<Map<String, dynamic>> filtered = [];
+
+        if (widget.isRegistration) {
+          filtered = subjectsData
+              .map((s) => {'id': s['id'], 'name': s['name']})
+              .toList();
+        } else {
+          final subjectsProvider = Provider.of<TutorSubjectsProvider>(context, listen: false);
+          final currentSubjectIds = subjectsProvider.subjects.map((s) => s.subjectId).toSet();
+          
+          filtered = subjectsData
+              .where((s) => !currentSubjectIds.contains(s['id']))
+              .map((s) => {'id': s['id'], 'name': s['name']})
+              .toList();
+        }
+        // final currentSubjectIds = subjectsProvider.subjects.map((s) => s.subjectId).toSet();
         
-        final currentSubjectIds = subjectsProvider.subjects.map((s) => s.subjectId).toSet();
-        
-        // Filtramos las que ya tiene el tutor
-        final filtered = subjectsData.where((s) => !currentSubjectIds.contains(s['id'])).toList();
+        // final filtered = subjectsData
+        //     .where((s) => !currentSubjectIds.contains(s['id']))
+        //     .map((s) => {'id': s['id'], 'name': s['name']})
+        //     .toList();
         
         setState(() {
-          _availableSubjects = filtered.map((s) => {'id': s['id'], 'name': s['name']}).toList();
-          _filteredSubjects = List.from(_availableSubjects);
+          if (reset) {
+            _availableSubjects = filtered;
+          } else {
+            _availableSubjects.addAll(filtered);
+          }
+          _currentPage = response['data']['current_page'] ?? 1;
+          _lastPage = response['data']['last_page'] ?? 1;
           _isLoading = false;
+          _isLoadingMore = false;
         });
-      } else {
-        setState(() => _isLoading = false);
       }
     } catch (e) {
-      print('Error loading all subjects: $e');
-      if (!mounted) return;
-      setState(() => _isLoading = false);
+      if (mounted) setState(() { _isLoading = false; _isLoadingMore = false; });
     }
   }
 
-  // 2. GUARDAR SELECCIÓN MÚLTIPLE
   Future<void> _saveSelections() async {
     if (_selectedSubjectIds.isEmpty || _isSaving) return;
-
     setState(() => _isSaving = true);
 
-    // 1. Capturamos herramientas antes de los await
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final subjectsProvider = Provider.of<TutorSubjectsProvider>(context, listen: false);
 
-    int successCount = 0;
-    int totalCount = _selectedSubjectIds.length;
+    try {
+      final results = await Future.wait(
+        _selectedSubjectIds.map((id) => 
+          subjectsProvider.addTutorSubjectToApi(authProvider, id, '', null)
+        )
+      );
 
-    try{
-      // 2. Preparamos todas las peticiones a la Base de Datos
-      List<Future<bool>> futures = []; 
-       for (int subjectId in _selectedSubjectIds) {
-         futures.add(subjectsProvider.addTutorSubjectToApi(
-           authProvider,
-           subjectId,
-           '', 
-           null, 
-         ));
-       }
-      // 3. DISPARAMOS TODAS AL MISMO TIEMPO
-      final results = await Future.wait(futures);
-
-      // 4. CONTAMOS CUÁNTAS FUERON EXITOSAS
-      successCount = results.where((success) => success).length;
-
-      // 5. RECARGAMOS LA LISTA DE MATERIAS DEL TUTOR
+      int successCount = results.where((s) => s).length;
       await subjectsProvider.loadTutorSubjects(authProvider);
       
-    } catch (e) {
-      print("❌ Error al agregar materias: $e");
-    } finally {
       if (mounted) {
-        setState(() => _isSaving = false);
         navigator.pop();
-
-        // 6. MOSTRAMOS EL SNACKBAR FINAL
-        if(successCount == totalCount) {
-          scaffoldMessenger.showSnackBar(
-            SnackBar(content: Text('$successCount materias agregadas'), backgroundColor: AppColors.primaryGreen)
-          );
-        } else if (successCount > 0) {
-          scaffoldMessenger.showSnackBar(
-            SnackBar(content: Text('$successCount de $totalCount agregadas. Algunas fallaron.'), backgroundColor: Colors.orange)
-          );
-        } else {
-          scaffoldMessenger.showSnackBar(
-            SnackBar(content: Text(subjectsProvider.error ?? 'Error al agregar'), backgroundColor: AppColors.redColor)
-          );
-        }
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text('$successCount materias añadidas exitosamente'),
+            backgroundColor: AppColors.primaryGreen,
+            behavior: SnackBarBehavior.floating,
+          )
+        );
       }
-    } 
-    //  if (!mounted) return;
-    //   scaffoldMessenger.showSnackBar(SnackBar(content: Text(subjectsProvider.error ?? 'Error al agregar'), backgroundColor: AppColors.redColor));
-    //   setState(() => _isSaving = false);
-    //   return; 
-  }
-
-  void _toggleSelection(int id) {
-    HapticFeedback.lightImpact();
-    setState(() {
-      if (_selectedSubjectIds.contains(id)) {
-        _selectedSubjectIds.remove(id);
-      } else {
-        _selectedSubjectIds.add(id);
-      }
-    });
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   @override
@@ -165,19 +179,17 @@ class _AddSubjectSheetState extends State<AddSubjectSheet> {
     final cardColor = isDark ? const Color(0xFF16181D) : Colors.white;
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.88, // Deja un espacio arriba
+      height: MediaQuery.of(context).size.height * 0.88,
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
       ),
       child: Column(
         children: [
-          // Píldora superior
           const SizedBox(height: 12),
           Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(10))),
           const SizedBox(height: 20),
 
-          // BUSCADOR (Diseño idéntico a tu foto)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Container(
@@ -188,104 +200,131 @@ class _AddSubjectSheetState extends State<AddSubjectSheet> {
               ),
               child: TextField(
                 controller: _searchController,
-                style: TextStyle(color: isDark ? Colors.white : AppColors.brandBlue, fontWeight: FontWeight.w600, fontFamily: kFontFamily),
+                onChanged: _onSearchChanged,
+                style: TextStyle(color: isDark ? Colors.white : AppColors.brandBlue, fontWeight: FontWeight.w600, fontFamily: _kFontFamily),
                 decoration: InputDecoration(
-                  hintText: "Busca tus especialidades...",
-                  hintStyle: TextStyle(color: isDark ? Colors.white30 : Colors.grey[400], fontFamily: kFontFamily),
+                  hintText: "Buscar materia...",
+                  hintStyle: TextStyle(color: isDark ? Colors.white30 : Colors.grey[400], fontFamily: _kTitleFont),
                   border: InputBorder.none,
-                  prefixIcon: Icon(Icons.search_rounded, color: AppColors.brandCyan),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: Icon(Icons.close_rounded, color: isDark ? Colors.white30 : Colors.grey),
-                          onPressed: () {
-                            _searchController.clear();
-                            FocusScope.of(context).unfocus();
-                          },
-                        )
-                      : null,
+                  prefixIcon: const Icon(Icons.search_rounded, color: AppColors.brandCyan),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
                 ),
               ),
             ),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
 
-          // TÍTULO "MATERIAS DISPONIBLES"
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 28),
-            child: Align(
-              alignment: Alignment.centerLeft,
+          Expanded(
+            child: _isLoading 
+              ? const Center(child: CircularProgressIndicator(color: AppColors.brandCyan))
+              : _availableSubjects.isEmpty 
+                  ? _buildEmptyState(isDark)
+                  : ListView.builder(
+                      controller: _scrollController,
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                      itemCount: _availableSubjects.length + (_isLoadingMore ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (index == _availableSubjects.length) {
+                          return const Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                          );
+                        }
+                        final item = _availableSubjects[index];
+                        return _SelectableSubjectItem(
+                          name: item['name'],
+                          isSelected: _selectedSubjectIds.contains(item['id']),
+                          isDark: isDark,
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            setState(() {
+                              if (_selectedSubjectIds.contains(item['id'])) {
+                                _selectedSubjectIds.remove(item['id']);
+                              } else {
+                                _selectedSubjectIds.add(item['id']);
+                              }
+                            });
+                          },
+                        );
+                      },
+                    ),
+          ),
+
+          _buildBottomBar(isDark, cardColor),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(bool isDark) {
+    return SingleChildScrollView( 
+      child: Padding(
+        padding: const EdgeInsets.only(top: 40), 
+        child: Column(
+          children: [
+            Icon(Icons.info_outline_rounded, size: 64, color: isDark ? Colors.white12 : Colors.grey[200]),
+            const SizedBox(height: 16),
+            Text(
+              "No se encontraron materias nuevas.",
+              style: TextStyle(color: isDark ? Colors.white54 : Colors.grey[500], fontFamily: _kTitleFont, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 40),
               child: Text(
-                "MATERIAS DISPONIBLES",
-                style: TextStyle(color: isDark ? Colors.white54 : Colors.grey[500], fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0, fontFamily: kFontFamily),
+                "Es posible que ya las tengas agregadas o que no existan en el catálogo.",
+                textAlign: TextAlign.center,
+                style: TextStyle(color: isDark ? Colors.white24 : Colors.grey[400], fontSize: 12, fontFamily: _kTitleFont),
               ),
             ),
-          ),
+          ],
+        ),
+      ),
+    );
+  }
 
-          const SizedBox(height: 12),
-
-          // LISTA DE MATERIAS
+  Widget _buildBottomBar(bool isDark, Color cardColor) {
+    return Container(
+      padding: EdgeInsets.only(left: 24, right: 24, top: 16, bottom: MediaQuery.of(context).padding.bottom + 16),
+      decoration: BoxDecoration(
+        color: cardColor,
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, -5))],
+      ),
+      child: Row(
+        children: [
           Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator(color: AppColors.brandCyan))
-                : _filteredSubjects.isEmpty
-                    ? Center(child: Text("No se encontraron materias", style: TextStyle(color: isDark ? Colors.white54 : Colors.grey)))
-                    : ListView.builder(
-                        physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                        itemCount: _filteredSubjects.length,
-                        itemBuilder: (context, index) {
-                          final item = _filteredSubjects[index];
-                          final isSelected = _selectedSubjectIds.contains(item['id']);
-
-                          return _SelectableSubjectItem(
-                            name: item['name'],
-                            isSelected: isSelected,
-                            isDark: isDark,
-                            onTap: () => _toggleSelection(item['id']),
-                          );
-                        },
-                      ),
-          ),
-
-          // LOS DOS BOTONES INFERIORES
-          Container(
-            padding: EdgeInsets.only(left: 24, right: 24, top: 16, bottom: MediaQuery.of(context).padding.bottom + 16),
-            decoration: BoxDecoration(
-              color: cardColor,
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, -5))],
+            child: TextButton(
+              onPressed: _isSaving ? null : () => Navigator.pop(context),
+              child: Text("Cancelar", style: TextStyle(color: isDark ? Colors.white70 : Colors.grey[600], fontWeight: FontWeight.bold, fontFamily: _kTitleFont)),
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextButton(
-                    onPressed: _isSaving ? null : () => Navigator.pop(context),
-                    style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-                    child: Text("Cancelar", style: TextStyle(color: isDark ? Colors.white70 : Colors.grey[600], fontWeight: FontWeight.bold, fontFamily: kFontFamily)),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            flex: 2,
+            child: ElevatedButton(
+              onPressed: (_selectedSubjectIds.isEmpty || _isSaving) ? null : () {
+              if (widget.isRegistration) {
+                  widget.onRegistrationComplete?.call(_selectedSubjectIds.toList());
+                  Navigator.pop(context);
+                   // Solo cerramos y devolvemos los datos
+                } else {
+                  _saveSelections(); // Llama a tu API para guardar (Modo Edición)
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                backgroundColor: AppColors.brandCyan,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 0,
+              ),
+              child: _isSaving 
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : Text(
+                    _selectedSubjectIds.isEmpty ? "Seleccionar" : "Añadir ${_selectedSubjectIds.length}",
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontFamily: _kTitleFont),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  flex: 2,
-                  child: ElevatedButton(
-                    onPressed: (_selectedSubjectIds.isEmpty || _isSaving) ? null : _saveSelections,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: AppColors.brandCyan,
-                      disabledBackgroundColor: isDark ? Colors.white10 : Colors.grey[300],
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      elevation: 0,
-                    ),
-                    child: _isSaving
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : Text(
-                            _selectedSubjectIds.isEmpty ? "Seleccionar" : "Añadir ${_selectedSubjectIds.length}",
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontFamily: kFontFamily),
-                          ),
-                  ),
-                ),
-              ],
             ),
           ),
         ],
@@ -294,25 +333,18 @@ class _AddSubjectSheetState extends State<AddSubjectSheet> {
   }
 }
 
-// WIDGET INTERNO: EL ITEM DE LA LISTA CON EL "+"
 class _SelectableSubjectItem extends StatelessWidget {
   final String name;
   final bool isSelected;
   final bool isDark;
   final VoidCallback onTap;
 
-  const _SelectableSubjectItem({
-    required this.name,
-    required this.isSelected,
-    required this.isDark,
-    required this.onTap,
-  });
+  const _SelectableSubjectItem({required this.name, required this.isSelected, required this.isDark, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final bgColor = isDark ? const Color(0xFF16181D) : Colors.white;
     final textColor = isDark ? Colors.white : AppColors.brandBlue;
-    
     final selectedBgColor = AppColors.brandCyan.withOpacity(0.08);
     final borderColor = isSelected ? AppColors.brandCyan : (isDark ? Colors.white10 : Colors.black.withOpacity(0.05));
 
@@ -320,7 +352,6 @@ class _SelectableSubjectItem extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        curve: Curves.easeInOut,
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
         decoration: BoxDecoration(
@@ -330,20 +361,13 @@ class _SelectableSubjectItem extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Icono (+) o (Check)
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 250),
-              transitionBuilder: (Widget child, Animation<double> animation) {
-                return ScaleTransition(scale: animation, child: RotationTransition(turns: animation, child: child));
-              },
               child: isSelected
-                  ? const Icon(Icons.check_circle_rounded, key: ValueKey('check'), color: AppColors.brandCyan, size: 22)
-                  : Icon(Icons.add_rounded, key: const ValueKey('add'), color: isDark ? Colors.white54 : AppColors.brandCyan, size: 22),
+                  ? const Icon(Icons.check_circle_rounded, color: AppColors.brandCyan, size: 22)
+                  : Icon(Icons.add_rounded, color: isDark ? Colors.white54 : AppColors.brandCyan, size: 22),
             ),
-            
             const SizedBox(width: 16),
-            
-            // Nombre de la Materia
             Expanded(
               child: Text(
                 name,
@@ -351,7 +375,7 @@ class _SelectableSubjectItem extends StatelessWidget {
                   color: isSelected ? AppColors.brandCyan : textColor,
                   fontSize: 15,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                  fontFamily: kFontFamily,
+                  fontFamily: _kFontFamily,
                 ),
               ),
             ),

@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/view/student/reservations/widgets/booking_modal.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:ui';
-import 'package:flutter_projects/view/tutor/instant_tutoring_screen.dart';
-import 'package:flutter_projects/view/tutor/search_tutors_screen.dart'
-    show BookingModal;
+import 'package:flutter_projects/view/student/reservations/instant-reservation/instant_tutoring_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
@@ -18,7 +17,7 @@ class TutorProfileScreen extends StatefulWidget {
   final String tutorVideo;
   final String description;
   final double rating;
-  final List<String> subjects;
+  final List<Map<String, dynamic>> subjects;
   final int completedCourses;
 
   // Idiomas por defecto
@@ -169,12 +168,38 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
 
   @override
   void dispose() {
-    _videoController.dispose();
+    try {
+      _videoController.dispose();
+    } catch (_) {}
     _scrollController.dispose();
     super.dispose();
   }
 
-  Widget _buildStyledChip(String label) {
+  String _displaySubjectName(dynamic subject) {
+    if (subject is Map) {
+      final raw = (subject['name'] ?? '').toString();
+      final idx = raw.indexOf('-');
+      if (idx >= 0 && idx < raw.length - 1) {
+        return raw.substring(idx + 1).trim();
+      }
+      return raw;
+    }
+    final raw = (subject ?? '').toString();
+    final idx = raw.indexOf('-');
+    if (idx >= 0 && idx < raw.length - 1) {
+      return raw.substring(idx + 1).trim();
+    }
+    return raw;
+  }
+
+  int _extractSubjectId(Map<String, dynamic>? subject) {
+    if (subject == null) return 1;
+    final value = subject['id'] ?? subject['subject_id'];
+    if (value is int) return value;
+    return int.tryParse(value?.toString() ?? '') ?? 1;
+  }
+
+  Widget _buildStyledChip(dynamic label) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
       decoration: BoxDecoration(
@@ -201,7 +226,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
         ],
       ),
       child: Text(
-        label,
+        _displaySubjectName(label),
         style: TextStyle(
           color: Colors.white,
           fontSize: 12,
@@ -756,7 +781,10 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                                         subjects: widget.subjects,
                                         tutorId:
                                             int.tryParse(widget.tutorId) ?? 1,
-                                        subjectId: 1,
+                                        subjectId: _extractSubjectId(
+                                            widget.subjects.isNotEmpty
+                                                ? widget.subjects.first
+                                                : null),
                                       ),
                                     ),
                                   );
@@ -827,7 +855,10 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                                   tutorImage: widget.tutorImage,
                                   subjects: widget.subjects,
                                   tutorId: int.tryParse(widget.tutorId) ?? 1,
-                                  subjectId: 1,
+                                  subjectId: _extractSubjectId(
+                                      widget.subjects.isNotEmpty
+                                          ? widget.subjects.first
+                                          : null),
                                 ),
                               ),
                             );

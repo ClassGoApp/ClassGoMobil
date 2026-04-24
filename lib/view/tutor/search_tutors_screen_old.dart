@@ -6,8 +6,8 @@ import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/auth/login_screen.dart';
 import 'package:flutter_projects/view/components/login_required_alert.dart';
 import 'package:flutter_projects/view/components/skeleton/tutor_card_skeleton.dart';
-import 'package:flutter_projects/view/components/tutor_card.dart';
 import 'package:flutter_projects/view/profile/profile_screen.dart';
+import 'package:flutter_projects/view/student/serch_Tutor/widgets/tutor_card.dart';
 import 'package:flutter_projects/view/tutor/component/filter_turtor_bottom_sheet.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -16,10 +16,10 @@ import 'package:flutter_projects/view/components/main_header.dart';
 import 'dart:async';
 import 'package:flutter_projects/view/tutor/tutor_profile_screen.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import 'package:flutter_projects/view/tutor/instant_tutoring_screen.dart';
+import 'package:flutter_projects/view/student/reservations/instant-reservation/instant_tutoring_screen.dart';
 import 'package:flutter_projects/view/tutor/student_calendar_screen.dart';
 import 'package:flutter_projects/view/tutor/student_history_screen.dart';
-import 'package:flutter_projects/view/tutor/payment_qr_screen.dart';
+import 'package:flutter_projects/view/student/reservations/paymentQR/payment_qr_screen.dart';
 
 class SearchTutorsScreen extends StatefulWidget {
   final String? initialKeyword;
@@ -1031,9 +1031,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                             ? tutor['avg_rating'].toDouble()
                                             : 0.0))
                                     : 0.0,
-                                subjects: validSubjects
-                                    .map((s) => s['name'] as String)
-                                    .toList(),
+                                subjects: validSubjects,
                                 completedCourses: (tutor[
                                         'completed_courses_count'] is int)
                                     ? tutor['completed_courses_count'] ?? 0
@@ -1086,9 +1084,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                               ? tutor['avg_rating'].toDouble()
                                               : 0.0))
                                       : 0.0,
-                                  subjects: validSubjects
-                                      .map((s) => s['name'] as String)
-                                      .toList(),
+                                  subjects: validSubjects,
                                   completedCourses: (tutor[
                                           'completed_courses_count'] is int)
                                       ? tutor['completed_courses_count'] ?? 0
@@ -1141,13 +1137,16 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                             highResTutorImages[tutor['id']] ??
                                                 profile['image'] ??
                                                 AppImages.placeHolderImage,
-                                        subjects: validSubjects
-                                            .map((s) => s['name'] as String)
-                                            .toList(),
+                                        subjects: validSubjects,
                                         tutorId: tutor['id'],
                                         subjectId: validSubjects.isNotEmpty
-                                            ? 1
-                                            : 1, // Default subject ID
+                                            ? (validSubjects.first['id'] is int
+                                                ? validSubjects.first['id']
+                                                : int.tryParse(validSubjects
+                                                        .first['id']
+                                                        .toString()) ??
+                                                    1)
+                                            : 1,
                                       ),
                                     ),
                                   );
