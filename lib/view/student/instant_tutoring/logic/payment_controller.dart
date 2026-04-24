@@ -11,7 +11,6 @@ class PaymentController extends ChangeNotifier {
   bool isWaitingForTutor = false;
 
   final ImagePicker _picker = ImagePicker();
-  Timer? _pollingTimer;
 
   // 1. SELECCIONAR IMAGEN DE LA GALERÍA
   Future<void> pickImage(Function(String) onError) async {
@@ -52,19 +51,30 @@ class PaymentController extends ChangeNotifier {
       final miToken = prefs.getString('token') ?? '';
 
       if (miToken.isEmpty) {
-        throw Exception("No tienes una sesión activa. Vuelve a iniciar sesión.");
+        throw Exception(
+            "No tienes una sesión activa. Vuelve a iniciar sesión.");
       }
 
-      final uploadResponse = await subirComprobante(bookingId, receiptImage!.path, miToken);
+      final uploadResponse =
+          await subirComprobante(bookingId, receiptImage!.path, miToken);
 
       if (uploadResponse['ok'] == true || uploadResponse['success'] == true) {
+        // Mostrar pantalla de "comprobante enviado" y redirigir tras 3 segundos.
         isSubmitting = false;
         isWaitingForTutor = true;
         notifyListeners();
 
-        _iniciarPolling(bookingId, miToken, onTutorAccepted, onTutorRejected);
+        // Espera 3 segundos y luego notifica aceptación para que la UI navegue.
+        await Future.delayed(const Duration(seconds: 3));
+        isWaitingForTutor = false;
+        notifyListeners();
+
+        String linkGenerado =
+            uploadResponse['meeting_link'] ?? 'https://meet.google.com/...';
+        onTutorAccepted(linkGenerado);
       } else {
-        throw Exception(uploadResponse['message'] ?? 'Error al subir el comprobante');
+        throw Exception(
+            uploadResponse['message'] ?? 'Error al subir el comprobante');
       }
     } catch (e) {
       isSubmitting = false;
@@ -73,45 +83,8 @@ class PaymentController extends ChangeNotifier {
     }
   }
 
-  // 4. POLLING: PREGUNTAR SI EL TUTOR YA ACEPTÓ EL PAGO
-  void _iniciarPolling(int bookingId, String token, Function(String) onTutorAccepted, VoidCallback onTutorRejected) {
-    _pollingTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
-  try {
-    final estado = await consultarEstadoReserva(bookingId, token);
-
-    print("🟡 RESPUESTA POLLING: $estado");
-
-    if (estado['success'] == true) {
-      String uiState = estado['ui_state'];
-
-      print("🟣 uiState evaluado: $uiState");
-
-      if (uiState == 'accepted') {
-        print("✅ ENTRÓ A ACCEPTED");
-
-        timer.cancel();
-        String linkGenerado = estado['meeting_link'] ?? 'https://meet.google.com/...';
-        onTutorAccepted(linkGenerado);
-
-      } else if (uiState == 'rejected' || uiState == 'expired' || uiState == 'completed') {
-        print("❌ RECHAZADO / EXPIRADO");
-
-        timer.cancel();
-        onTutorRejected();
-      }
-    } else {
-      print("🔴 FALLÓ RESPUESTA: ${estado['message']}");
-    }
-
-  } catch (e) {
-    print("💥 ERROR POLLING: $e");
-  }
-});
-  }
-
   @override
   void dispose() {
-    _pollingTimer?.cancel();
     super.dispose();
   }
 }

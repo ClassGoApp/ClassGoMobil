@@ -177,8 +177,8 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
       final List<dynamic> allSubjectsFlat = [];
 
       for (var cat in categoriasApi) {
-        String catName = cat['categoria'];
-        List<dynamic> materiasArray = cat['materias'];
+        String catName = cat['categoria'] ?? 'Sin Categoría';
+        List<dynamic> materiasArray = cat['materias'] ?? [];
         List<dynamic> materiasAdaptadas = [];
 
         for (var mat in materiasArray) {
@@ -372,13 +372,14 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
             : Stack(
               children: [
                 CustomScrollView(
-                  physics: const BouncingScrollPhysics(),
+                  physics: const ClampingScrollPhysics(),
                   slivers: [
                     // 1. HEADER
                     SliverAppBar(
-                      backgroundColor: const Color(0xFFF8FAFC),
-                      floating: true,
-                      elevation: 0,
+                      backgroundColor: const Color(0xFFF4F4FB),
+                      pinned: true,
+                      floating: false,
+                      elevation: 1,
                       automaticallyImplyLeading: false,
                       title: const Text(
                         'Tutor Instantáneo',

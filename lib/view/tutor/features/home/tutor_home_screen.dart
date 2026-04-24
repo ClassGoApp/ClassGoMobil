@@ -84,7 +84,7 @@ class _TutorHomeScreenState extends State<TutorHomeScreen> {
                       !isProfileComplete) ...[
                     const SizedBox(height: 15),
                     SizedBox(
-                      height: 250,
+                      height: homeProvider.pendingTutoringRequest != null ? 230 : 0, 
                       child: PageView(
                         physics: const BouncingScrollPhysics(),
                         controller: PageController(viewportFraction: 0.92),
@@ -92,8 +92,10 @@ class _TutorHomeScreenState extends State<TutorHomeScreen> {
                           if (homeProvider.pendingTutoringRequest != null)
                             SolicitudTutoriaCard(
                                 data: homeProvider.pendingTutoringRequest!),
-                          if (!isProfileComplete)
-                            _buildOnboardingBanner(context),
+
+                          // COMENTADO TEMPORALMENTE HASTA TENER LÓGICA
+                          // if (!isProfileComplete)
+                          //   _buildOnboardingBanner(context),
                         ],
                       ),
                     ),

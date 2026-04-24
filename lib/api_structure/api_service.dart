@@ -6,10 +6,6 @@ import 'package:mime/mime.dart';
 import 'package:path/path.dart' as path;
 
 final String baseUrl = 'https://classgoapp.com/api';
-final String storageBaseUrl = 'https://classgoapp.com/storage';
-
-// final String baseUrl = 'http://192.168.1.12:8000/api';
-// final String storageBaseUrl = 'http://192.168.1.12:8000/storage';
 
 class TokenExpiredException implements Exception {
   final String message =
@@ -3148,6 +3144,7 @@ Future<Map<String, dynamic>> tutorAceptWaitlist(
     // 🔍 1. Vemos qué estamos enviando
     print('🚀 [API TUTOR] Enviando petición a: $uri');
     print('🚀 [API TUTOR] Body enviado: $body');
+    print('🚀 [API TUTOR] Headers enviados: $headers');
 
     final response = await http.post(uri, headers: headers, body: body);
 
