@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/view/student/serch_Tutor/search_tutors_screen.dart';
 
 class CategoriesCarousel extends StatefulWidget {
   const CategoriesCarousel({super.key});
@@ -13,12 +14,33 @@ class _CategoriesCarouselState extends State<CategoriesCarousel> {
   int _currentPage = 0;
 
   final List<Map<String, dynamic>> _categories = [
-    {'title': 'Contabilidad', 'image': 'https://www.classgoapp.com/images/home/Tugo-skin/contabilidad.webp'},
-    {'title': 'Química', 'image': 'https://www.classgoapp.com/images/home/Tugo-skin/quimica.webp'},
-    {'title': 'Programación', 'image': 'https://www.classgoapp.com/images/home/Tugo-skin/programacion.webp'},
-    {'title': 'Inglés', 'image': 'https://www.classgoapp.com/images/home/Tugo-skin/ingles.webp'},
-    {'title': 'Ciencias Exactas', 'image': 'https://www.classgoapp.com/images/home/Tugo-skin/matematicas.webp'},
-    {'title': 'Música', 'image': 'https://www.classgoapp.com/images/home/Tugo-skin/musica.webp'},
+    {
+      'title': 'Contabilidad',
+      'image':
+          'https://www.classgoapp.com/images/home/Tugo-skin/contabilidad.webp'
+    },
+    {
+      'title': 'Química',
+      'image': 'https://www.classgoapp.com/images/home/Tugo-skin/quimica.webp'
+    },
+    {
+      'title': 'Programación',
+      'image':
+          'https://www.classgoapp.com/images/home/Tugo-skin/programacion.webp'
+    },
+    {
+      'title': 'Inglés',
+      'image': 'https://www.classgoapp.com/images/home/Tugo-skin/ingles.webp'
+    },
+    {
+      'title': 'Ciencias Exactas',
+      'image':
+          'https://www.classgoapp.com/images/home/Tugo-skin/matematicas.webp'
+    },
+    {
+      'title': 'Música',
+      'image': 'https://www.classgoapp.com/images/home/Tugo-skin/musica.webp'
+    },
   ];
 
   @override
@@ -52,7 +74,7 @@ class _CategoriesCarouselState extends State<CategoriesCarousel> {
         ),
         const SizedBox(height: 15),
         SizedBox(
-          height: 340, 
+          height: 340,
           child: PageView.builder(
             clipBehavior: Clip.none,
             controller: _pageController,
@@ -63,9 +85,8 @@ class _CategoriesCarouselState extends State<CategoriesCarousel> {
             physics: const BouncingScrollPhysics(),
             itemBuilder: (context, index) {
               return _buildPosterCard(
-                isActive: index == _currentPage, 
-                category: _categories[index]
-              );
+                  isActive: index == _currentPage,
+                  category: _categories[index]);
             },
           ),
         ),
@@ -73,7 +94,8 @@ class _CategoriesCarouselState extends State<CategoriesCarousel> {
     );
   }
 
-  Widget _buildPosterCard({required bool isActive, required Map<String, dynamic> category}) {
+  Widget _buildPosterCard(
+      {required bool isActive, required Map<String, dynamic> category}) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 350),
       curve: Curves.easeOutCubic,
@@ -100,18 +122,19 @@ class _CategoriesCarouselState extends State<CategoriesCarousel> {
           children: [
             // 1. Imagen
             Image.network(
-              category['image'], 
+              category['image'],
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) {
                 return Container(
                   color: AppColors.brandBlue,
                   child: const Center(
-                    child: Icon(Icons.image, color: Color.fromARGB(0, 143, 9, 9), size: 40),
+                    child: Icon(Icons.image,
+                        color: Color.fromARGB(0, 143, 9, 9), size: 40),
                   ),
                 );
               },
             ),
-            
+
             // 2. Gradiente inferior para proteger el texto
             Container(
               decoration: BoxDecoration(
@@ -127,7 +150,7 @@ class _CategoriesCarouselState extends State<CategoriesCarousel> {
                 ),
               ),
             ),
-            
+
             Positioned(
               bottom: 20,
               left: 12,
@@ -137,7 +160,7 @@ class _CategoriesCarouselState extends State<CategoriesCarousel> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: 'outfit',
-                  fontSize: isActive ? 22 : 16, 
+                  fontSize: isActive ? 22 : 16,
                   fontWeight: FontWeight.w900,
                   color: Colors.white,
                   shadows: [
@@ -155,15 +178,14 @@ class _CategoriesCarouselState extends State<CategoriesCarousel> {
               color: Colors.transparent,
               child: InkWell(
                 onTap: () {
-                  if (!isActive) {
-                    _pageController.animateToPage(
-                      _categories.indexOf(category),
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                    );
-                  } else {
-                    debugPrint("Abrir materia: ${category['title']}");
-                  }
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => SearchTutorsScreen(
+                        initialKeyword: category['title'],
+                      ),
+                    ),
+                  );
                 },
               ),
             ),
