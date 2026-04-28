@@ -251,10 +251,15 @@ class _ReservationTutorProfileScreenState
                                           alignment: Alignment.center,
                                           children: [
                                             SizedBox.expand(
-                                              child: Image.network(
-                                                widget.tutorImage,
-                                                fit: BoxFit.cover,
-                                              ),
+                                                child: widget.tutorImage.startsWith('http')
+                                                    ? Image.network(
+                                                        widget.tutorImage,
+                                                        fit: BoxFit.cover,
+                                                      )
+                                                    : Image.asset(
+                                                        AppImages.placeHolderImage,
+                                                        fit: BoxFit.cover,
+                                                      ),
                                             ),
                                             ClipRRect(
                                               child: BackdropFilter(
@@ -352,9 +357,13 @@ class _ReservationTutorProfileScreenState
                                       child: CircleAvatar(
                                         radius: avatarRadius,
                                         backgroundColor: AppColors.cardLight,
-                                        backgroundImage:
-                                            CachedNetworkImageProvider(
-                                                widget.tutorImage),
+                                          backgroundImage: widget.tutorImage
+                                                  .startsWith('http')
+                                              ? CachedNetworkImageProvider(
+                                                  widget.tutorImage)
+                                              : const AssetImage(
+                                                      AppImages.placeHolderImage)
+                                                  as ImageProvider,
                                       ),
                                     ),
                                   ),

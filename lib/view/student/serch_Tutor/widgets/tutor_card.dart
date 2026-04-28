@@ -104,21 +104,27 @@ class _TutorCardState extends State<TutorCard> {
                       ),
                     ),
                     child: ClipOval(
-                      child: CachedNetworkImage(
-                        imageUrl: widget.imageUrl,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          color: AppColors.greyColor.withOpacity(0.1),
-                          child: const Center(
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        ),
-                        errorWidget: (context, url, error) => Container(
-                          color: AppColors.greyColor.withOpacity(0.1),
-                          child: const Icon(Icons.person,
-                              color: AppColors.greyColor, size: 36),
-                        ),
-                      ),
+                      child: widget.imageUrl.startsWith('http')
+                          ? CachedNetworkImage(
+                              imageUrl: widget.imageUrl,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => Container(
+                                color: AppColors.greyColor.withOpacity(0.1),
+                                child: const Center(
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                              ),
+                              errorWidget: (context, url, error) => Container(
+                                color: AppColors.greyColor.withOpacity(0.1),
+                                child: const Icon(Icons.person,
+                                    color: AppColors.greyColor, size: 36),
+                              ),
+                            )
+                          : Image.asset(
+                              AppImages.placeHolderImage,
+                              fit: BoxFit.cover,
+                            ),
                     ),
                   ),
                 ),

@@ -98,7 +98,8 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
       final subjectId = _activeBatch!['subject_id'].toString();
       final subjectName = _getSubjectNameFromId(subjectId);
 
-      _navegarAlRadar(subjectName, subjectId, _activeBatch!['seconds_left'] ?? 300);
+      _navegarAlRadar(
+          subjectName, subjectId, _activeBatch!['seconds_left'] ?? 300);
     }
   }
 
@@ -109,7 +110,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token') ?? '';
-      
+
       final result = await checkActiveBatch(token);
       if (result['active'] == true) {
         _activeBatch = result;
@@ -120,7 +121,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
       _activeBatch = null;
     } finally {
       if (mounted) {
-        setState(() => _isCheckingActive = false); 
+        setState(() => _isCheckingActive = false);
       }
     }
   }
@@ -134,29 +135,37 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
     return "Tutoría Activa";
   }
 
-  void _confirmarYNavegarAlRadar(BuildContext context, String materiaName, String materiaId) {
+  void _confirmarYNavegarAlRadar(
+      BuildContext context, String materiaName, String materiaId) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text("Confirmar Búsqueda", style: TextStyle(fontWeight: FontWeight.bold)),
-          content: Text("¿Deseas buscar un tutor disponible ahora mismo para la materia de $materiaName?"),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text("Confirmar Búsqueda",
+              style: TextStyle(fontWeight: FontWeight.bold)),
+          content: Text(
+              "¿Deseas buscar un tutor disponible ahora mismo para la materia de $materiaName?"),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Cancelar", style: TextStyle(color: Colors.grey)),
+              child:
+                  const Text("Cancelar", style: TextStyle(color: Colors.grey)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1E40AF),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
               ),
               onPressed: () {
                 Navigator.pop(context);
                 _navegarAlRadar(materiaName, materiaId, 300);
               },
-              child: const Text("Sí, Buscar Tutor", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              child: const Text("Sí, Buscar Tutor",
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ],
         );
@@ -166,12 +175,11 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
 
   Future<void> _loadJsonData() async {
     try {
-
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token') ?? '';
 
       final jsonData = await getCategoriasMaterias(token);
-      
+
       final List<dynamic> categoriasApi = jsonData['data'];
       final Map<String, List<dynamic>> grouped = {};
       final List<dynamic> allSubjectsFlat = [];
@@ -184,8 +192,8 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
         for (var mat in materiasArray) {
           var subjectAdapted = {
             'Subcategoría': catName,
-            'Materia': mat['materia'], 
-            'id_materia': mat['id_materia'] 
+            'Materia': mat['materia'],
+            'id_materia': mat['id_materia']
           };
           materiasAdaptadas.add(subjectAdapted);
           allSubjectsFlat.add(subjectAdapted);
@@ -203,7 +211,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
       }
     } catch (e) {
       print("🔥 Error al cargar materias: $e");
-      
+
       if (mounted) setState(() => _isLoadingData = false);
     }
   }
@@ -222,14 +230,16 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
       final int secondsToPass = (rawSeconds is num) ? rawSeconds.toInt() : 300;
 
       // Usamos la variable convertida "secondsToPass"
-      _navegarAlRadar(activeSubjectName, activeSubjectId, secondsToPass, isRecovered: true);
+      _navegarAlRadar(activeSubjectName, activeSubjectId, secondsToPass,
+          isRecovered: true);
     } else {
       _confirmarYNavegarAlRadar(context, materiaName, materiaId);
     }
   }
 
   // 💡 Le agregamos el parámetro opcional "isRecovered"
-  void _navegarAlRadar(String name, String id, int seconds, {bool isRecovered = false}) {
+  void _navegarAlRadar(String name, String id, int seconds,
+      {bool isRecovered = false}) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -267,7 +277,8 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
   }
 
   // CARGA INSTANTÁNEA GRACIAS A LA PRE-INDEXACIÓN O(1)
-  void _openCategoryBottomSheet(BuildContext context, String categoryName, int colorHex) {
+  void _openCategoryBottomSheet(
+      BuildContext context, String categoryName, int colorHex) {
     FocusScope.of(context).unfocus();
     final subjects = _subjectsByCategory[categoryName] ?? [];
 
@@ -344,10 +355,9 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                             onTap: () {
                               Navigator.pop(context);
 
-                              _procesarToqueMateria(
-                                subject['Materia'], 
-                                subject['id_materia'].toString()
-                              );},
+                              _procesarToqueMateria(subject['Materia'],
+                                  subject['id_materia'].toString());
+                            },
                           );
                         },
                       ),
@@ -369,8 +379,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
         child: _isLoadingData
             ? const Center(
                 child: CircularProgressIndicator(color: Color(0xFF1E40AF)))
-            : Stack(
-              children: [
+            : Stack(children: [
                 CustomScrollView(
                   physics: const ClampingScrollPhysics(),
                   slivers: [
@@ -394,7 +403,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                       //   onPressed: () => Navigator.of(context).pop(),
                       // ),
                     ),
-              
+
                     // 2. BUSCADOR
                     SliverToBoxAdapter(
                       child: Padding(
@@ -403,7 +412,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '¿Qué quieres\naprender hoy?',
+                              '¿En qué te\nacompañamos hoy?',
                               style: Theme.of(context)
                                   .textTheme
                                   .headlineMedium!
@@ -458,7 +467,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                         ),
                       ),
                     ),
-              
+
                     if (isSearching) ...[
                       SliverToBoxAdapter(
                         child: Padding(
@@ -503,12 +512,10 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                                         size: 16,
                                         color: Colors.grey),
                                     onTap: () {
-                                      FocusScope.of(context).unfocus(); 
-                                      
-                                      _procesarToqueMateria(
-                                        subject['Materia'], 
-                                        subject['id_materia'].toString()
-                                      );
+                                      FocusScope.of(context).unfocus();
+
+                                      _procesarToqueMateria(subject['Materia'],
+                                          subject['id_materia'].toString());
                                     },
                                   );
                                 },
@@ -518,8 +525,8 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                     ] else ...[
                       const SliverToBoxAdapter(
                         child: Padding(
-                          padding:
-                              EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 10),
                           child: Text(
                             'Explorar Categorías',
                             style: TextStyle(
@@ -537,8 +544,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                             crossAxisCount: 2,
                             mainAxisSpacing: 15,
                             crossAxisSpacing: 15,
-                            childAspectRatio:
-                                1.15,
+                            childAspectRatio: 1.15,
                           ),
                           delegate: SliverChildBuilderDelegate(
                             (context, index) {
@@ -602,19 +608,20 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                         ),
                       ),
                     ],
-              
+
                     const SliverToBoxAdapter(
                         child: SizedBox(height: 100)), // Espacio para el navbar
-                    
                   ],
                 ),
                 if (_isCheckingActive)
                   const Positioned(
-                    top: 0, left: 0, right: 0,
-                    child: LinearProgressIndicator(color: Color(0xFF1E40AF), minHeight: 3),
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: LinearProgressIndicator(
+                        color: Color(0xFF1E40AF), minHeight: 3),
                   ),
-              ]
-            ),
+              ]),
       ),
     );
   }

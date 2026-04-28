@@ -273,7 +273,9 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final userData = authProvider.userData;
     profileImageUrl = userData?['user']?['profile']?['image'] ?? '';
-    precacheImage(NetworkImage(profileImageUrl), context);
+    if (profileImageUrl.isNotEmpty && profileImageUrl.startsWith('http')) {
+      precacheImage(NetworkImage(profileImageUrl), context);
+    }
   }
 
   @override
