@@ -24,7 +24,7 @@ class MascotBanner extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '¡Sigue aprendiendo!',
+                    '¡Te acompañamos!',
                     style: TextStyle(
                       fontFamily: 'outfit',
                       fontSize: 18,
