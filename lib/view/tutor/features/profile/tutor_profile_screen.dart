@@ -52,10 +52,9 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     final baseUrl = AppConfig.mediaBaseUrl;
     String cleanBaseUrl = baseUrl;
     if (!cleanBaseUrl.endsWith('/')) cleanBaseUrl = '$cleanBaseUrl/';
-
+    
     String cleanVideoPath = videoPath;
-    if (cleanVideoPath.startsWith('/'))
-      cleanVideoPath = cleanVideoPath.substring(1);
+    if (cleanVideoPath.startsWith('/')) cleanVideoPath = cleanVideoPath.substring(1);
 
     return '$cleanBaseUrl$cleanVideoPath';
   }
