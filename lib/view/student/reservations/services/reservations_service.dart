@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 class ReservationItem {
   final int id;
   final String tutorName;
+  final String studentName;
   final String subjectName;
   final DateTime? start;
   final DateTime? end;
@@ -13,6 +14,7 @@ class ReservationItem {
   ReservationItem({
     required this.id,
     required this.tutorName,
+    this.studentName = 'Estudiante',
     required this.subjectName,
     required this.start,
     required this.end,
@@ -110,22 +112,48 @@ class ReservationsService {
         // Tutor name: prefer fields in booking, otherwise fetch tutor
         String tutorName =
             (b['tutor_name']?.toString() ?? b['tutor']?.toString() ?? 'Tutor');
-        if ((tutorName.isEmpty || tutorName == 'Tutor') &&
-            (b['tutor_id'] != null)) {
-          try {
-            final tutorId = b['tutor_id'].toString();
-            final tutorResp = await getTutors(token, tutorId);
-            // posibles shapes
-            if (tutorResp.containsKey('user')) {
-              final u = tutorResp['user'];
-              tutorName =
-                  (u['first_name'] ?? '') + ' ' + (u['last_name'] ?? '');
-            } else if (tutorResp.containsKey('name')) {
-              tutorName = tutorResp['name'].toString();
-            } else if (tutorResp.containsKey('full_name')) {
-              tutorName = tutorResp['full_name'].toString();
-            }
-          } catch (_) {}
+        final int tId = int.tryParse(b['tutor_id']?.toString() ?? '') ?? 0;
+
+        if (tutorName.isEmpty && tId > 0) {
+          if (tId == userId) {
+            tutorName = "Tutor";
+          } else {
+            try {
+              final tutorResp = await getTutors(token, tId.toString());
+              // posibles shapes
+              if (tutorResp.containsKey('user')) {
+                final u = tutorResp['user'];
+                tutorName =
+                    (u['first_name'] ?? '') + ' ' + (u['last_name'] ?? '');
+              } else if (tutorResp.containsKey('name')) {
+                tutorName = tutorResp['name'].toString();
+              } else if (tutorResp.containsKey('full_name')) {
+                tutorName = tutorResp['full_name'].toString();
+              }
+            } catch (_) {}
+          }
+        }
+
+        // Student name
+        String studentName = b['student_name']?.toString() ?? b['student']?.toString() ?? '';
+        final int sId = int.tryParse(b['student_id']?.toString() ?? '') ?? 0;
+
+        if (studentName.isEmpty && sId > 0) {
+          if (sId == userId) {
+            studentName = "Estudiante";
+          } else {
+            try {
+              final studentResp = await getProfile(token, sId);
+              if (studentResp.containsKey('user')) {
+                final u = studentResp['user'];
+                studentName = (u['first_name'] ?? '') + ' ' + (u['last_name'] ?? '');
+              } else if (studentResp.containsKey('first_name')) {
+                studentName = (studentResp['first_name'] ?? '') + ' ' + (studentResp['last_name'] ?? '');
+              } else if (studentResp.containsKey('name')) {
+                studentName = studentResp['name'].toString();
+              }
+            } catch (_) {}
+          }
         }
 
         // Subject name: prefer booking subject fields, otherwise call API
@@ -150,6 +178,7 @@ class ReservationsService {
         out.add(ReservationItem(
           id: id,
           tutorName: tutorName.isNotEmpty ? tutorName : 'Tutor',
+          studentName: studentName.isNotEmpty ? studentName : 'Estudiante',
           subjectName: subjectName.isNotEmpty ? subjectName : 'Materia',
           start: start,
           end: end,

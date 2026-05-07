@@ -1,37 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/view/student/reservations/services/reservations_service.dart';
 import 'package:flutter_projects/view/tutor/features/home/widgets/reservation_details_dialog.dart';
 import 'package:flutter_projects/view/tutor/features/home/providers/tutor_home_provider.dart';
 import 'package:flutter_projects/view/tutor/features/home/widgets/start_session_dialog.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 const String _kTitleFont = 'outfit';
 const String _kBodyFont = 'manrope';
 
-class AppointmentModel {
-  final int id;
-  final String title;
-  final String studentName;
-  final String date;
-  final String time;
-  final String endTime;
-  final String status;
-  final String meetLink;
-
-  AppointmentModel({
-    required this.id,
-    required this.title,
-    required this.studentName,
-    required this.date,
-    required this.time,
-    required this.endTime,
-    required this.status,
-    this.meetLink = '',
-  });
-}
-
 class NextAppointmentSection extends StatefulWidget {
-  final List<AppointmentModel> appointments;
+  final List<ReservationItem> appointments;
   final bool isAvailable;
 
   const NextAppointmentSection(
@@ -120,7 +100,7 @@ class _NextAppointmentSectionState extends State<NextAppointmentSection> {
 }
 
 class _AppointmentCard extends StatelessWidget {
-  final AppointmentModel data;
+  final ReservationItem data;
 
   const _AppointmentCard({Key? key, required this.data}) : super(key: key);
 
@@ -139,6 +119,15 @@ class _AppointmentCard extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final statusColor = _getStatusColor(data.status);
 
+    final String dateStr = data.start != null 
+        ? DateFormat('dd MMM yyyy', 'es').format(data.start!) 
+        : 'Sin fecha';
+    final String timeStr = data.start != null 
+        ? DateFormat('HH:mm').format(data.start!) 
+        : '--:--';
+    final String endTimeStr = data.end != null 
+        ? DateFormat('HH:mm').format(data.end!) 
+        : '--:--';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
       decoration: BoxDecoration(
@@ -163,14 +152,13 @@ class _AppointmentCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // PARTE SUPERIOR: Título y Badge en una fila, el resto abajo
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: Text(
-                  data.title,
+                  data.subjectName,
                   style: TextStyle(
                     color: isDark ? Colors.white : AppColors.brandBlue,
                     fontSize: 24,
@@ -272,7 +260,7 @@ class _AppointmentCard extends StatelessWidget {
                         size: 12, color: AppColors.brandCyan),
                     const SizedBox(width: 4),
                     Text(
-                      data.date,
+                      dateStr,
                       style: TextStyle(
                         color: isDark ? Colors.white70 : AppColors.brandBlue,
                         fontSize: 12,
@@ -300,7 +288,7 @@ class _AppointmentCard extends StatelessWidget {
                         size: 12, color: AppColors.brandOrange),
                     const SizedBox(width: 4),
                     Text(
-                      "${data.time} - ${data.endTime}",
+                      "$timeStr - $endTimeStr",
                       style: TextStyle(
                         color: isDark ? Colors.white70 : AppColors.brandBlue,
                         fontSize: 12,
@@ -332,13 +320,7 @@ class _AppointmentCard extends StatelessWidget {
                       showDialog(
                         context: context,
                         builder: (ctx) => ReservationDetailsDialog(
-                          subject: data.title,
-                          studentName: data.studentName,
-                          date: data.date,
-                          time: data.time,
-                          endTime: data.endTime,
-                          message:
-                              "Hola, necesito ayuda con este tema. ¡Gracias!",
+                          data: data,
                         ),
                       );
                     },
@@ -374,8 +356,8 @@ class _AppointmentCard extends StatelessWidget {
                   child: ElevatedButton.icon(
                     onPressed: () async {
                       if (isCursando) {
-                        if (data.meetLink.isNotEmpty) {
-                          provider.openMeetLink(context, data.meetLink);
+                        if (data.meetingLink.isNotEmpty) {
+                          provider.openMeetLink(context, data.meetingLink);
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
@@ -396,8 +378,8 @@ class _AppointmentCard extends StatelessWidget {
                                   await provider.changeBookingStatusToCursando(
                                       context, data.id);
                               if (success) {
-                                if (data.meetLink.isNotEmpty) {
-                                  provider.openMeetLink(context, data.meetLink);
+                                if (data.meetingLink.isNotEmpty) {
+                                  provider.openMeetLink(context, data.meetingLink);
                                 } else {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
