@@ -84,7 +84,7 @@ class _TutorSubjectsScreenState extends State<TutorSubjectsScreen> {
             TutorHeader(
               title: "Materias",
               subtitle: "GESTIÓN DE MATERIAS",
-              onBackTap: () => Navigator.maybePop(context),
+              //onBackTap: () => Navigator.maybePop(context),
             ),
 
             const SizedBox(height: 8),

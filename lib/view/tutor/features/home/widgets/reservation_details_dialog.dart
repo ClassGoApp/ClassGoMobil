@@ -7,7 +7,7 @@ class ReservationDetailsDialog extends StatelessWidget {
   final String date;
   final String time;
   final String endTime;
-  final String message;
+  final String? message;
 
   const ReservationDetailsDialog({
     Key? key,
@@ -16,7 +16,7 @@ class ReservationDetailsDialog extends StatelessWidget {
     required this.date,
     required this.time,
     required this.endTime,
-    required this.message,
+    this.message,
   }) : super(key: key);
 
   @override
@@ -118,7 +118,7 @@ class ReservationDetailsDialog extends StatelessWidget {
             const SizedBox(height: 16),
 
             // 4. Mensaje del estudiante (Caja con borde)
-            Container(
+            /**Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -131,6 +131,7 @@ class ReservationDetailsDialog extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
+            **/
 
             // 5. Botones Finales
             Row(
@@ -147,6 +148,7 @@ class ReservationDetailsDialog extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
+                /** 
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {
@@ -161,7 +163,7 @@ class ReservationDetailsDialog extends StatelessWidget {
                     ),
                     child: const Text("Editar", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
-                ),
+                ),**/
               ],
             ),
           ],

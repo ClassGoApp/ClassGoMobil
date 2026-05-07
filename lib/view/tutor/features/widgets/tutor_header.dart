@@ -63,6 +63,8 @@ class TutorHeader extends StatelessWidget {
                       onTap: onBackTap,
                     ),
                     const SizedBox(width: 16),
+                  ] else ...[
+                    const SizedBox(width: 13), 
                   ],
                   
                   // Textos

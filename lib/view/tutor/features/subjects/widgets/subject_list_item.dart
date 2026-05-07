@@ -103,7 +103,7 @@ class _SubjectListItemState extends State<SubjectListItem> {
                     children: [
                       Text(
                         widget.name,
-                        style: TextStyle(color: textColor, fontSize: 18, fontWeight: FontWeight.w900, fontFamily: kFontFamily, height: 1.2),
+                        style: TextStyle(color: textColor, fontSize: 16, fontWeight: FontWeight.w900, fontFamily: kFontFamily, height: 1.2),
                       ),
                       const SizedBox(height: 8),
                       Container(

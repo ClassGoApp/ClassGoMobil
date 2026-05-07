@@ -102,7 +102,7 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
             TutorHeader(
               title: "Agenda",
               subtitle: "GESTIÓN DE TIEMPO",
-              onBackTap: () => Navigator.maybePop(context),
+              //onBackTap: () => Navigator.maybePop(context),
               actionIcon: Icons.calendar_today_rounded,
               onActionTap: () {
                 setState(() => _focusedDay = DateTime.now());
@@ -183,9 +183,19 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
     return Row(
       children: [
         _CircularIconButton(
-            icon: Icons.chevron_left_rounded,
-            onTap: () => setState(() => _focusedDay =
-                DateTime(_focusedDay.year, _focusedDay.month - 1, 1))),
+          icon: Icons.chevron_left_rounded,
+          onTap: () {
+            final previusMonth =
+                DateTime(_focusedDay.year, _focusedDay.month - 1, 1);
+            final firstAllowedDay = DateTime(2024, 1, 1);
+
+            if (!previusMonth.isBefore(firstAllowedDay)) {
+              setState(() {
+                _focusedDay = previusMonth;
+              });
+            }
+          },
+        ),
         const SizedBox(width: 8),
         Expanded(
           child: Column(
@@ -193,7 +203,7 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 250),
                 child: Text(
-                    "${toBeginningOfSentenceCase(DateFormat('MMMM', 'es').format(_focusedDay))} ${DateFormat('yyyy').format(_focusedDay)}",
+                    "${toBeginningOfSentenceCase(DateFormat('MMM', 'es').format(_focusedDay))} ${DateFormat('yyyy').format(_focusedDay)}",
                     key: ValueKey(_focusedDay.month),
                     style: TextStyle(
                         color: textColor,
@@ -215,8 +225,16 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
         const SizedBox(width: 8),
         _CircularIconButton(
             icon: Icons.chevron_right_rounded,
-            onTap: () => setState(() => _focusedDay =
-                DateTime(_focusedDay.year, _focusedDay.month + 1, 1))),
+            onTap: () {
+              final nextMonth = DateTime(_focusedDay.year, _focusedDay.month + 1, 1);
+              final lastAllowedDay = DateTime(2030, 12, 31);
+
+              if (!nextMonth.isAfter(lastAllowedDay)) {
+                setState(() {
+                  _focusedDay = nextMonth;
+                });
+              }
+            }),
         const SizedBox(width: 12),
         Visibility(
           maintainSize: true,
@@ -524,7 +542,10 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
         _rangeEnd = e;
         _focusedDay = f;
       }),
-      onPageChanged: (f) => _focusedDay = f,
+      onPageChanged: (f) { setState(() {
+        _focusedDay = f;
+      }); 
+      }
     );
   }
 

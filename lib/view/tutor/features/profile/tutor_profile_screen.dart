@@ -12,7 +12,7 @@ import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/tutor/features/widgets/tutor_header.dart';
 import 'package:flutter_projects/view/tutor/features/profile/video_presentation_modal.dart';
 import 'package:flutter_projects/view/profile/edit_profile_screen.dart';
-import 'package:flutter_projects/api_structure/config/app_config.dart'; 
+import 'package:flutter_projects/api_structure/config/app_config.dart';
 
 const String _kTitleFont = 'outfit';
 const String _kBodyFont = 'manrope';
@@ -35,6 +35,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     });
   }
 
+  bool _isExpanded = false;
+
   String _getShortName(String fullName) {
     if (fullName.trim().isEmpty) return "";
     List<String> parts = fullName.trim().split(RegExp(r'\s+'));
@@ -50,10 +52,11 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     final baseUrl = AppConfig.mediaBaseUrl;
     String cleanBaseUrl = baseUrl;
     if (!cleanBaseUrl.endsWith('/')) cleanBaseUrl = '$cleanBaseUrl/';
-    
+
     String cleanVideoPath = videoPath;
-    if (cleanVideoPath.startsWith('/')) cleanVideoPath = cleanVideoPath.substring(1);
-    
+    if (cleanVideoPath.startsWith('/'))
+      cleanVideoPath = cleanVideoPath.substring(1);
+
     return '$cleanBaseUrl$cleanVideoPath';
   }
 
@@ -76,8 +79,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
         profile['image'] ?? profile['profile_image'] ?? user?['profile_image'];
 
     String? videoPath = profile['intro_video'];
-    String? videoUrl = (videoPath != null && videoPath.isNotEmpty) 
-        ? _buildFullVideoUrl(videoPath) 
+    String? videoUrl = (videoPath != null && videoPath.isNotEmpty)
+        ? _buildFullVideoUrl(videoPath)
         : null;
 
     final String description = profile['description'] ?? '';
@@ -109,9 +112,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
               TutorHeader(
                 title: "MI PERFIL",
                 subtitle: "GESTIÓN DE PERFIL",
-                onBackTap: () {
-                  Navigator.maybePop(context);
-                },
+                //onBackTap: () {Navigator.maybePop(context);},
               ),
               Expanded(
                 child: SingleChildScrollView(
@@ -401,21 +402,49 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
           ),
         ),
         const SizedBox(height: 24),
-        const SizedBox(height: 24),
-        _buildListTile(
-          "MÉTODO DE COBRO (QR)", 
-          Icons.qr_code_scanner_rounded,
-          mainTextColor, 
-          innerBgColor,
-          onTap: () {
-             Navigator.push(
-               context,
-               MaterialPageRoute(
-                 builder: (context) => const QrPaymentScreen(initialQrUrl: null),
-               ),
-             );
-          }
+        Container(
+          decoration: BoxDecoration(
+              color: innerBgColor, borderRadius: BorderRadius.circular(20)),
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.brandCyan.withOpacity(0.15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.payments_rounded, color: AppColors.brandCyan, size: 20),
+            ),
+            title: const Text("TARIFA POR TUTORÍA", 
+                style: TextStyle(
+                    fontFamily: _kTitleFont,
+                    color: Colors.grey, // Color sutil
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5)),
+            subtitle: Padding(
+              padding: const EdgeInsets.only(top: 4.0),
+              child: Text("50 Bs / 20min.", 
+                  style: TextStyle(
+                      fontFamily: _kTitleFont,
+                      color: mainTextColor, 
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900)),
+            ),
+            trailing: Icon(Icons.edit_rounded, color: Colors.grey[400], size: 18),
+            onTap: () => _showPriceModal(context), 
+          ),
         ),
+        const SizedBox(height: 24),
+        _buildListTile("MÉTODO DE COBRO (QR)", Icons.qr_code_scanner_rounded,
+            mainTextColor, innerBgColor, onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const QrPaymentScreen(initialQrUrl: null),
+            ),
+          );
+        }),
         // const SizedBox(height: 12),
         // _buildListTile("DIPLOMAS Y CERTIFICADOS",
         //     Icons.workspace_premium_outlined, mainTextColor, innerBgColor),
@@ -564,20 +593,54 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
               color: innerBgColor, borderRadius: BorderRadius.circular(20)),
           child: items.isEmpty
               ? const Text(
-                  "Aún tienes materias agregadas.",
-                  style: TextStyle(
-                      fontFamily: _kBodyFont,
-                      color: Colors.grey,
-                      fontSize: 13,
-                      fontStyle: FontStyle.italic),
+                  "Aún no tienes materias agregadas.",
                 )
-              : Wrap(
-                  spacing: 8.0,
-                  runSpacing: 10.0,
-                  children: items
-                      .map((s) => _buildStyledChip(s, color,
-                          actionIcon: actionIcon, onTap: onChipTap))
-                      .toList(),
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 10,
+                      children: [
+                        ...items
+                            .take(_isExpanded ? items.length : 4)
+                            .map((s) => _buildStyledChip(s, color, actionIcon: actionIcon, onTap: onChipTap,))
+                            .toList(),
+                      ],
+                    ),
+                    if (items.length > 4) const SizedBox(height: 12),
+                    if (items.length > 4)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: ActionChip(
+                          label: Text(
+                            _isExpanded
+                                ? "Ver menos"
+                                : "+${items.length - 4} más",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: _isExpanded ? Colors.grey : color,
+                            ),
+                          ),
+                          backgroundColor:
+                              _isExpanded ? Colors.transparent : Colors.white,
+                          side: BorderSide(
+                            color: _isExpanded
+                                ? Colors.grey.withOpacity(0.3)
+                                : color.withOpacity(0.5),
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _isExpanded = !_isExpanded;
+                            });
+                          },
+                        ),
+                      ),
+                  ],
                 ),
         ),
       ],
@@ -589,29 +652,35 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 7.0),
       decoration: BoxDecoration(
-        color: baseColor
-            .withOpacity(0.15),
+        color: baseColor.withOpacity(0.15),
         borderRadius: BorderRadius.circular(12.0),
         border: Border.all(color: baseColor.withOpacity(0.5), width: 1),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (actionIcon != null) ...[
-            Icon(actionIcon,
-                color: baseColor, size: 14), 
-            const SizedBox(width: 6),
-          ],
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: _kBodyFont,
-              color: baseColor, 
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 180),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (actionIcon != null) ...[
+              Icon(actionIcon, color: baseColor, size: 14),
+              const SizedBox(width: 6),
+            ],
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                softWrap: true,
+                style: TextStyle(
+                  fontFamily: _kBodyFont,
+                  color: baseColor,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -634,6 +703,105 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
         trailing: Icon(Icons.chevron_right_rounded, color: Colors.grey[400]),
         onTap: onTap,
       ),
+    );
+  }
+  void _showPriceModal(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF1E222A) : AppColors.whiteColor;
+    final inputBg = isDark ? AppColors.blackColor : const Color(0xFFF4F6F9);
+    final textColor = isDark ? AppColors.whiteColor : AppColors.brandBlue;
+
+    // Controlador para leer lo que el usuario escribe
+    TextEditingController priceController = TextEditingController(text: "50");
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true, // CLAVE: Permite que el teclado empuje el modal
+      backgroundColor: Colors.transparent, // Para que se vean los bordes curvos
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom, // Padding dinámico del teclado
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(30),
+                topRight: Radius.circular(30),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                
+                // Título
+                Text("Definir Tarifa",
+                  style: TextStyle(fontFamily: _kTitleFont, color: textColor, fontSize: 18, fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 8),
+                const Text("Ingresa el monto que cobrarás por 20 minutos de tutoría.",
+                  style: TextStyle(fontFamily: _kBodyFont, color: Colors.grey, fontSize: 13),
+                ),
+                const SizedBox(height: 20),
+
+                TextField(
+                  controller: priceController,
+                  keyboardType: TextInputType.number,
+                  style: TextStyle(fontFamily: _kBodyFont, color: textColor, fontSize: 18, fontWeight: FontWeight.bold),
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.attach_money_rounded, color: AppColors.brandCyan),
+                    suffixText: "Bs/20min",
+                    suffixStyle: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
+                    filled: true,
+                    fillColor: inputBg,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Botón de Guardar
+                SizedBox(
+                  width: double.infinity,
+                  height: 55,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.brandCyan,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      elevation: 0,
+                    ),
+                    onPressed: () {
+                      print("Nuevo precio: ${priceController.text}");
+                      Navigator.pop(context);
+                    },
+                    child: const Text("GUARDAR TARIFA",
+                      style: TextStyle(fontFamily: _kTitleFont, color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 1),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

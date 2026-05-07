@@ -24,7 +24,7 @@ class SubjectsSearchBar extends StatelessWidget {
       ),
       child: TextField(
         controller: controller,
-        style: TextStyle(color: isDark ? Colors.white : AppColors.brandBlue, fontWeight: FontWeight.w600, fontFamily: kFontFamily),
+        style: TextStyle(color: isDark ? Colors.white : AppColors.brandBlue, fontWeight: FontWeight.w600, fontFamily: kFontFamily, fontSize: 15),
         decoration: InputDecoration(
           hintText: "Agrega tu próxima materia...",
           hintStyle: TextStyle(color: isDark ? Colors.white30 : Colors.grey[400], fontWeight: FontWeight.normal, fontFamily: kFontFamily),
