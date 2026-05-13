@@ -447,8 +447,7 @@ class _LoginScreenState extends State<LoginScreen>
                               Navigator.pushAndRemoveUntil(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (_) =>
-                                       const HomeScreen()),
+                                    builder: (_) => const HomeScreen()),
                                 (Route<dynamic> route) => false,
                               );
                             },
@@ -456,7 +455,7 @@ class _LoginScreenState extends State<LoginScreen>
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
-                                  'Saltar',
+                                  'INICIO',
                                   style: TextStyle(
                                     color: AppColors.whiteColor,
                                     fontSize: FontSize.scale(context, 15),
@@ -485,194 +484,140 @@ class _LoginScreenState extends State<LoginScreen>
                             padding:
                                 const EdgeInsets.symmetric(horizontal: 12.0),
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                SvgPicture.asset(
-                                  AppImages.logo,
-                                  width: 150,
-                                  height: 150,
-                                  alignment: Alignment.center,
-                                ),
-                                SizedBox(height: 20),
-                                Column(
-                                  children: [
-                                    Text(
-                                      'Inicia sesión en tu cuenta',
-                                      style: TextStyle(
-                                        fontFamily: 'SF-Pro-Text',
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: FontSize.scale(context, 24),
-                                        color: AppColors.whiteColor,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    SizedBox(height: height * 0.01),
-                                    Text(
-                                      'Accede a cursos, administra tu agenda,\ny mantente conectado.',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontFamily: 'SF-Pro-Text',
-                                        fontWeight: FontWeight.w400,
-                                        fontSize: FontSize.scale(context, 16),
-                                        color: AppColors.whiteColor,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: height * 0.06),
-                                CustomTextField(
-                                  hint: 'Correo electrónico',
-                                  obscureText: false,
-                                  controller: _emailController,
-                                  focusNode: _emailFocusNode,
-                                  hasError: !_isEmailValid,
-                                ),
-                                if (_errorMessage.isNotEmpty)
-                                  Padding(
-                                    padding:
-                                        EdgeInsets.only(top: height * 0.01),
-                                    child: Text(
-                                      _errorMessage,
-                                      style:
-                                          TextStyle(color: AppColors.redColor),
-                                    ),
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  SvgPicture.asset(
+                                    AppImages.logo,
+                                    width: 150,
+                                    height: 150,
+                                    alignment: Alignment.center,
                                   ),
-                                SizedBox(height: height * 0.02),
-                                CustomTextField(
-                                  hint: 'Contraseña',
-                                  obscureText: true,
-                                  controller: _passwordController,
-                                  focusNode: _passwordFocusNode,
-                                  hasError: !_isPasswordValid,
-                                ),
-                                if (_passwordErrorMessage.isNotEmpty)
-                                  Padding(
-                                    padding:
-                                        EdgeInsets.only(top: height * 0.01),
-                                    child: Text(
-                                      _passwordErrorMessage,
-                                      style:
-                                          TextStyle(color: AppColors.redColor),
-                                    ),
-                                  ),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  children: [
-                                    Transform.translate(
-                                      offset: Offset(-10, 0),
-                                      child: Transform.scale(
-                                        scale: 1.3,
-                                        child: Checkbox(
-                                          value: _isChecked,
-                                          checkColor: AppColors.whiteColor,
-                                          activeColor: AppColors.primaryGreen,
-                                          fillColor: WidgetStateProperty
-                                              .resolveWith<Color>((states) {
-                                            if (states.contains(
-                                                WidgetState.selected)) {
-                                              return AppColors.primaryGreen;
-                                            }
-                                            return AppColors.whiteColor;
-                                          }),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(5.0),
-                                          ),
-                                          side: BorderSide(
-                                            color: AppColors.dividerColor,
-                                            width: 1.5,
-                                          ),
-                                          onChanged: (bool? value) {
-                                            setState(() {
-                                              _isChecked = value ?? false;
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                    ),
-                                    Transform.translate(
-                                      offset: Offset(-12, 0),
-                                      child: Text(
-                                        'Recordar cuenta en dispositivo',
+                                  SizedBox(height: 20),
+                                  Column(
+                                    children: [
+                                      Text(
+                                        'Inicia sesión en tu cuenta',
                                         style: TextStyle(
-                                          fontSize: FontSize.scale(context, 16),
+                                          fontFamily: 'SF-Pro-Text',
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: FontSize.scale(context, 24),
                                           color: AppColors.whiteColor,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      SizedBox(height: height * 0.01),
+                                      Text(
+                                        'Accede a cursos, administra tu agenda,\ny mantente conectado.',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
                                           fontFamily: 'SF-Pro-Text',
                                           fontWeight: FontWeight.w400,
+                                          fontSize: FontSize.scale(context, 16),
+                                          color: AppColors.whiteColor,
                                         ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: height * 0.024),
-                                ElevatedButton(
-                                  onPressed: _validateEmailAndSubmit,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.lightBlueColor,
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 16, vertical: 15),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
+                                    ],
                                   ),
-                                  child: Text(
-                                    'Ingresar',
-                                    style: TextStyle(
-                                      color: AppColors.whiteColor,
-                                      fontSize: FontSize.scale(context, 16),
-                                      fontFamily: 'SF-Pro-Text',
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                                  SizedBox(height: height * 0.06),
+                                  CustomTextField(
+                                    hint: 'Correo electrónico',
+                                    obscureText: false,
+                                    controller: _emailController,
+                                    focusNode: _emailFocusNode,
+                                    hasError: !_isEmailValid,
                                   ),
-                                ),
-                                SizedBox(height: 16),
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              ResetPassword()),
-                                    );
-                                  },
-                                  child: Text(
-                                    '¿Olvidaste tu contraseña?',
-                                    style: TextStyle(
-                                      fontSize: FontSize.scale(context, 16),
-                                      color: AppColors.whiteColor,
-                                      fontFamily: 'SF-Pro-Text',
-                                      fontWeight: FontWeight.w500,
+                                  if (_errorMessage.isNotEmpty)
+                                    Padding(
+                                      padding:
+                                          EdgeInsets.only(top: height * 0.01),
+                                      child: Text(
+                                        _errorMessage,
+                                        style: TextStyle(
+                                            color: AppColors.redColor),
+                                      ),
                                     ),
+                                  SizedBox(height: height * 0.02),
+                                  CustomTextField(
+                                    hint: 'Contraseña',
+                                    obscureText: true,
+                                    controller: _passwordController,
+                                    focusNode: _passwordFocusNode,
+                                    hasError: !_isPasswordValid,
                                   ),
-                                ),
-                                Container(
-                                  width: double.infinity,
-                                  decoration: ShapeDecoration(
-                                    color: AppColors.whiteColor,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                                  if (_passwordErrorMessage.isNotEmpty)
+                                    Padding(
+                                      padding:
+                                          EdgeInsets.only(top: height * 0.01),
+                                      child: Text(
+                                        _passwordErrorMessage,
+                                        style: TextStyle(
+                                            color: AppColors.redColor),
+                                      ),
                                     ),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      Transform.translate(
+                                        offset: Offset(-10, 0),
+                                        child: Transform.scale(
+                                          scale: 1.3,
+                                          child: Checkbox(
+                                            value: _isChecked,
+                                            checkColor: AppColors.whiteColor,
+                                            activeColor: AppColors.primaryGreen,
+                                            fillColor: WidgetStateProperty
+                                                .resolveWith<Color>((states) {
+                                              if (states.contains(
+                                                  WidgetState.selected)) {
+                                                return AppColors.primaryGreen;
+                                              }
+                                              return AppColors.whiteColor;
+                                            }),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(5.0),
+                                            ),
+                                            side: BorderSide(
+                                              color: AppColors.dividerColor,
+                                              width: 1.5,
+                                            ),
+                                            onChanged: (bool? value) {
+                                              setState(() {
+                                                _isChecked = value ?? false;
+                                              });
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                      Transform.translate(
+                                        offset: Offset(-12, 0),
+                                        child: Text(
+                                          'Recordar cuenta en dispositivo',
+                                          style: TextStyle(
+                                            fontSize:
+                                                FontSize.scale(context, 16),
+                                            color: AppColors.whiteColor,
+                                            fontFamily: 'SF-Pro-Text',
+                                            fontWeight: FontWeight.w400,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  child: TextButton(
-                                    onPressed: () {
-                                      Navigator.pushReplacement(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                RegistrationScreen()),
-                                      );
-                                    },
-                                    style: TextButton.styleFrom(
+                                  SizedBox(height: height * 0.024),
+                                  ElevatedButton(
+                                    onPressed: _validateEmailAndSubmit,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.lightBlueColor,
                                       padding: EdgeInsets.symmetric(
-                                          vertical: 15, horizontal: 16),
+                                          horizontal: 16, vertical: 15),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(12),
                                       ),
-                                      backgroundColor: AppColors.primaryGreen,
                                     ),
                                     child: Text(
-                                      '¿No tienes una cuenta?, Registrate',
+                                      'Ingresar',
                                       style: TextStyle(
                                         color: AppColors.whiteColor,
                                         fontSize: FontSize.scale(context, 16),
@@ -681,30 +626,85 @@ class _LoginScreenState extends State<LoginScreen>
                                       ),
                                     ),
                                   ),
-                                ),
-                                SizedBox(height: height * 0.02),
-                              //   ElevatedButton.icon(
-                              //     icon: Image.asset(
-                              //       'assets/images/google_logo.png', // Asegúrate de tener el logo de Google en assets/images
-                              //       width: 24,
-                              //       height: 24,
-                              //     ),
-                              //     label: Text('Iniciar sesión con Google'),
-                              //     onPressed: () => signInWithGoogle(context),
-                              //     style: ElevatedButton.styleFrom(
-                              //       backgroundColor: Colors.white,
-                              //       foregroundColor: Colors.black,
-                              //       shape: RoundedRectangleBorder(
-                              //           borderRadius:
-                              //               BorderRadius.circular(12)),
-                              //       padding: EdgeInsets.symmetric(
-                              //           horizontal: 18, vertical: 12),
-                              //       textStyle:
-                              //           TextStyle(fontWeight: FontWeight.bold),
-                              //     ),
-                              //   ),
-                              ]
-                            ),
+                                  SizedBox(height: 16),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                ResetPassword()),
+                                      );
+                                    },
+                                    child: Text(
+                                      '¿Olvidaste tu contraseña?',
+                                      style: TextStyle(
+                                        fontSize: FontSize.scale(context, 16),
+                                        color: AppColors.whiteColor,
+                                        fontFamily: 'SF-Pro-Text',
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                  Container(
+                                    width: double.infinity,
+                                    decoration: ShapeDecoration(
+                                      color: AppColors.whiteColor,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    child: TextButton(
+                                      onPressed: () {
+                                        Navigator.pushReplacement(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (context) =>
+                                                  RegistrationScreen()),
+                                        );
+                                      },
+                                      style: TextButton.styleFrom(
+                                        padding: EdgeInsets.symmetric(
+                                            vertical: 15, horizontal: 16),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        backgroundColor: AppColors.primaryGreen,
+                                      ),
+                                      child: Text(
+                                        '¿No tienes una cuenta?, Registrate',
+                                        style: TextStyle(
+                                          color: AppColors.whiteColor,
+                                          fontSize: FontSize.scale(context, 16),
+                                          fontFamily: 'SF-Pro-Text',
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(height: height * 0.02),
+                                  //   ElevatedButton.icon(
+                                  //     icon: Image.asset(
+                                  //       'assets/images/google_logo.png', // Asegúrate de tener el logo de Google en assets/images
+                                  //       width: 24,
+                                  //       height: 24,
+                                  //     ),
+                                  //     label: Text('Iniciar sesión con Google'),
+                                  //     onPressed: () => signInWithGoogle(context),
+                                  //     style: ElevatedButton.styleFrom(
+                                  //       backgroundColor: Colors.white,
+                                  //       foregroundColor: Colors.black,
+                                  //       shape: RoundedRectangleBorder(
+                                  //           borderRadius:
+                                  //               BorderRadius.circular(12)),
+                                  //       padding: EdgeInsets.symmetric(
+                                  //           horizontal: 18, vertical: 12),
+                                  //       textStyle:
+                                  //           TextStyle(fontWeight: FontWeight.bold),
+                                  //     ),
+                                  //   ),
+                                ]),
                           ),
                         ),
                       ),

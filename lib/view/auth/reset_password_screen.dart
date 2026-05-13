@@ -5,7 +5,7 @@ import 'package:flutter_projects/base_components/custom_snack_bar.dart';
 import 'package:flutter_projects/base_components/textfield.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/auth/login_screen.dart';
-import 'package:flutter_projects/view/student/serch_Tutor/search_tutors_screen.dart';
+import 'package:flutter_projects/view/home/home_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_projects/helpers/back_button_handler.dart';
 import 'register_screen.dart';
@@ -123,7 +123,6 @@ class _LoginScreenState extends State<ResetPassword>
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
 
-
     return WillPopScope(
       onWillPop: () => BackButtonHandler.handleBackButton(
         context,
@@ -143,15 +142,15 @@ class _LoginScreenState extends State<ResetPassword>
                       Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => SearchTutorsScreen()),
-                            (Route<dynamic> route) => false,
+                            builder: (context) => const HomeScreen()),
+                        (Route<dynamic> route) => false,
                       );
                     },
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Skip',
+                          'INICIO',
                           style: TextStyle(
                             color: AppColors.whiteColor,
                             fontSize: FontSize.scale(context, 15),
@@ -216,13 +215,10 @@ class _LoginScreenState extends State<ResetPassword>
                                 ),
                                 textAlign: TextAlign.center,
                               ),
-
-
                             ],
                           ),
                         ),
                         SizedBox(height: height * 0.2),
-
                         Column(
                           children: [
                             CustomTextField(
@@ -249,14 +245,14 @@ class _LoginScreenState extends State<ResetPassword>
                                 : ElevatedButton(
                                     onPressed: _forgetPassword,
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor:AppColors.lightBlueColor,
+                                      backgroundColor: AppColors.lightBlueColor,
                                       minimumSize: Size(double.infinity, 55),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                     ),
                                     child: Text(
-                                      'Send Reset link',
+                                      'Enviar enlace de restablecimiento',
                                       textScaler: TextScaler.noScaling,
                                       style: TextStyle(
                                         fontSize: FontSize.scale(context, 16),
@@ -307,7 +303,8 @@ class _LoginScreenState extends State<ResetPassword>
                             SizedBox(height: 6.0),
                             Center(
                               child: Container(
-                                padding: EdgeInsets.symmetric(vertical: 15.0,horizontal: 16.0),
+                                padding: EdgeInsets.symmetric(
+                                    vertical: 15.0, horizontal: 16.0),
                                 child: RichText(
                                   text: TextSpan(
                                     text: "Ya tienes una cuenta? ",
@@ -335,7 +332,8 @@ class _LoginScreenState extends State<ResetPassword>
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(
-                                                  builder: (context) => LoginScreen()),
+                                                  builder: (context) =>
+                                                      LoginScreen()),
                                             );
                                           },
                                       ),
