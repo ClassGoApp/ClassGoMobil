@@ -192,7 +192,7 @@ class _LoginScreenState extends State<LoginScreen>
   void showCustomToast(BuildContext context, String message, bool isSuccess) {
     final overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
-        top: 1.0,
+        top: 100.0,
         left: 16.0,
         right: 16.0,
         child: CustomToast(

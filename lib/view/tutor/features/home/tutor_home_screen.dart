@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_projects/view/bookings/bookings.dart';
+import 'package:flutter_projects/view/student/reservations/services/reservations_service.dart';
+import 'package:flutter_projects/view/student/serch_Tutor/search_tutors_screen.dart';
 import 'package:flutter_projects/view/tutor/features/home/providers/tutor_home_provider.dart';
 import 'package:flutter_projects/view/tutor/onboarding/tutor_onboarding_screen.dart';
 import 'package:provider/provider.dart';
@@ -36,10 +39,13 @@ class _TutorHomeScreenState extends State<TutorHomeScreen> {
     final homeProvider = Provider.of<TutorHomeProvider>(context);
 
     final user = authProvider.userData?['user'];
+    final profile = user?['profile'] ?? {};
     final String userName = user != null ? (user['name'] ?? 'Tutor') : 'Tutor';
 
     String? imageUrl =
-        user?['profile']?['image'] ?? user?['profile']?['profile_image'];
+        profile['image'] ?? profile['profile_image'];
+
+    final bool isVerified = profile['verified'] == true;
 
     if (imageUrl != null && imageUrl.isNotEmpty) {
       if (imageUrl
@@ -60,6 +66,7 @@ class _TutorHomeScreenState extends State<TutorHomeScreen> {
           tutorName: userName,
           profileImageUrl: imageUrl,
           rating: 4.9,
+          isVerified: isVerified,
           isLoadingImage: homeProvider.isLoading,
           isAvailable: homeProvider.isAvailable,
           onLogoutTap: () => authProvider.logout(),
@@ -105,7 +112,6 @@ class _TutorHomeScreenState extends State<TutorHomeScreen> {
                       isProfileComplete)
                     const SizedBox(height: 25),
 
-                  // SECCIONES LIBRES
                   QuickAccessSection(onNavigate: widget.onNavigate),
 
                   const SizedBox(height: 20),
@@ -119,23 +125,16 @@ class _TutorHomeScreenState extends State<TutorHomeScreen> {
                       final end =
                           DateTime.tryParse(booking['end_time'] ?? '') ??
                               start.add(const Duration(minutes: 20));
-
-                      final dateFormatted =
-                          '${start.day.toString().padLeft(2, '0')}/${start.month.toString().padLeft(2, '0')}/${start.year}';
-                      final time =
-                          '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')}';
-                      final timeEnd =
-                          '${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}';
-
-                      return AppointmentModel(
+                              
+                      return ReservationItem(
                           id: booking['id'] ?? 0,
-                          title: booking['subject_name'] ?? 'Tutoría',
+                          subjectName: booking['subject_name'] ?? 'Tutoría',
+                          tutorName: booking['tutor_name'] ?? 'Tutor',
                           studentName: booking['student_name'] ?? 'Estudiante',
-                          date: dateFormatted,
-                          time: time,
-                          endTime: timeEnd,
+                          start: start,
+                          end: end,
                           status: booking['status'] ?? 'pendiente',
-                          meetLink: booking['meeting_link'] ?? '');
+                          meetingLink: booking['meeting_link'] ?? '');
                     }).toList(),
                   ),
                 ],

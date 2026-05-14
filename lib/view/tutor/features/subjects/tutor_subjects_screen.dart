@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_projects/base_components/custom_snack_bar.dart';
 import 'package:flutter_projects/view/tutor/features/widgets/tutor_header.dart';
 import 'package:provider/provider.dart';
 
@@ -141,19 +142,23 @@ class _TutorSubjectsScreenState extends State<TutorSubjectsScreen> {
                                   });
                                 },
                                 onDelete: () async {
-                                  final scaffoldMessenger = ScaffoldMessenger.of(context);
-                                  final nombreMateria = item.subject.name;
+                                  final nombreMateria = item.subject.name.length > 25
+                                    ? "${item.subject.name.substring(0, 25)}..."
+                                    : item.subject.name;
                                   
                                   final success = await provider.deleteTutorSubjectFromApi(auth, item.id);
                                   if (success && mounted) {
                                     setState(() => _selectedSubjectId = null);
-                                    scaffoldMessenger.clearSnackBars();
-                                    scaffoldMessenger.showSnackBar(
-                                      SnackBar(content: Text("Materia '$nombreMateria' liminada"), backgroundColor: AppColors.primaryGreen, duration: const Duration(seconds: 2)),
+                                    CustomToast.show(
+                                      context, 
+                                      "Materia \'$nombreMateria'\ eliminada correctamente.",
+                                      isSuccess: true,
                                     );
                                   } else if (mounted) {
-                                    scaffoldMessenger.showSnackBar(
-                                      SnackBar(content: Text(provider.error ?? "Error al eliminar"), backgroundColor: Colors.redAccent),
+                                    CustomToast.show(
+                                      context, 
+                                      "Error al eliminar '$nombreMateria'. Intenta de nuevo.",
+                                      isSuccess: false,
                                     );
                                   }
                                 },

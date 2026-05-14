@@ -120,247 +120,249 @@ class _VerificationPendingScreenState extends State<VerificationPendingScreen>
                 ),
 
                 Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Icono animado de email
-                      AnimatedBuilder(
-                        animation: _animationController,
-                        builder: (context, child) {
-                          return Transform.translate(
-                            offset: Offset(0, 5 * _animationController.value),
-                            child: Container(
-                              width: 120,
-                              height: 120,
-                              decoration: BoxDecoration(
-                                color:
-                                    AppColors.lightBlueColor.withOpacity(0.2),
-                                shape: BoxShape.circle,
-                                border: Border.all(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        // Icono animado de email
+                        AnimatedBuilder(
+                          animation: _animationController,
+                          builder: (context, child) {
+                            return Transform.translate(
+                              offset: Offset(0, 5 * _animationController.value),
+                              child: Container(
+                                width: 120,
+                                height: 120,
+                                decoration: BoxDecoration(
+                                  color:
+                                      AppColors.lightBlueColor.withOpacity(0.2),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: AppColors.lightBlueColor,
+                                    width: 3,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.lightBlueColor
+                                          .withOpacity(0.3),
+                                      blurRadius: 20,
+                                      spreadRadius: 5,
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(
+                                  Icons.email_outlined,
                                   color: AppColors.lightBlueColor,
-                                  width: 3,
+                                  size: 60,
                                 ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppColors.lightBlueColor
-                                        .withOpacity(0.3),
-                                    blurRadius: 20,
-                                    spreadRadius: 5,
-                                  ),
-                                ],
                               ),
-                              child: Icon(
-                                Icons.email_outlined,
-                                color: AppColors.lightBlueColor,
-                                size: 60,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      SizedBox(height: 32),
-
-                      // Título
-                      Text(
-                        '¡Registro exitoso!',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
+                            );
+                          },
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: 16),
-
-                      // Mensaje principal
-                      Text(
-                        'Hemos enviado un email de verificación a:',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
-                          fontSize: 16,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: 8),
-
-                      // Email del usuario
-                      Container(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: AppColors.lightBlueColor.withOpacity(0.3),
-                            width: 1,
-                          ),
-                        ),
-                        child: Text(
-                          widget.userData['email'] ?? 'email@ejemplo.com',
+                        SizedBox(height: 32),
+                    
+                        // Título
+                        Text(
+                          '¡Registro exitoso!',
                           style: TextStyle(
-                            color: AppColors.lightBlueColor,
+                            color: Colors.white,
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: 16),
+                    
+                        // Mensaje principal
+                        Text(
+                          'Hemos enviado un email de verificación a:',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
                             fontSize: 16,
-                            fontWeight: FontWeight.w600,
                           ),
+                          textAlign: TextAlign.center,
                         ),
-                      ),
-                      SizedBox(height: 24),
-
-                      // Instrucciones
-                      Container(
-                        padding: EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.2),
-                            width: 1,
+                        SizedBox(height: 8),
+                    
+                        // Email del usuario
+                        Container(
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: AppColors.lightBlueColor.withOpacity(0.3),
+                              width: 1,
+                            ),
                           ),
-                        ),
-                        child: Column(
-                          children: [
-                            Row(
-                              children: [
-                                Icon(Icons.check_circle,
-                                    color: Colors.green, size: 20),
-                                SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    'Revisa tu bandeja de entrada',
-                                    style: TextStyle(
-                                        color: Colors.white, fontSize: 14),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Icon(Icons.check_circle,
-                                    color: Colors.green, size: 20),
-                                SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    'Haz clic en el enlace de verificación',
-                                    style: TextStyle(
-                                        color: Colors.white, fontSize: 14),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Icon(Icons.check_circle,
-                                    color: Colors.green, size: 20),
-                                SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    'Tu cuenta se activará automáticamente',
-                                    style: TextStyle(
-                                        color: Colors.white, fontSize: 14),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 32),
-
-                      // Botón de reenviar email
-                      AnimatedBuilder(
-                        animation: _pulseController,
-                        builder: (context, child) {
-                          return Transform.scale(
-                            scale: 1.0 + (_pulseController.value * 0.05),
-                            child: SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton.icon(
-                                onPressed: _isResending
-                                    ? null
-                                    : _resendVerificationEmail,
-                                icon: _isResending
-                                    ? SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          color: Colors.white,
-                                          strokeWidth: 2,
-                                        ),
-                                      )
-                                    : Icon(Icons.refresh, color: Colors.white),
-                                label: Text(
-                                  _isResending
-                                      ? 'Reenviando...'
-                                      : 'Reenviar email',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.orangeprimary,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  padding: EdgeInsets.symmetric(vertical: 16),
-                                  elevation: 0,
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      SizedBox(height: 16),
-
-                      // Botón de abrir app de email
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: () => SimpleDeepLinkHandler.openEmailApp(),
-                          icon: Icon(Icons.email,
-                              color: AppColors.lightBlueColor),
-                          label: Text(
-                            'Abrir app de email',
+                          child: Text(
+                            widget.userData['email'] ?? 'email@ejemplo.com',
                             style: TextStyle(
                               color: AppColors.lightBlueColor,
                               fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(
-                                color: AppColors.lightBlueColor, width: 2),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                        ),
+                        SizedBox(height: 24),
+                    
+                        // Instrucciones
+                        Container(
+                          padding: EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.2),
+                              width: 1,
                             ),
-                            padding: EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.check_circle,
+                                      color: Colors.green, size: 20),
+                                  SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      'Revisa tu bandeja de entrada',
+                                      style: TextStyle(
+                                          color: Colors.white, fontSize: 14),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(Icons.check_circle,
+                                      color: Colors.green, size: 20),
+                                  SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      'Haz clic en el enlace de verificación',
+                                      style: TextStyle(
+                                          color: Colors.white, fontSize: 14),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(Icons.check_circle,
+                                      color: Colors.green, size: 20),
+                                  SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      'Tu cuenta se activará automáticamente',
+                                      style: TextStyle(
+                                          color: Colors.white, fontSize: 14),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                      SizedBox(height: 24),
-
-                      // Enlace al login
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(
-                                builder: (context) => LoginScreen()),
-                            (Route<dynamic> route) => false,
-                          );
-                        },
-                        child: Text(
-                          '¿Ya tienes cuenta? Inicia sesión',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.8),
-                            fontSize: 14,
-                            decoration: TextDecoration.underline,
+                        SizedBox(height: 32),
+                    
+                        // Botón de reenviar email
+                        AnimatedBuilder(
+                          animation: _pulseController,
+                          builder: (context, child) {
+                            return Transform.scale(
+                              scale: 1.0 + (_pulseController.value * 0.05),
+                              child: SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton.icon(
+                                  onPressed: _isResending
+                                      ? null
+                                      : _resendVerificationEmail,
+                                  icon: _isResending
+                                      ? SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            color: Colors.white,
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : Icon(Icons.refresh, color: Colors.white),
+                                  label: Text(
+                                    _isResending
+                                        ? 'Reenviando...'
+                                        : 'Reenviar email',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.orangeprimary,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    padding: EdgeInsets.symmetric(vertical: 16),
+                                    elevation: 0,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        SizedBox(height: 16),
+                    
+                        // Botón de abrir app de email
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: () => SimpleDeepLinkHandler.openEmailApp(),
+                            icon: Icon(Icons.email,
+                                color: AppColors.lightBlueColor),
+                            label: Text(
+                              'Abrir app de email',
+                              style: TextStyle(
+                                color: AppColors.lightBlueColor,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(
+                                  color: AppColors.lightBlueColor, width: 2),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                        SizedBox(height: 24),
+                    
+                        // Enlace al login
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pushAndRemoveUntil(
+                              MaterialPageRoute(
+                                  builder: (context) => LoginScreen()),
+                              (Route<dynamic> route) => false,
+                            );
+                          },
+                          child: Text(
+                            '¿Ya tienes cuenta? Inicia sesión',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.8),
+                              fontSize: 14,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_projects/base_components/custom_snack_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
@@ -9,45 +10,20 @@ const String _kBodyFont = 'manrope';
 class LogoutSection extends StatelessWidget {
   const LogoutSection({Key? key}) : super(key: key);
 
-  void _executeLogout(BuildContext context) {
+  static void executeLogout(BuildContext context) {
     Provider.of<AuthProvider>(context, listen: false).logout();
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle_rounded, color: Colors.white),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Text(
-                "Sesión cerrada correctamente.",
-                style: TextStyle(
-                  fontFamily: _kBodyFont, 
-                  color: Colors.white, 
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                ),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: AppColors.brandCyan, 
-        behavior: SnackBarBehavior.floating, 
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        margin: const EdgeInsets.only(bottom: 30, left: 20, right: 20),
-        elevation: 10,
-        duration: const Duration(seconds: 3),
-      ),
-    );
+    CustomToast.show(context, "Sesión cerrada correctamente.", isSuccess: true);
   }
 
-  void _showLogoutDialog(BuildContext context, bool isDark) {
-    final dialogBgColor = isDark ? const Color(0xFF1A1D24) : Colors.white;
-    final textColor = isDark ? Colors.white : AppColors.brandBlue;
+  static void showLogoutDialog(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showDialog(
       context: context,
-      builder: (BuildContext dialogContext) {
+      builder: (dialogContext) {
+        final dialogBgColor = isDark ? const Color(0xFF1A1D24) : Colors.white;
+        final textColor = isDark ? Colors.white : AppColors.brandBlue;
         return Dialog(
           backgroundColor: Colors.transparent,
           insetPadding: const EdgeInsets.symmetric(horizontal: 20),
@@ -122,7 +98,7 @@ class LogoutSection extends StatelessWidget {
                       child: ElevatedButton(
                         onPressed: () {
                           Navigator.pop(dialogContext); 
-                          _executeLogout(context); 
+                          executeLogout(context);
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.redAccent,
@@ -152,10 +128,9 @@ class LogoutSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? Colors.redAccent.withOpacity(0.05) : Colors.red[50]!;
-    
+
     return Container(
       decoration: BoxDecoration(
         color: bgColor,
@@ -170,7 +145,8 @@ class LogoutSection extends StatelessWidget {
             color: Colors.redAccent.withOpacity(0.15),
             shape: BoxShape.circle,
           ),
-          child: const Icon(Icons.power_settings_new_rounded, color: Colors.redAccent, size: 20),
+          child: const Icon(Icons.power_settings_new_rounded,
+              color: Colors.redAccent, size: 20),
         ),
         title: const Text(
           "CERRAR SESIÓN",
@@ -183,7 +159,7 @@ class LogoutSection extends StatelessWidget {
           ),
         ),
         trailing: Icon(Icons.chevron_right_rounded, color: Colors.redAccent.withOpacity(0.5)),
-        onTap: () => _showLogoutDialog(context, isDark),
+        onTap: () => LogoutSection.showLogoutDialog(context),
       ),
     );
   }

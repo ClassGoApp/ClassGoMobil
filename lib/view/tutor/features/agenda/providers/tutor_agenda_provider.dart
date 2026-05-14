@@ -3,10 +3,11 @@ import 'package:flutter_projects/api_structure/api_service.dart';
 
 class TutorAgendaProvider extends ChangeNotifier {
 
-  // 1. ESTADO CENTRAL (Base de datos local en memoria)
   final Map<DateTime, List<Map<String, dynamic>>> _freeTimesByDay = {};
   Map<DateTime, List<Map<String, dynamic>>> get freeTimesByDay =>
       _freeTimesByDay;
+
+  final Set<String> _loadedMonths = {};
 
   bool _isLoadingSlots = false;
   bool get isLoadingSlots => _isLoadingSlots;
@@ -17,42 +18,149 @@ class TutorAgendaProvider extends ChangeNotifier {
   bool _isMutating = false;
   bool get isMutating => _isMutating;
 
-  // 2. LECTURA (GET) - CON MANEJO DE ERRORES ESTRICTO
-  Future<void> loadAvailableSlots(String token, String userId) async {
-    _isLoadingSlots = true;
-    _errorMessage = null;
-    notifyListeners();
+Future<void> loadAvailableSlots(
+  String token,
+  String userId, {
+  int? year,
+  int? month,
+  bool forceRefresh = false,
+}) async {
+  final targetYear = year ?? DateTime.now().year;
+  final targetMonth = month ?? DateTime.now().month;
+  final monthKey = "$targetYear-$targetMonth";
 
-    try {
-      final response = await getTutorAvailableSlots(token, userId);
-      print("📥 DEBUG DATA DE BD: $response"); // Veremos esto en tu consola
+  if (!forceRefresh && _loadedMonths.contains(monthKey)) {
+    return;
+  }
 
+  _isLoadingSlots = true;
+  _errorMessage = null;
+  notifyListeners();
+
+  try {
+    final response = await getTutorAvailableSlots(
+      token,
+      userId,
+      targetYear,
+      targetMonth,
+    );
+
+    if (response is Map && response.containsKey('Date')) {
+      final dynamic rawDate = response['Date'];
+
+      if (rawDate is Map) {
+        final Map<dynamic, dynamic> dateMap = rawDate;
+
+        dateMap.forEach((dayStr, slotsList) {
+          int day = int.tryParse(dayStr.toString()) ?? 1;
+          DateTime cleanDay = DateTime(targetYear, targetMonth, day);
+
+          Map<String, Map<String, dynamic>> groupedBlocks = {};
+
+          if (slotsList is List) {
+            for (var slot in slotsList) {
+              if (slot is Map && slot['status'] == 'free') {
+                final timeStr = slot['time']?.toString() ?? '';
+                final slotId = slot['slot_id']?.toString() ?? '';
+
+                if (timeStr.isEmpty || slotId.isEmpty) continue;
+
+                final parts = timeStr.split(':');
+
+                if (parts.length >= 2) {
+                  final startHour = int.tryParse(parts[0]) ?? 0;
+                  final startMin = int.tryParse(parts[1]) ?? 0;
+
+                  final startDateTime = DateTime(
+                    targetYear,
+                    targetMonth,
+                    day,
+                    startHour,
+                    startMin,
+                  );
+
+                  final endDateTime = startDateTime.add(
+                    const Duration(minutes: 20),
+                  );
+
+                  if (groupedBlocks.containsKey(slotId)) {
+                    DateTime currentEnd =
+                        groupedBlocks[slotId]!['endDateTime'];
+
+                    if (endDateTime.isAfter(currentEnd)) {
+                      groupedBlocks[slotId]!['endDateTime'] = endDateTime;
+                      groupedBlocks[slotId]!['end'] =
+                          "${endDateTime.hour.toString().padLeft(2, '0')}:${endDateTime.minute.toString().padLeft(2, '0')}";
+                    }
+                  } else {
+                    final formattedStart =
+                        "${startDateTime.hour.toString().padLeft(2, '0')}:${startDateTime.minute.toString().padLeft(2, '0')}";
+
+                    final formattedEnd =
+                        "${endDateTime.hour.toString().padLeft(2, '0')}:${endDateTime.minute.toString().padLeft(2, '0')}";
+
+                    groupedBlocks[slotId] = {
+                      'id': slotId,
+                      'start': formattedStart,
+                      'end': formattedEnd,
+                      'status': slot['status'],
+                      'startDateTime': startDateTime,
+                      'endDateTime': endDateTime,
+                    };
+                  }
+                }
+              }
+            }
+          }
+
+          if (groupedBlocks.isNotEmpty) {
+            _freeTimesByDay[cleanDay] = groupedBlocks.values.map((block) {
+              return {
+                'id': block['id'],
+                'start': block['start'],
+                'end': block['end'],
+                'status': block['status'],
+              };
+            }).toList();
+
+            _freeTimesByDay[cleanDay]!.sort(
+              (a, b) => a['start'].compareTo(b['start']),
+            );
+          } else {
+            _freeTimesByDay.remove(cleanDay);
+          }
+        });
+
+        _loadedMonths.add(monthKey);
+      } else {
+        print("📭 No hay horarios disponibles para $monthKey");
+        _loadedMonths.add(monthKey);
+        _errorMessage = null;
+      }
+    } else if (response is Map) {
       List<dynamic> slotsData = [];
 
-      // Buscador inteligente: No importa cómo Laravel mande el JSON, lo encontraremos
       if (response['data'] is List) {
         slotsData = response['data'];
-      } else if (response['data'] != null && response['data']['data'] is List) {
+      } else if (
+          response['data'] != null &&
+          response['data']['data'] is List) {
         slotsData = response['data']['data'];
-      } else if (response['slots'] is List) {
-        slotsData = response['slots'];
       }
 
       if (slotsData.isNotEmpty) {
         _parseAndLoadSlots(slotsData);
-      } else {
-        _freeTimesByDay.clear(); // Limpia si no hay datos
       }
-    } catch (e) {
-      print('❌ Error al cargar slots: $e');
-      _errorMessage = "Error de conexión. Verifica tu internetv.";
-    } finally {
-      _isLoadingSlots = false;
-      notifyListeners();
+      _loadedMonths.add(monthKey);
     }
+  } catch (e) {
+    print('❌ Error al cargar slots: $e');
+    _errorMessage = "Error de conexión. Verifica tu internet.";
+  } finally {
+    _isLoadingSlots = false;
+    notifyListeners();
   }
-
-  // 3. GUARDADO MÚLTIPLE (POST) - VERSIÓN ULTRA RÁPIDA (PARALELA)
+}
   Future<bool> saveSlotsForDays({
     required String token,
     required String userId,
@@ -65,6 +173,7 @@ class TutorAgendaProvider extends ChangeNotifier {
     notifyListeners();
 
     bool allSuccess = true;
+    bool atLeastOneSaved = false;
 
     try {
       List<Future<void>> tareasParalelas = [];
@@ -75,7 +184,6 @@ class TutorAgendaProvider extends ChangeNotifier {
             "${cleanDay.year}-${cleanDay.month.toString().padLeft(2, '0')}-${cleanDay.day.toString().padLeft(2, '0')}";
 
         for (var slot in newSlots) {
-          // 1. Calculamos la duración en minutos (requerido por tu API)
           final startParts = slot['start']!.split(':');
           final endParts = slot['end']!.split(':');
           final startMinutes =
@@ -84,7 +192,6 @@ class TutorAgendaProvider extends ChangeNotifier {
               (int.parse(endParts[0]) * 60) + int.parse(endParts[1]);
           final duracion = (endMinutes - startMinutes).toString();
 
-          // 2. Preparamos el mapa de datos exacto que tu API pide
           final slotData = {
             'user_id': userId,
             'start_time': slot['start'],
@@ -93,23 +200,12 @@ class TutorAgendaProvider extends ChangeNotifier {
             'duracion': duracion,
           };
 
-          // 3. Enviamos a tu API real
           tareasParalelas
               .add(createUserSubjectSlot(token, slotData).then((response) {
-            if (response['success'] == true) {
-              // Obtenemos el ID real generado por tu base de datos
-              final nuevoId = response['data']?['id']?.toString() ??
-                  DateTime.now().millisecondsSinceEpoch.toString();
-
-              // Guardamos en memoria local
-              _freeTimesByDay.putIfAbsent(cleanDay, () => []).add({
-                'id': nuevoId,
-                'start': slot['start'],
-                'end': slot['end'],
-              });
+            if (response['success'] == true || response['success'] == 'true' || response['status'] == 'success' || response.containsKey('id')) {
+              atLeastOneSaved = true;
             } else {
-              print(
-                  "❌ El servidor rechazó el bloque de $dateString: ${response['message']}");
+              print("❌ El servidor rechazó el bloque de $dateString: ${response['message']}");
               allSuccess = false;
             }
           }).catchError((error) {
@@ -119,8 +215,12 @@ class TutorAgendaProvider extends ChangeNotifier {
         }
       }
 
-      // Ejecutamos todo al mismo tiempo para que sea instantáneo
       await Future.wait(tareasParalelas);
+
+      if (atLeastOneSaved) {
+        await loadAvailableSlots(token, userId, forceRefresh: true);
+      }
+
     } catch (e) {
       print('❌ Error crítico en el guardado masivo: $e');
       allSuccess = false;
@@ -131,8 +231,6 @@ class TutorAgendaProvider extends ChangeNotifier {
 
     return allSuccess;
   }
-
-  // 4. ELIMINAR DATO (DELETE) - CONECTADO A TU API
   Future<bool> deleteSlot(
       String token, String slotId, String userId, DateTime day) async {
     final cleanDay = _normalizeDate(day);

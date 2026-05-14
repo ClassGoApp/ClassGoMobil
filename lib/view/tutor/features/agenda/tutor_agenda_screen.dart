@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_projects/base_components/custom_snack_bar.dart';
 import 'package:flutter_projects/view/tutor/features/widgets/tutor_header.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -10,6 +11,7 @@ import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/view/tutor/features/agenda/providers/tutor_agenda_provider.dart';
 import 'package:flutter_projects/view/tutor/dashboard/sheets/add_schedule_sheet.dart';
 
+enum AgendaMode { bookings, availability }
 class TutorAgendaScreen extends StatefulWidget {
   const TutorAgendaScreen({Key? key}) : super(key: key);
 
@@ -21,6 +23,7 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
   CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime _focusedDay = DateTime.now();
   DateTime _viewedDay = DateTime.now();
+  AgendaMode _currentMode = AgendaMode.bookings;
 
   bool _isMultiSelectMode = false;
   Set<DateTime> _selectedDays = {};
@@ -36,12 +39,16 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
   }
 
   // FUTURE PARA EL REFRESH INDICATOR
-  Future<void> _fetchAgendaData() async {
+  Future<void> _fetchAgendaData({bool forceRefresh = false}) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     if (authProvider.token != null && authProvider.userId != null) {
       await Provider.of<TutorAgendaProvider>(context, listen: false)
           .loadAvailableSlots(
-              authProvider.token!, authProvider.userId!.toString());
+            authProvider.token!, 
+            authProvider.userId!.toString(), 
+            year: _focusedDay.year,
+            month: _focusedDay.month,
+            forceRefresh: forceRefresh);
     }
   }
 
@@ -79,6 +86,7 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final bgColor = isDark ? AppColors.deepDarkBg : AppColors.softWhiteBg;
 
     final authProvider = Provider.of<AuthProvider>(context);
     final agendaProvider = Provider.of<TutorAgendaProvider>(context);
@@ -101,7 +109,7 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
           children: [
             TutorHeader(
               title: "Agenda",
-              subtitle: "GESTIÓN DE TIEMPO",
+              subtitle: "GESTIONA TU TIEMPO",
               //onBackTap: () => Navigator.maybePop(context),
               actionIcon: Icons.calendar_today_rounded,
               onActionTap: () {
@@ -109,15 +117,16 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
                 _clearSelection();
               },
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Expanded(
               //  EL REFRESH INDICATOR PARA RECARGAR DESLIZANDO HACIA ABAJO
               child: RefreshIndicator(
                 color: AppColors.brandCyan,
                 backgroundColor:
-                    isDark ? const Color(0xFF151A24) : Colors.white,
-                onRefresh: _fetchAgendaData,
-                child: SingleChildScrollView(
+                    isDark ? AppColors.cardDarkNeo: Colors.white,
+                onRefresh: () => _fetchAgendaData(forceRefresh: true),
+                child:
+                SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(
                       parent: BouncingScrollPhysics()),
                   padding: const EdgeInsets.only(bottom: 120, top: 10),
@@ -193,6 +202,7 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
               setState(() {
                 _focusedDay = previusMonth;
               });
+              _fetchAgendaData();
             }
           },
         ),
@@ -233,6 +243,7 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
                 setState(() {
                   _focusedDay = nextMonth;
                 });
+                _fetchAgendaData();
               }
             }),
         const SizedBox(width: 12),
@@ -545,6 +556,7 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
       onPageChanged: (f) { setState(() {
         _focusedDay = f;
       }); 
+      _fetchAgendaData();
       }
     );
   }
@@ -564,7 +576,6 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
         onPressed:
             (isActivelySelecting && days.isNotEmpty && !provider.isMutating)
                 ? () {
-                    final scaffoldMsg = ScaffoldMessenger.of(context);
                     showDialog(
                       context: context,
                       barrierColor: Colors.black.withOpacity(0.6),
@@ -580,9 +591,11 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
                               ]);
                           if (success && mounted) {
                             _clearSelection();
-                            scaffoldMsg.showSnackBar(const SnackBar(
-                                content: Text("Horarios asignados"),
-                                backgroundColor: AppColors.primaryGreen));
+                            CustomToast.show(
+                              context,
+                              "Horario guardado correctamente",
+                              isSuccess: true
+                            );
                           }
                         },
                       ),
@@ -730,7 +743,6 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
                           onPressed: () async {
                             Navigator.of(dialogContext).pop();
 
-                            final scaffoldMsg = ScaffoldMessenger.of(context);
                             final ok = await p.deleteSlot(
                                 auth.token ?? '',
                                 slot['id'].toString(),
@@ -738,16 +750,19 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
                                 _viewedDay);
 
                             if (ok && mounted) {
-                              scaffoldMsg.showSnackBar(const SnackBar(
-                                  content:
-                                      Text("Horario eliminado exitosamente"),
-                                  backgroundColor: AppColors.primaryGreen));
+                              CustomToast.show(
+                                context,
+                                "Horario eliminado exitosamente",
+                                isSuccess: true,
+                              );
                             } else {
-                              scaffoldMsg.showSnackBar(const SnackBar(
-                                  content: Text("Error al eliminar el horario"),
-                                  backgroundColor: Colors.redAccent));
-                            }
-                          },
+                              CustomToast.show(
+                                context,
+                                "Error al eliminar el horario",
+                                isSuccess: false,
+                              );
+                              }
+                            },
                           style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.redAccent,
                               shape: RoundedRectangleBorder(

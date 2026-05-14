@@ -719,8 +719,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       );
 
       if (response.statusCode == 200) {
-        final responseData = json.decode(response.body);
-
         // Actualizar el perfil localmente
         await authProvider.updateUserProfiles(body);
 
@@ -762,19 +760,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       ),
     );
 
-    try {
-      Overlay.of(context).insert(overlayEntry);
-      Future.delayed(const Duration(seconds: 3), () {
-        if (mounted && overlayEntry.mounted) {
-          overlayEntry.remove();
-        }
-      });
-    } catch (e) {
-      // Si hay un error al insertar el overlay, limpiarlo
+    Overlay.of(context).insert(overlayEntry);
+    Future.delayed(const Duration(seconds: 3), () {
       if (overlayEntry.mounted) {
         overlayEntry.remove();
       }
-    }
+    });
   }
 
   // Método para cerrar la vista de editar perfil
@@ -856,6 +847,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final profile = user?['profile'] ?? {};
     final String firstName = profile['first_name'] ?? '';
     final String lastName = profile['last_name'] ?? '';
+    final bool isVerified = authProvider.isTutorVerified;
     final String userName = '$firstName $lastName'.trim().isEmpty
         ? (user?['name'] ?? 'Tutor')
         : '$firstName $lastName'.trim();
@@ -871,6 +863,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       profileImageUrl: _profileImageUrl,
       profileVideoUrl: _profileVideoUrl,
       userName: userName,
+      isVerified: isVerified,
       profileImageWidget: _buildProfileImage(),
       videoPlayerWidget: _buildVideoPlayer(),
       videoPlaceholderWidget: _buildVideoPlaceholder(),
@@ -1048,50 +1041,94 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   void _showImageOptions() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final bgColor = isDark ? AppColors.blackColor : AppColors.whiteColor;
+    final textColor = isDark ? AppColors.whiteColor : AppColors.brandBlue;
+
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.darkBlue,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(30), topRight: Radius.circular(30)),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.lightGreyColor.withOpacity(0.5),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            SizedBox(height: 20),
-            if (_profileImageUrl != null && _profileImageUrl!.isNotEmpty)
-              ListTile(
-                leading: Icon(Icons.visibility, color: AppColors.navbar),
-                title: Text(
-                  'Ver imagen',
-                  style: TextStyle(color: AppColors.whiteColor),
+                width: 40,
+                height: 5,
+                decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(10))),
+            const SizedBox(height: 24),
+            Text("FOTO DE PERFIL",
+                style: TextStyle(
+                    fontFamily: 'outfit',
+                    color: textColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.5)),
+            const SizedBox(height: 8),
+            const Text("¿Qué deseas hacer con tu imagen?",
+                style: TextStyle(
+                    fontFamily: 'manrope', color: Colors.grey, fontSize: 13)),
+            const SizedBox(height: 24),
+            if (_profileImageUrl != null && _profileImageUrl!.isNotEmpty) ...[
+              SizedBox(
+                width: double.infinity,
+                height: 55,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _showImagePreview();
+                  },
+                  icon: const Icon(Icons.visibility_outlined, size: 20),
+                  label: const Text("Ver imagen actual",
+                      style: TextStyle(
+                          fontFamily: 'outfit',
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.brandCyan,
+                    side: const BorderSide(color: AppColors.brandCyan),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20)),
+                  ),
                 ),
-                onTap: () {
+              ),
+              const SizedBox(height: 12),
+            ],
+            SizedBox(
+              width: double.infinity,
+              height: 55,
+              child: ElevatedButton.icon(
+                onPressed: () {
                   Navigator.pop(context);
-                  _showImagePreview();
+                  _pickImage();
                 },
+                icon: const Icon(Icons.camera_alt_outlined,
+                    color: Colors.white, size: 20),
+                label: const Text("Cambiar imagen",
+                    style: TextStyle(
+                        fontFamily: 'outfit',
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.brandCyan,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20)),
+                  elevation: 0,
+                ),
               ),
-            ListTile(
-              leading: Icon(Icons.camera_alt, color: AppColors.navbar),
-              title: Text(
-                'Cambiar imagen',
-                style: TextStyle(color: AppColors.whiteColor),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                _pickImage();
-              },
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 10),
           ],
         ),
       ),

@@ -11,6 +11,30 @@ class CustomToast extends StatelessWidget {
     required this.isSuccess,
   }) : super(key: key);
 
+  static void show(BuildContext context, String message, {bool isSuccess = true}) {
+    final overlayState = Overlay.maybeOf(context);
+    if (overlayState == null) return;
+
+    final overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: 100.0,
+        left: 16.0,
+        right: 16.0,
+        child: CustomToast(
+          message: message,
+          isSuccess: isSuccess,
+        ),
+      ),
+    );
+
+    overlayState.insert(overlayEntry);
+
+    Future.delayed(const Duration(seconds: 3), () {
+      if (overlayEntry.mounted) {
+        overlayEntry.remove();
+      }
+    });
+  }
   @override
   Widget build(BuildContext context) {
     return SafeArea(

@@ -754,6 +754,27 @@ Future<Map<String, dynamic>> getCountryStates(
   }
 }
 
+Future<Map<String, dynamic>> updateProfilePrice(
+  String token, int userId, String price) async {
+  final uri = Uri.parse(
+    '$baseUrl/user/$userId/profile-price',
+  );
+
+  final response = await http.post(
+    uri,
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode({
+      'price': price,
+    }),
+  );
+
+  return jsonDecode(response.body);
+}
+
 Future<Map<String, dynamic>> deleteEducation(String token, int id) async {
   final url = Uri.parse('$baseUrl/tutor-education/$id');
 

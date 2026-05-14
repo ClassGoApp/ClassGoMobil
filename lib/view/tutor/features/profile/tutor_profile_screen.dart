@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_projects/view/tutor/features/profile/widgets/logout_section.dart';
-import 'package:flutter_projects/view/tutor/features/profile/widgets/payment_method_detail.dart';
+import 'package:flutter_projects/view/tutor/features/profile/widgets/price_section.dart';
 import 'package:flutter_projects/view/tutor/features/profile/widgets/qr_payment_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -68,6 +68,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     final user = authProvider.userData?['user'];
     final profile = user?['profile'] ?? {};
 
+    final bool isVerified = profile['verified'] == true;
     final String firstName = profile['first_name'] ?? '';
     final String lastName = profile['last_name'] ?? '';
     final String userName = '$firstName $lastName'.trim().isEmpty
@@ -115,14 +116,14 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
               ),
               Expanded(
                 child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
+                  physics: const ClampingScrollPhysics(),
                   padding: const EdgeInsets.only(bottom: 120),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Column(
                       children: [
                         const SizedBox(height: 20),
-                        _buildTopCard(photoUrl, shortName, isDark),
+                        _buildTopCard(photoUrl, shortName, isDark, isVerified),
                         Container(
                           margin: const EdgeInsets.only(top: 20),
                           width: double.infinity,
@@ -153,7 +154,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     );
   }
 
-  Widget _buildTopCard(String? photoUrl, String userName, bool isDark) {
+  Widget _buildTopCard(String? photoUrl, String userName, bool isDark, bool isVerified) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -276,7 +277,9 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white.withOpacity(0.25)),
+                      border: Border.all(color: isVerified 
+                        ? Colors.white.withOpacity(0.25)
+                        : Colors.grey.withOpacity(0.5)),
                       boxShadow: [
                         BoxShadow(
                             color: Colors.black.withOpacity(0.05),
@@ -286,14 +289,15 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.verified_rounded,
-                            color: AppColors.brandCyan, size: 16),
+                        Icon(isVerified ? Icons.verified_rounded : Icons.hourglass_empty_rounded,
+                            color: isVerified ? AppColors.brandCyan : Colors.grey[400], 
+                              size: 16),
                         const SizedBox(width: 6),
-                        const Text(
-                          "TUTOR VERIFICADO",
+                        Text(
+                          isVerified ? "TUTOR VERIFICADO" : "TUTOR SIN VERIFICAR",
                           style: TextStyle(
                               fontFamily: _kBodyFont,
-                              color: Colors.white,
+                              color: isVerified ? Colors.white : Colors.grey[400], 
                               fontSize: 10,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 1.0),
@@ -401,39 +405,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
           ),
         ),
         const SizedBox(height: 24),
-        Container(
-          decoration: BoxDecoration(
-              color: innerBgColor, borderRadius: BorderRadius.circular(20)),
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            leading: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.brandCyan.withOpacity(0.15),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.payments_rounded, color: AppColors.brandCyan, size: 20),
-            ),
-            title: const Text("TARIFA POR TUTORÍA", 
-                style: TextStyle(
-                    fontFamily: _kTitleFont,
-                    color: Colors.grey, // Color sutil
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5)),
-            subtitle: Padding(
-              padding: const EdgeInsets.only(top: 4.0),
-              child: Text("50 Bs / 20min.", 
-                  style: TextStyle(
-                      fontFamily: _kTitleFont,
-                      color: mainTextColor, 
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900)),
-            ),
-            trailing: Icon(Icons.edit_rounded, color: Colors.grey[400], size: 18),
-            onTap: () => _showPriceModal(context), 
-          ),
-        ),
+        const TutorPriceSection(),
         const SizedBox(height: 24),
         _buildListTile("MÉTODO DE COBRO (QR)", Icons.qr_code_scanner_rounded,
             mainTextColor, innerBgColor, onTap: () {
@@ -582,6 +554,21 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                     fontSize: 12,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 0.5)),
+
+            const Spacer(),
+
+            Padding(
+              padding: const EdgeInsets.only(right: 10),
+              child: Text(
+                "${items.length}",
+                style: TextStyle(
+                  fontFamily: _kTitleFont,
+                  color: mainTextColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            )
           ],
         ),
         const SizedBox(height: 12),
@@ -592,7 +579,12 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
               color: innerBgColor, borderRadius: BorderRadius.circular(20)),
           child: items.isEmpty
               ? const Text(
-                  "Aún no tienes materias agregadas.",
+                  " Aún no tienes materias agregadas.",
+                  style: TextStyle(
+                    fontFamily: _kBodyFont,
+                    color: Colors.grey,
+                    fontSize: 13,
+                  ),
                 )
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -702,105 +694,6 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
         trailing: Icon(Icons.chevron_right_rounded, color: Colors.grey[400]),
         onTap: onTap,
       ),
-    );
-  }
-  void _showPriceModal(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final bgColor = isDark ? const Color(0xFF1E222A) : AppColors.whiteColor;
-    final inputBg = isDark ? AppColors.blackColor : const Color(0xFFF4F6F9);
-    final textColor = isDark ? AppColors.whiteColor : AppColors.brandBlue;
-
-    // Controlador para leer lo que el usuario escribe
-    TextEditingController priceController = TextEditingController(text: "50");
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true, // CLAVE: Permite que el teclado empuje el modal
-      backgroundColor: Colors.transparent, // Para que se vean los bordes curvos
-      builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom, // Padding dinámico del teclado
-          ),
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(30),
-                topRight: Radius.circular(30),
-              ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                
-                // Título
-                Text("Definir Tarifa",
-                  style: TextStyle(fontFamily: _kTitleFont, color: textColor, fontSize: 18, fontWeight: FontWeight.w900),
-                ),
-                const SizedBox(height: 8),
-                const Text("Ingresa el monto que cobrarás por 20 minutos de tutoría.",
-                  style: TextStyle(fontFamily: _kBodyFont, color: Colors.grey, fontSize: 13),
-                ),
-                const SizedBox(height: 20),
-
-                TextField(
-                  controller: priceController,
-                  keyboardType: TextInputType.number,
-                  style: TextStyle(fontFamily: _kBodyFont, color: textColor, fontSize: 18, fontWeight: FontWeight.bold),
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.attach_money_rounded, color: AppColors.brandCyan),
-                    suffixText: "Bs/20min",
-                    suffixStyle: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
-                    filled: true,
-                    fillColor: inputBg,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Botón de Guardar
-                SizedBox(
-                  width: double.infinity,
-                  height: 55,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.brandCyan,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      elevation: 0,
-                    ),
-                    onPressed: () {
-                      print("Nuevo precio: ${priceController.text}");
-                      Navigator.pop(context);
-                    },
-                    child: const Text("GUARDAR TARIFA",
-                      style: TextStyle(fontFamily: _kTitleFont, color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 1),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 }

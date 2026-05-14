@@ -249,6 +249,7 @@ class _AlliancesScreenState extends State<AlliancesScreen> {
               borderRadius: BorderRadius.circular(15),
               child: _SmartAllianceImage(
                 imageUrl: alianza['imagen'] ?? '',
+                title: alianza['titulo'] ?? '',
                 height: 100,
                 iconSize: 50,
               ),
@@ -350,6 +351,7 @@ class _AllianceCard extends StatelessWidget {
                 padding: const EdgeInsets.all(20.0),
                 child: _SmartAllianceImage(
                   imageUrl: logoUrl,
+                  title: name,
                   iconSize: 40,
                 ),
               ),
@@ -384,24 +386,85 @@ class _AllianceCard extends StatelessWidget {
 
 class _SmartAllianceImage extends StatelessWidget {
   final String imageUrl;
+  final String title;
   final double height;
   final double iconSize;
 
   const _SmartAllianceImage({
     required this.imageUrl,
+    required this.title,
     this.height = double.infinity,
     this.iconSize = 40,
   });
 
+  static const Map<String, String> _localAllianceAssets = {
+    'cognikids': 'assets/images/home/alliances/CogniKids.jpeg',
+    'colegiodecontadorespublicos': 'assets/images/home/alliances/ColegiodeContadoresPúblicosdeSantaCruz.jpeg',
+    'colegiodeprofesionalesencomunicacion': 'assets/images/home/alliances/ColegiodeProfesionalesenComunicación.png',
+    'colegiodeingenieroscomerciales': 'assets/images/home/alliances/ColegiodedeIngenierosComercialesSantaCruz.jpeg',
+    'constructorachassa': 'assets/images/home/alliances/ConstructoraChassa.jpeg',
+    'camarainmobiliariadesantacruz': 'assets/images/home/alliances/CámaraInmobiliariadeSantaCruz.webp',
+    'estilocolorcuracautin': 'assets/images/home/alliances/EstiloColorCuracautin.jpeg',
+    'lacocinadeluchita': 'assets/images/home/alliances/LaCocinadeLuchita.png',
+    'asociaciondeprofesionalesfinancieros': 'assets/images/home/alliances/asociaciondeprofesionalesfinancieros.jpeg',
+    'uagrm': 'assets/images/home/alliances/CarreradeContaduríaPúblicaUAGRM.jpeg',
+  };
+
+  String _normalize(String value) {
+    return value
+        .toLowerCase()
+        .replaceAll(RegExp(r'[áàäâ]'), 'a')
+        .replaceAll(RegExp(r'[éèëê]'), 'e')
+        .replaceAll(RegExp(r'[íìïî]'), 'i')
+        .replaceAll(RegExp(r'[óòöô]'), 'o')
+        .replaceAll(RegExp(r'[úùüû]'), 'u')
+        .replaceAll(RegExp(r'[ñ]'), 'n')
+        .replaceAll(RegExp(r'[^a-z0-9]'), '');
+  }
+
+  String? _findLocalAsset() {
+    final normalizedTitle = _normalize(title);
+    final normalizedUrl = _normalize(imageUrl);
+
+    for (final entry in _localAllianceAssets.entries) {
+      if (normalizedTitle.contains(entry.key) || normalizedUrl.contains(entry.key)) {
+        return entry.value;
+      }
+    }
+  print("TITLE REAL: $title");
+print("IMAGE URL: $imageUrl");
+print("NORMALIZED TITLE: ${_normalize(title)}");
+print("NORMALIZED URL: ${_normalize(imageUrl)}");
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
-    Widget fallback() => SizedBox(
+    Widget fallback() {
+      final localAsset = _findLocalAsset();
+      if (localAsset != null) {
+        return Image.asset(
+          localAsset,
           height: height == double.infinity ? null : height,
-          child: Center(
-            child: Icon(Icons.business_rounded,
-                color: AppColors.lightGreyColor, size: iconSize),
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) => SizedBox(
+            height: height == double.infinity ? null : height,
+            child: Center(
+              child: Icon(Icons.business_rounded,
+                  color: AppColors.lightGreyColor, size: iconSize),
+            ),
           ),
         );
+      }
+
+      return SizedBox(
+        height: height == double.infinity ? null : height,
+        child: Center(
+          child: Icon(Icons.business_rounded,
+              color: AppColors.lightGreyColor, size: iconSize),
+        ),
+      );
+    }
 
     if (imageUrl.isEmpty) return fallback();
 

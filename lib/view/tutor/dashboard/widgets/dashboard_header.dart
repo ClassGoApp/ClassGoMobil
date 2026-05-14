@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/tutor/dashboard/widgets/theme_toggle_button.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_projects/view/tutor/features/profile/widgets/logout_section.dart';
 
 class DashboardHeader extends StatelessWidget {
   // --- DATOS ---
@@ -37,7 +36,8 @@ class DashboardHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = Colors.white;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -56,12 +56,12 @@ class DashboardHeader extends StatelessWidget {
               isVerified: isVerified,
               showRating: showRating,
               showVerified: showVerified,
-              textColor: colorScheme.onSurface,
+              textColor: textColor,
             ),
           ),
           _HeaderActions(
             onLogoutTap: onLogoutTap,
-            iconColor: colorScheme.onSurface,
+            iconColor: textColor,
           ),
         ],
       ),
@@ -83,9 +83,6 @@ class _HeaderProfileImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ⬇️ AGREGA ESTA LÍNEA AQUÍ PARA VER QUÉ ESTÁ LLEGANDO ⬇️
-    print("====== URL DE LA FOTO DEL TUTOR: $imageUrl ======");
-
     const double size = 56.0;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -117,7 +114,6 @@ class _HeaderProfileImage extends StatelessWidget {
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(16),
-            // TU LÓGICA ORIGINAL INTACTA
             child: isLoading
                 ? Center(
                     child: SizedBox(
@@ -144,7 +140,7 @@ class _HeaderProfileImage extends StatelessWidget {
         ),
 
         // PUNTO DE ESTADO (ONLINE / OFFLINE)
-        Positioned(
+        /**Positioned(
           bottom: -2,
           right: -2,
           child: Container(
@@ -159,7 +155,7 @@ class _HeaderProfileImage extends StatelessWidget {
               ),
             ),
           ),
-        ),
+        ),**/
       ],
     );
   }
@@ -193,15 +189,16 @@ class _HeaderUserInfo extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final ratingCardBg = isDark ? const Color(0xFF1B3B48) : AppColors.cardDark;
+    final ratingCardBg =
+        isDark ? const Color(0xFF1B3B48) : Colors.white.withOpacity(0.08);
 
-    final verifiedBg = const Color(0xFF1B3B48);
+    final verifiedBg =
+        isDark ? const Color(0xFF1B3B48) : Colors.white.withOpacity(0.08);
     final verifiedText = Colors.white;
     final verifiedIcon = AppColors.brandCyan;
 
-    final unverifiedBg = Color.fromRGBO(255, 255, 255, 0.1);
-
-    final unverifiedText = Colors.grey;
+    final unverifiedBg = Colors.white.withOpacity(0.08);
+    final unverifiedText = isDark ? Colors.grey : Colors.grey[300]!;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,24 +228,24 @@ class _HeaderUserInfo extends StatelessWidget {
           children: [
             if (showRating)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3.2),
                 decoration: BoxDecoration(
                   color: ratingCardBg,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Icon(Icons.star_rounded,
-                        color: Color(0xFFFFC107), size: 18),
+                        color: Color(0xFFFFC107), size: 14),
                     const SizedBox(width: 4),
                     Text(
                       rating.toStringAsFixed(1),
                       style: TextStyle(
                         color: textColor,
                         fontFamily: 'manrope',
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 12,
                       ),
                     ),
                   ],
@@ -258,30 +255,34 @@ class _HeaderUserInfo extends StatelessWidget {
               Container(
                 decoration: BoxDecoration(
                     color: isVerified ? verifiedBg : unverifiedBg,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     border: isVerified
                         ? null
                         : Border.all(color: Colors.grey.withOpacity(0.3))),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      isVerified
-                          ? Icons.verified_user_outlined
-                          : Icons.hourglass_empty_rounded,
-                      color: isVerified ? verifiedIcon : unverifiedText,
-                      size: 14,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(isVerified ? "VERIFICADO" : "PENDIENTE",
-                        style: TextStyle(
-                          color: isVerified ? verifiedText : unverifiedText,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          fontFamily: 'manrope',
-                          letterSpacing: 0.5,
-                        ))
-                  ],
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isVerified
+                            ? Icons.verified_rounded
+                            : Icons.hourglass_empty_rounded,
+                        color: isVerified ? verifiedIcon : unverifiedText,
+                        size: 14,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(isVerified ? "VERIFICADO" : "SIN VERIFICAR",
+                          style: TextStyle(
+                            color: isVerified ? verifiedText : unverifiedText,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            fontFamily: 'manrope',
+                            letterSpacing: 0.5,
+                          ))
+                    ],
+                  ),
                 ),
               )
           ],
@@ -313,16 +314,7 @@ class _HeaderActions extends StatelessWidget {
           icon: Icons.logout_rounded,
           isDestructive: true,
           onTap: () async {
-            // 1. Obtenemos la instancia de tu AuthProvider
-            // Asegúrate de que el nombre de la clase sea el correcto
-            final authProvider =
-                Provider.of<AuthProvider>(context, listen: false);
-
-            // 2. Pasamos el token vacío
-            await authProvider.setAuthToken('');
-
-            // 3. Ejecutamos cualquier otra acción que hayas pasado por parámetro
-            onLogoutTap();
+            LogoutSection.showLogoutDialog(context);
           },
         ),
       ],
@@ -351,14 +343,12 @@ class _HeaderActions extends StatelessWidget {
           decoration: BoxDecoration(
             color: isDestructive
                 ? const Color(0xFFFF453A).withOpacity(0.1)
-                : (isDark
-                    ? Colors.white.withOpacity(0.05)
-                    : Colors.black.withOpacity(0.05)),
+                : Colors.white.withOpacity(0.08),
             shape: BoxShape.circle,
             border: Border.all(
               color: isDestructive
                   ? const Color(0xFFFF453A).withOpacity(0.3)
-                  : (isDark ? Colors.white10 : Colors.black12),
+                  : Colors.white10,
             ),
           ),
           child: Icon(

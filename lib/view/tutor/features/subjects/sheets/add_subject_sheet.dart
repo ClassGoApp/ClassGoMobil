@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_projects/base_components/custom_snack_bar.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
 
@@ -142,7 +143,6 @@ class _AddSubjectSheetState extends State<AddSubjectSheet> {
     if (_selectedSubjectIds.isEmpty || _isSaving) return;
     setState(() => _isSaving = true);
 
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final subjectsProvider = Provider.of<TutorSubjectsProvider>(context, listen: false);
@@ -159,13 +159,20 @@ class _AddSubjectSheetState extends State<AddSubjectSheet> {
       
       if (mounted) {
         navigator.pop();
-        scaffoldMessenger.showSnackBar(
-          SnackBar(
-            content: Text('$successCount materias añadidas exitosamente'),
-            backgroundColor: AppColors.primaryGreen,
-            behavior: SnackBarBehavior.floating,
-          )
-        );
+        if (successCount > 0) {
+          CustomToast.show(
+            context, 
+            "$successCount materia${successCount > 1 ? 's' : ''} añadida${successCount > 1 ? 's' : ''} correctamente.",
+            isSuccess: true,
+          );
+        } else {
+          CustomToast.show(
+            context, 
+            "No se pudieron añadir las materias. Intenta de nuevo.",
+            isSuccess: false,
+          );
+          
+        }
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);

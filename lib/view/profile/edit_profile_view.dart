@@ -15,6 +15,7 @@ class EditProfileView extends StatelessWidget {
   final String? profileImageUrl;
   final String? profileVideoUrl;
   final String userName;
+  final bool isVerified;
 
   final Widget profileImageWidget;
   final Widget videoPlayerWidget;
@@ -39,6 +40,7 @@ class EditProfileView extends StatelessWidget {
     required this.profileImageUrl,
     required this.profileVideoUrl,
     required this.userName,
+    required this.isVerified,
     required this.profileImageWidget,
     required this.videoPlayerWidget,
     required this.videoPlaceholderWidget,
@@ -156,11 +158,26 @@ class EditProfileView extends StatelessWidget {
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          const Icon(Icons.verified_rounded, color: AppColors.brandCyan, size: 12),
+                                          Icon(
+                                            isVerified
+                                                ? Icons.verified_rounded
+                                                : Icons.hourglass_empty_rounded,
+                                            color: isVerified
+                                                ? AppColors.brandCyan
+                                                : Colors.grey[400],
+                                            size: 12,
+                                          ),
                                           const SizedBox(width: 4),
-                                          const Text(
-                                            "TUTOR VERIFICADO",
-                                            style: TextStyle(fontFamily: 'manrope', color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                                          Text(
+                                            isVerified
+                                                ? "TUTOR VERIFICADO"
+                                                : "PENDIENTE DE VERIFICACIÓN",
+                                            style: TextStyle(
+                                              fontFamily: 'manrope',
+                                              color: isVerified ? Colors.white: Colors.grey[400],
+                                              fontSize: 8,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -236,7 +253,6 @@ class EditProfileView extends StatelessWidget {
                                   fillColor: cardBgColor,
                                   textColor: mainTextColor,
                                 ),
-
                                 const SizedBox(height: 30),
 
                                 Text("VIDEO DE PRESENTACIÓN", style: TextStyle(fontFamily: 'outfit', color: mainTextColor, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 0.5)),

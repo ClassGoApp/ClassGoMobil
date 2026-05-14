@@ -82,6 +82,14 @@ class AuthProvider with ChangeNotifier {
     return result;
   }
 
+  bool get isTutorVerified {
+    final profile = _userData?['user']?['profile'];
+
+    if (profile == null) return false;
+
+    return profile['verified'] == true;
+  }
+
   int? get userId {
     if (_userData != null &&
         _userData!.containsKey('user') &&

@@ -12,6 +12,7 @@ class DashboardTopSection extends StatelessWidget {
   final double rating;
 
   // Estados
+  final bool isVerified;
   final bool isLoadingImage;
   final bool isAvailable;
 
@@ -25,6 +26,7 @@ class DashboardTopSection extends StatelessWidget {
     this.profileImageUrl,
     required this.rating,
     this.isLoadingImage = false,
+    required this.isVerified,
     required this.isAvailable,
     required this.onLogoutTap,
     required this.onAvailabilityToggle,
@@ -71,19 +73,14 @@ class DashboardTopSection extends StatelessWidget {
                       ]
                     : null,
               ),
-              child: Theme(
-                data: ThemeData.dark().copyWith(
-                  scaffoldBackgroundColor: backgroundColor,
-                ),
-                child: DashboardHeader(
-                  tutorName: tutorName,
-                  profileImageUrl: profileImageUrl,
-                  rating: rating,
-                  isVerified: true,
-                  isLoadingImage: isLoadingImage,
-                  isAvailable: isAvailable,
-                  onLogoutTap: onLogoutTap,
-                ),
+              child: DashboardHeader(
+                tutorName: tutorName,
+                profileImageUrl: profileImageUrl,
+                rating: rating,
+                isVerified: isVerified,
+                isLoadingImage: isLoadingImage,
+                isAvailable: isAvailable,
+                onLogoutTap: onLogoutTap,
               ),
             ),
 
