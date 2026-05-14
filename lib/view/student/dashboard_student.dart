@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/student/instant_tutoring/instant_tutoring_screen.dart';
 import 'package:flutter_projects/view/student/serch_Tutor/search_tutors_screen.dart';
@@ -47,27 +48,34 @@ class _DashboardStudentState extends State<DashboardStudent> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: PageView( 
-        controller: _pageController,
-        physics: const NeverScrollableScrollPhysics(),
-        children: [
-          _buildHomeTab(),                         // Index 0
-          _buildBookingsTab(),                     // Index 1
-          const InstantTutoringScreen(),           // Index 2 
-          const FavoriteTutorsScreen(showBottomNav: false), // Index 3
-          const ProfileScreen(showAppBar: false),  // Index 4
-        ],
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light
       ),
-      bottomNavigationBar: StudentBottomNav(
-        currentIndex: _selectedIndex,
-        onTap: (index) {
-          changeTab(index);
-        },
-        onCenterTap: () {
-          changeTab(2);
-        },
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: PageView( 
+          controller: _pageController,
+          physics: const NeverScrollableScrollPhysics(),
+          children: [
+            _buildHomeTab(),                         // Index 0
+            _buildBookingsTab(),                     // Index 1
+            const InstantTutoringScreen(),           // Index 2 
+            const FavoriteTutorsScreen(showBottomNav: false), // Index 3
+            const ProfileScreen(showAppBar: false),  // Index 4
+          ],
+        ),
+        bottomNavigationBar: StudentBottomNav(
+          currentIndex: _selectedIndex,
+          onTap: (index) {
+            changeTab(index);
+          },
+          onCenterTap: () {
+            changeTab(2);
+          },
+        ),
       ),
     );
   }
@@ -105,6 +113,7 @@ class _DashboardStudentState extends State<DashboardStudent> {
                 (userData != null && userData['user'] != null
                     ? userData['user']['profile']['image']
                     : null),
+            textColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.blackColor,
             rating: 0.0,
             isVerified: false,
             isLoadingImage: false,

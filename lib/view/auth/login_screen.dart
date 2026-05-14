@@ -56,20 +56,21 @@ class _LoginScreenState extends State<LoginScreen>
 
     setState(() {
       if (email.isEmpty) {
-        _errorMessage = 'Email should not be empty';
+        _errorMessage = 'El correo no puede estar vacío';
         _isEmailValid = false;
       } else if (isValidEmail(email)) {
         _errorMessage = '';
         _isEmailValid = true;
       } else {
-        _errorMessage = 'Invalid email address';
+        _errorMessage = 'Ingresa un correo válido';
         _isEmailValid = false;
       }
       if (password.isEmpty) {
-        _passwordErrorMessage = 'Password should not be empty';
+        _passwordErrorMessage = 'La contraseña no puede estar vacía';
         _isPasswordValid = false;
       } else if (password.length < 6) {
-        _passwordErrorMessage = 'Password must be greater than 6 characters';
+        _passwordErrorMessage =
+            'La contraseña debe tener al menos 6 caracteres';
         _isPasswordValid = false;
       } else {
         _passwordErrorMessage = '';
@@ -119,25 +120,30 @@ class _LoginScreenState extends State<LoginScreen>
         _passwordController.clear();
         showCustomToast(
           context,
-          response['message'],
+          'Inicio de sesión exitoso',
           true,
         );
       } catch (error) {
         print('Login API call failed: $error');
-        showCustomToast(context, "${error.toString()}", false);
-
-        setState(() {
-          _isLoading = false;
-        });
         final errorMessage = error.toString();
         if (errorMessage.contains("Not verified")) {
           _openBottomSheet(context);
+          showCustomToast(
+            context,
+            'Tu correo no está verificado. Revisa tu bandeja y confirma tu cuenta.',
+            false,
+          );
         } else if (errorMessage.contains("CSRF token mismatch.")) {
+          showCustomToast(
+            context,
+            'El servidor no está disponible. Intenta nuevamente más tarde.',
+            false,
+          );
           showDialog(
             context: context,
             builder: (BuildContext context) => AlertDialog(
               title: Text(
-                'Server Down',
+                'Servidor temporalmente fuera de servicio',
                 textScaler: TextScaler.noScaling,
                 style: TextStyle(
                   fontSize: FontSize.scale(context, 18),
@@ -148,7 +154,7 @@ class _LoginScreenState extends State<LoginScreen>
                 ),
               ),
               content: Text(
-                'The server is currently down. Please wait and try again later.',
+                'El servidor no está disponible en este momento. Por favor intenta de nuevo más tarde.',
                 textScaler: TextScaler.noScaling,
                 style: TextStyle(
                   fontSize: FontSize.scale(context, 14),
@@ -178,7 +184,16 @@ class _LoginScreenState extends State<LoginScreen>
               ],
             ),
           );
+        } else {
+          showCustomToast(
+            context,
+            'No se pudo iniciar sesión. Revisa tus datos e inténtalo de nuevo.',
+            false,
+          );
         }
+        setState(() {
+          _isLoading = false;
+        });
       }
     } else {
       if (!_isEmailValid) {
@@ -203,7 +218,7 @@ class _LoginScreenState extends State<LoginScreen>
     );
 
     Overlay.of(context).insert(overlayEntry);
-    Future.delayed(const Duration(seconds: 1), () {
+    Future.delayed(const Duration(seconds: 2), () {
       overlayEntry.remove();
     });
   }
@@ -218,20 +233,20 @@ class _LoginScreenState extends State<LoginScreen>
         Navigator.pop(context);
         showCustomToast(
           context,
-          "Please add your email and verify",
+          'Hemos reenviado el correo. Revisa tu bandeja de entrada para verificar tu cuenta.',
           true,
         );
       } catch (error) {
         showCustomToast(
           context,
-          'Error: Failed to resend email.',
+          'No se pudo reenviar el correo. Intenta de nuevo más tarde.',
           false,
         );
       }
     } else {
       showCustomToast(
         context,
-        'Error: Token is missing.',
+        'No se encontró sesión activa. Por favor vuelve a iniciar sesión.',
         false,
       );
     }
@@ -673,7 +688,7 @@ class _LoginScreenState extends State<LoginScreen>
                                         backgroundColor: AppColors.primaryGreen,
                                       ),
                                       child: Text(
-                                        '¿No tienes una cuenta?, Registrate',
+                                        '¿No tienes una cuenta?S Regístrate',
                                         style: TextStyle(
                                           color: AppColors.whiteColor,
                                           fontSize: FontSize.scale(context, 16),

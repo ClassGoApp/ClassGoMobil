@@ -144,14 +144,14 @@ class TutorHeader extends StatelessWidget {
                   const SizedBox(width: 12),
                 ],
                 
-                Container(
+                /**Container(
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.1),
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white.withOpacity(0.15), width: 1.5),
                   ),
                   child: const ThemeToggleButton(),
-                ),
+                ),**/
               ],
             ),
           ],

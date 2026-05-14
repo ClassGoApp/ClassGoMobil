@@ -16,6 +16,7 @@ class EditProfileView extends StatelessWidget {
   final String? profileVideoUrl;
   final String userName;
   final bool isVerified;
+  final bool isStudent;
 
   final Widget profileImageWidget;
   final Widget videoPlayerWidget;
@@ -41,6 +42,7 @@ class EditProfileView extends StatelessWidget {
     required this.profileVideoUrl,
     required this.userName,
     required this.isVerified,
+    required this.isStudent,
     required this.profileImageWidget,
     required this.videoPlayerWidget,
     required this.videoPlaceholderWidget,
@@ -159,22 +161,27 @@ class EditProfileView extends StatelessWidget {
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Icon(
+                                            isStudent 
+                                                ? Icons.school_rounded
+                                                :
                                             isVerified
                                                 ? Icons.verified_rounded
                                                 : Icons.hourglass_empty_rounded,
-                                            color: isVerified
+                                            color: (isVerified || isStudent)
                                                 ? AppColors.brandCyan
                                                 : Colors.grey[400],
                                             size: 12,
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
-                                            isVerified
-                                                ? "TUTOR VERIFICADO"
-                                                : "PENDIENTE DE VERIFICACIÓN",
+                                            isStudent 
+                                                ? "ESTUDIANTE"
+                                                : isVerified
+                                                  ? "TUTOR VERIFICADO"
+                                                  : "PENDIENTE DE VERIFICACIÓN",
                                             style: TextStyle(
                                               fontFamily: 'manrope',
-                                              color: isVerified ? Colors.white: Colors.grey[400],
+                                              color: (isVerified || isStudent) ? Colors.white: Colors.grey[400],
                                               fontSize: 8,
                                               fontWeight: FontWeight.bold,
                                             ),

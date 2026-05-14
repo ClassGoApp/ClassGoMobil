@@ -29,7 +29,7 @@ class CustomToast extends StatelessWidget {
 
     overlayState.insert(overlayEntry);
 
-    Future.delayed(const Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 2), () {
       if (overlayEntry.mounted) {
         overlayEntry.remove();
       }

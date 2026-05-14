@@ -852,6 +852,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ? (user?['name'] ?? 'Tutor')
         : '$firstName $lastName'.trim();
 
+    final String role = user['role']?.toString() ?? '';
+    final bool isStudent = role == 'student';
+    
     return EditProfileView(
       formKey: _formKey,
       firstNameController: _firstNameController,
@@ -864,6 +867,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       profileVideoUrl: _profileVideoUrl,
       userName: userName,
       isVerified: isVerified,
+      isStudent: isStudent,
       profileImageWidget: _buildProfileImage(),
       videoPlayerWidget: _buildVideoPlayer(),
       videoPlaceholderWidget: _buildVideoPlaceholder(),
