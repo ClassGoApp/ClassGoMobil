@@ -699,15 +699,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         throw Exception('Usuario no autenticado');
       }
 
+      final String role = authProvider.userData?['user']?['role']?.toString() ?? '';
+      final bool isStudentProfile = role == 'student';
+
       // Preparar los datos en formato x-www-form-urlencoded
       final body = {
         'first_name': _firstNameController.text.trim(),
         'last_name': _lastNameController.text.trim(),
         'phone_number': _phoneController.text.trim(),
-        'description': _descriptionController.text.trim(),
         'full_name':
             '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}',
       };
+
+      if (!isStudentProfile) {
+        body['description'] = _descriptionController.text.trim();
+      }
 
       final response = await http.put(
         Uri.parse('https://classgoapp.com/api/user/$userId/profile'),

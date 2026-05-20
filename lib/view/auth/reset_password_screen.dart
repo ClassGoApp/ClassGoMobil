@@ -38,13 +38,13 @@ class _LoginScreenState extends State<ResetPassword>
 
     setState(() {
       if (email.isEmpty) {
-        _errorMessage = 'Email should not be empty';
+        _errorMessage = 'Ingresa tu correo';
         _isEmailValid = false;
       } else if (isValidEmail(email)) {
         _errorMessage = '';
         _isEmailValid = true;
       } else {
-        _errorMessage = 'Invalid email address';
+        _errorMessage = 'Ingresa un correo válido';
         _isEmailValid = false;
       }
     });
@@ -63,7 +63,7 @@ class _LoginScreenState extends State<ResetPassword>
           showCustomToast(context, response['message'], false);
         }
       } catch (e) {
-        showCustomToast(context, 'Failed to send email: $e', false);
+        showCustomToast(context, 'No se pudo enviar el correo', false);
       } finally {
         setState(() {
           _isLoading = false;
@@ -192,7 +192,7 @@ class _LoginScreenState extends State<ResetPassword>
                               ),
                               SizedBox(height: 30.0),
                               Text(
-                                'Restablecer Contraseña',
+                                'Restablecer contraseña',
                                 textScaler: TextScaler.noScaling,
                                 style: TextStyle(
                                     fontFamily: 'SF-Pro-Text',
@@ -204,7 +204,7 @@ class _LoginScreenState extends State<ResetPassword>
                               ),
                               SizedBox(height: 8.0),
                               Text(
-                                'Ingrese su correo electronico para restrablecer la contraseña de su cuenta.',
+                                'Ingresa tu correo para restablecer la contraseña de tu cuenta.',
                                 textScaler: TextScaler.noScaling,
                                 style: TextStyle(
                                   fontFamily: 'SF-Pro-Text',
@@ -222,7 +222,7 @@ class _LoginScreenState extends State<ResetPassword>
                         Column(
                           children: [
                             CustomTextField(
-                              hint: 'Email Address',
+                              hint: 'Correo electrónico',
                               obscureText: false,
                               controller: _emailController,
                               focusNode: _emailFocusNode,

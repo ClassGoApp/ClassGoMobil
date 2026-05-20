@@ -522,15 +522,6 @@ class _DashboardTutorState extends State<DashboardTutor>
     }
   }
 
-  void _showAddSubjectModal() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => AddSubjectModal(),
-    );
-  }
-
   void _deleteSubject(int subjectId) {
     showDialog(
       context: context,

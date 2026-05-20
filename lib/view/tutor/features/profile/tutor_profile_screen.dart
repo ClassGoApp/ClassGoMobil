@@ -68,6 +68,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     final user = authProvider.userData?['user'];
     final profile = user?['profile'] ?? {};
 
+    final String email = user['email'];
     final bool isVerified = profile['verified'] == true;
     final String firstName = profile['first_name'] ?? '';
     final String lastName = profile['last_name'] ?? '';
@@ -123,7 +124,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                     child: Column(
                       children: [
                         const SizedBox(height: 20),
-                        _buildTopCard(photoUrl, shortName, isDark, isVerified),
+                        _buildTopCard(photoUrl, shortName, isDark, isVerified, email),
                         Container(
                           margin: const EdgeInsets.only(top: 20),
                           width: double.infinity,
@@ -154,7 +155,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     );
   }
 
-  Widget _buildTopCard(String? photoUrl, String userName, bool isDark, bool isVerified) {
+  Widget _buildTopCard(String? photoUrl, String userName, bool isDark, bool isVerified, String email) {
+    
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -268,6 +270,18 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                               offset: Offset(0, 2))
                         ],
                       ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    email,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: _kBodyFont,
+                      color: Colors.white.withOpacity(0.85),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.3,
                     ),
                   ),
                   const SizedBox(height: 12),

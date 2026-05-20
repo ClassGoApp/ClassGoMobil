@@ -8,6 +8,7 @@ import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/provider/tutor_subjects_provider.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
+import 'package:flutter_projects/view/tutor/features/subjects/services/subject_search_service.dart';
 
 const String _kFontFamily = 'manrope';
 const String _kTitleFont = 'outfit';
@@ -56,7 +57,8 @@ class _AddSubjectSheetState extends State<AddSubjectSheet> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200 &&
+    if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 200 &&
         !_isLoadingMore &&
         _currentPage < _lastPage) {
       _loadAvailableSubjects(reset: false);
@@ -72,9 +74,16 @@ class _AddSubjectSheetState extends State<AddSubjectSheet> {
 
   Future<void> _loadAvailableSubjects({required bool reset}) async {
     if (reset) {
-      if (mounted) setState(() { _isLoading = true; _currentPage = 1; });
+      if (mounted)
+        setState(() {
+          _isLoading = true;
+          _currentPage = 1;
+        });
     } else {
-      if (mounted) setState(() { _isLoadingMore = true; });
+      if (mounted)
+        setState(() {
+          _isLoadingMore = true;
+        });
     }
 
     try {
@@ -82,60 +91,85 @@ class _AddSubjectSheetState extends State<AddSubjectSheet> {
       final subjectsProvider = Provider.of<TutorSubjectsProvider>(context, listen: false);
       
       final query = _searchController.text.trim();
-      
-      String? tokenToUse;
-      if (!widget.isRegistration) {
-        final authProvider = Provider.of<AuthProvider>(context, listen: false);
-        tokenToUse = authProvider.token;
+
+      if (authProvider.token == null) {
+        if (mounted)
+          setState(() {
+            _isLoading = false;
+            _isLoadingMore = false;
+          });
+        return;
       }
 
-      final response = await getAllSubjects(
-        authProvider.token!, 
-        page: reset ? 1 : _currentPage + 1, 
-        perPage: 20,
-        keyword: query.isEmpty ? null : query
+      if (widget.isRegistration) {
+        final response = await getAllSubjects(
+          authProvider.token!,
+          page: reset ? 1 : _currentPage + 1,
+          perPage: 50,
+          keyword: query.isEmpty ? null : query,
+        );
+
+        if (!mounted) return;
+
+        if (response['status'] == 200 && response['data'] != null) {
+          final List<dynamic> subjectsData = response['data']['data'];
+          print(
+              'DEBUG add_subject_sheet registration fetch page=${reset ? 1 : _currentPage + 1} count=${subjectsData.length}');
+          if (subjectsData.isNotEmpty) {
+            print(
+                'DEBUG add_subject_sheet registration raw first: ${subjectsData.first}');
+          }
+
+          final filtered = subjectsData
+              .map((s) => {'id': s['id'], 'name': s['name']})
+              .toList();
+
+          setState(() {
+            if (reset) {
+              _availableSubjects = filtered;
+            } else {
+              _availableSubjects.addAll(filtered);
+            }
+            _currentPage = response['data']['current_page'] ?? 1;
+            _lastPage = response['data']['last_page'] ?? 1;
+            _isLoading = false;
+            _isLoadingMore = false;
+          });
+        }
+
+        return;
+      }
+
+      final currentSubjectIds =
+          subjectsProvider.subjects.map((s) => s.subjectId).toSet();
+      final result = await SubjectSearchService.fetchAvailableSubjects(
+        authProvider.token!,
+        currentSubjectIds,
+        startPage: reset ? 1 : _currentPage + 1,
+        perPage: 50,
+        keyword: query.isEmpty ? null : query,
       );
 
       if (!mounted) return;
 
-      if (response['status'] == 200 && response['data'] != null) {
-        final List<dynamic> subjectsData = response['data']['data'];
-        List<Map<String, dynamic>> filtered = [];
-
-        if (widget.isRegistration) {
-          filtered = subjectsData
-              .map((s) => {'id': s['id'], 'name': s['name']})
-              .toList();
+      setState(() {
+        if (reset) {
+          _availableSubjects = result.subjects;
         } else {
-          final subjectsProvider = Provider.of<TutorSubjectsProvider>(context, listen: false);
-          final currentSubjectIds = subjectsProvider.subjects.map((s) => s.subjectId).toSet();
-          
-          filtered = subjectsData
-              .where((s) => !currentSubjectIds.contains(s['id']))
-              .map((s) => {'id': s['id'], 'name': s['name']})
-              .toList();
+          _availableSubjects.addAll(result.subjects);
         }
-        // final currentSubjectIds = subjectsProvider.subjects.map((s) => s.subjectId).toSet();
-        
-        // final filtered = subjectsData
-        //     .where((s) => !currentSubjectIds.contains(s['id']))
-        //     .map((s) => {'id': s['id'], 'name': s['name']})
-        //     .toList();
-        
+        _currentPage = result.currentPage;
+        _lastPage = result.lastPage;
+        _isLoading = false;
+        _isLoadingMore = false;
+      });
+    } catch (e) {
+      print('DEBUG add_subject_sheet fetch error: $e');
+      if (mounted)
         setState(() {
-          if (reset) {
-            _availableSubjects = filtered;
-          } else {
-            _availableSubjects.addAll(filtered);
-          }
-          _currentPage = response['data']['current_page'] ?? 1;
-          _lastPage = response['data']['last_page'] ?? 1;
           _isLoading = false;
           _isLoadingMore = false;
         });
-      }
-    } catch (e) {
-      if (mounted) setState(() { _isLoading = false; _isLoadingMore = false; });
     }
   }
 
@@ -145,33 +179,30 @@ class _AddSubjectSheetState extends State<AddSubjectSheet> {
 
     final navigator = Navigator.of(context);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final subjectsProvider = Provider.of<TutorSubjectsProvider>(context, listen: false);
+    final subjectsProvider =
+        Provider.of<TutorSubjectsProvider>(context, listen: false);
 
     try {
-      final results = await Future.wait(
-        _selectedSubjectIds.map((id) => 
-          subjectsProvider.addTutorSubjectToApi(authProvider, id, '', null)
-        )
-      );
+      final results = await Future.wait(_selectedSubjectIds.map((id) =>
+          subjectsProvider.addTutorSubjectToApi(authProvider, id, '', null)));
 
       int successCount = results.where((s) => s).length;
       await subjectsProvider.loadTutorSubjects(authProvider);
-      
+
       if (mounted) {
         navigator.pop();
         if (successCount > 0) {
           CustomToast.show(
-            context, 
+            context,
             "$successCount materia${successCount > 1 ? 's' : ''} añadida${successCount > 1 ? 's' : ''} correctamente.",
             isSuccess: true,
           );
         } else {
           CustomToast.show(
-            context, 
+            context,
             "No se pudieron añadir las materias. Intenta de nuevo.",
             isSuccess: false,
           );
-          
         }
       }
     } finally {
@@ -194,71 +225,89 @@ class _AddSubjectSheetState extends State<AddSubjectSheet> {
       child: Column(
         children: [
           const SizedBox(height: 12),
-          Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(10))),
+          Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                  color: Colors.grey.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(10))),
           const SizedBox(height: 20),
-
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Container(
               decoration: BoxDecoration(
                 color: cardColor,
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05)),
+                border: Border.all(
+                    color: isDark
+                        ? Colors.white10
+                        : Colors.black.withOpacity(0.05)),
               ),
               child: TextField(
                 controller: _searchController,
                 onChanged: _onSearchChanged,
-                style: TextStyle(color: isDark ? Colors.white : AppColors.brandBlue, fontWeight: FontWeight.w600, fontFamily: _kFontFamily),
+                style: TextStyle(
+                    color: isDark ? Colors.white : AppColors.brandBlue,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: _kFontFamily),
                 decoration: InputDecoration(
                   hintText: "Buscar materia...",
-                  hintStyle: TextStyle(color: isDark ? Colors.white30 : Colors.grey[400], fontFamily: _kTitleFont),
+                  hintStyle: TextStyle(
+                      color: isDark ? Colors.white30 : Colors.grey[400],
+                      fontFamily: _kTitleFont),
                   border: InputBorder.none,
-                  prefixIcon: const Icon(Icons.search_rounded, color: AppColors.brandCyan),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                  prefixIcon: const Icon(Icons.search_rounded,
+                      color: AppColors.brandCyan),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
                 ),
               ),
             ),
           ),
-
           const SizedBox(height: 20),
-
           Expanded(
-            child: _isLoading 
-              ? const Center(child: CircularProgressIndicator(color: AppColors.brandCyan))
-              : _availableSubjects.isEmpty 
-                  ? _buildEmptyState(isDark)
-                  : ListView.builder(
-                      controller: _scrollController,
-                      physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                      itemCount: _availableSubjects.length + (_isLoadingMore ? 1 : 0),
-                      itemBuilder: (context, index) {
-                        if (index == _availableSubjects.length) {
-                          return const Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+            child: _isLoading
+                ? const Center(
+                    child:
+                        CircularProgressIndicator(color: AppColors.brandCyan))
+                : _availableSubjects.isEmpty
+                    ? _buildEmptyState(isDark)
+                    : ListView.builder(
+                        controller: _scrollController,
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 8),
+                        itemCount: _availableSubjects.length +
+                            (_isLoadingMore ? 1 : 0),
+                        itemBuilder: (context, index) {
+                          if (index == _availableSubjects.length) {
+                            return const Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: Center(
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2)),
+                            );
+                          }
+                          final item = _availableSubjects[index];
+                          return _SelectableSubjectItem(
+                            name: item['name'],
+                            isSelected:
+                                _selectedSubjectIds.contains(item['id']),
+                            isDark: isDark,
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              setState(() {
+                                if (_selectedSubjectIds.contains(item['id'])) {
+                                  _selectedSubjectIds.remove(item['id']);
+                                } else {
+                                  _selectedSubjectIds.add(item['id']);
+                                }
+                              });
+                            },
                           );
-                        }
-                        final item = _availableSubjects[index];
-                        return _SelectableSubjectItem(
-                          name: item['name'],
-                          isSelected: _selectedSubjectIds.contains(item['id']),
-                          isDark: isDark,
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            setState(() {
-                              if (_selectedSubjectIds.contains(item['id'])) {
-                                _selectedSubjectIds.remove(item['id']);
-                              } else {
-                                _selectedSubjectIds.add(item['id']);
-                              }
-                            });
-                          },
-                        );
-                      },
-                    ),
+                        },
+                      ),
           ),
-
           _buildBottomBar(isDark, cardColor),
         ],
       ),
@@ -266,16 +315,20 @@ class _AddSubjectSheetState extends State<AddSubjectSheet> {
   }
 
   Widget _buildEmptyState(bool isDark) {
-    return SingleChildScrollView( 
+    return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.only(top: 40), 
+        padding: const EdgeInsets.only(top: 40),
         child: Column(
           children: [
-            Icon(Icons.info_outline_rounded, size: 64, color: isDark ? Colors.white12 : Colors.grey[200]),
+            Icon(Icons.info_outline_rounded,
+                size: 64, color: isDark ? Colors.white12 : AppColors.brandCyan),
             const SizedBox(height: 16),
             Text(
               "No se encontraron materias nuevas.",
-              style: TextStyle(color: isDark ? Colors.white54 : Colors.grey[500], fontFamily: _kTitleFont, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  color: isDark ? Colors.white54 : Colors.grey,
+                  fontFamily: _kTitleFont,
+                  fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Padding(
@@ -283,7 +336,10 @@ class _AddSubjectSheetState extends State<AddSubjectSheet> {
               child: Text(
                 "Es posible que ya las tengas agregadas o que no existan en el catálogo.",
                 textAlign: TextAlign.center,
-                style: TextStyle(color: isDark ? Colors.white24 : Colors.grey[400], fontSize: 12, fontFamily: _kTitleFont),
+                style: TextStyle(
+                    color: isDark ? Colors.white24 : Colors.grey[400],
+                    fontSize: 12,
+                    fontFamily: _kTitleFont),
               ),
             ),
           ],
@@ -294,44 +350,70 @@ class _AddSubjectSheetState extends State<AddSubjectSheet> {
 
   Widget _buildBottomBar(bool isDark, Color cardColor) {
     return Container(
-      padding: EdgeInsets.only(left: 24, right: 24, top: 16, bottom: MediaQuery.of(context).padding.bottom + 16),
+      padding: EdgeInsets.only(
+          left: 24,
+          right: 24,
+          top: 16,
+          bottom: MediaQuery.of(context).padding.bottom + 16),
       decoration: BoxDecoration(
         color: cardColor,
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, -5))],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 20,
+              offset: const Offset(0, -5))
+        ],
       ),
       child: Row(
         children: [
           Expanded(
             child: TextButton(
               onPressed: _isSaving ? null : () => Navigator.pop(context),
-              child: Text("Cancelar", style: TextStyle(color: isDark ? Colors.white70 : Colors.grey[600], fontWeight: FontWeight.bold, fontFamily: _kTitleFont)),
+              child: Text("Cancelar",
+                  style: TextStyle(
+                      color: isDark ? Colors.white70 : Colors.grey[600],
+                      fontWeight: FontWeight.bold,
+                      fontFamily: _kTitleFont)),
             ),
           ),
           const SizedBox(width: 16),
           Expanded(
             flex: 2,
             child: ElevatedButton(
-              onPressed: (_selectedSubjectIds.isEmpty || _isSaving) ? null : () {
-              if (widget.isRegistration) {
-                  widget.onRegistrationComplete?.call(_selectedSubjectIds.toList());
-                  Navigator.pop(context);
-                   // Solo cerramos y devolvemos los datos
-                } else {
-                  _saveSelections(); // Llama a tu API para guardar (Modo Edición)
-                }
-              },
+              onPressed: (_selectedSubjectIds.isEmpty || _isSaving)
+                  ? null
+                  : () {
+                      if (widget.isRegistration) {
+                        widget.onRegistrationComplete
+                            ?.call(_selectedSubjectIds.toList());
+                        Navigator.pop(context);
+                        // Solo cerramos y devolvemos los datos
+                      } else {
+                        _saveSelections(); // Llama a tu API para guardar (Modo Edición)
+                      }
+                    },
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 backgroundColor: AppColors.brandCyan,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
                 elevation: 0,
               ),
-              child: _isSaving 
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : Text(
-                    _selectedSubjectIds.isEmpty ? "Seleccionar" : "Añadir ${_selectedSubjectIds.length}",
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontFamily: _kTitleFont),
-                  ),
+              child: _isSaving
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 2))
+                  : Text(
+                      _selectedSubjectIds.isEmpty
+                          ? "Seleccionar"
+                          : "Añadir ${_selectedSubjectIds.length}",
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: _kTitleFont),
+                    ),
             ),
           ),
         ],
@@ -346,14 +428,20 @@ class _SelectableSubjectItem extends StatelessWidget {
   final bool isDark;
   final VoidCallback onTap;
 
-  const _SelectableSubjectItem({required this.name, required this.isSelected, required this.isDark, required this.onTap});
+  const _SelectableSubjectItem(
+      {required this.name,
+      required this.isSelected,
+      required this.isDark,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final bgColor = isDark ? const Color(0xFF16181D) : Colors.white;
     final textColor = isDark ? Colors.white : AppColors.brandBlue;
     final selectedBgColor = AppColors.brandCyan.withOpacity(0.08);
-    final borderColor = isSelected ? AppColors.brandCyan : (isDark ? Colors.white10 : Colors.black.withOpacity(0.05));
+    final borderColor = isSelected
+        ? AppColors.brandCyan
+        : (isDark ? Colors.white10 : Colors.black.withOpacity(0.05));
 
     return GestureDetector(
       onTap: onTap,
@@ -371,8 +459,11 @@ class _SelectableSubjectItem extends StatelessWidget {
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 250),
               child: isSelected
-                  ? const Icon(Icons.check_circle_rounded, color: AppColors.brandCyan, size: 22)
-                  : Icon(Icons.add_rounded, color: isDark ? Colors.white54 : AppColors.brandCyan, size: 22),
+                  ? const Icon(Icons.check_circle_rounded,
+                      color: AppColors.brandCyan, size: 22)
+                  : Icon(Icons.add_rounded,
+                      color: isDark ? Colors.white54 : AppColors.brandCyan,
+                      size: 22),
             ),
             const SizedBox(width: 16),
             Expanded(

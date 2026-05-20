@@ -688,7 +688,7 @@ class _LoginScreenState extends State<LoginScreen>
                                         backgroundColor: AppColors.primaryGreen,
                                       ),
                                       child: Text(
-                                        '¿No tienes una cuenta?S Regístrate',
+                                        '¿No tienes una cuenta?, Regístrate',
                                         style: TextStyle(
                                           color: AppColors.whiteColor,
                                           fontSize: FontSize.scale(context, 16),

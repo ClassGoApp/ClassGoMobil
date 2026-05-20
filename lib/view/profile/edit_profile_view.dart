@@ -83,7 +83,7 @@ class EditProfileView extends StatelessWidget {
 
               Expanded(
                 child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
+                  physics: const ClampingScrollPhysics(),
                   padding: const EdgeInsets.only(bottom: 40),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -251,68 +251,69 @@ class EditProfileView extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 16),
 
-                                _buildTextField(
-                                  controller: descriptionController,
-                                  label: 'DESCRIPCIÓN',
-                                  hint: 'Cuéntanos algo sobre ti ...',
-                                  icon: Icons.description_outlined,
-                                  maxLines: 4,
-                                  fillColor: cardBgColor,
-                                  textColor: mainTextColor,
-                                ),
-                                const SizedBox(height: 30),
+                                if (!isStudent) ...[
+                                  _buildTextField(
+                                    controller: descriptionController,
+                                    label: 'DESCRIPCIÓN',
+                                    hint: 'Cuéntanos algo sobre ti ...',
+                                    icon: Icons.description_outlined,
+                                    maxLines: 4,
+                                    fillColor: cardBgColor,
+                                    textColor: mainTextColor,
+                                  ),
+                                  const SizedBox(height: 30),
 
-                                Text("VIDEO DE PRESENTACIÓN", style: TextStyle(fontFamily: 'outfit', color: mainTextColor, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-                                const SizedBox(height: 12),
-                            
-                                if (profileVideoUrl != null && profileVideoUrl!.isNotEmpty)
-                                  videoPlayerWidget
-                                else
-                                  videoPlaceholderWidget,
-                                
-                                const SizedBox(height: 12),
-                                
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: SizedBox(
-                                        height: 50,
-                                        child: OutlinedButton.icon(
-                                          onPressed: isVideoLoading ? null : onSelectVideo,
-                                          icon: isVideoLoading 
-                                            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                                            : const Icon(Icons.video_library, size: 18),
-                                          label: Text(isVideoLoading ? 'Actualizando...' : 'Cambiar Video'),
-                                          style: OutlinedButton.styleFrom(
-                                            foregroundColor: AppColors.brandCyan,
-                                            side: const BorderSide(color: AppColors.brandCyan),
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                  Text("VIDEO DE PRESENTACIÓN", style: TextStyle(fontFamily: 'outfit', color: mainTextColor, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                                  const SizedBox(height: 12),
+                              
+                                  if (profileVideoUrl != null && profileVideoUrl!.isNotEmpty)
+                                    videoPlayerWidget
+                                  else
+                                    videoPlaceholderWidget,
+                                  
+                                  const SizedBox(height: 12),
+                                  
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: SizedBox(
+                                          height: 50,
+                                          child: OutlinedButton.icon(
+                                            onPressed: isVideoLoading ? null : onSelectVideo,
+                                            icon: isVideoLoading 
+                                              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                                              : const Icon(Icons.video_library, size: 18),
+                                            label: Text(isVideoLoading ? 'Actualizando...' : 'Cambiar Video'),
+                                            style: OutlinedButton.styleFrom(
+                                              foregroundColor: AppColors.brandCyan,
+                                              side: const BorderSide(color: AppColors.brandCyan),
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                    if (profileVideoUrl != null && profileVideoUrl!.isNotEmpty) ...[
-                                      const SizedBox(width: 12),
-                                      SizedBox(
-                                        height: 50,
-                                        width: 50,
-                                        child: OutlinedButton(
-                                          onPressed: isVideoLoading ? null : onDeleteVideo,
-                                          style: OutlinedButton.styleFrom(
-                                            padding: EdgeInsets.zero,
-                                            foregroundColor: Colors.redAccent,
-                                            side: const BorderSide(color: Colors.redAccent),
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                      if (profileVideoUrl != null && profileVideoUrl!.isNotEmpty) ...[
+                                        const SizedBox(width: 12),
+                                        SizedBox(
+                                          height: 50,
+                                          width: 50,
+                                          child: OutlinedButton(
+                                            onPressed: isVideoLoading ? null : onDeleteVideo,
+                                            style: OutlinedButton.styleFrom(
+                                              padding: EdgeInsets.zero,
+                                              foregroundColor: Colors.redAccent,
+                                              side: const BorderSide(color: Colors.redAccent),
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                            ),
+                                            child: const Icon(Icons.delete_outline, size: 22),
                                           ),
-                                          child: const Icon(Icons.delete_outline, size: 22),
                                         ),
-                                      ),
-                                    ]
-                                  ],
-                                ),
+                                      ]
+                                    ],
+                                  ),
 
-                                const SizedBox(height: 20),
-
+                                ],
+                                const SizedBox(height: 12),
                                 SizedBox(
                                   width: double.infinity,
                                   height: 55,
