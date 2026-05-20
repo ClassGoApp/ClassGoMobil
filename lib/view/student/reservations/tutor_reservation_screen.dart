@@ -61,6 +61,13 @@ class _ReservationTutorProfileScreenState
   bool _instantAvailable = false;
   bool _checkingInstantAvailability = true;
   int _selectedTabIndex = 0;
+  List<TutorReviewDto> reviewList =
+      new List<TutorReviewDto>.empty(growable: true);
+
+  // Controlador para leer lo que el usuario escribe
+  final TextEditingController _reviewController = TextEditingController();
+  // Variable para guardar cuántas estrellas eligió (inicia en 0)
+  double _userRating = 0.0;
 
   String _displaySubjectName(dynamic subject) {
     try {
@@ -82,10 +89,18 @@ class _ReservationTutorProfileScreenState
     }
   }
 
+  void listReviews() {
+    reviewList.clear();
+    for (var review in widget.reviews) {
+      reviewList.add(TutorReviewDto.fromJson(review));
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _initializeVideo();
+    listReviews();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkInstantAvailability();
     });
@@ -154,6 +169,7 @@ class _ReservationTutorProfileScreenState
       _videoController.dispose();
     } catch (_) {}
     _scrollController.dispose();
+    _reviewController.dispose();
     super.dispose();
   }
 
@@ -496,6 +512,16 @@ class _ReservationTutorProfileScreenState
   }
 
   Widget _buildStatistics() {
+    String averageRating = "0.0"; // Valor por defecto
+
+    if (reviewList.isNotEmpty) {
+      // fold(valorInicial, (acumulador, elementoActual) => acumulador + elementoActual.propiedad)
+      double totalSum = reviewList.fold(0.0, (sum, item) => sum + item.rating);
+
+      // Dividimos y formateamos a un solo decimal (ej: 4.8)
+      double average = totalSum / reviewList.length;
+      averageRating = average.toStringAsFixed(1);
+    }
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0),
       child: Row(
@@ -504,7 +530,7 @@ class _ReservationTutorProfileScreenState
           Expanded(
             child: _buildStatCard(
               Icons.star,
-              widget.rating.toStringAsFixed(1),
+              averageRating,
               'Calificación',
               Colors.amber,
             ),
@@ -866,37 +892,115 @@ class _ReservationTutorProfileScreenState
   }
 
   Widget _buildReviews() {
-    print("REVIEWS: ${widget.reviews}");
-    final List<TutorReviewDto> reviewList =
-        widget.reviews.map((item) => TutorReviewDto.fromJson(item)).toList();
-
-    if (reviewList.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 20.0),
-        child: Text(
-          'Este tutor todavía no tiene reseñas.',
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey,
-          ),
-        ),
-      );
-    }
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0),
       child: Column(
-        children: reviewList.map((item) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 14),
-            child: _buildReviewCard(
-              item.fullName,
-              item.rating,
-              item.comment,
-              item.timeAgo,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // =================================================================
+          // 1. SECCIÓN PARA AÑADIR UNA NUEVA RESEÑA
+          // =================================================================
+          const Text(
+            'Deja tu valoración',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+
+          // Fila de Estrellas interactivas
+          Row(
+            children: List.generate(5, (index) {
+              return GestureDetector(
+                onTap: () {
+                  // Actualiza el estado para pintar las estrellas seleccionadas
+                  setState(() {
+                    _userRating = index + 1.0;
+                  });
+                },
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: Icon(
+                    index < _userRating ? Icons.star : Icons.star_border,
+                    color: Colors.amber,
+                    size: 32,
+                  ),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 12),
+
+          // Campo de texto para el comentario
+          TextField(
+            controller: _reviewController,
+            maxLines: 3,
+            decoration: InputDecoration(
+              hintText: '¿Cómo fue tu experiencia con este tutor?',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              contentPadding: const EdgeInsets.all(12),
             ),
-          );
-        }).toList(),
+          ),
+          const SizedBox(height: 12),
+
+          // Botón de Enviar
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: () {
+                // Aquí agregarás tu lógica para enviar los datos a Laravel
+                print('Rating enviado: $_userRating');
+                print('Comentario enviado: ${_reviewController.text}');
+              },
+              child: const Text(
+                'Publicar reseña',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 24),
+          const Divider(), // Línea divisoria
+          const SizedBox(height: 20),
+
+          // =================================================================
+          // 2. SECCIÓN DE RESEÑAS EXISTENTES (Tu lógica anterior adaptada)
+          // =================================================================
+          const Text(
+            'Reseñas de estudiantes',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+
+          // Validación: Si está vacío muestra el texto, sino dibuja la lista
+          if (reviewList.isEmpty)
+            const Text(
+              'Este tutor todavía no tiene reseñas. ¡Sé el primero en opinar!',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
+              ),
+            )
+          else
+            // Usamos el operador "spread" (...) para insertar la lista de widgets en la Column
+            ...reviewList.map((item) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: _buildReviewCard(
+                  item.fullName,
+                  item.rating,
+                  item.comment,
+                  item.timeAgo,
+                ),
+              );
+            }),
+        ],
       ),
     );
   }
