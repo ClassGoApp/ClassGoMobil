@@ -1235,6 +1235,11 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
               final tutor = tutors[index];
               final profile = tutor['profile'] as Map<String, dynamic>;
               final subjects = tutor['subjects'] as List;
+              final reviews = (tutor['reviews'] as List?)
+                      ?.whereType<Map>()
+                      .map((e) => Map<String, dynamic>.from(e))
+                      .toList() ??
+                  const <Map<String, dynamic>>[];
               final validSubjects = subjects
                   .where((subject) =>
                       subject['status'] == 'active' &&
@@ -1254,7 +1259,6 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                       subject['deleted_at'] == null)
                   .firstOrNull;
               final subjectId = firstValidSubject?['id'] ?? 1;
-
               return AnimationConfiguration.staggeredList(
                 position: index,
                 duration: const Duration(milliseconds: 600),
@@ -1303,6 +1307,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                             ? profile['price'].toDouble()
                                             : 0.0))
                                     : 0.0,
+                                reviews: reviews,
                               ),
                             ),
                           );
@@ -1316,9 +1321,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                       ? tutor['avg_rating'].toDouble()
                                       : 0.0))
                               : 0.0,
-                          reviews:
-                              int.tryParse('${tutor['total_reviews'] ?? 0}') ??
-                                  0,
+                          reviews: reviews.length,
                           imageUrl: highResTutorImages[tutor['id']] ??
                               profile['image'] ??
                               AppImages.placeHolderImage,
@@ -1364,6 +1367,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                               ? profile['price'].toDouble()
                                               : 0.0))
                                       : 0.0,
+                                  reviews: reviews,
                                 ),
                               ),
                             );

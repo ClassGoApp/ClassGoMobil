@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/view/student/reservations/services/TutorReviewDto.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:ui';
 import 'package:flutter_projects/view/student/reservations/instant-reservation/instant_tutoring_screen.dart';
@@ -20,6 +21,9 @@ class ReservationTutorProfileScreen extends StatefulWidget {
   final List<Map<String, dynamic>> subjects;
   final int completedCourses;
 
+  //Reviews
+  final List<Map<String, dynamic>> reviews;
+
   // Idiomas por defecto
   final List<String> languages;
   final String? tagline;
@@ -38,6 +42,7 @@ class ReservationTutorProfileScreen extends StatefulWidget {
     this.languages = const ['Español', 'Inglés'],
     this.tagline = '',
     this.price,
+    this.reviews = const [],
   }) : super(key: key);
 
   @override
@@ -251,15 +256,17 @@ class _ReservationTutorProfileScreenState
                                           alignment: Alignment.center,
                                           children: [
                                             SizedBox.expand(
-                                                child: widget.tutorImage.startsWith('http')
-                                                    ? Image.network(
-                                                        widget.tutorImage,
-                                                        fit: BoxFit.cover,
-                                                      )
-                                                    : Image.asset(
-                                                        AppImages.placeHolderImage,
-                                                        fit: BoxFit.cover,
-                                                      ),
+                                              child: widget.tutorImage
+                                                      .startsWith('http')
+                                                  ? Image.network(
+                                                      widget.tutorImage,
+                                                      fit: BoxFit.cover,
+                                                    )
+                                                  : Image.asset(
+                                                      AppImages
+                                                          .placeHolderImage,
+                                                      fit: BoxFit.cover,
+                                                    ),
                                             ),
                                             ClipRRect(
                                               child: BackdropFilter(
@@ -357,13 +364,13 @@ class _ReservationTutorProfileScreenState
                                       child: CircleAvatar(
                                         radius: avatarRadius,
                                         backgroundColor: AppColors.cardLight,
-                                          backgroundImage: widget.tutorImage
-                                                  .startsWith('http')
-                                              ? CachedNetworkImageProvider(
-                                                  widget.tutorImage)
-                                              : const AssetImage(
-                                                      AppImages.placeHolderImage)
-                                                  as ImageProvider,
+                                        backgroundImage: widget.tutorImage
+                                                .startsWith('http')
+                                            ? CachedNetworkImageProvider(
+                                                widget.tutorImage)
+                                            : const AssetImage(
+                                                    AppImages.placeHolderImage)
+                                                as ImageProvider,
                                       ),
                                     ),
                                   ),
@@ -506,7 +513,7 @@ class _ReservationTutorProfileScreenState
           Expanded(
             child: _buildStatCard(
               Icons.rate_review,
-              '124',
+              widget.reviews.length.toString(),
               'Reseñas',
               AppColors.blueColor,
             ),
@@ -639,7 +646,7 @@ class _ReservationTutorProfileScreenState
                   ),
                 ),
                 child: Text(
-                  'Reseñas (124)',
+                  'Reseñas (${widget.reviews.length.toString()})',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 15,
@@ -859,31 +866,37 @@ class _ReservationTutorProfileScreenState
   }
 
   Widget _buildReviews() {
+    print("REVIEWS: ${widget.reviews}");
+    final List<TutorReviewDto> reviewList =
+        widget.reviews.map((item) => TutorReviewDto.fromJson(item)).toList();
+
+    if (reviewList.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 20.0),
+        child: Text(
+          'Este tutor todavía no tiene reseñas.',
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey,
+          ),
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0),
       child: Column(
-        children: [
-          _buildReviewCard(
-            'María González',
-            5.0,
-            'Excelente tutor, muy claro en sus explicaciones.',
-            '2 días atrás',
-          ),
-          SizedBox(height: 14),
-          _buildReviewCard(
-            'Carlos Ruiz',
-            4.5,
-            'Muy buena experiencia, aprendí mucho.',
-            '1 semana atrás',
-          ),
-          SizedBox(height: 14),
-          _buildReviewCard(
-            'Ana Martínez',
-            5.0,
-            'Es paciente y explica todo de manera sencilla.',
-            '2 semanas atrás',
-          ),
-        ],
+        children: reviewList.map((item) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 14),
+            child: _buildReviewCard(
+              item.fullName,
+              item.rating,
+              item.comment,
+              item.timeAgo,
+            ),
+          );
+        }).toList(),
       ),
     );
   }

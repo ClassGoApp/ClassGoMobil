@@ -755,7 +755,7 @@ Future<Map<String, dynamic>> getCountryStates(
 }
 
 Future<Map<String, dynamic>> updateProfilePrice(
-  String token, int userId, String price) async {
+    String token, int userId, String price) async {
   final uri = Uri.parse(
     '$baseUrl/user/$userId/profile-price',
   );
@@ -3111,7 +3111,7 @@ Future<List<TeamMember>> getTeamMembers() async {
 
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
-      
+
       if (jsonResponse['success'] == true) {
         List<dynamic> data = jsonResponse['data'];
         return data.map((item) => TeamMember.fromJson(item)).toList();
@@ -3119,7 +3119,8 @@ Future<List<TeamMember>> getTeamMembers() async {
         throw Exception('Error en la respuesta de la API');
       }
     } else {
-      throw Exception('Error al conectar con el servidor: ${response.statusCode}');
+      throw Exception(
+          'Error al conectar con el servidor: ${response.statusCode}');
     }
   } catch (e) {
     throw Exception('Error de conexión: $e');
