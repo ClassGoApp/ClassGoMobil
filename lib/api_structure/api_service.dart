@@ -6,8 +6,7 @@ import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as path;
 
-//final String baseUrl = 'https://classgoapp.com/api';
-final String baseUrl = 'http://192.168.0.158:8000/api';
+final String baseUrl = 'https://classgoapp.com/api';
 
 class TokenExpiredException implements Exception {
   final String message =
@@ -3125,5 +3124,63 @@ Future<List<TeamMember>> getTeamMembers() async {
     }
   } catch (e) {
     throw Exception('Error de conexión: $e');
+  }
+}
+
+Future<Map<String, dynamic>> createReview(String token, int userId, int tutorId,
+    String reviewText, double rating) async {
+  final String url = '$baseUrl/reviews';
+  try {
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'user_id': tutorId,
+        'reviewer_id': userId,
+        'comment': reviewText,
+        'rating': rating,
+      }),
+    );
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 201) {
+      return data;
+    } else {
+      return {
+        'ok': false,
+        'message':
+            data['message'] ?? 'Error en el servidor: ${response.statusCode}'
+      };
+    }
+  } catch (e) {
+    return {'ok': false, 'message': 'Error al subir la review: $e'};
+  }
+}
+
+Future<Map<String, dynamic>> getReviewTutor(
+    String? token, String tutorId) async {
+  try {
+    final response = await http.get(
+      Uri.parse('$baseUrl/reviews?user_id=$tutorId'),
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 200) {
+      return data;
+    } else {
+      return {
+        'ok': false,
+        'message':
+            data['message'] ?? 'Error en el servidor: ${response.statusCode}'
+      };
+    }
+  } catch (e) {
+    return {'ok': false, 'message': 'Error al obtener las review: $e'};
   }
 }
