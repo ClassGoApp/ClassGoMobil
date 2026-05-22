@@ -16,6 +16,7 @@ import 'package:flutter_projects/view/home/home_screen.dart';
 import 'package:flutter_projects/view/tutor/dashboard_tutor.dart';
 import 'package:flutter_projects/helpers/back_button_handler.dart';
 import 'package:flutter_projects/view/components/role_based_navigation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   final Map<String, dynamic>? registrationResponse;
@@ -42,6 +43,11 @@ class _LoginScreenState extends State<LoginScreen>
   String _passwordErrorMessage = '';
   bool _isPasswordValid = true;
   bool _isLoading = false;
+
+  final LayerLink _emailLayerLink = LayerLink();
+  final GlobalKey _emailKey = GlobalKey();
+  OverlayEntry? _overlayEntry;
+  List<Map<String, dynamic>> _savedAccounts = [];
 
   static bool isValidEmail(String email) {
     bool emailValid = RegExp(
@@ -102,6 +108,12 @@ class _LoginScreenState extends State<LoginScreen>
         print('Llamando a setAuthToken...');
         await authProvider.setAuthToken(token);
         print('setAuthToken completado');
+
+        if (_isChecked) {
+          await _saveAccount(email, password);
+        } else {
+          await _removeAccount(email);
+        }
 
         setState(() {
           _isLoading = false;
@@ -411,12 +423,167 @@ class _LoginScreenState extends State<LoginScreen>
     );
 
     _controller.repeat(reverse: true);
+
+    _emailFocusNode.addListener(_onEmailFocusChange);
+    _loadSavedAccounts();
   }
 
   @override
   void dispose() {
+    _emailFocusNode.removeListener(_onEmailFocusChange);
+    _hideSuggestionsOverlay();
     _controller.dispose();
     super.dispose();
+  }
+
+  void _onEmailFocusChange() {
+    if (_emailFocusNode.hasFocus) {
+      _showSuggestionsOverlay();
+    } else {
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (mounted && !_emailFocusNode.hasFocus) {
+          _hideSuggestionsOverlay();
+        }
+      });
+    }
+  }
+
+  Future<void> _loadSavedAccounts() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String? accountsJson = prefs.getString('saved_accounts');
+      if (accountsJson != null) {
+        final List<dynamic> decoded = jsonDecode(accountsJson);
+        setState(() {
+          _savedAccounts = decoded.map((item) => Map<String, dynamic>.from(item)).toList();
+        });
+        if (_savedAccounts.isNotEmpty) {
+          final lastAccount = _savedAccounts.first;
+          _emailController.text = lastAccount['email'] ?? '';
+          _passwordController.text = lastAccount['password'] ?? '';
+          setState(() {
+            _isChecked = true;
+          });
+        }
+      }
+    } catch (e) {
+      print('Error loading saved accounts: $e');
+    }
+  }
+
+  Future<void> _saveAccount(String email, String password) async {
+    final prefs = await SharedPreferences.getInstance();
+    _savedAccounts.removeWhere((acc) => acc['email'] == email);
+    _savedAccounts.insert(0, {
+      'email': email,
+      'password': password,
+    });
+    if (_savedAccounts.length > 5) {
+      _savedAccounts = _savedAccounts.sublist(0, 5);
+    }
+    await prefs.setString('saved_accounts', jsonEncode(_savedAccounts));
+  }
+
+  Future<void> _removeAccount(String email) async {
+    final prefs = await SharedPreferences.getInstance();
+    _savedAccounts.removeWhere((acc) => acc['email'] == email);
+    await prefs.setString('saved_accounts', jsonEncode(_savedAccounts));
+  }
+
+  void _showSuggestionsOverlay() {
+    _hideSuggestionsOverlay();
+    if (_savedAccounts.isEmpty) return;
+
+    final renderBox = _emailKey.currentContext?.findRenderObject() as RenderBox?;
+    final width = renderBox?.size.width ?? (MediaQuery.of(context).size.width - 24);
+    final height = renderBox?.size.height ?? 50.0;
+
+    final overlayState = Overlay.of(context);
+    _overlayEntry = OverlayEntry(
+      builder: (context) {
+        return Positioned(
+          width: width,
+          child: CompositedTransformFollower(
+            link: _emailLayerLink,
+            showWhenUnlinked: false,
+            offset: Offset(0, height + 4),
+            child: Material(
+              elevation: 4,
+              borderRadius: BorderRadius.circular(10),
+              color: AppColors.whiteColor,
+              child: Container(
+                constraints: const BoxConstraints(maxHeight: 200),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.dividerColor),
+                ),
+                child: ListView.builder(
+                  padding: EdgeInsets.zero,
+                  shrinkWrap: true,
+                  itemCount: _savedAccounts.length,
+                  itemBuilder: (context, index) {
+                    final account = _savedAccounts[index];
+                    final email = account['email'] ?? '';
+                    return ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                      title: Text(
+                        email,
+                        style: const TextStyle(
+                          fontFamily: 'SF-Pro-Text',
+                          fontSize: 14,
+                          color: AppColors.blackColor,
+                        ),
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete_outline, size: 20, color: AppColors.redColor),
+                        onPressed: () {
+                          _deleteSavedAccount(email);
+                        },
+                      ),
+                      onTap: () {
+                        _selectSavedAccount(account);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+    overlayState.insert(_overlayEntry!);
+  }
+
+  void _hideSuggestionsOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
+
+  void _selectSavedAccount(Map<String, dynamic> account) {
+    setState(() {
+      _emailController.text = account['email'] ?? '';
+      _passwordController.text = account['password'] ?? '';
+      _isChecked = true;
+    });
+    _hideSuggestionsOverlay();
+    _passwordFocusNode.requestFocus();
+  }
+
+  void _deleteSavedAccount(String email) async {
+    setState(() {
+      _savedAccounts.removeWhere((acc) => acc['email'] == email);
+    });
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('saved_accounts', jsonEncode(_savedAccounts));
+    
+    _emailFocusNode.requestFocus();
+
+    if (_savedAccounts.isEmpty) {
+      _hideSuggestionsOverlay();
+    } else {
+      _showSuggestionsOverlay();
+    }
   }
 
   @override
@@ -429,10 +596,15 @@ class _LoginScreenState extends State<LoginScreen>
         context,
         isLoading: _isLoading,
       ),
-      child: Scaffold(
-          backgroundColor: AppColors.primaryGreen,
-          body: Container(
-            height: height,
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () {
+          FocusScope.of(context).unfocus();
+        },
+        child: Scaffold(
+            backgroundColor: AppColors.primaryGreen,
+            body: Container(
+              height: height,
             child: Stack(
               children: [
                 SafeArea(
@@ -520,12 +692,16 @@ class _LoginScreenState extends State<LoginScreen>
                                     ],
                                   ),
                                   SizedBox(height: height * 0.06),
-                                  CustomTextField(
-                                    hint: 'Correo electrónico',
-                                    obscureText: false,
-                                    controller: _emailController,
-                                    focusNode: _emailFocusNode,
-                                    hasError: !_isEmailValid,
+                                  CompositedTransformTarget(
+                                    link: _emailLayerLink,
+                                    key: _emailKey,
+                                    child: CustomTextField(
+                                      hint: 'Correo electrónico',
+                                      obscureText: false,
+                                      controller: _emailController,
+                                      focusNode: _emailFocusNode,
+                                      hasError: !_isEmailValid,
+                                    ),
                                   ),
                                   if (_errorMessage.isNotEmpty)
                                     Padding(
@@ -724,7 +900,7 @@ class _LoginScreenState extends State<LoginScreen>
                   ),
               ],
             ),
-          )),
+          ))),
     );
   }
 }
