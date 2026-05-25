@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/view/student/reservations/services/TutorReviewDto.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:ui';
 import 'package:flutter_projects/view/student/reservations/instant-reservation/instant_tutoring_screen.dart';
@@ -9,6 +10,8 @@ import 'package:flutter_projects/view/student/reservations/services/reservations
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
+import 'package:flutter_projects/view/student/reservations/services/tutor_reviews_service.dart';
+import 'package:flutter_projects/view/student/reservations/widgets/tutor_reviews_section.dart';
 
 class ReservationTutorProfileScreen extends StatefulWidget {
   final String tutorId;
@@ -19,6 +22,9 @@ class ReservationTutorProfileScreen extends StatefulWidget {
   final double rating;
   final List<Map<String, dynamic>> subjects;
   final int completedCourses;
+
+  //Reviews
+  final List<Map<String, dynamic>> reviews;
 
   // Idiomas por defecto
   final List<String> languages;
@@ -38,6 +44,7 @@ class ReservationTutorProfileScreen extends StatefulWidget {
     this.languages = const ['Español', 'Inglés'],
     this.tagline = '',
     this.price,
+    this.reviews = const [],
   }) : super(key: key);
 
   @override
@@ -56,6 +63,8 @@ class _ReservationTutorProfileScreenState
   bool _instantAvailable = false;
   bool _checkingInstantAvailability = true;
   int _selectedTabIndex = 0;
+  List<TutorReviewDto> reviewList =
+      new List<TutorReviewDto>.empty(growable: true);
 
   String _displaySubjectName(dynamic subject) {
     try {
@@ -77,10 +86,19 @@ class _ReservationTutorProfileScreenState
     }
   }
 
+  void listReviews() {
+    reviewList.clear();
+    for (var review in widget.reviews) {
+      reviewList.add(TutorReviewDto.fromJson(review));
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _initializeVideo();
+    listReviews();
+    _fetchReviews();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkInstantAvailability();
     });
@@ -251,15 +269,17 @@ class _ReservationTutorProfileScreenState
                                           alignment: Alignment.center,
                                           children: [
                                             SizedBox.expand(
-                                                child: widget.tutorImage.startsWith('http')
-                                                    ? Image.network(
-                                                        widget.tutorImage,
-                                                        fit: BoxFit.cover,
-                                                      )
-                                                    : Image.asset(
-                                                        AppImages.placeHolderImage,
-                                                        fit: BoxFit.cover,
-                                                      ),
+                                              child: widget.tutorImage
+                                                      .startsWith('http')
+                                                  ? Image.network(
+                                                      widget.tutorImage,
+                                                      fit: BoxFit.cover,
+                                                    )
+                                                  : Image.asset(
+                                                      AppImages
+                                                          .placeHolderImage,
+                                                      fit: BoxFit.cover,
+                                                    ),
                                             ),
                                             ClipRRect(
                                               child: BackdropFilter(
@@ -357,13 +377,13 @@ class _ReservationTutorProfileScreenState
                                       child: CircleAvatar(
                                         radius: avatarRadius,
                                         backgroundColor: AppColors.cardLight,
-                                          backgroundImage: widget.tutorImage
-                                                  .startsWith('http')
-                                              ? CachedNetworkImageProvider(
-                                                  widget.tutorImage)
-                                              : const AssetImage(
-                                                      AppImages.placeHolderImage)
-                                                  as ImageProvider,
+                                        backgroundImage: widget.tutorImage
+                                                .startsWith('http')
+                                            ? CachedNetworkImageProvider(
+                                                widget.tutorImage)
+                                            : const AssetImage(
+                                                    AppImages.placeHolderImage)
+                                                as ImageProvider,
                                       ),
                                     ),
                                   ),
@@ -489,6 +509,16 @@ class _ReservationTutorProfileScreenState
   }
 
   Widget _buildStatistics() {
+    String averageRating = "0.0"; // Valor por defecto
+
+    if (reviewList.isNotEmpty) {
+      // fold(valorInicial, (acumulador, elementoActual) => acumulador + elementoActual.propiedad)
+      double totalSum = reviewList.fold(0.0, (sum, item) => sum + item.rating);
+
+      // Dividimos y formateamos a un solo decimal (ej: 4.8)
+      double average = totalSum / reviewList.length;
+      averageRating = average.toStringAsFixed(1);
+    }
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0),
       child: Row(
@@ -497,7 +527,7 @@ class _ReservationTutorProfileScreenState
           Expanded(
             child: _buildStatCard(
               Icons.star,
-              widget.rating.toStringAsFixed(1),
+              averageRating,
               'Calificación',
               Colors.amber,
             ),
@@ -506,7 +536,7 @@ class _ReservationTutorProfileScreenState
           Expanded(
             child: _buildStatCard(
               Icons.rate_review,
-              '124',
+              reviewList.length.toString(),
               'Reseñas',
               AppColors.blueColor,
             ),
@@ -625,7 +655,10 @@ class _ReservationTutorProfileScreenState
           ),
           Expanded(
             child: GestureDetector(
-              onTap: () => setState(() => _selectedTabIndex = 1),
+              onTap: () {
+                setState(() => _selectedTabIndex = 1);
+                _fetchReviews();
+              },
               child: Container(
                 padding: EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
@@ -639,7 +672,7 @@ class _ReservationTutorProfileScreenState
                   ),
                 ),
                 child: Text(
-                  'Reseñas (124)',
+                  'Reseñas (${reviewList.length.toString()})',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 15,
@@ -859,117 +892,87 @@ class _ReservationTutorProfileScreenState
   }
 
   Widget _buildReviews() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0),
-      child: Column(
-        children: [
-          _buildReviewCard(
-            'María González',
-            5.0,
-            'Excelente tutor, muy claro en sus explicaciones.',
-            '2 días atrás',
-          ),
-          SizedBox(height: 14),
-          _buildReviewCard(
-            'Carlos Ruiz',
-            4.5,
-            'Muy buena experiencia, aprendí mucho.',
-            '1 semana atrás',
-          ),
-          SizedBox(height: 14),
-          _buildReviewCard(
-            'Ana Martínez',
-            5.0,
-            'Es paciente y explica todo de manera sencilla.',
-            '2 semanas atrás',
-          ),
-        ],
-      ),
+    return TutorReviewsSection(
+      reviewList: reviewList,
+      onReviewSubmitted: (rating, comment) {
+        _submitReview(rating, comment);
+      },
     );
   }
 
-  Widget _buildReviewCard(
-      String name, double rating, String comment, String time) {
-    return Container(
-      padding: EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: AppColors.cardLight,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.dividerLight,
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 6,
-            offset: Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: AppColors.greyFadeColor,
-                child: Icon(Icons.person,
-                    color: AppColors.textLightPrimary, size: 20),
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textLightPrimary,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(Icons.star, color: Colors.amber, size: 14),
-                        SizedBox(width: 4),
-                        Text(
-                          rating.toStringAsFixed(1),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textLightSecondary,
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          time,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: AppColors.textLightSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 12),
-          Text(
-            comment,
-            style: TextStyle(
-              fontSize: 13,
-              color: AppColors.textLightPrimary,
-              height: 1.4,
-            ),
-          ),
-        ],
+  // Enviar reseña del tutor
+  Future<void> _submitReview(double rating, String comment) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
       ),
     );
+
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final token = authProvider.token;
+      final userId = authProvider.userId;
+
+      if (token == null || userId == null) {
+        Navigator.pop(context); // Close loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Debes iniciar sesión para publicar una reseña')),
+        );
+        return;
+      }
+
+      final result = await TutorReviewsService.submitReview(
+        token: token,
+        userId: userId,
+        tutorId: widget.tutorId,
+        rating: rating,
+        comment: comment,
+      );
+
+      Navigator.pop(context); // Close loading dialog
+
+      if (result['ok'] != false) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Reseña publicada con éxito')),
+        );
+        // Refresh reviews list
+        _fetchReviews();
+      } else {
+        final errorMsg = result['message'] ?? 'Error al publicar la reseña';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMsg)),
+        );
+      }
+    } catch (e) {
+      Navigator.pop(context); // Close loading dialog
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Error al enviar la reseña. Inténtalo de nuevo.')),
+      );
+    }
+  }
+
+  // Cargar las reseñas del tutor
+  Future<void> _fetchReviews() async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final token = authProvider.token;
+      if (token == null) return;
+
+      final reviews =
+          await TutorReviewsService.fetchReviews(token, widget.tutorId);
+
+      if (mounted) {
+        setState(() {
+          reviewList = reviews;
+        });
+      }
+    } catch (e) {
+      print("Error fetching reviews: $e");
+    }
   }
 
   Widget _buildBottomBar(

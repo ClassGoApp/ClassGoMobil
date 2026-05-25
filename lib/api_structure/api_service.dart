@@ -782,7 +782,7 @@ Future<Map<String, dynamic>> getCountryStates(
 }
 
 Future<Map<String, dynamic>> updateProfilePrice(
-  String token, int userId, String price) async {
+    String token, int userId, String price) async {
   final uri = Uri.parse(
     '$baseUrl/user/$userId/profile-price',
   );
@@ -3138,7 +3138,7 @@ Future<List<TeamMember>> getTeamMembers() async {
 
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
-      
+
       if (jsonResponse['success'] == true) {
         List<dynamic> data = jsonResponse['data'];
         return data.map((item) => TeamMember.fromJson(item)).toList();
@@ -3146,9 +3146,68 @@ Future<List<TeamMember>> getTeamMembers() async {
         throw Exception('Error en la respuesta de la API');
       }
     } else {
-      throw Exception('Error al conectar con el servidor: ${response.statusCode}');
+      throw Exception(
+          'Error al conectar con el servidor: ${response.statusCode}');
     }
   } catch (e) {
     throw Exception('Error de conexión: $e');
+  }
+}
+
+Future<Map<String, dynamic>> createReview(String token, int userId, int tutorId,
+    String reviewText, double rating) async {
+  final String url = '$baseUrl/reviews';
+  try {
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'user_id': tutorId,
+        'reviewer_id': userId,
+        'comment': reviewText,
+        'rating': rating,
+      }),
+    );
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 201) {
+      return data;
+    } else {
+      return {
+        'ok': false,
+        'message':
+            data['message'] ?? 'Error en el servidor: ${response.statusCode}'
+      };
+    }
+  } catch (e) {
+    return {'ok': false, 'message': 'Error al subir la review: $e'};
+  }
+}
+
+Future<Map<String, dynamic>> getReviewTutor(
+    String? token, String tutorId) async {
+  try {
+    final response = await http.get(
+      Uri.parse('$baseUrl/reviews?user_id=$tutorId'),
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 200) {
+      return data;
+    } else {
+      return {
+        'ok': false,
+        'message':
+            data['message'] ?? 'Error en el servidor: ${response.statusCode}'
+      };
+    }
+  } catch (e) {
+    return {'ok': false, 'message': 'Error al obtener las review: $e'};
   }
 }
