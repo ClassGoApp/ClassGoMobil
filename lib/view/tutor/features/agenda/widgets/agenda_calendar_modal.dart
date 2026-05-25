@@ -278,7 +278,7 @@ class _AgendaCalendarModalState extends State<AgendaCalendarModal> {
             child: Text(
               widget.mode == AgendaMode.classes
                   ? "ACEPTAR"
-                  : "CONFIGURAR HORARIOSm",
+                  : "CONFIGURAR HORARIOS",
               style: const TextStyle(
                   fontFamily: 'outfit',
                   color: Colors.white,
