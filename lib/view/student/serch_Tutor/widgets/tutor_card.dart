@@ -14,7 +14,7 @@ class TutorCard extends StatefulWidget {
   final String tutorProfession;
   final String sessionDuration;
   final bool isFavoriteInitial;
-  final ValueChanged<bool> onFavoritePressed;
+  final Future<void> Function(bool isFavorite) onFavoritePressed;
   final String subjectsString; // Renombrado
   final String description; // Nuevo campo para la descripción real
   final String? tagline; // Nuevo campo para el tagline
@@ -148,7 +148,9 @@ class _TutorCardState extends State<TutorCard> {
                                     style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
-                                      color: theme.textTheme.titleLarge?.color ?? AppColors.blackColor,
+                                      color:
+                                          theme.textTheme.titleLarge?.color ??
+                                              AppColors.blackColor,
                                     ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -165,16 +167,40 @@ class _TutorCardState extends State<TutorCard> {
                             ),
                           ),
                           GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _isFavorite = !_isFavorite;
-                                widget.onFavoritePressed(_isFavorite);
-                              });
+                            onTap: () async {
+                              final navigator = Navigator.of(context);
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (context) => WillPopScope(
+                                  onWillPop: () async => false,
+                                  child: const Center(
+                                    child: CircularProgressIndicator(
+                                      color: AppColors.primaryGreen,
+                                    ),
+                                  ),
+                                ),
+                              );
+
+                              try {
+                                await widget.onFavoritePressed(!_isFavorite);
+                                if (mounted) {
+                                  setState(() {
+                                    _isFavorite = !_isFavorite;
+                                  });
+                                }
+                              } catch (e) {
+                                debugPrint('Error al actualizar favorito: $e');
+                              } finally {
+                                navigator.pop();
+                              }
                             },
                             child: Container(
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
-                                color: isDark ? theme.cardTheme.color : Colors.white,
+                                color: isDark
+                                    ? theme.cardTheme.color
+                                    : Colors.white,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Icon(
@@ -202,7 +228,8 @@ class _TutorCardState extends State<TutorCard> {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: theme.textTheme.titleMedium?.color ?? AppColors.blackColor,
+                              color: theme.textTheme.titleMedium?.color ??
+                                  AppColors.blackColor,
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -261,7 +288,8 @@ class _TutorCardState extends State<TutorCard> {
                     child: Text(
                       'Ver Perfil',
                       style: TextStyle(
-                        color: theme.textTheme.bodyLarge?.color ?? AppColors.blackColor,
+                        color: theme.textTheme.bodyLarge?.color ??
+                            AppColors.blackColor,
                         fontWeight: FontWeight.w600,
                         fontSize: 15,
                       ),
