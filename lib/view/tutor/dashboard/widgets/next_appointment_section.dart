@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/student/reservations/services/reservations_service.dart';
+import 'package:flutter_projects/view/tutor/features/agenda/tutor_agenda_screen.dart';
 import 'package:flutter_projects/view/tutor/features/home/widgets/reservation_details_dialog.dart';
 import 'package:flutter_projects/view/tutor/features/home/providers/tutor_home_provider.dart';
 import 'package:flutter_projects/view/tutor/features/home/widgets/start_session_dialog.dart';
@@ -13,9 +14,10 @@ const String _kBodyFont = 'manrope';
 class NextAppointmentSection extends StatefulWidget {
   final List<ReservationItem> appointments;
   final bool isAvailable;
+  final Function(int)? onNavigate;
 
   const NextAppointmentSection(
-      {Key? key, required this.appointments, required this.isAvailable})
+      {Key? key, required this.appointments, required this.isAvailable, this.onNavigate})
       : super(key: key);
 
   @override
@@ -29,6 +31,16 @@ class _NextAppointmentSectionState extends State<NextAppointmentSection> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final today = DateTime.now();
+    final todaysAppointments = widget.appointments.where((b) {
+      if (b.start == null) return false;
+      return 
+        b.start!.year == today.year &&
+        b.start!.month == today.month &&
+        b.start!.day == today.day;
+    }).toList();
+
     return Column(
       children: [
         Padding(
@@ -37,7 +49,7 @@ class _NextAppointmentSectionState extends State<NextAppointmentSection> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Tu Próxima Cita",
+                "Clases de hoy",
                 style: TextStyle(
                   color: isDark ? Colors.white : AppColors.brandBlue,
                   fontSize: 20,
@@ -46,25 +58,80 @@ class _NextAppointmentSectionState extends State<NextAppointmentSection> {
                   height: 1.4,
                 ),
               ),
-              if (widget.appointments.length > 1)
+              if (todaysAppointments.length > 1)
                 Row(
                   children: List.generate(
-                    widget.appointments.length,
+                    todaysAppointments.length,
                     (index) => _buildDot(index),
                   ),
                 ),
-            ],
+              if (todaysAppointments.length > 1)
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () {
+                    if (widget.onNavigate != null) {
+                      widget.onNavigate!(1);
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: isDark 
+                            ? [const Color(0xFF2A2F3A), const Color(0xFF1E222A)]
+                            : [Colors.white, const Color(0xFFF8FAFC)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isDark ? Colors.white10 : AppColors.brandBlue.withOpacity(0.08),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(isDark ? 0.3 : 0.02),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        )
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Text(
+                          "Ver Agenda",
+                          style: TextStyle(
+                            fontFamily: _kTitleFont,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            color: isDark ? Colors.white : AppColors.brandBlue,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: AppColors.brandCyan.withOpacity(0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.arrow_forward_ios_rounded, 
+                              size: 8, color: AppColors.brandCyan),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              ],
           ),
         ),
 
         // EMPTY STATE
         SizedBox(
           height: 250,
-          child: widget.appointments.isEmpty
+          child: todaysAppointments.isEmpty
               ? _EmptyStateCard(isAvailable: widget.isAvailable)
               : PageView.builder(
                   controller: _pageController,
-                  itemCount: widget.appointments.length,
+                  itemCount: todaysAppointments.length,
                   physics: const BouncingScrollPhysics(),
                   onPageChanged: (int index) {
                     setState(() => _currentPage = index);
@@ -73,7 +140,7 @@ class _NextAppointmentSectionState extends State<NextAppointmentSection> {
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: _AppointmentCard(
-                        data: widget.appointments[index],
+                        data: todaysAppointments[index],
                       ),
                     );
                   },
