@@ -699,15 +699,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         throw Exception('Usuario no autenticado');
       }
 
+      final String role = authProvider.userData?['user']?['role']?.toString() ?? '';
+      final bool isStudentProfile = role == 'student';
+
       // Preparar los datos en formato x-www-form-urlencoded
       final body = {
         'first_name': _firstNameController.text.trim(),
         'last_name': _lastNameController.text.trim(),
         'phone_number': _phoneController.text.trim(),
-        'description': _descriptionController.text.trim(),
         'full_name':
             '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}',
       };
+
+      if (!isStudentProfile) {
+        body['description'] = _descriptionController.text.trim();
+      }
 
       final response = await http.put(
         Uri.parse('https://classgoapp.com/api/user/$userId/profile'),
@@ -852,6 +858,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ? (user?['name'] ?? 'Tutor')
         : '$firstName $lastName'.trim();
 
+    final String role = user['role']?.toString() ?? '';
+    final bool isStudent = role == 'student';
+    
     return EditProfileView(
       formKey: _formKey,
       firstNameController: _firstNameController,
@@ -864,6 +873,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       profileVideoUrl: _profileVideoUrl,
       userName: userName,
       isVerified: isVerified,
+      isStudent: isStudent,
       profileImageWidget: _buildProfileImage(),
       videoPlayerWidget: _buildVideoPlayer(),
       videoPlaceholderWidget: _buildVideoPlaceholder(),

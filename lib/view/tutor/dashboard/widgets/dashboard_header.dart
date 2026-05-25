@@ -10,6 +10,7 @@ class DashboardHeader extends StatelessWidget {
   final String? profileImageUrl;
   final double rating;
   final bool isVerified;
+  final Color? textColor;
 
   // --- ESTADOS ---
   final bool isLoadingImage;
@@ -26,6 +27,7 @@ class DashboardHeader extends StatelessWidget {
     this.profileImageUrl,
     required this.rating,
     this.isVerified = true,
+    this.textColor,
     this.isLoadingImage = false,
     required this.isAvailable,
     this.showRating = true,
@@ -37,7 +39,7 @@ class DashboardHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final textColor = Colors.white;
+    final Color finalTextColor = textColor ?? (isDark ? Colors.white: Colors.white);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -56,12 +58,12 @@ class DashboardHeader extends StatelessWidget {
               isVerified: isVerified,
               showRating: showRating,
               showVerified: showVerified,
-              textColor: textColor,
+              textColor: finalTextColor,
             ),
           ),
           _HeaderActions(
             onLogoutTap: onLogoutTap,
-            iconColor: textColor,
+            iconColor: finalTextColor,
           ),
         ],
       ),
@@ -307,7 +309,7 @@ class _HeaderActions extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const ThemeToggleButton(),
+        //const ThemeToggleButton(),
         const SizedBox(width: 8),
         _buildCircleButton(
           context,

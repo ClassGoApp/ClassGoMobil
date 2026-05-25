@@ -3,10 +3,41 @@ import 'package:flutter_projects/styles/app_styles.dart';
 
 const String kFontFamily = 'outfit'; 
 
-class SubjectsSearchBar extends StatelessWidget {
+class SubjectsSearchBar extends StatefulWidget {
   final TextEditingController controller;
+  final VoidCallback? onClear;
 
-  const SubjectsSearchBar({Key? key, required this.controller}) : super(key: key);
+  const SubjectsSearchBar({Key? key, required this.controller, this.onClear})
+      : super(key: key);
+
+  @override
+  State<SubjectsSearchBar> createState() => _SubjectsSearchBarState();
+}
+
+class _SubjectsSearchBarState extends State<SubjectsSearchBar> {
+  bool _hasText = false;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_handleTextChanged);
+    _hasText = widget.controller.text.isNotEmpty;
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_handleTextChanged);
+    super.dispose();
+  }
+
+  void _handleTextChanged() {
+    final hasText = widget.controller.text.isNotEmpty;
+    if (hasText != _hasText) {
+      setState(() {
+        _hasText = hasText;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,14 +54,35 @@ class SubjectsSearchBar extends StatelessWidget {
         ],
       ),
       child: TextField(
-        controller: controller,
-        style: TextStyle(color: isDark ? Colors.white : AppColors.brandBlue, fontWeight: FontWeight.w600, fontFamily: kFontFamily, fontSize: 15),
+        controller: widget.controller,
+        style: TextStyle(
+          color: isDark ? Colors.white : AppColors.brandBlue,
+          fontWeight: FontWeight.w600,
+          fontFamily: kFontFamily,
+          fontSize: 15,
+        ),
         decoration: InputDecoration(
           hintText: "Agrega tu próxima materia...",
-          hintStyle: TextStyle(color: isDark ? Colors.white30 : Colors.grey[400], fontWeight: FontWeight.normal, fontFamily: kFontFamily),
+          hintStyle: TextStyle(
+            color: isDark ? Colors.white30 : Colors.grey[400],
+            fontWeight: FontWeight.normal,
+            fontFamily: kFontFamily,
+          ),
           border: InputBorder.none,
-          prefixIcon: Icon(Icons.search_rounded, color: AppColors.brandCyan, size: 26),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          prefixIcon:
+              Icon(Icons.search_rounded, color: AppColors.brandCyan, size: 26),
+          suffixIcon: _hasText
+              ? IconButton(
+                  icon: Icon(Icons.close_rounded,
+                      color: isDark ? Colors.white54 : Colors.grey[500]),
+                  onPressed: () {
+                    widget.controller.clear();
+                    widget.onClear?.call();
+                  },
+                )
+              : null,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
         ),
       ),
     );

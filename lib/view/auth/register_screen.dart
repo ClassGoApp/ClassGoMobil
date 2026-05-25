@@ -109,7 +109,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
       }
 
       showCustomToast(
-          context, responseData['message'] ?? 'Registration successful', true);
+          context, responseData['message'] ?? 'Registro exitoso', true);
 
       Navigator.pushReplacement(
         context,
@@ -160,7 +160,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
 
     setState(() {
       if (firstName.isEmpty) {
-        _firstNameErrorMessage = "First Name should not be empty";
+        _firstNameErrorMessage = "Ingresa tu nombre";
         _isFirstNameValid = false;
       } else {
         _firstNameErrorMessage = '';
@@ -168,7 +168,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
       }
 
       if (lastName.isEmpty) {
-        _lastNameErrorMessage = "Last Name should not be empty";
+        _lastNameErrorMessage = "Ingresa tus apellidos";
         _isLastNameValid = false;
       } else {
         _lastNameErrorMessage = '';
@@ -176,10 +176,10 @@ class _RegistrationScreenState extends State<RegistrationScreen>
       }
 
       if (email.isEmpty) {
-        _emailErrorMessage = "Email should not be empty";
+        _emailErrorMessage = "Ingresa tu correo";
         _isEmailValid = false;
       } else if (!_isValidEmail(email)) {
-        _emailErrorMessage = 'Enter a valid email address';
+        _emailErrorMessage = 'Ingresa un correo válido';
         _isEmailValid = false;
       } else {
         _emailErrorMessage = '';
@@ -187,10 +187,10 @@ class _RegistrationScreenState extends State<RegistrationScreen>
       }
 
       if (password.isEmpty) {
-        _passwordErrorMessage = "Password should not be empty";
+        _passwordErrorMessage = "Ingresa una contraseña";
         _isPasswordValid = false;
       } else if (password.length < 8) {
-        _passwordErrorMessage = 'Password must be at least 8 characters';
+        _passwordErrorMessage = 'Usa al menos 8 caracteres';
         _isPasswordValid = false;
       } else {
         _passwordErrorMessage = '';
@@ -198,11 +198,11 @@ class _RegistrationScreenState extends State<RegistrationScreen>
       }
 
       if (confirmPassword.isEmpty) {
-        _confirmPasswordErrorMessage = "Confirm Password should not be empty";
+        _confirmPasswordErrorMessage = "Confirma la contraseña";
         _isConfirmPasswordValid = false;
       } else if (password != confirmPassword) {
         _confirmPasswordErrorMessage =
-            'Password and Confirm Password must match';
+            'Las contraseñas deben coincidir';
         _isConfirmPasswordValid = false;
       } else {
         _confirmPasswordErrorMessage = '';
@@ -211,7 +211,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
 
       if (_isChecked.isEmpty) {
         showCustomToast(
-            context, 'You must agree to the Terms & Conditions', false);
+            context, 'Acepta términos y privacidad para continuar', false);
       }
     });
 
@@ -277,7 +277,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
         }
 
         showCustomToast(context,
-            responseData['message'] ?? 'Registration successful', true);
+            responseData['message'] ?? 'Registro exitoso', true);
 
         // Redirigir a la pantalla de verificación pendiente en lugar del login
         Navigator.pushReplacement(
@@ -296,7 +296,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
         print('Error capturado en registro: $error');
         print('Tipo de error: ${error.runtimeType}');
 
-        String errorMessage = 'Registration failed: ';
+        String errorMessage = 'No se pudo registrar: ';
 
         if (error is Map<String, dynamic> && error.containsKey('message')) {
           errorMessage += error['message'];
@@ -357,7 +357,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              'Skip',
+                              'Inicio',
                               style: TextStyle(
                                 color: AppColors.whiteColor,
                                 fontSize: FontSize.scale(context, 15),
@@ -688,7 +688,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                                         ),
                                         children: [
                                           TextSpan(
-                                            text: 'Terminos y condiciones',
+                                            text: 'Términos y condiciones',
                                             style: TextStyle(
                                                 fontSize:
                                                     FontSize.scale(context, 14),
