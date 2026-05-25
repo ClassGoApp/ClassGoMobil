@@ -89,7 +89,7 @@ class _TutorPriceSectionState extends State<TutorPriceSection> {
               color: AppColors.brandCyan, size: 20),
         ),
         title: const Text(
-          "TARIFA POR TUTORÍA",
+          "PRECIO POR TUTORÍA",
           style: TextStyle(
               fontFamily: _kTitleFont,
               color: Colors.grey,
@@ -152,7 +152,7 @@ class _TutorPriceSectionState extends State<TutorPriceSection> {
                           color: Colors.grey.withOpacity(0.3),
                           borderRadius: BorderRadius.circular(10)))),
               const SizedBox(height: 24),
-              Text("Definir Tarifa",
+              Text("Definir Precio",
                   style: TextStyle(
                       fontFamily: _kTitleFont,
                       color: textColor,
@@ -197,7 +197,7 @@ class _TutorPriceSectionState extends State<TutorPriceSection> {
                           borderRadius: BorderRadius.circular(16))),
                   onPressed: () =>
                       _updatePrice(context, priceController.text.trim()),
-                  child: const Text("GUARDAR TARIFA",
+                  child: const Text("GUARDAR PRECIO",
                       style: TextStyle(
                           fontFamily: _kTitleFont,
                           color: Colors.white,

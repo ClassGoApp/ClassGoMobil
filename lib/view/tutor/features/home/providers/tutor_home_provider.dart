@@ -9,7 +9,7 @@ import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TutorHomeProvider extends ChangeNotifier {
-  bool isAvailable = false;
+  bool isAvailable = true;
   bool isLoading = false;
   List<Map<String, dynamic>>? nextBooking = [];
   

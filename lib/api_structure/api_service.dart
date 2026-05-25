@@ -136,6 +136,33 @@ Future<Map<String, dynamic>> loginUser(String email, String password) async {
   }
 }
 
+Future<Map<String, dynamic>> acceptTerms(String token, String role) async {
+  final uri = Uri.parse('$baseUrl/user/accept-terms'); 
+  final headers = <String, String>{
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer $token',
+  };
+
+  final body = json.encode({
+    'role': role,
+  });
+
+  final response = await http.post(
+    uri,
+    headers: headers,
+    body: body,
+  );
+
+  if (response.statusCode == 200) {
+    return json.decode(response.body);
+  } else {
+    final error = json.decode(response.body);
+    throw Exception(error['message'] ?? 'Error al aceptar términos');
+  }
+}
+
+
 Future<Map<String, dynamic>> forgetPassword(String email) async {
   final uri = Uri.parse('$baseUrl/forget-password');
   final headers = <String, String>{
@@ -1061,9 +1088,9 @@ Future<Map<String, dynamic>> getProfile(String token, int id) async {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
     };
+    
 
     final response = await http.get(uri, headers: headers);
-
     if (response.statusCode == 200) {
       final decodedBody = json.decode(response.body);
       return decodedBody;

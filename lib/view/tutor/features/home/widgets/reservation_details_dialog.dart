@@ -242,7 +242,7 @@ class ReservationDetailsDialog extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text("Enlace de Reunión", style: TextStyle(color: AppColors.neonGreen, fontSize: 11, fontWeight: FontWeight.bold, fontFamily: _kTitleFont)),
+                              const Text("Enlace de Reunión", style: TextStyle(color: AppColors.textLightSecondary, fontSize: 11, fontWeight: FontWeight.bold, fontFamily: _kTitleFont)),
                               const SizedBox(height: 4),
                               Text(
                                 data.meetingLink,

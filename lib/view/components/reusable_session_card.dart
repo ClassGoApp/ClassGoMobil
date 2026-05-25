@@ -7,7 +7,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../provider/auth_provider.dart';
-import '../detailPage/session_detail.dart';
 
 class SessionCard extends StatefulWidget {
   final int slotsLeft;

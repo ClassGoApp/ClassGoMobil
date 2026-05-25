@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_projects/base_components/custom_snack_bar.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/view/tutor/features/agenda/tutor_agenda_screen.dart' show AgendaMode;
+import 'package:flutter_projects/view/tutor/features/agenda/widgets/agenda_calendar_modal.dart';
 
 class AddScheduleSheet extends StatefulWidget {
   final List<DateTime> selectedDays;
@@ -19,21 +22,21 @@ class AddScheduleSheet extends StatefulWidget {
 class _AddScheduleSheetState extends State<AddScheduleSheet> {
   late TimeOfDay _startTime;
   late TimeOfDay _endTime;
-  
   int _activeFieldIndex = 0; 
 
-  // Controladores del Rodillo
+  late List<DateTime> _currentSelectedDays;
   late FixedExtentScrollController _hourWheelCtrl;
   late FixedExtentScrollController _minWheelCtrl;
 
   @override
   void initState() {
     super.initState();
+    _currentSelectedDays = widget.selectedDays;
+
     final now = TimeOfDay.now();
     _startTime = TimeOfDay(hour: now.hour == 23 ? 22 : now.hour + 1, minute: 0);
     _endTime = TimeOfDay(hour: _startTime.hour + 1, minute: 0);
 
-    // Inicializamos los rodillos en la hora de INICIO
     _hourWheelCtrl = FixedExtentScrollController(initialItem: 1000 * 24 + _startTime.hour);
     _minWheelCtrl = FixedExtentScrollController(initialItem: 1000 * 60 + _startTime.minute);
   }
@@ -45,9 +48,33 @@ class _AddScheduleSheetState extends State<AddScheduleSheet> {
     super.dispose();
   }
 
+  Future<void> _openCalendarToChangeDates() async {
+    final List<DateTime>? result = await showDialog<List<DateTime>>(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          elevation: 20,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          child: AgendaCalendarModal(
+            mode: AgendaMode.availability,
+            initialDate: _currentSelectedDays.first,
+          ),
+        );
+      },
+    );
+
+    if (result != null && result.isNotEmpty) {
+      setState(() {
+        _currentSelectedDays = result;
+      });
+    }
+  }
+
   String _getDaysDisplayText() {
-    if (widget.selectedDays.isEmpty) return "SIN FECHA";
-    final days = List<DateTime>.from(widget.selectedDays)..sort();
+    if (_currentSelectedDays.isEmpty) return "SIN FECHA";
+    final days = List<DateTime>.from(_currentSelectedDays)..sort();
     if (days.length == 1) return DateFormat('MMM dd', 'es').format(days.first).toUpperCase();
     
     final first = DateFormat('MMM dd', 'es').format(days.first).toUpperCase();
@@ -55,7 +82,6 @@ class _AddScheduleSheetState extends State<AddScheduleSheet> {
     return "$first - $last";
   }
 
-  // Se llama cuando el usuario gira el rodillo
   void _onWheelChanged(int hourIndex, int minuteIndex) {
     final h = hourIndex % 24;
     final m = minuteIndex % 60;
@@ -69,12 +95,10 @@ class _AddScheduleSheetState extends State<AddScheduleSheet> {
     });
   }
 
-  // Cambia la pestaña entre INICIA y FINALIZA
   void _setActiveField(int index) {
     setState(() {
       _activeFieldIndex = index;
       final target = index == 0 ? _startTime : _endTime;
-      // Movemos el rodillo para que coincida con la hora de la pestaña seleccionada
       _hourWheelCtrl.jumpToItem(1000 * 24 + target.hour);
       _minWheelCtrl.jumpToItem(1000 * 60 + target.minute);
     });
@@ -85,8 +109,10 @@ class _AddScheduleSheetState extends State<AddScheduleSheet> {
     final endDouble = _endTime.hour + _endTime.minute / 60.0;
 
     if (startDouble >= endDouble) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("La hora de fin debe ser mayor a la de inicio"), backgroundColor: Colors.redAccent)
+      CustomToast.show(
+        context,
+        "La hora de fin debe ser mayor a la de inicio",
+        isSuccess: false,
       );
       return;
     }
@@ -120,7 +146,6 @@ class _AddScheduleSheetState extends State<AddScheduleSheet> {
           child: Column(
             mainAxisSize: MainAxisSize.min, 
             children: [
-              // Botón Cerrar (X)
               Align(
                 alignment: Alignment.topRight,
                 child: GestureDetector(
@@ -129,7 +154,6 @@ class _AddScheduleSheetState extends State<AddScheduleSheet> {
                 ),
               ),
               
-              // Icono central
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(color: AppColors.brandCyan.withOpacity(0.1), shape: BoxShape.circle),
@@ -143,20 +167,28 @@ class _AddScheduleSheetState extends State<AddScheduleSheet> {
               
               const SizedBox(height: 24),
 
-              // Píldora de Rango
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.brandCyan.withOpacity(0.3), width: 1.5),
-                  color: isDark ? Colors.white.withOpacity(0.02) : Colors.transparent,
+              GestureDetector(
+                onTap: _openCalendarToChangeDates,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.brandCyan.withOpacity(0.3), width: 1.5),
+                    color: isDark ? Colors.white.withOpacity(0.02) : Colors.transparent,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(_getDaysDisplayText(), style: const TextStyle(color: AppColors.brandCyan, fontWeight: FontWeight.bold, fontSize: 12)),
+                      const SizedBox(width: 6),
+                      const Icon(Icons.edit_calendar_rounded, color: AppColors.brandCyan, size: 14),
+                    ],
+                  ),
                 ),
-                child: Text(_getDaysDisplayText(), style: const TextStyle(color: AppColors.brandCyan, fontWeight: FontWeight.bold, fontSize: 12)),
               ),
 
               const SizedBox(height: 24),
 
-              // PESTAÑAS (INICIA / FINALIZA)
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -167,20 +199,16 @@ class _AddScheduleSheetState extends State<AddScheduleSheet> {
               ),
 
               const SizedBox(height: 24),
-
-              // RODILLOS MÁGICOS (WHEEL PICKER)
               _buildWheelPicker(isDark),
-
               const SizedBox(height: 32),
 
-              // Botón Confirmar
               SizedBox(
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
                   onPressed: _handleConfirm,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isDark ? AppColors.brandCyan : AppColors.brandBlue,
+                    backgroundColor: AppColors.brandCyan,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     elevation: 0,
                   ),
@@ -194,7 +222,6 @@ class _AddScheduleSheetState extends State<AddScheduleSheet> {
     );
   }
 
-  // --- WIDGET PESTAÑAS ---
   Widget _buildTab(String label, TimeOfDay time, int index, bool isDark) {
     final isActive = _activeFieldIndex == index;
     final activeColor = AppColors.brandCyan;
@@ -224,14 +251,12 @@ class _AddScheduleSheetState extends State<AddScheduleSheet> {
     );
   }
 
-  // --- WIDGET RODILLO INTERNO ---
   Widget _buildWheelPicker(bool isDark) {
     return SizedBox(
       height: 100, 
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Fondo que resalta la selección del medio
           Container(
             height: 40,
             decoration: BoxDecoration(

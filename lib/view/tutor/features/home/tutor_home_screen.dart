@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/view/bookings/bookings.dart';
+import 'package:flutter_projects/view/detailPage/detail_screen.dart';
 import 'package:flutter_projects/view/student/reservations/services/reservations_service.dart';
 import 'package:flutter_projects/view/student/serch_Tutor/search_tutors_screen.dart';
 import 'package:flutter_projects/view/tutor/features/home/providers/tutor_home_provider.dart';
+import 'package:flutter_projects/view/tutor/features/home/widgets/terms_acceptance_section.dart';
 import 'package:flutter_projects/view/tutor/onboarding/tutor_onboarding_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
@@ -116,8 +118,11 @@ class _TutorHomeScreenState extends State<TutorHomeScreen> {
 
                   const SizedBox(height: 20),
 
+                  //const TermsAcceptanceSection(role: 'tutor'),
+
                   NextAppointmentSection(
                     isAvailable: homeProvider.isAvailable,
+                    onNavigate: widget.onNavigate,
                     appointments: homeProvider.nextBooking!.map((booking) {
                       final start =
                           DateTime.tryParse(booking['start_time'] ?? '') ??

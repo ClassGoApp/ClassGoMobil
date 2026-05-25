@@ -17,7 +17,6 @@ import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
 
 // Vistas
-import 'package:flutter_projects/view/tutor/add_subject_modal.dart';
 import 'package:flutter_projects/view/auth/login_screen.dart';
 import 'package:flutter_projects/view/components/success_animation_dialog.dart';
 

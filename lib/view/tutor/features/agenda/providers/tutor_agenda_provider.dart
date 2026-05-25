@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
+import 'package:flutter_projects/view/student/reservations/services/reservations_service.dart';
 
 class TutorAgendaProvider extends ChangeNotifier {
 
@@ -355,5 +356,47 @@ Future<void> loadAvailableSlots(
     }
 
     return timeString;
+  }
+  // LÓGICA DE RESERVAS (CLASES PROGRAMADAS)
+  List<ReservationItem> _reservations = [];
+  List<ReservationItem> get reservations => _reservations;
+
+  final Set<DateTime> _daysWithClasses = {};
+
+  bool _isLoadingBookings = false;
+  bool get isLoadingBookings => _isLoadingBookings;
+
+  Future<void> loadReservations(String token, int userId) async {
+    _isLoadingBookings = true;
+    notifyListeners();
+
+    try {
+      _reservations = await ReservationsService.fetchUserReservations(token, userId);
+      
+      _daysWithClasses.clear();
+      for (var res in _reservations) {
+        if (res.start != null) {
+          _daysWithClasses.add(DateTime(res.start!.year, res.start!.month, res.start!.day));
+        }
+      }
+    } catch (e) {
+      print("❌ Error cargando reservas: $e");
+    } finally {
+      _isLoadingBookings = false;
+      notifyListeners();
+    }
+  }
+
+  bool hasClasses(DateTime day) {
+    return _daysWithClasses.contains(DateTime(day.year, day.month, day.day));
+  }
+
+  List<ReservationItem> getReservationsForDay(DateTime day) {
+    return _reservations.where((res) {
+      if (res.start == null) return false;
+      return res.start!.year == day.year &&
+             res.start!.month == day.month &&
+             res.start!.day == day.day;
+    }).toList();
   }
 }
