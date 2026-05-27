@@ -137,7 +137,7 @@ Future<Map<String, dynamic>> loginUser(String email, String password) async {
 }
 
 Future<Map<String, dynamic>> acceptTerms(String token, String role) async {
-  final uri = Uri.parse('$baseUrl/user/accept-terms'); 
+  final uri = Uri.parse('$baseUrl/user/accept-terms');
   final headers = <String, String>{
     'Accept': 'application/json',
     'Content-Type': 'application/json',
@@ -161,7 +161,6 @@ Future<Map<String, dynamic>> acceptTerms(String token, String role) async {
     throw Exception(error['message'] ?? 'Error al aceptar términos');
   }
 }
-
 
 Future<Map<String, dynamic>> forgetPassword(String email) async {
   final uri = Uri.parse('$baseUrl/forget-password');
@@ -1088,7 +1087,6 @@ Future<Map<String, dynamic>> getProfile(String token, int id) async {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
     };
-    
 
     final response = await http.get(uri, headers: headers);
     if (response.statusCode == 200) {
@@ -3209,5 +3207,34 @@ Future<Map<String, dynamic>> getReviewTutor(
     }
   } catch (e) {
     return {'ok': false, 'message': 'Error al obtener las review: $e'};
+  }
+}
+
+Future<Map<String, dynamic>> disconnectGoogle(String? token) async {
+  try {
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/google/disconnect'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 200) {
+      return data;
+    } else {
+      return {
+        'success': false,
+        'message':
+            data['message'] ?? 'Error en el servidor: ${response.statusCode}'
+      };
+    }
+  } catch (e) {
+    return {
+      'success': false,
+      'message': 'Error al desconectar la cuenta de Google: $e'
+    };
   }
 }
