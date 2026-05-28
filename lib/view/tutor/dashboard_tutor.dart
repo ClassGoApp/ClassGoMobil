@@ -702,7 +702,9 @@ class _DashboardTutorState extends State<DashboardTutor>
       TutorSubjectsScreen(),
         
       // 3. PERFIL 
-      const TutorProfileScreen(), 
+      TutorProfileScreen(onNavigate: (index) {
+        setState(() { _currentIndex = index; });
+      })
     ];
 
     // bool showNavbar = false;

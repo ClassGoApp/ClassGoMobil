@@ -551,6 +551,9 @@ class AuthProvider with ChangeNotifier {
 
   Future<void> updateUserProfiles(Map<String, dynamic>? updatedProfile) async {
     if (updatedProfile != null && _userData != null) {
+      final existingProfile = Map<String, dynamic>.from(
+          (_userData!['user']?['profile'] ?? {}) as Map);
+
       // Construir full_name si tenemos first_name y last_name
       if (updatedProfile['first_name'] != null &&
           updatedProfile['last_name'] != null) {
@@ -558,8 +561,16 @@ class AuthProvider with ChangeNotifier {
             '${updatedProfile['first_name']} ${updatedProfile['last_name']}';
       }
 
-      // Actualizar _userData['user']['profile']
-      _userData!['user']['profile'] = updatedProfile;
+      final mergedProfile = {
+        ...existingProfile,
+        ...updatedProfile,
+      };
+
+      print('DEBUG - updateUserProfiles merge profile: $mergedProfile');
+
+      // Actualizar _userData['user']['profile'] sin perder campos existentes
+      _userData!['user']['profile'] = mergedProfile;
+      _userData!['profile'] = mergedProfile;
 
       // Actualizar los campos individuales para mantener sincronizados los datos
       if (updatedProfile['first_name'] != null) {
@@ -607,6 +618,29 @@ class AuthProvider with ChangeNotifier {
 
       SharedPreferences.getInstance().then((prefs) {
         prefs.setString('userData', jsonEncode(_userData));
+        notifyListeners();
+      });
+    }
+  }
+
+  void updateProfileVideo(String? newVideoUrl) {
+    if (_userData != null && _userData!['user'] != null) {
+      // Asegurar que la estructura profile existe
+      if (_userData!['user']['profile'] == null) {
+        _userData!['user']['profile'] = {};
+      }
+
+      print(
+          'DEBUG - AuthProvider actualizando intro_video con valor: $newVideoUrl');
+
+      // Actualizar la URL del video de introducción
+      _userData!['user']['profile']['intro_video'] = newVideoUrl;
+
+      final serializedUserData = jsonEncode(_userData);
+      print('DEBUG - AuthProvider userData persistido: $serializedUserData');
+
+      SharedPreferences.getInstance().then((prefs) {
+        prefs.setString('userData', serializedUserData);
         notifyListeners();
       });
     }
@@ -734,7 +768,7 @@ class AuthProvider with ChangeNotifier {
     _token = null;
     _userData = null;
     // Mantener _isSessionLoaded = true; para que el Router no se quede en "cargando"
-    
+
     _educationList.clear();
     _experienceList.clear();
     _certificateList.clear();
@@ -746,11 +780,25 @@ class AuthProvider with ChangeNotifier {
     _performBackgroundCleanup();
   }
 
+  Future<void> markTermsAsAccepted() async {
+    if (_userData != null && _userData!['user'] != null) {
+      _userData!['user']['terms_accepted'] = true;
+      _userData!['user']['terms_accepted_at'] = DateTime.now().toIso8601String();
+
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('userData', jsonEncode(_userData));
+
+      notifyListeners();
+
+      print('DEBUG - Términos actualizados en SharedPreferences localmente');
+    }
+  }
+
   /// Realiza la limpieza de persistencia en segundo plano
   Future<void> _performBackgroundCleanup() async {
     try {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
-      
+
       await Future.wait([
         NotificationTopicService.unsubscribeAll(),
         prefs.remove('token'),

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter_projects/view/home/widgets/about_us_screen.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
@@ -137,7 +138,7 @@ Future<Map<String, dynamic>> loginUser(String email, String password) async {
 }
 
 Future<Map<String, dynamic>> acceptTerms(String token, String role) async {
-  final uri = Uri.parse('$baseUrl/user/accept-terms'); 
+  final uri = Uri.parse('$baseUrl/accept-terms'); 
   final headers = <String, String>{
     'Accept': 'application/json',
     'Content-Type': 'application/json',
@@ -3211,3 +3212,219 @@ Future<Map<String, dynamic>> getReviewTutor(
     return {'ok': false, 'message': 'Error al obtener las review: $e'};
   }
 }
+
+Future<Map<String, dynamic>> updateUserProfile({
+  required String token,
+  required int userId,
+  required Map<String, String> profileData,
+}) async {
+  try {
+    print('DEBUG - Actualizando perfil para usuario: $userId');
+    final response = await http.put(
+      Uri.parse('$baseUrl/user/$userId/profile'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json',
+      },
+      body: profileData,
+    );
+
+    print('DEBUG - Respuesta updateUserProfile status: ${response.statusCode}');
+    final responseData = json.decode(response.body);
+
+    if (response.statusCode == 200) {
+      return {
+        'success': true,
+        'data': responseData,
+      };
+    } else {
+      return {
+        'success': false,
+        'message': responseData['message'] ?? 'Error al actualizar el perfil',
+        'status': response.statusCode,
+      };
+    }
+  } catch (e) {
+    print('Error en updateUserProfile: $e');
+    return {
+      'success': false,
+      'message': 'Error de conexión: $e',
+    };
+  }
+}
+
+Future<Map<String, dynamic>> updateProfileImage({
+  required String token,
+  required int userId,
+  required String imagePath,
+}) async {
+  try {
+    print('DEBUG - Subiendo imagen de perfil para usuario: $userId desde $imagePath');
+    
+    final file = File(imagePath);
+    if (!await file.exists()) {
+      return {
+        'success': false,
+        'message': 'El archivo de imagen seleccionado no existe.',
+      };
+    }
+    
+    final int fileSizeInBytes = await file.length();
+    final double fileSizeInMB = fileSizeInBytes / (1024 * 1024);
+    print('DEBUG - Tamaño de imagen: ${fileSizeInMB.toStringAsFixed(2)}MB');
+    
+    if (fileSizeInMB > 5.0) {
+      return {
+        'success': false,
+        'message': 'La imagen supera el límite de 5MB permitido (${fileSizeInMB.toStringAsFixed(1)}MB).',
+      };
+    }
+
+    var request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/user/$userId/profile-files'),
+    );
+
+    request.headers['Authorization'] = 'Bearer $token';
+    request.headers['Accept'] = 'application/json';
+
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'image',
+        imagePath,
+      ),
+    );
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+    
+    print('DEBUG - Respuesta updateProfileImage status: ${response.statusCode}');
+    final responseData = json.decode(response.body);
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return {
+        'success': true,
+        'data': responseData,
+      };
+    } else {
+      return {
+        'success': false,
+        'message': responseData['message'] ?? 'Error al actualizar la imagen',
+        'status': response.statusCode,
+      };
+    }
+  } catch (e) {
+    print('Error en updateProfileImage: $e');
+    return {
+      'success': false,
+      'message': 'Error de conexión: $e',
+    };
+  }
+}
+
+Future<Map<String, dynamic>> updateProfileVideo({
+  required String token,
+  required int userId,
+  required String videoPath,
+  Function(double percentage)? onProgress,
+}) async {
+  try {
+    print('DEBUG - Subiendo video de introducción para usuario: $userId desde $videoPath');
+    
+    final file = File(videoPath);
+    if (!await file.exists()) {
+      return {
+        'success': false,
+        'message': 'El archivo de video seleccionado no existe.',
+      };
+    }
+    
+    final int fileSizeInBytes = await file.length();
+    final double fileSizeInMB = fileSizeInBytes / (1024 * 1024);
+    print('DEBUG - Tamaño de video: ${fileSizeInMB.toStringAsFixed(2)}MB');
+    
+    if (fileSizeInMB > 50.0) {
+      return {
+        'success': false,
+        'message': 'El video supera el límite de 50MB permitido (${fileSizeInMB.toStringAsFixed(1)}MB).',
+      };
+    }
+
+    var request = MultipartRequestWithProgress(
+      'POST',
+      Uri.parse('$baseUrl/user/$userId/profile-files'),
+      onProgress: (sent, total) {
+        if (onProgress != null && total > 0) {
+          double progress = (sent / total) * 100;
+          onProgress(progress);
+        }
+      },
+    );
+
+    request.headers['Authorization'] = 'Bearer $token';
+    request.headers['Accept'] = 'application/json';
+
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'intro_video',
+        videoPath,
+      ),
+    );
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+    
+    print('DEBUG - Respuesta updateProfileVideo status: ${response.statusCode}');
+    final responseData = json.decode(response.body);
+
+    if (response.statusCode == 200 && responseData['success'] == true) {
+      return {
+        'success': true,
+        'data': responseData,
+      };
+    } else {
+      return {
+        'success': false,
+        'message': responseData['message'] ?? 'Error al actualizar el video',
+        'status': response.statusCode,
+      };
+    }
+  } catch (e) {
+    print('Error en updateProfileVideo: $e');
+    return {
+      'success': false,
+      'message': 'Error de conexión: $e',
+    };
+  }
+}
+
+/// Clase personalizada para interceptar el flujo de datos del request multipart
+/// y poder calcular el progreso de subida en tiempo real
+class MultipartRequestWithProgress extends http.MultipartRequest {
+  final Function(int bytesSent, int totalBytes) onProgress;
+
+  MultipartRequestWithProgress(
+    String method,
+    Uri url, {
+    required this.onProgress,
+  }) : super(method, url);
+
+  @override
+  http.ByteStream finalize() {
+    final byteStream = super.finalize();
+    int totalBytes = contentLength;
+    int bytesSent = 0;
+
+    final transformer = StreamTransformer<List<int>, List<int>>.fromHandlers(
+      handleData: (data, sink) {
+        bytesSent += data.length;
+        onProgress(bytesSent, totalBytes);
+        sink.add(data);
+      },
+    );
+
+    return http.ByteStream(byteStream.transform(transformer));
+  }
+}
+

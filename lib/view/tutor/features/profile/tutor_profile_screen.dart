@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_projects/base_components/custom_snack_bar.dart';
 import 'package:flutter_projects/view/tutor/features/profile/widgets/logout_section.dart';
 import 'package:flutter_projects/view/tutor/features/profile/widgets/price_section.dart';
 import 'package:flutter_projects/view/tutor/features/profile/widgets/qr_payment_screen.dart';
@@ -13,13 +14,15 @@ import 'package:flutter_projects/view/tutor/features/widgets/tutor_header.dart';
 import 'package:flutter_projects/view/tutor/features/profile/video_presentation_modal.dart';
 import 'package:flutter_projects/view/profile/edit_profile_screen.dart';
 import 'package:flutter_projects/api_structure/config/app_config.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 const String _kTitleFont = 'outfit';
 const String _kBodyFont = 'manrope';
 
 class TutorProfileScreen extends StatefulWidget {
-  const TutorProfileScreen({Key? key}) : super(key: key);
-
+  final Function(int) onNavigate;
+  const TutorProfileScreen({Key? key, required this.onNavigate})
+      : super(key: key);
   @override
   State<TutorProfileScreen> createState() => _TutorProfileScreenState();
 }
@@ -37,6 +40,19 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
 
   bool _isExpanded = false;
 
+  Future<void> _launchTermsUrl() async {
+    final url = Uri.parse('https://classgoapp.com/terminos#tutorias-instantaneas');
+    if (!await launchUrl(url, mode: LaunchMode.inAppWebView)) {
+      if (mounted) {
+        CustomToast.show(
+          context,
+          "No se pudo abrir el enlace",
+          isSuccess: false,
+        );
+      }
+    }
+  }
+
   String _getShortName(String fullName) {
     if (fullName.trim().isEmpty) return "";
     List<String> parts = fullName.trim().split(RegExp(r'\s+'));
@@ -52,9 +68,10 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     final baseUrl = AppConfig.mediaBaseUrl;
     String cleanBaseUrl = baseUrl;
     if (!cleanBaseUrl.endsWith('/')) cleanBaseUrl = '$cleanBaseUrl/';
-    
+
     String cleanVideoPath = videoPath;
-    if (cleanVideoPath.startsWith('/')) cleanVideoPath = cleanVideoPath.substring(1);
+    if (cleanVideoPath.startsWith('/'))
+      cleanVideoPath = cleanVideoPath.substring(1);
 
     return '$cleanBaseUrl$cleanVideoPath';
   }
@@ -84,6 +101,10 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
         ? _buildFullVideoUrl(videoPath)
         : null;
 
+    print(
+        'DEBUG - TutorProfileScreen leyendo intro_video desde provider: $videoPath');
+    print('DEBUG - TutorProfileScreen videoUrl construido: $videoUrl');
+
     final String description = profile['description'] ?? '';
 
     final subjectsProvider = Provider.of<TutorSubjectsProvider>(context);
@@ -110,7 +131,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
           top: false,
           child: Column(
             children: [
-              TutorHeader(
+              const TutorHeader(
                 title: "MI PERFIL",
                 subtitle: "GESTIÓN DE PERFIL",
                 //onBackTap: () {Navigator.maybePop(context);},
@@ -141,7 +162,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                           child: Padding(
                               padding: const EdgeInsets.all(24),
                               child: _buildMainView(description, subjectNames,
-                                  isDark, mainTextColor, videoUrl)), 
+                                  isDark, mainTextColor, videoUrl)),
                         ),
                       ],
                     ),
@@ -156,7 +177,6 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
   }
 
   Widget _buildTopCard(String? photoUrl, String userName, bool isDark, bool isVerified, String email) {
-    
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -291,9 +311,10 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: isVerified 
-                        ? Colors.white.withOpacity(0.25)
-                        : Colors.grey.withOpacity(0.5)),
+                      border: Border.all(
+                          color: isVerified
+                              ? Colors.white.withOpacity(0.25)
+                              : Colors.grey.withOpacity(0.5)),
                       boxShadow: [
                         BoxShadow(
                             color: Colors.black.withOpacity(0.05),
@@ -303,15 +324,23 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(isVerified ? Icons.verified_rounded : Icons.hourglass_empty_rounded,
-                            color: isVerified ? AppColors.brandCyan : Colors.grey[400], 
-                              size: 16),
+                        Icon(
+                            isVerified
+                                ? Icons.verified_rounded
+                                : Icons.hourglass_empty_rounded,
+                            color: isVerified
+                                ? AppColors.brandCyan
+                                : Colors.grey[400],
+                            size: 16),
                         const SizedBox(width: 6),
                         Text(
-                          isVerified ? "TUTOR VERIFICADO" : "TUTOR SIN VERIFICAR",
+                          isVerified
+                              ? "TUTOR VERIFICADO"
+                              : "TUTOR SIN VERIFICAR",
                           style: TextStyle(
                               fontFamily: _kBodyFont,
-                              color: isVerified ? Colors.white : Colors.grey[400], 
+                              color:
+                                  isVerified ? Colors.white : Colors.grey[400],
                               fontSize: 10,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 1.0),
@@ -330,6 +359,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
 
   Widget _buildMainView(String description, List<String> subjects, bool isDark,
       Color mainTextColor, String? videoUrl) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final user = authProvider.userData?['user'];
     final innerBgColor =
         isDark ? const Color(0xFF1E222A) : const Color(0xFFF4F6F9);
 
@@ -419,9 +450,26 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
           ),
         ),
         const SizedBox(height: 24),
+        Row(children: [
+          Container(
+              width: 5,
+              height: 18,
+              decoration: BoxDecoration(
+                  color: AppColors.brandOrange,
+                  borderRadius: BorderRadius.circular(10))),
+          const SizedBox(width: 10),
+          Text("CONFIGURACION DE PAGOS ",
+              style: TextStyle(
+                  fontFamily: _kTitleFont,
+                  color: mainTextColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.5)),
+        ]),
+        const SizedBox(height: 12),
         const TutorPriceSection(),
-        const SizedBox(height: 24),
-        _buildListTile("MÉTODO DE COBRO (QR)", Icons.qr_code_scanner_rounded,
+        const SizedBox(height: 12),
+        _buildListTile("MÉTODO DE PAGO (QR)", Icons.qr_code_scanner_rounded,
             mainTextColor, innerBgColor, onTap: () {
           Navigator.push(
             context,
@@ -430,12 +478,57 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
             ),
           );
         }),
+
+        const SizedBox(height: 24),
+        Row(
+          children: [
+            Container(
+                width: 5,
+                height: 18,
+                decoration: BoxDecoration(
+                    color: Colors.grey,
+                    borderRadius: BorderRadius.circular(10))),
+            const SizedBox(width: 10),
+            Text("LEGAL",
+                style: TextStyle(
+                    fontFamily: _kTitleFont,
+                    color: mainTextColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.5)),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _buildListTile(
+            user?['terms_accepted'] == true
+                ? "TÉRMINOS Y CONDICIONES"
+                : "TÉRMINOS Y CONDICIONES (PENDIENTE)",
+            Icons.gavel_rounded,
+            mainTextColor,
+            isDark ? const Color(0xFF1E222A) : const Color(0xFFF4F6F9),
+            onTap: () {
+          if (user?['terms_accepted'] == true) {
+            _launchTermsUrl();
+          } else {
+            CustomToast.show(
+              context,
+              "Debes aceptar los términos y condiciones",
+              isWarning: true,
+            );
+            widget.onNavigate(0);
+          }
+        }),
+
+        const SizedBox(height: 40),
         // const SizedBox(height: 12),
         // _buildListTile("DIPLOMAS Y CERTIFICADOS",
         //     Icons.workspace_premium_outlined, mainTextColor, innerBgColor),
         // const SizedBox(height: 12),
         // _buildListTile("AJUSTES AVANZADOS", Icons.settings_outlined,
         //     Colors.grey, innerBgColor),
+
+        // ELEMENTOS OCULTOS POR REDUNDANCIA UX
+        /*
         const SizedBox(height: 24),
         _buildChipsSection(
           title: "MATERIAS",
@@ -457,7 +550,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
           onChipTap: null,
         ),
         const SizedBox(height: 30),
-
+        */
         const LogoutSection(),
       ],
     );
@@ -568,9 +661,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                     fontSize: 12,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 0.5)),
-
             const Spacer(),
-
             Padding(
               padding: const EdgeInsets.only(right: 10),
               child: Text(
@@ -609,7 +700,12 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                       children: [
                         ...items
                             .take(_isExpanded ? items.length : 4)
-                            .map((s) => _buildStyledChip(s, color, actionIcon: actionIcon, onTap: onChipTap,))
+                            .map((s) => _buildStyledChip(
+                                  s,
+                                  color,
+                                  actionIcon: actionIcon,
+                                  onTap: onChipTap,
+                                ))
                             .toList(),
                       ],
                     ),
@@ -691,7 +787,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
   }
 
   Widget _buildListTile(
-      String title, IconData icon, Color textColor, Color bgColor, {VoidCallback? onTap}) {
+      String title, IconData icon, Color textColor, Color bgColor,
+      {VoidCallback? onTap}) {
     return Container(
       decoration: BoxDecoration(
           color: bgColor, borderRadius: BorderRadius.circular(20)),

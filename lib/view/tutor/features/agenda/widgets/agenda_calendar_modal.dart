@@ -266,7 +266,6 @@ class _AgendaCalendarModalState extends State<AgendaCalendarModal> {
         Expanded(
           child: ElevatedButton(
             onPressed: () {
-              // 🌟 DEVOLVEMOS LA LISTA DE FECHAS AL PADRE
               Navigator.pop(context, _getAllSelectedDays());
             },
             style: ElevatedButton.styleFrom(
@@ -279,6 +278,7 @@ class _AgendaCalendarModalState extends State<AgendaCalendarModal> {
               widget.mode == AgendaMode.classes
                   ? "ACEPTAR"
                   : "CONFIGURAR HORARIOS",
+              textAlign: TextAlign.center,
               style: const TextStyle(
                   fontFamily: 'outfit',
                   color: Colors.white,

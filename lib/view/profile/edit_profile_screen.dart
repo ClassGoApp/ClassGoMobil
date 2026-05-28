@@ -3,6 +3,7 @@ import 'package:flutter_projects/view/profile/edit_profile_view.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:video_player/video_player.dart';
@@ -11,6 +12,7 @@ import '../../provider/auth_provider.dart';
 import '../../styles/app_styles.dart';
 import '../../base_components/custom_snack_bar.dart';
 import '../../api_structure/config/app_config.dart';
+import '../../api_structure/api_service.dart';
 
 class EditProfileScreen extends StatefulWidget {
   @override
@@ -32,6 +34,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   // Variables para el video
   String? _profileVideoUrl;
   bool _isVideoLoading = false;
+  bool _isPickingVideo = false;
+  double _uploadProgress = 0.0;
   bool _isVideoInitialized = false;
   late VideoPlayerController _videoController;
   final DefaultCacheManager _cacheManager = DefaultCacheManager();
@@ -90,6 +94,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _phoneController.text = profile['phone_number'] ?? '';
     _descriptionController.text = profile['description'] ?? '';
 
+    final storedVideoPath = profile['intro_video'];
+    if (storedVideoPath != null && storedVideoPath.toString().isNotEmpty) {
+      final fullVideoUrl = _buildFullVideoUrl(storedVideoPath.toString());
+      if (mounted) {
+        setState(() {
+          _profileVideoUrl = fullVideoUrl;
+        });
+      }
+    }
+
     // Cargar imagen de perfil usando EXACTAMENTE la misma API que el dashboard
     await _loadProfileImageFromDashboard();
   }
@@ -101,19 +115,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       final userId = authProvider.userData?['user']['id'];
 
       if (token != null && userId != null) {
-        // Usar EXACTAMENTE la misma API que el dashboard
-        final response = await http.get(
-          Uri.parse('https://classgoapp.com/api/user/$userId/profile-image'),
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Accept': 'application/json',
-          },
-        );
+        final result = await getUserProfileImage(token, userId);
 
-        if (response.statusCode == 200) {
-          final responseData = json.decode(response.body);
-
-          // La respuesta viene directamente con los datos, no en {success: true, data: {...}}
+        if (result['success'] == true) {
+          final responseData = result['data'];
           final profileImageUrl = responseData['profile_image'];
 
           if (profileImageUrl != null && profileImageUrl.isNotEmpty) {
@@ -333,7 +338,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   // Método para seleccionar video
   Future<void> _selectVideo() async {
+    if (_isPickingVideo) {
+      print('Selección de video ya está en progreso, ignorando tap');
+      return;
+    }
+
     try {
+      _isPickingVideo = true;
+
       // Verificar que el widget esté montado antes de continuar
       if (!mounted) {
         print('Widget no está montado, cancelando selección de video');
@@ -347,13 +359,52 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       );
 
       if (video != null && mounted) {
+        final file = File(video.path);
+        final int sizeInBytes = await file.length();
+        final double sizeInMB = sizeInBytes / (1024 * 1024);
+        print(
+            'DEBUG - Video seleccionado. Tamaño: ${sizeInMB.toStringAsFixed(2)}MB');
+
+        if (sizeInMB > 50.0) {
+          _showCustomToast(
+              'El video supera el límite de 50MB permitido (${sizeInMB.toStringAsFixed(1)}MB). Por favor, elige un video más liviano.',
+              false);
+          return;
+        }
+
         await _updateVideo(video.path);
       }
     } catch (e) {
       if (mounted) {
         _showCustomToast('Error al seleccionar video: $e', false);
       }
+    } finally {
+      _isPickingVideo = false;
     }
+  }
+
+  String? _extractIntroVideoUrl(Map<String, dynamic> responseData) {
+    final nestedData = responseData['data'];
+    final profileData =
+        nestedData is Map<String, dynamic> ? nestedData['profile'] : null;
+
+    final candidates = [
+      responseData['intro_video'],
+      responseData['video'],
+      profileData?['intro_video'],
+      responseData['profile']?['intro_video'],
+      nestedData?['intro_video'],
+      nestedData?['profile']?['intro_video'],
+      responseData['user']?['profile']?['intro_video'],
+    ];
+
+    for (final candidate in candidates) {
+      if (candidate is String && candidate.isNotEmpty) {
+        return candidate;
+      }
+    }
+
+    return null;
   }
 
   // Método para actualizar el video
@@ -362,6 +413,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (mounted) {
         setState(() {
           _isVideoLoading = true;
+          _uploadProgress = 0.0;
         });
       }
 
@@ -373,39 +425,35 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         throw Exception('Usuario no autenticado');
       }
 
-      // Crear request multipart
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('https://classgoapp.com/api/user/$userId/profile-files'),
+      final result = await updateProfileVideo(
+        token: token,
+        userId: userId,
+        videoPath: videoPath,
+        onProgress: (progress) {
+          if (mounted) {
+            setState(() {
+              _uploadProgress = progress;
+            });
+          }
+        },
       );
 
-      request.headers['Authorization'] = 'Bearer $token';
-      request.headers['Accept'] = 'application/json';
+      if (result['success'] == true) {
+        final jsonData = (result['data'] as Map<String, dynamic>);
+        print('DEBUG - Respuesta completa updateProfileVideo: $jsonData');
 
-      // Agregar el video
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          'intro_video',
-          videoPath,
-        ),
-      );
+        final newVideoUrl = _extractIntroVideoUrl(jsonData);
+        print('DEBUG - intro_video extraído de la respuesta: $newVideoUrl');
 
-      final response = await request.send();
-      final responseData = await response.stream.bytesToString();
-      final jsonData = json.decode(responseData);
-
-      if (response.statusCode == 200 && jsonData['success'] == true) {
-        // Actualizar la URL del video localmente
-        final newVideoUrl = jsonData['data']['profile']['intro_video'];
+        if (newVideoUrl == null || newVideoUrl.isEmpty) {
+          throw Exception('La respuesta del servidor no contiene intro_video');
+        }
 
         // Construir la URL completa del video
         final fullVideoUrl = _buildFullVideoUrl(newVideoUrl);
 
-        // Actualizar en el AuthProvider (guardar solo el path relativo)
-        if (authProvider.userData != null) {
-          authProvider.userData!['user']['profile']['intro_video'] =
-              newVideoUrl;
-        }
+        // Actualizar reactivamente usando el AuthProvider
+        authProvider.updateProfileVideo(newVideoUrl);
 
         // Limpiar el video anterior
         if (_isVideoInitialized && mounted) {
@@ -430,7 +478,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
         _showCustomToast('Video actualizado exitosamente', true);
       } else {
-        throw Exception(jsonData['message'] ?? 'Error al actualizar el video');
+        throw Exception(result['message'] ?? 'Error al actualizar el video');
       }
     } catch (e) {
       _showCustomToast('Error al actualizar video: $e', false);
@@ -699,7 +747,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         throw Exception('Usuario no autenticado');
       }
 
-      final String role = authProvider.userData?['user']?['role']?.toString() ?? '';
+      final String role =
+          authProvider.userData?['user']?['role']?.toString() ?? '';
       final bool isStudentProfile = role == 'student';
 
       // Preparar los datos en formato x-www-form-urlencoded
@@ -715,16 +764,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         body['description'] = _descriptionController.text.trim();
       }
 
-      final response = await http.put(
-        Uri.parse('https://classgoapp.com/api/user/$userId/profile'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: body,
+      final result = await updateUserProfile(
+        token: token,
+        userId: userId,
+        profileData: body,
       );
 
-      if (response.statusCode == 200) {
+      if (result['success'] == true) {
         // Actualizar el perfil localmente
         await authProvider.updateUserProfiles(body);
 
@@ -734,12 +780,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         // Regresar a la pantalla anterior y forzar actualización
         Navigator.pop(context,
             true); // Pasar true para indicar que se actualizó la imagen
-
-        // El provider se actualizará automáticamente con los datos del servidor
       } else {
-        final errorData = json.decode(response.body);
-        throw Exception(
-            errorData['message'] ?? 'Error al actualizar el perfil');
+        throw Exception(result['message'] ?? 'Error al actualizar el perfil');
       }
     } catch (e) {
       _showCustomToast('Error: ${e.toString()}', false);
@@ -860,7 +902,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     final String role = user['role']?.toString() ?? '';
     final bool isStudent = role == 'student';
-    
+
     return EditProfileView(
       formKey: _formKey,
       firstNameController: _firstNameController,
@@ -869,6 +911,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       descriptionController: _descriptionController,
       isLoading: _isLoading,
       isVideoLoading: _isVideoLoading,
+      uploadProgress: _uploadProgress,
       profileImageUrl: _profileImageUrl,
       profileVideoUrl: _profileVideoUrl,
       userName: userName,
@@ -898,30 +941,42 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Row(
           children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 28),
+            Icon(Icons.warning_amber_rounded,
+                color: Colors.redAccent, size: 28),
             SizedBox(width: 10),
-            Text('Eliminar Video', style: TextStyle(fontFamily: 'outfit', fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.brandBlue)),
+            Text('Eliminar Video',
+                style: TextStyle(
+                    fontFamily: 'outfit',
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: AppColors.brandBlue)),
           ],
         ),
         content: const Text(
           '¿Estás seguro de que deseas eliminar tu video de presentación? Esta acción no se puede deshacer.',
-          style: TextStyle(fontFamily: 'manrope', color: Colors.grey, fontSize: 14),
+          style: TextStyle(
+              fontFamily: 'manrope', color: Colors.grey, fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+            child: const Text('Cancelar',
+                style:
+                    TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
           ),
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(context); 
-              _deleteVideoLogic(); 
+              Navigator.pop(context);
+              _deleteVideoLogic();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.redAccent,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
             ),
-            child: const Text('Sí, eliminar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: const Text('Sí, eliminar',
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -934,11 +989,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     // setState(() {
     //   _isVideoLoading = true;
     // });
-    
+
     try {
-      // TODO: Agregar llamada HTTP DELETE a tu API de ClassGo si es necesario.
       await Future.delayed(const Duration(seconds: 1)); // Simulando red
-      
+
       if (_isVideoInitialized && mounted) {
         _videoController.removeListener(() {});
         _videoController.dispose();
@@ -953,7 +1007,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         _profileVideoUrl = null;
         _isVideoInitialized = false;
       });
-      
+
       _showCustomToast('Video eliminado correctamente', true);
     } catch (e) {
       _showCustomToast('Error al eliminar video: $e', false);
@@ -1197,6 +1251,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       );
 
       if (image != null) {
+        final file = File(image.path);
+        final int sizeInBytes = await file.length();
+        final double sizeInMB = sizeInBytes / (1024 * 1024);
+        print(
+            'DEBUG - Imagen seleccionada. Tamaño: ${sizeInMB.toStringAsFixed(2)}MB');
+
+        if (sizeInMB > 5.0) {
+          _showCustomToast(
+              'La imagen supera el límite de 5MB permitido (${sizeInMB.toStringAsFixed(1)}MB). Por favor, elige una imagen más liviana.',
+              false);
+          return;
+        }
+
         await _uploadImage(image);
       }
     } catch (e) {
@@ -1218,97 +1285,42 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         throw Exception('Usuario no autenticado');
       }
 
-      // Crear la petición multipart con el endpoint correcto
-      final request = http.MultipartRequest(
-        'POST',
-        Uri.parse('https://classgoapp.com/api/user/$userId/profile-files'),
+      final result = await updateProfileImage(
+        token: token,
+        userId: userId,
+        imagePath: imageFile.path,
       );
 
-      // Agregar headers
-      request.headers['Authorization'] = 'Bearer $token';
+      if (result['success'] == true) {
+        final jsonResponse = result['data'];
 
-      // Agregar la imagen
-      final imageBytes = await imageFile.readAsBytes();
+        String? newImageUrl;
 
-      final imageField = http.MultipartFile.fromBytes(
-        'image',
-        imageBytes,
-        filename: imageFile.name,
-      );
-      request.files.add(imageField);
+        if (jsonResponse['data'] != null) {
+          newImageUrl = jsonResponse['data']['image'] ??
+              jsonResponse['data']['profile']?['image'] ??
+              jsonResponse['data']['url'];
+        } else if (jsonResponse['image'] != null) {
+          newImageUrl = jsonResponse['image'];
+        } else if (jsonResponse['url'] != null) {
+          newImageUrl = jsonResponse['url'];
+        }
 
-      // Enviar la petición
-      final response = await request.send();
-      final responseData = await response.stream.bytesToString();
+        if (newImageUrl != null) {
+          authProvider.updateProfileImage(newImageUrl);
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        try {
-          final jsonResponse = json.decode(responseData);
+          setState(() {
+            _profileImageUrl = newImageUrl;
+          });
 
-          if (jsonResponse['success'] == true ||
-              jsonResponse['status'] == 'success') {
-            // Actualizar la imagen localmente
-            String? newImageUrl;
+          _showCustomToast('Imagen actualizada exitosamente', true);
 
-            // Intentar diferentes estructuras de respuesta
-            if (jsonResponse['data'] != null) {
-              newImageUrl = jsonResponse['data']['image'] ??
-                  jsonResponse['data']['profile']?['image'] ??
-                  jsonResponse['data']['url'];
-            } else if (jsonResponse['image'] != null) {
-              newImageUrl = jsonResponse['image'];
-            } else if (jsonResponse['url'] != null) {
-              newImageUrl = jsonResponse['url'];
-            }
-
-            if (newImageUrl != null) {
-              // Actualizar en el provider PRIMERO para que se sincronice en toda la app
-              authProvider.updateProfileImage(newImageUrl);
-
-              // Luego actualizar localmente
-              setState(() {
-                _profileImageUrl = newImageUrl;
-              });
-
-              _showCustomToast('Imagen actualizada exitosamente', true);
-
-              // Recargar la imagen desde la API para mostrar la nueva imagen
-              await _loadProfileImageFromDashboard();
-            } else {
-              throw Exception(
-                  'No se pudo obtener la URL de la imagen actualizada');
-            }
-          } else {
-            throw Exception(
-                jsonResponse['message'] ?? 'Error al actualizar la imagen');
-          }
-        } catch (jsonError) {
-          // Si no es JSON válido, verificar si es una respuesta de éxito simple
-          if (responseData.contains('success') ||
-              responseData.contains('Success')) {
-            _showCustomToast('Imagen actualizada exitosamente', true);
-          } else {
-            throw Exception('Respuesta del servidor no válida: $responseData');
-          }
+          await _loadProfileImageFromDashboard();
+        } else {
+          throw Exception('No se pudo obtener la URL de la imagen actualizada');
         }
       } else {
-        // Manejar diferentes tipos de errores
-        String errorMessage =
-            'Error al actualizar la imagen (${response.statusCode})';
-
-        try {
-          if (responseData.isNotEmpty) {
-            final errorData = json.decode(responseData);
-            errorMessage = errorData['message'] ?? errorMessage;
-          }
-        } catch (e) {
-          // Si no es JSON, usar la respuesta como está
-          if (responseData.isNotEmpty && responseData.length < 200) {
-            errorMessage = responseData;
-          }
-        }
-
-        throw Exception(errorMessage);
+        throw Exception(result['message'] ?? 'Error al actualizar la imagen');
       }
     } catch (e) {
       _showCustomToast('Error: ${e.toString()}', false);

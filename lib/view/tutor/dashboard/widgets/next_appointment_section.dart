@@ -544,7 +544,7 @@ class _EmptyStateCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               isAvailable
-                  ? "No tienes citas programadas para hoy."
+                  ? "No tienes clases programadas para hoy."
                   : "Activa tu disponibilidad para que los alumnos te vean.",
               style: TextStyle(
                 color: isDark ? Colors.grey : Colors.grey[500],
