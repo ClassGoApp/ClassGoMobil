@@ -63,7 +63,10 @@ class _DashboardStudentState extends State<DashboardStudent> {
             _buildHomeTab(),                         // Index 0
             _buildBookingsTab(),                     // Index 1
             const InstantTutoringScreen(),           // Index 2 
-            const FavoriteTutorsScreen(showBottomNav: false), // Index 3
+            FavoriteTutorsScreen(
+              showBottomNav: false,
+              isSelected: _selectedIndex == 3,
+            ),                                       // Index 3
             const ProfileScreen(showAppBar: false),  // Index 4
           ],
         ),

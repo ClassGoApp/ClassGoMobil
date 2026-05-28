@@ -29,7 +29,6 @@ import 'package:flutter_projects/models/tutor_subject.dart';
 
 import 'package:flutter_projects/view/tutor/dashboard/logic/calendar_selection_controller.dart';
 
-
 class DashboardTutor extends StatefulWidget {
   @override
   _DashboardTutorState createState() => _DashboardTutorState();
@@ -37,8 +36,7 @@ class DashboardTutor extends StatefulWidget {
 
 class _DashboardTutorState extends State<DashboardTutor>
     with WidgetsBindingObserver {
-
-  bool _isBottomNavVisible = true; 
+  bool _isBottomNavVisible = true;
   bool isAvailable = false;
 
   int _currentIndex = 0;
@@ -77,6 +75,7 @@ class _DashboardTutorState extends State<DashboardTutor>
     }
     return false; // Permite que el scroll continúe propagándose
   }
+
   @override
   void initState() {
     super.initState();
@@ -696,7 +695,7 @@ class _DashboardTutorState extends State<DashboardTutor>
           onNavigate: (index) => setState(() => _currentIndex = index)),
 
       // 1. AGENDA
-      const TutorAgendaScreen (),
+      const TutorAgendaScreen(),
 
       // 2. MATERIAS
       TutorSubjectsScreen(),
@@ -715,20 +714,20 @@ class _DashboardTutorState extends State<DashboardTutor>
         IndexedStack(
           index: _currentIndex,
           children: _screens,
-        ),      
-          Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: TutorBottomNav(
-                currentIndex: _currentIndex,
-                onTap: (index) {
-                  setState(() => _currentIndex = index);
-                  // lógica de navegación real:
-                  // if (index == 1) Navigator.pushNamed...
-                  print("Navegar a tab: $index");
-                },
-              ))
+        ),
+        Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: TutorBottomNav(
+              currentIndex: _currentIndex,
+              onTap: (index) {
+                setState(() => _currentIndex = index);
+                // lógica de navegación real:
+                // if (index == 1) Navigator.pushNamed...
+                print("Navegar a tab: $index");
+              },
+            ))
       ]),
     );
   }
@@ -786,7 +785,6 @@ class _DashboardTutorState extends State<DashboardTutor>
   }
 
   // Método para reproducir sonido de éxito
-
 
   // Método para actualizar la disponibilidad de tutoría
   Future<void> _updateTutoringAvailability(bool newAvailability) async {

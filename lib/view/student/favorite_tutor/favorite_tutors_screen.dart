@@ -17,8 +17,12 @@ import 'package:flutter_projects/helpers/slide_up_route.dart';
 
 class FavoriteTutorsScreen extends StatefulWidget {
   final bool showBottomNav;
-  const FavoriteTutorsScreen({Key? key, this.showBottomNav = true})
-      : super(key: key);
+  final bool isSelected;
+  const FavoriteTutorsScreen({
+    Key? key,
+    this.showBottomNav = true,
+    this.isSelected = false,
+  }) : super(key: key);
 
   @override
   State<FavoriteTutorsScreen> createState() => _FavoriteTutorsScreenState();
@@ -47,14 +51,14 @@ class _FavoriteTutorsScreenState extends State<FavoriteTutorsScreen> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: FavoriteTutorsContent(),
+          child: FavoriteTutorsContent(isSelected: widget.isSelected),
         ),
       ),
       bottomNavigationBar: widget.showBottomNav
           ? StudentBottomNav(
-              currentIndex: 2,
+              currentIndex: 3,
               onTap: (index) {
-                if (index == 2) return;
+                if (index == 3) return;
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(
                       builder: (context) => RoleBasedNavigation()),
@@ -69,7 +73,8 @@ class _FavoriteTutorsScreenState extends State<FavoriteTutorsScreen> {
 
 /// Contenido reutilizable de la pantalla de Favoritos
 class FavoriteTutorsContent extends StatefulWidget {
-  const FavoriteTutorsContent({Key? key}) : super(key: key);
+  final bool isSelected;
+  const FavoriteTutorsContent({Key? key, this.isSelected = false}) : super(key: key);
 
   @override
   State<FavoriteTutorsContent> createState() => _FavoriteTutorsContentState();
@@ -83,6 +88,14 @@ class _FavoriteTutorsContentState extends State<FavoriteTutorsContent> {
   final FocusNode _searchFocusNode = FocusNode();
   Timer? _debounce;
   late final ScrollController _scrollController;
+
+  @override
+  void didUpdateWidget(covariant FavoriteTutorsContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isSelected && !oldWidget.isSelected) {
+      _loadFavorites();
+    }
+  }
 
   @override
   void initState() {
@@ -194,7 +207,9 @@ class _FavoriteTutorsContentState extends State<FavoriteTutorsContent> {
           completedCourses: _toInt(tutor['completed_courses_count']),
         ),
       ),
-    );
+    ).then((_) {
+      _loadFavorites();
+    });
   }
 
   @override
@@ -232,60 +247,78 @@ class _FavoriteTutorsContentState extends State<FavoriteTutorsContent> {
   Widget _buildEmptyState() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text(
-              'Aún no tienes tutores favoritos',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : AppColors.blackColor,
+    return RefreshIndicator(
+      onRefresh: _onRefresh,
+      color: AppColors.primaryGreen,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: constraints.maxHeight,
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Guarda tutores que te gusten para encontrarlos rápidamente.',
-              style: TextStyle(
-                  color: isDark ? Colors.white54 : AppColors.greyColor,
-                  fontSize: 14),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => SearchTutorsScreen(),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryGreen,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Aún no tienes tutores favoritos',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : AppColors.blackColor,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Guarda tutores que te gusten para encontrarlos rápidamente.',
+                        style: TextStyle(
+                            color: isDark ? Colors.white54 : AppColors.greyColor,
+                            fontSize: 14),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => SearchTutorsScreen(),
+                              ),
+                            ).then((_) {
+                              _loadFavorites();
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryGreen,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            'Buscar Tutores',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                child: const Text(
-                  'Buscar Tutores',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
               ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -363,7 +396,9 @@ class _FavoriteTutorsContentState extends State<FavoriteTutorsContent> {
                                 subjectId: selectedSubjectId,
                               ),
                             ),
-                          );
+                          ).then((_) {
+                            _loadFavorites();
+                          });
                         },
                         tutorProfession: validSubjectNames.isNotEmpty
                             ? validSubjectNames.first

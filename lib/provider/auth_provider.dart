@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
+import 'package:flutter_projects/api_structure/api_service.dart' as api_service;
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_projects/api_structure/config/app_config.dart';
 import 'package:flutter_projects/view/tutor/certificate/certificate_detail.dart';
 import 'package:flutter_projects/view/tutor/experience/experience_detail.dart';
@@ -763,6 +765,7 @@ class AuthProvider with ChangeNotifier {
   /// Cierra la sesión del usuario de forma instantánea
   Future<void> logout() async {
     print('DEBUG - Iniciando logout instantáneo');
+    final String? tokenToUse = _token;
 
     // 1. Limpiar datos en memoria de inmediato
     _token = null;
@@ -777,7 +780,7 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     // 2. Ejecutar limpieza pesada en segundo plano SIN esperar el resultado
-    _performBackgroundCleanup();
+    _performBackgroundCleanup(tokenToUse);
   }
 
   Future<void> markTermsAsAccepted() async {
@@ -795,9 +798,40 @@ class AuthProvider with ChangeNotifier {
   }
 
   /// Realiza la limpieza de persistencia en segundo plano
-  Future<void> _performBackgroundCleanup() async {
+  Future<void> _performBackgroundCleanup(String? token) async {
     try {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
+      
+      if (token != null) {
+        // 1. Llamar al API de desconexión de Google si corresponde
+        try {
+          print('Llamando a disconnectGoogle en el backend...');
+          final response = await api_service.disconnectGoogle(token);
+          print('Response disconnectGoogle: $response');
+        } catch (e) {
+          print('Error al desconectar Google en backend: $e');
+        }
+
+        // 2. Llamar al logout del backend para invalidar el token
+        try {
+          print('Llamando a logout en el backend...');
+          final response = await api_service.logout(token);
+          print('Response backend logout: $response');
+        } catch (e) {
+          print('Error en logout del backend: $e');
+        }
+      }
+
+      // 3. Cerrar sesión de GoogleSignIn en el dispositivo si corresponde
+      try {
+        final GoogleSignIn googleSignIn = GoogleSignIn();
+        if (await googleSignIn.isSignedIn()) {
+          print('Cerrando sesión de Google en el dispositivo...');
+          await googleSignIn.signOut();
+        }
+      } catch (e) {
+        print('Error al desloguear GoogleSignIn local: $e');
+      }
 
       await Future.wait([
         NotificationTopicService.unsubscribeAll(),
