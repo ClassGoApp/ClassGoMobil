@@ -266,7 +266,7 @@ class EditProfileView extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 30),
 
-                                  Text("VIDEO DE PRESENTACIÓN", style: TextStyle(fontFamily: 'outfit', color: mainTextColor, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                                  Text("VIDEO DE PRESENTACIÓN (OPCIONAL)", style: TextStyle(fontFamily: 'outfit', color: mainTextColor, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
                                   const SizedBox(height: 12),
                               
                                   Stack(
