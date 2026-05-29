@@ -36,12 +36,13 @@ class _TermsAcceptanceSectionState extends State<TermsAcceptanceSection> {
         if (mounted) {
           CustomToast.show(
             context,
-            "¡Radar activado con éxito!",
+            "¡Términos aceptados correctamente!",
             isSuccess: true,
           );
         }
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print(stackTrace);
       if (mounted) {
         CustomToast.show(
           context,
@@ -74,9 +75,7 @@ class _TermsAcceptanceSectionState extends State<TermsAcceptanceSection> {
       const Color cardBg = AppColors.brandBlue;
       const Color titleColor = Colors.white;
       final Color textColor = Colors.white.withOpacity(0.75);
-      final Color accentCyan = AppColors.brandCyan; 
-      final Color badgeBg = accentCyan.withOpacity(0.15);
-      const Color badgeText = Colors.white;
+      final Color accentCyan = AppColors.brandCyan;
 
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),

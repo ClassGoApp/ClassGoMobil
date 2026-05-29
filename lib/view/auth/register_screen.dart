@@ -5,11 +5,7 @@ import 'package:flutter_projects/base_components/custom_snack_bar.dart';
 import 'package:flutter_projects/base_components/textfield.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
-import 'package:flutter_projects/view/auth/tutor_subject_selection_screen.dart';
 import 'package:flutter_projects/view/home/home_screen.dart';
-import 'package:flutter_projects/view/layout/main_shell.dart';
-import 'package:flutter_projects/view/student/serch_Tutor/search_tutors_screen.dart';
-import 'package:flutter_projects/view/tutor/features/subjects/sheets/add_subject_sheet.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/helpers/back_button_handler.dart';
@@ -22,13 +18,11 @@ class RegistrationScreen extends StatefulWidget {
   State<RegistrationScreen> createState() => _RegistrationScreenState();
 }
 
-class _RegistrationScreenState extends State<RegistrationScreen>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _fadeAnimation;
+class _RegistrationScreenState extends State<RegistrationScreen> {
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
@@ -36,12 +30,14 @@ class _RegistrationScreenState extends State<RegistrationScreen>
   final FocusNode _firstNameFocusNode = FocusNode();
   final FocusNode _lastNameFocusNode = FocusNode();
   final FocusNode _emailFocusNode = FocusNode();
+  final FocusNode _phoneFocusNode = FocusNode();
   final FocusNode _passwordFocusNode = FocusNode();
   final FocusNode _confirmPasswordFocusNode = FocusNode();
 
   bool _isFirstNameValid = true;
   bool _isLastNameValid = true;
   bool _isEmailValid = true;
+  bool _isPhoneNumberValid = true;
   bool _isPasswordValid = true;
   bool _isConfirmPasswordValid = true;
   String _isChecked = "";
@@ -50,12 +46,10 @@ class _RegistrationScreenState extends State<RegistrationScreen>
   String _firstNameErrorMessage = '';
   String _lastNameErrorMessage = '';
   String _emailErrorMessage = '';
+  String _phoneNumberErrorMessage = '';
   String _passwordErrorMessage = '';
   String _confirmPasswordErrorMessage = '';
   String role = 'student';
-
-  bool _hasSelectedSubjects = false;
-  List<int> _selectedSubjects = [];
 
   bool _isLoading = false;
 
@@ -66,37 +60,25 @@ class _RegistrationScreenState extends State<RegistrationScreen>
   }
 
   @override
-  void initState() {
-    super.initState();
-
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeInOut,
-      ),
-    );
-
-    _controller.repeat(reverse: true);
-  }
-
-  @override
   void dispose() {
-    _controller.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+
+    _firstNameFocusNode.dispose();
+    _lastNameFocusNode.dispose();
+    _emailFocusNode.dispose();
+    _phoneFocusNode.dispose();
+    _passwordFocusNode.dispose();
+    _confirmPasswordFocusNode.dispose();
+
     super.dispose();
   }
 
-  void _executeRegistration(Map<String, dynamic> finalUserData) async {
-    // 🚀 RASTREADOR 4: ¿Qué entra a la función final?
-    print(
-        '🚀 [Paso 4 - Ejecución] Iniciando _executeRegistration con: $finalUserData');
+  Future<void> _executeRegistration(Map<String, dynamic> finalUserData) async {
     setState(() => _isLoading = true);
 
     try {
@@ -110,6 +92,8 @@ class _RegistrationScreenState extends State<RegistrationScreen>
 
       showCustomToast(
           context, responseData['message'] ?? 'Registro exitoso', true);
+
+      if (!mounted) return;
 
       Navigator.pushReplacement(
         context,
@@ -125,10 +109,27 @@ class _RegistrationScreenState extends State<RegistrationScreen>
         ),
       );
     } catch (error) {
-      print('Error capturado en registro: $error');
-      // ... manejo de errores de Toast ...
+      String errorMessage = 'No se pudo registrar';
+
+      if (error is Map<String, dynamic> && error.containsKey('message')) {
+        errorMessage = error['message'];
+      } else if (error.toString().contains('HandshakeException')) {
+        errorMessage =
+            'Error de conexión segura. Verifica tu conexión a internet.';
+      } else if (error.toString().contains('SocketException')) {
+        errorMessage =
+            'No se pudo conectar al servidor. Verifica tu conexión a internet.';
+      } else {
+        errorMessage = error.toString();
+      }
+
+      if (mounted) {
+        showCustomToast(context, errorMessage, false);
+      }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -155,6 +156,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
     String firstName = _firstNameController.text;
     String lastName = _lastNameController.text;
     String email = _emailController.text;
+    String phoneNumber = _phoneController.text.trim();
     String password = _passwordController.text;
     String confirmPassword = _confirmPasswordController.text;
 
@@ -186,6 +188,17 @@ class _RegistrationScreenState extends State<RegistrationScreen>
         _isEmailValid = true;
       }
 
+      if (phoneNumber.isEmpty) {
+        _phoneNumberErrorMessage = 'Ingresa tu número de celular';
+        _isPhoneNumberValid = false;
+      } else if (!RegExp(r'^[0-9+\-\s()]{8,15}$').hasMatch(phoneNumber)) {
+        _phoneNumberErrorMessage = 'Ingresa un número válido';
+        _isPhoneNumberValid = false;
+      } else {
+        _phoneNumberErrorMessage = '';
+        _isPhoneNumberValid = true;
+      }
+
       if (password.isEmpty) {
         _passwordErrorMessage = "Ingresa una contraseña";
         _isPasswordValid = false;
@@ -201,8 +214,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
         _confirmPasswordErrorMessage = "Confirma la contraseña";
         _isConfirmPasswordValid = false;
       } else if (password != confirmPassword) {
-        _confirmPasswordErrorMessage =
-            'Las contraseñas deben coincidir';
+        _confirmPasswordErrorMessage = 'Las contraseñas deben coincidir';
         _isConfirmPasswordValid = false;
       } else {
         _confirmPasswordErrorMessage = '';
@@ -218,6 +230,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
     if (_isFirstNameValid &&
         _isLastNameValid &&
         _isEmailValid &&
+        _isPhoneNumberValid &&
         _isPasswordValid &&
         _isConfirmPasswordValid &&
         _isChecked.isNotEmpty) {
@@ -229,105 +242,19 @@ class _RegistrationScreenState extends State<RegistrationScreen>
         "first_name": firstName,
         "last_name": lastName,
         "email": email,
+        "phone_number": phoneNumber,
         "password": password,
         "password_confirmation": confirmPassword,
         "user_role": role,
         "terms": _isChecked,
       };
-      if (role == 'tutor') {
-        print(
-            '🚀 [Paso 2A - Registro] Abriendo pantalla de selección de materias...');
 
-        final List<int>? selectedSubjects = await Navigator.push<List<int>>(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const TutorSubjectSelectionScreen(),
-          ),
-        );
-
-        // 🚀 RASTREADOR 2: ¿Qué recibió el formulario?
-        print(
-            '🚀 [Paso 2B - Registro] Regresamos al formulario. Recibimos: $selectedSubjects');
-
-        if (selectedSubjects != null && selectedSubjects.isNotEmpty) {
-          userData['subjects'] = selectedSubjects;
-
-          // 🚀 RASTREADOR 3: ¿Cómo quedó el paquete final?
-          print(
-              '🚀 [Paso 3 - Registro] Paquete armado con éxito. Datos finales: $userData');
-
-          _executeRegistration(userData);
-        } else {
-          print(
-              '⚠️ [Alerta] El usuario cerró la pantalla sin materias o dio hacia atrás.');
-        }
-      } else {
-        _executeRegistration(userData);
-      }
-
-      try {
-        print('Iniciando proceso de registro...');
-        final responseData = await registerUser(userData);
-        print('Respuesta del registro: $responseData');
-        final authProvider = Provider.of<AuthProvider>(context, listen: false);
-        if (responseData.containsKey('data') &&
-            responseData['data'].containsKey('token')) {
-          final String token = responseData['data']['token'];
-          authProvider.setToken(token);
-        }
-
-        showCustomToast(context,
-            responseData['message'] ?? 'Registro exitoso', true);
-
-        // Redirigir a la pantalla de verificación pendiente en lugar del login
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-              builder: (context) => VerificationPendingScreen(
-                    userData: {
-                      'email': email,
-                      'first_name': firstName,
-                      'last_name': lastName,
-                      'response': responseData,
-                    },
-                  )),
-        );
-      } catch (error) {
-        print('Error capturado en registro: $error');
-        print('Tipo de error: ${error.runtimeType}');
-
-        String errorMessage = 'No se pudo registrar: ';
-
-        if (error is Map<String, dynamic> && error.containsKey('message')) {
-          errorMessage += error['message'];
-          print('Error estructurado: ${error['message']}');
-        } else if (error.toString().contains('HandshakeException')) {
-          errorMessage +=
-              'Error de conexión segura. Verifica tu conexión a internet.';
-          print('Error de SSL detectado en pantalla');
-        } else if (error.toString().contains('SocketException')) {
-          errorMessage +=
-              'No se pudo conectar al servidor. Verifica tu conexión a internet.';
-          print('Error de conexión detectado en pantalla');
-        } else {
-          errorMessage += 'An unknown error occurred: ${error.toString()}';
-          print('Error inesperado en pantalla: $error');
-        }
-
-        showCustomToast(context, errorMessage, false);
-      } finally {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      await _executeRegistration(userData);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final w = MediaQuery.of(context).size.width;
-    final h = MediaQuery.of(context).size.height;
-
     return WillPopScope(
       onWillPop: () => BackButtonHandler.handleBackButton(
         context,
@@ -481,6 +408,23 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                                 padding: const EdgeInsets.only(top: 8.0),
                                 child: Text(
                                   _emailErrorMessage,
+                                  style: TextStyle(color: AppColors.redColor),
+                                ),
+                              ),
+                            SizedBox(height: 15),
+                            CustomTextField(
+                              hint: 'Número de celular',
+                              obscureText: false,
+                              controller: _phoneController,
+                              focusNode: _phoneFocusNode,
+                              keyboardType: TextInputType.phone,
+                              hasError: !_isPhoneNumberValid,
+                            ),
+                            if (_phoneNumberErrorMessage.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: Text(
+                                  _phoneNumberErrorMessage,
                                   style: TextStyle(color: AppColors.redColor),
                                 ),
                               ),
@@ -746,7 +690,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                                 ),
                               ),
                               child: Text(
-                                role == 'tutor' ? 'Siguiente' : 'Registrarse',
+                                'Registrarse',
                                 style: TextStyle(
                                   color: AppColors.whiteColor,
                                   fontSize: FontSize.scale(context, 16),

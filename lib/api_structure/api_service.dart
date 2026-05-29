@@ -138,7 +138,7 @@ Future<Map<String, dynamic>> loginUser(String email, String password) async {
 }
 
 Future<Map<String, dynamic>> acceptTerms(String token, String role) async {
-  final uri = Uri.parse('$baseUrl/user/accept-terms');
+  final uri = Uri.parse('$baseUrl/accept-terms');
   final headers = <String, String>{
     'Accept': 'application/json',
     'Content-Type': 'application/json',
@@ -3267,11 +3267,11 @@ Future<Map<String, dynamic>> updateProfileImage({
         'message': 'El archivo de imagen seleccionado no existe.',
       };
     }
-    
+
     final int fileSizeInBytes = await file.length();
     final double fileSizeInMB = fileSizeInBytes / (1024 * 1024);
     print('DEBUG - Tamaño de imagen: ${fileSizeInMB.toStringAsFixed(2)}MB');
-    
+
     if (fileSizeInMB > 5.0) {
       return {
         'success': false,
