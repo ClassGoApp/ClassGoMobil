@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
@@ -5,8 +7,12 @@ import 'package:flutter_projects/base_components/custom_snack_bar.dart';
 import 'package:flutter_projects/base_components/textfield.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/view/auth/tutor_subject_selection_screen.dart';
+import 'package:flutter_projects/view/components/role_based_navigation.dart';
 import 'package:flutter_projects/view/home/home_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/helpers/back_button_handler.dart';
 
@@ -18,7 +24,10 @@ class RegistrationScreen extends StatefulWidget {
   State<RegistrationScreen> createState() => _RegistrationScreenState();
 }
 
-class _RegistrationScreenState extends State<RegistrationScreen> {
+class _RegistrationScreenState extends State<RegistrationScreen>  
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _fadeAnimation;
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -60,7 +69,31 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    _controller.repeat(reverse: true);
+  }
+
+  @override
   void dispose() {
+    _controller.dispose();
+
     _firstNameController.dispose();
     _lastNameController.dispose();
     _emailController.dispose();
@@ -700,6 +733,27 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                               ),
                             ),
                             SizedBox(height: 16),
+                            ElevatedButton.icon(
+                              icon: Image.asset(
+                                'assets/images/google_logo.png',
+                                width: 24,
+                                height: 24,
+                              ),
+                              label: Text('Registrarse con Google'),
+                              onPressed: _isLoading
+                                  ? null
+                                  : () => _signInWithGoogle(context),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: Colors.black,
+                                minimumSize: Size(double.infinity, 50),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                textStyle:
+                                    TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
                             Center(
                               child: Container(
                                 padding: EdgeInsets.symmetric(
@@ -765,5 +819,93 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _signInWithGoogle(BuildContext context) async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        scopes: ['email', 'profile'],
+      );
+
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      if (googleUser == null) {
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      final String? idToken = googleAuth.idToken;
+      if (idToken == null) {
+        throw Exception('No se pudo obtener el token de Google');
+      }
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/google'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'id_token': idToken,
+          'role': this.role,
+        }),
+      );
+
+      if (response.statusCode == 403) {
+        throw Exception(response.body);
+      }
+
+      if (response.statusCode != 200) {
+        throw Exception('Error backend Google login');
+      }
+
+      final responseData = jsonDecode(response.body);
+      final Map<String, dynamic> loginData = responseData['data'];
+      final String token = loginData['token'];
+
+      await authProvider.setToken(token);
+      await authProvider.setUserData(loginData);
+      await authProvider.setAuthToken(token);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Registro de usuarios exitoso')),
+      );
+
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => RoleBasedNavigation()),
+        (route) => false,
+      );
+    } catch (e) {
+      String displayMessage = 'Error al registrarse con Google';
+      try {
+        final errorString = e.toString().replaceFirst('Exception: ', '').trim();
+        final decoded = jsonDecode(errorString);
+        if (decoded is Map && decoded.containsKey('message')) {
+          displayMessage = decoded['message'];
+        }
+      } catch (_) {
+        final errorMsg = e.toString().replaceFirst('Exception: ', '').trim();
+        if (errorMsg.isNotEmpty) {
+          displayMessage = errorMsg;
+        }
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(displayMessage)),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 }

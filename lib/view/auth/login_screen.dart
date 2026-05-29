@@ -389,7 +389,7 @@ class _LoginScreenState extends State<LoginScreen>
       );
 
       if (response.statusCode != 200) {
-        throw Exception('Error backend Google login');
+        throw Exception(response.body);
       }
 
       final responseData = jsonDecode(response.body);
@@ -419,8 +419,23 @@ class _LoginScreenState extends State<LoginScreen>
     } catch (e, stacktrace) {
       print('🔴 ERROR REAL: $e');
       print('📜 STACKTRACE: $stacktrace');
+      String displayMessage = 'Error al iniciar sesión con Google';
+      try {
+        // Limpiamos el texto de la excepción e intentamos decodificar el JSON
+        final errorString = e.toString().replaceFirst('Exception: ', '').trim();
+        final decoded = jsonDecode(errorString);
+        if (decoded is Map && decoded.containsKey('message')) {
+          displayMessage = decoded['message'];
+        }
+      } catch (_) {
+        // En caso de que no sea un JSON, mostramos el mensaje de error normal
+        final errorMsg = e.toString().replaceFirst('Exception: ', '').trim();
+        if (errorMsg.isNotEmpty) {
+          displayMessage = errorMsg;
+        }
+      }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al iniciar sesión con Google')),
+        SnackBar(content: Text(displayMessage)),
       );
       setState(() {
         _isLoading = false;
