@@ -188,28 +188,61 @@ Future<Map<String, dynamic>> forgetPassword(String email) async {
   }
 }
 
+Future<Map<String, dynamic>> verifyEmail(String id, String hash) async {
+  try {
+    final response = await http.get(
+      Uri.parse('$baseUrl/verify-email?id=$id&hash=$hash'),
+      headers: {
+        'Accept': 'application/json',
+      },
+    );
+
+    final data = jsonDecode(response.body);
+    
+    if (response.statusCode == 200) {
+      return {
+        'success': data['status'] == true || data['success'] == true,
+        'message': data['message'] ?? 'Email verificado exitosamente',
+        'data': data
+      };
+    } else {
+      return {
+        'success': false,
+        'message': data['message'] ?? 'Error en el servidor: ${response.statusCode}'
+      };
+    }
+  } catch (e) {
+    return {
+      'success': false,
+      'message': 'Error al verificar el email: $e'
+    };
+  }
+}
+
 Future<Map<String, dynamic>> resendEmail(String token) async {
   try {
     final Uri uri = Uri.parse('$baseUrl/resend-email');
     final headers = <String, String>{
       'Authorization': 'Bearer $token',
       'Accept': 'application/json',
-      'Content-Type': 'application/json',
     };
 
-    final response = await http.get(
+    final response = await http.post(
       uri,
       headers: headers,
     );
 
-    if (response.statusCode == 200) {
-      return json.decode(response.body);
+    final decodedData = json.decode(response.body);
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return decodedData;
     } else {
-      final error = json.decode(response.body);
-      throw Exception(error['message'] ?? 'Failed to resend email');
+      final errorMessage = decodedData['message'] ?? 'Error desconocido al reenviar correo';
+      print('Error del servidor: $errorMessage');
+      throw Exception(errorMessage);
     }
   } catch (e) {
-    throw 'Failed to resend email: $e';
+    throw Exception('Error de conexión o servidor: $e');
   }
 }
 
