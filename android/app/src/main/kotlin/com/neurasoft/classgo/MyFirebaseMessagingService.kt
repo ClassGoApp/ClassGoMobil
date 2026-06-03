@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.BitmapFactory
 import android.os.Build
 import android.util.Log
 import androidx.core.app.ActivityCompat
@@ -37,10 +38,13 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             return
         }
 
-        val iconName = remoteMessage.data["icon"] ?: "ic_stat_pendiente"
+        val iconName = remoteMessage.data["icon"] ?: "ic_notification_outline"
         Log.d("MyFirebaseMsgService", "Icon recibido desde backend: $iconName")
-        val requestedIconResId = resources.getIdentifier(iconName, "drawable", packageName)
-        val iconResId = if (requestedIconResId != 0) requestedIconResId else R.mipmap.ic_launcher
+        var requestedIconResId = resources.getIdentifier(iconName, "drawable", packageName)
+        if (requestedIconResId == 0) {
+            requestedIconResId = resources.getIdentifier(iconName, "mipmap", packageName)
+        }
+        val iconResId = if (requestedIconResId != 0) requestedIconResId else R.drawable.ic_notification_outline
 
         val title = remoteMessage.notification?.title
             ?: remoteMessage.data["title"]
