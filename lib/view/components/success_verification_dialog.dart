@@ -3,6 +3,8 @@ import 'package:lottie/lottie.dart';
 import 'package:audioplayers/audioplayers.dart';
 
 class SuccessVerificationDialog extends StatefulWidget {
+  const SuccessVerificationDialog({Key? key}) : super(key: key);
+
   @override
   _SuccessVerificationDialogState createState() =>
       _SuccessVerificationDialogState();
@@ -15,10 +17,6 @@ class _SuccessVerificationDialogState extends State<SuccessVerificationDialog> {
   void initState() {
     super.initState();
     _playSuccessSound();
-    // Cerrar el modal automáticamente tras 2 segundos
-    Future.delayed(Duration(seconds: 2), () {
-      if (mounted) Navigator.of(context).pop();
-    });
   }
 
   Future<void> _playSuccessSound() async {
@@ -45,12 +43,11 @@ class _SuccessVerificationDialogState extends State<SuccessVerificationDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Ícono animado de éxito
             Lottie.asset('assets/lottie/success.json',
                 width: 80, height: 80, repeat: false),
-            SizedBox(height: 18),
-            Icon(Icons.check_circle, color: Colors.green, size: 48),
-            SizedBox(height: 18),
+            const SizedBox(height: 18),
+            const Icon(Icons.check_circle, color: Colors.green, size: 48),
+            const SizedBox(height: 18),
             Text(
               '¡Verificación exitosa!',
               style: TextStyle(
@@ -60,9 +57,9 @@ class _SuccessVerificationDialogState extends State<SuccessVerificationDialog> {
               ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: 10),
-            Text(
-              'Tu cuenta ha sido verificada correctamente.\nTe estamos redirigiendo...',
+            const SizedBox(height: 10),
+            const Text(
+              'Tu correo ha sido verificado correctamente.\nTe estamos redirigiendo...',
               style: TextStyle(color: Colors.black87, fontSize: 15),
               textAlign: TextAlign.center,
             ),

@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/auth/login_screen.dart';
+import 'package:flutter_projects/view/home/widgets/suport_screen.dart';
 import 'package:flutter_projects/view/profile/edit_profile_screen.dart';
 import 'package:flutter_projects/view/profile/skeleton/profile_image_skeleton.dart';
 import 'package:flutter_projects/view/settings/account_settings.dart';
@@ -264,7 +265,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             title: 'Ayuda',
             subtitle: 'Centro de ayuda y soporte',
             onTap: () {
-              // TODO: Navegar a ayuda
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SupportScreen(),
+                ),
+              );
             },
           ),
           SizedBox(height: 12),

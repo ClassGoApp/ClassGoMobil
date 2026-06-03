@@ -124,7 +124,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
       }
 
       showCustomToast(
-          context, responseData['message'] ?? 'Registro exitoso', true);
+          context, "Registro exitoso, verifica tu correo", true);
 
       if (!mounted) return;
 
