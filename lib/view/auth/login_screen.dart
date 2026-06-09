@@ -363,6 +363,7 @@ class _LoginScreenState extends State<LoginScreen>
 
       final GoogleSignIn googleSignIn = GoogleSignIn(
         scopes: ['email', 'profile'],
+        serverClientId: '744993003231-v9s9e4la6nlfpiiosgun21r3ilrgk31g.apps.googleusercontent.com',
       );
 
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
