@@ -41,7 +41,7 @@ class FavoriteTutorService {
 
       final responses = await Future.wait(
         names.map(
-          (name) => getAvailableTutors(
+          (name) => getVerifiedTutors(
             token,
             page: 1,
             perPage: 10,
