@@ -200,7 +200,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: theme.textTheme.titleLarge?.color ?? AppColors.blackColor,
+                    color: theme.textTheme.titleLarge?.color ??
+                        AppColors.blackColor,
                   ),
                 ),
                 SizedBox(height: 4),

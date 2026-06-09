@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_projects/base_components/custom_snack_bar.dart';
+import 'package:flutter_projects/view/home/widgets/suport_screen.dart';
 import 'package:flutter_projects/view/tutor/features/profile/widgets/logout_section.dart';
 import 'package:flutter_projects/view/tutor/features/profile/widgets/price_section.dart';
 import 'package:flutter_projects/view/tutor/features/profile/widgets/qr_payment_screen.dart';
@@ -145,7 +146,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                     child: Column(
                       children: [
                         const SizedBox(height: 20),
-                        _buildTopCard(photoUrl, shortName, isDark, isVerified, email),
+                        _buildTopCard(
+                            photoUrl, shortName, isDark, isVerified, email),
                         Container(
                           margin: const EdgeInsets.only(top: 20),
                           width: double.infinity,
@@ -176,7 +178,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     );
   }
 
-  Widget _buildTopCard(String? photoUrl, String userName, bool isDark, bool isVerified, String email) {
+  Widget _buildTopCard(String? photoUrl, String userName, bool isDark,
+      bool isVerified, String email) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -548,6 +551,21 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
           mainTextColor: mainTextColor,
           actionIcon: Icons.language_outlined,
           onChipTap: null,
+        ),
+        const SizedBox(height: 24),
+        _buildListTile(
+          "CENTRO DE AYUDA Y SOPORTE",
+          Icons.help_outline_rounded,
+          mainTextColor,
+          innerBgColor,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => SupportScreen(),
+              ),
+            );
+          },
         ),
         const SizedBox(height: 30),
         */

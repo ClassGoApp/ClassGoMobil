@@ -12,6 +12,7 @@ import 'package:flutter_projects/view/home/widgets/trust_actions_row.dart';
 import 'package:flutter_projects/view/profile/profile_screen.dart';
 import 'package:flutter_projects/view/student/profile_screen_student.dart' hide ProfileScreen; 
 import 'package:flutter_projects/view/student/serch_Tutor/search_tutors_screen.dart'; 
+import 'package:flutter_projects/view/home/widgets/whatsapp_button.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -43,6 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
       key: _scaffoldKey,
       backgroundColor: AppColors.backgroundLight,
       drawer: const HomeDrawer(),
+      floatingActionButton: const WhatsAppButton(),
       body: CustomScrollView(
         physics: const ClampingScrollPhysics(),
         slivers: [
