@@ -194,6 +194,16 @@ class NotificationTopicService {
     }
   }
 
+  /// Suscribirse al topic global mass_notification
+  static Future<void> subscribeToMassNotification() async {
+    try {
+      await _messaging.subscribeToTopic('mass_notification');
+      print('Suscrito al topic global: mass_notification');
+    } catch (e) {
+      print('Error al suscribirse a mass_notification: $e');
+    }
+  }
+
   // Pedir Permisos para android
   static Future<void> requestPermissionOnFirstLaunch() async {
     final prefs = await SharedPreferences.getInstance();

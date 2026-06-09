@@ -112,6 +112,7 @@ class _MyAppState extends State<MyApp> {
     // Inicializar el servicio de deep links después de que el widget esté montado
     WidgetsBinding.instance.addPostFrameCallback((_) {
       NotificationTopicService.requestPermissionOnFirstLaunch();
+      NotificationTopicService.subscribeToMassNotification();
       DeepLinkService().initialize(navigatorKey.currentContext!);
     });
   }
