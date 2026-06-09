@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_projects/view/home/widgets/suport_screen.dart';
 import 'package:flutter_projects/view/tutor/features/profile/widgets/logout_section.dart';
 import 'package:flutter_projects/view/tutor/features/profile/widgets/price_section.dart';
 import 'package:flutter_projects/view/tutor/features/profile/widgets/qr_payment_screen.dart';
@@ -52,9 +53,10 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     final baseUrl = AppConfig.mediaBaseUrl;
     String cleanBaseUrl = baseUrl;
     if (!cleanBaseUrl.endsWith('/')) cleanBaseUrl = '$cleanBaseUrl/';
-    
+
     String cleanVideoPath = videoPath;
-    if (cleanVideoPath.startsWith('/')) cleanVideoPath = cleanVideoPath.substring(1);
+    if (cleanVideoPath.startsWith('/'))
+      cleanVideoPath = cleanVideoPath.substring(1);
 
     return '$cleanBaseUrl$cleanVideoPath';
   }
@@ -124,7 +126,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                     child: Column(
                       children: [
                         const SizedBox(height: 20),
-                        _buildTopCard(photoUrl, shortName, isDark, isVerified, email),
+                        _buildTopCard(
+                            photoUrl, shortName, isDark, isVerified, email),
                         Container(
                           margin: const EdgeInsets.only(top: 20),
                           width: double.infinity,
@@ -141,7 +144,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                           child: Padding(
                               padding: const EdgeInsets.all(24),
                               child: _buildMainView(description, subjectNames,
-                                  isDark, mainTextColor, videoUrl)), 
+                                  isDark, mainTextColor, videoUrl)),
                         ),
                       ],
                     ),
@@ -155,8 +158,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     );
   }
 
-  Widget _buildTopCard(String? photoUrl, String userName, bool isDark, bool isVerified, String email) {
-    
+  Widget _buildTopCard(String? photoUrl, String userName, bool isDark,
+      bool isVerified, String email) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -291,9 +294,10 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: isVerified 
-                        ? Colors.white.withOpacity(0.25)
-                        : Colors.grey.withOpacity(0.5)),
+                      border: Border.all(
+                          color: isVerified
+                              ? Colors.white.withOpacity(0.25)
+                              : Colors.grey.withOpacity(0.5)),
                       boxShadow: [
                         BoxShadow(
                             color: Colors.black.withOpacity(0.05),
@@ -303,15 +307,23 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(isVerified ? Icons.verified_rounded : Icons.hourglass_empty_rounded,
-                            color: isVerified ? AppColors.brandCyan : Colors.grey[400], 
-                              size: 16),
+                        Icon(
+                            isVerified
+                                ? Icons.verified_rounded
+                                : Icons.hourglass_empty_rounded,
+                            color: isVerified
+                                ? AppColors.brandCyan
+                                : Colors.grey[400],
+                            size: 16),
                         const SizedBox(width: 6),
                         Text(
-                          isVerified ? "TUTOR VERIFICADO" : "TUTOR SIN VERIFICAR",
+                          isVerified
+                              ? "TUTOR VERIFICADO"
+                              : "TUTOR SIN VERIFICAR",
                           style: TextStyle(
                               fontFamily: _kBodyFont,
-                              color: isVerified ? Colors.white : Colors.grey[400], 
+                              color:
+                                  isVerified ? Colors.white : Colors.grey[400],
                               fontSize: 10,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 1.0),
@@ -456,6 +468,21 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
           actionIcon: Icons.language_outlined,
           onChipTap: null,
         ),
+        const SizedBox(height: 24),
+        _buildListTile(
+          "CENTRO DE AYUDA Y SOPORTE",
+          Icons.help_outline_rounded,
+          mainTextColor,
+          innerBgColor,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => SupportScreen(),
+              ),
+            );
+          },
+        ),
         const SizedBox(height: 30),
 
         const LogoutSection(),
@@ -568,9 +595,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                     fontSize: 12,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 0.5)),
-
             const Spacer(),
-
             Padding(
               padding: const EdgeInsets.only(right: 10),
               child: Text(
@@ -609,7 +634,12 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                       children: [
                         ...items
                             .take(_isExpanded ? items.length : 4)
-                            .map((s) => _buildStyledChip(s, color, actionIcon: actionIcon, onTap: onChipTap,))
+                            .map((s) => _buildStyledChip(
+                                  s,
+                                  color,
+                                  actionIcon: actionIcon,
+                                  onTap: onChipTap,
+                                ))
                             .toList(),
                       ],
                     ),
@@ -691,7 +721,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
   }
 
   Widget _buildListTile(
-      String title, IconData icon, Color textColor, Color bgColor, {VoidCallback? onTap}) {
+      String title, IconData icon, Color textColor, Color bgColor,
+      {VoidCallback? onTap}) {
     return Container(
       decoration: BoxDecoration(
           color: bgColor, borderRadius: BorderRadius.circular(20)),
