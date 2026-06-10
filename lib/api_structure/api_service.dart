@@ -14,6 +14,51 @@ class TokenExpiredException implements Exception {
       "Tu sesión ha expirado. Por favor, inicia sesión de nuevo.";
 }
 
+Future<void> updateFcmToken(String fcmToken, {String? authToken, int? userId}) async {
+  final uri = Uri.parse('$baseUrl/update-fcm-token'); // 🔥 Usa la URL global dinámica
+  
+  final headers = <String, String>{
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  };
+
+  if (authToken != null && authToken.isNotEmpty) {
+    headers['Authorization'] = 'Bearer $authToken';
+  }
+
+  final bodyData = <String, dynamic>{
+    'fcm_token': fcmToken,
+  };
+  
+  if (userId != null) {
+    bodyData['user_id'] = userId;
+  }
+
+  try {
+    final response = await http.post(uri, headers: headers, body: json.encode(bodyData));
+    print('Respuesta backend FCM: ${response.statusCode} - ${response.body}');
+  } catch (e) {
+    print('Excepción al guardar FCM Token: $e');
+  }
+}
+
+Future<void> detachFcmToken(String fcmToken, String authToken) async {
+  final uri = Uri.parse('$baseUrl/detach-fcm-token');
+  
+  final headers = <String, String>{
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer $authToken',
+  };
+
+  try {
+    final response = await http.post(uri, headers: headers, body: json.encode({'fcm_token': fcmToken}));
+    print('Respuesta backend FCM Detach: ${response.statusCode}');
+  } catch (e) {
+    print('Excepción al desvincular FCM Token: $e');
+  }
+}
+
 Future<Map<String, dynamic>> registerUser(Map<String, dynamic> userData) async {
   try {
     print('Iniciando registro de usuario con datos: $userData');

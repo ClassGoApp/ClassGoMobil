@@ -343,37 +343,14 @@ class AuthProvider with ChangeNotifier {
     int? userIdValue = userId;
     print('User ID obtenido:  [32m$userIdValue [0m');
 
-    if (fcmToken != null && userIdValue != null) {
-      try {
-        print('Enviando token FCM al backend...');
-        print('URL: https://classgoapp.com/api/update-fcm-token');
-        print(
-            'Headers: Content-Type: application/json, Accept: application/json');
-        print('Body: {"user_id": $userIdValue, "fcm_token": "$fcmToken"}');
-
-        final response = await http.post(
-          Uri.parse('https://classgoapp.com/api/update-fcm-token'),
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'User-Agent': 'ClassGoApp/1.0',
-          },
-          body: jsonEncode({'user_id': userIdValue, 'fcm_token': fcmToken}),
-        );
-        print(
-            'Respuesta backend FCM:  [34m${response.statusCode} [0m - ${response.body}');
-
-        if (response.statusCode == 200) {
-          print('Token FCM enviado exitosamente al backend');
-        } else {
-          print('Error en respuesta del backend: ${response.statusCode}');
-        }
-      } catch (e) {
-        print('Error enviando FCM token al backend: $e');
-        print('Stack trace: ${StackTrace.current}');
-      }
+    if (fcmToken != null) {
+      await updateFcmToken(
+        fcmToken, 
+        authToken: token, 
+        userId: userIdValue
+      );
     } else {
-      print('No se pudo obtener el token FCM o el user_id');
+      print('No se pudo obtener el token FCM');
     }
     // Escuchar cambios de token FCM y actualizar en el backend
     print('Configurando listener para cambios de token FCM...');
@@ -381,33 +358,12 @@ class AuthProvider with ChangeNotifier {
       int? userIdValue = userId;
       print('Token FCM actualizado: $newToken');
       print('User ID obtenido:  [32m$userIdValue [0m');
-      if (userIdValue != null) {
-        try {
-          print('Enviando token FCM actualizado al backend...');
-          final response = await http.post(
-            Uri.parse('https://classgoapp.com/api/update-fcm-token'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'User-Agent': 'ClassGoApp/1.0',
-            },
-            body: jsonEncode({'user_id': userIdValue, 'fcm_token': newToken}),
-          );
-          print(
-              'FCM token actualizado en backend:  [34m${response.statusCode} [0m - ${response.body}');
-
-          if (response.statusCode == 200) {
-            print('Token FCM actualizado exitosamente en el backend');
-          } else {
-            print(
-                'Error actualizando token FCM en backend: ${response.statusCode}');
-          }
-        } catch (e) {
-          print('Error actualizando FCM token en backend: $e');
-          print('Stack trace: ${StackTrace.current}');
-        }
-      } else {
-        print('No se pudo obtener el user_id para actualizar el token FCM');
+      if (_token != null) {
+        await api_service.updateFcmToken(
+          newToken, 
+          authToken: _token, 
+          userId: userIdValue
+        );
       }
     });
     print('Listener de token FCM configurado');
@@ -810,6 +766,16 @@ class AuthProvider with ChangeNotifier {
           print('Response disconnectGoogle: $response');
         } catch (e) {
           print('Error al desconectar Google en backend: $e');
+        }
+
+        try {
+          print('Desvinculando FCM Token en backend...');
+          String? currentFcm = await FirebaseMessaging.instance.getToken();
+          if (currentFcm != null) {
+            await api_service.detachFcmToken(currentFcm, token);
+          }
+        } catch (e) {
+          print('Error al desvincular FCM token: $e');
         }
 
         // 2. Llamar al logout del backend para invalidar el token
