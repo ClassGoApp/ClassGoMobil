@@ -39,17 +39,27 @@ class NotificationTopicService {
         _messaging.unsubscribeFromTopic(_tutorTopic),
         _messaging.unsubscribeFromTopic(_tutorLegacyTopic),
         _messaging.unsubscribeFromTopic(_studentTopic),
-      ]);
+      ]).timeout(const Duration(seconds: 3), onTimeout: () {
+        print('Timeout al desuscribirse de topics antiguos.');
+        return [];
+      });
 
       if (normalizedRole == 'tutor') {
-        await _messaging.subscribeToTopic(_tutorTopic);
-        await _messaging.subscribeToTopic(_tutorLegacyTopic);
+        await Future.wait([
+          _messaging.subscribeToTopic(_tutorTopic),
+          _messaging.subscribeToTopic(_tutorLegacyTopic),
+        ]).timeout(const Duration(seconds: 3), onTimeout: () {
+          print('Timeout al suscribirse a topics de tutor.');
+          return [];
+        });
         await _persistCurrentRole('tutor');
         print(
             'Suscrito a topics: $_tutorTopic, $_tutorLegacyTopic (rol tutor)');
       } else if (normalizedRole == 'student' ||
           normalizedRole == 'estudiante') {
-        await _messaging.subscribeToTopic(_studentTopic);
+        await _messaging.subscribeToTopic(_studentTopic).timeout(const Duration(seconds: 3), onTimeout: () {
+          print('Timeout al suscribirse a topic de estudiante.');
+        });
         await _persistCurrentRole('student');
         print('Suscrito a topic: $_studentTopic (rol student)');
       } else {
@@ -197,7 +207,9 @@ class NotificationTopicService {
   /// Suscribirse al topic global mass_notification
   static Future<void> subscribeToMassNotification() async {
     try {
-      await _messaging.subscribeToTopic('mass_notification');
+      await _messaging.subscribeToTopic('mass_notification').timeout(const Duration(seconds: 3), onTimeout: () {
+        print('Timeout al suscribirse a mass_notification.');
+      });
       print('Suscrito al topic global: mass_notification');
     } catch (e) {
       print('Error al suscribirse a mass_notification: $e');

@@ -192,9 +192,12 @@ class AuthProvider with ChangeNotifier {
 
         final role = userRole;
         if (role != null) {
-          await NotificationTopicService.configureTopics(role);
-          print(
-              'DEBUG - Topics FCM resincronizados al cargar sesión para rol: $role');
+          NotificationTopicService.configureTopics(role).then((_) {
+            print(
+                'DEBUG - Topics FCM resincronizados al cargar sesión para rol: $role');
+          }).catchError((e) {
+            print('DEBUG - Error al resincronizar topics FCM al cargar sesión: $e');
+          });
         }
       }
     } else {
@@ -428,7 +431,11 @@ class AuthProvider with ChangeNotifier {
 
     if (role != null) {
       print('Configurando topics para rol: $role');
-      await NotificationTopicService.configureTopics(role);
+      NotificationTopicService.configureTopics(role).then((_) {
+        print('DEBUG - Topics FCM configurados para rol: $role');
+      }).catchError((e) {
+        print('DEBUG - Error al configurar topics FCM al guardar datos: $e');
+      });
     } else {
       print('No se pudo detectar el rol para topics');
     }
