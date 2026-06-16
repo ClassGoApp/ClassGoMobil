@@ -178,6 +178,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     screenWidth = MediaQuery.of(context).size.width;
     screenHeight = MediaQuery.of(context).size.height;
+    final bool isTablet = screenWidth >= 768;
     final bookingProvider = Provider.of<BookingProvider>(context);
     final userData = authProvider.userData;
     final int? userId = authProvider.userId;
@@ -268,8 +269,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           // Contenido principal
           SafeArea(
-            child: Column(
-              children: [
+            child: Align(
+              alignment: isTablet ? Alignment.centerRight : Alignment.center,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 980),
+                child: Column(
+                  children: [
                 SizedBox(height: 18),
                 // Foto de perfil con borde y sombra
                 Center(
@@ -772,6 +777,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ),
           ),
+        ),
+      ),
           SizedBox(height: 20),
           // Padding(
           //   padding: const EdgeInsets.only(right: 15, left: 15),
