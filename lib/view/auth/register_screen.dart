@@ -830,7 +830,8 @@ class _RegistrationScreenState extends State<RegistrationScreen>
 
       final GoogleSignIn googleSignIn = GoogleSignIn(
         scopes: ['email', 'profile'],
-        serverClientId: '744993003231-v9s9e4la6nlfpiiosgun21r3ilrgk31g.apps.googleusercontent.com',
+        serverClientId:
+            '777182771573-p7vjm3nh5393g3fhpbd71d2q14gclv1p.apps.googleusercontent.com',
       );
 
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
