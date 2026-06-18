@@ -12,6 +12,7 @@ class EditProfileView extends StatelessWidget {
 
   final bool isLoading;
   final bool isVideoLoading;
+  final double? uploadProgress;
   final String? profileImageUrl;
   final String? profileVideoUrl;
   final String userName;
@@ -38,6 +39,7 @@ class EditProfileView extends StatelessWidget {
     required this.descriptionController,
     required this.isLoading,
     required this.isVideoLoading,
+    this.uploadProgress = 0.0,
     required this.profileImageUrl,
     required this.profileVideoUrl,
     required this.userName,
@@ -62,6 +64,7 @@ class EditProfileView extends StatelessWidget {
     final scaffoldBg = isDark ? AppColors.blackColor : AppColors.whiteColor; 
     final cardBgColor = isDark ? const Color(0xFF1E222A) : const Color(0xFFF4F6F9);
     final mainTextColor = isDark ? AppColors.whiteColor : AppColors.brandBlue;
+    final double progress = uploadProgress ?? 0.0;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -263,13 +266,56 @@ class EditProfileView extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 30),
 
-                                  Text("VIDEO DE PRESENTACIÓN", style: TextStyle(fontFamily: 'outfit', color: mainTextColor, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                                  Text("VIDEO DE PRESENTACIÓN (OPCIONAL)", style: TextStyle(fontFamily: 'outfit', color: mainTextColor, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
                                   const SizedBox(height: 12),
                               
-                                  if (profileVideoUrl != null && profileVideoUrl!.isNotEmpty)
-                                    videoPlayerWidget
-                                  else
-                                    videoPlaceholderWidget,
+                                  Stack(
+                                    children: [
+                                      if (profileVideoUrl != null && profileVideoUrl!.isNotEmpty)
+                                        videoPlayerWidget
+                                      else
+                                        videoPlaceholderWidget,
+                                      if (isVideoLoading)
+                                        Positioned.fill(
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              color: Colors.black.withOpacity(0.7),
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            child: Center(
+                                              child: Column(
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                children: [
+                                                  SizedBox(
+                                                    width: 48,
+                                                    height: 48,
+                                                    child: CircularProgressIndicator(
+                                                      value: progress / 100.0,
+                                                      strokeWidth: 4,
+                                                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.brandCyan),
+                                                      backgroundColor: Colors.white24,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 16),
+                                                  Text(
+                                                    progress > 0.0
+                                                        ? 'Subiendo... ${progress.toStringAsFixed(0)}%'
+                                                        : 'Procesando...',
+                                                    style: const TextStyle(
+                                                      fontFamily: 'outfit',
+                                                      color: Colors.white,
+                                                      fontSize: 14,
+                                                      fontWeight: FontWeight.bold,
+                                                      letterSpacing: 0.5,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
                                   
                                   const SizedBox(height: 12),
                                   
@@ -281,9 +327,21 @@ class EditProfileView extends StatelessWidget {
                                           child: OutlinedButton.icon(
                                             onPressed: isVideoLoading ? null : onSelectVideo,
                                             icon: isVideoLoading 
-                                              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                                              ? SizedBox(
+                                                  width: 16,
+                                                  height: 16,
+                                                  child: CircularProgressIndicator(
+                                                    value: progress / 100.0,
+                                                    strokeWidth: 2,
+                                                    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.brandCyan),
+                                                  ),
+                                                )
                                               : const Icon(Icons.video_library, size: 18),
-                                            label: Text(isVideoLoading ? 'Actualizando...' : 'Cambiar Video'),
+                                            label: Text(isVideoLoading 
+                                              ? (progress > 0.0
+                                                  ? 'Subiendo ${progress.toStringAsFixed(0)}%'
+                                                  : 'Actualizando...')
+                                              : 'Cambiar Video'),
                                             style: OutlinedButton.styleFrom(
                                               foregroundColor: AppColors.brandCyan,
                                               side: const BorderSide(color: AppColors.brandCyan),

@@ -57,7 +57,7 @@ class HomeHeader extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 15),
+                      const SizedBox(height: 5),
                       SizedBox(
                         width: MediaQuery.of(context).size.width * 0.65,
                         child: const FittedBox(

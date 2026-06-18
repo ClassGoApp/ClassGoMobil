@@ -159,7 +159,7 @@ class _SupportScreenState extends State<SupportScreen>
                           ),
                         ),
                         child: const Text(
-                          '¡Hola! Soy Tugo. Estoy aquí para resolver todas tus dudas sobre ClassGo. ¿Cómo puedo ayudarte hoy?',
+                          '¡Hola! Soy Tugo. Estoy aquí para resolver todas tus dudas sobre ClassGo. ¿Cómo puedo ayudarte?',
                           style: TextStyle(
                             fontFamily: 'manrope',
                             fontSize: 14,
@@ -292,7 +292,7 @@ class _SupportScreenState extends State<SupportScreen>
                 );
               },
             ),
-            const SizedBox(height: 35),
+            const SizedBox(height: 20),
             Align(
               alignment: Alignment.centerLeft,
               child: Text(

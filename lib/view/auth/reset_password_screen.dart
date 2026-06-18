@@ -63,7 +63,7 @@ class _LoginScreenState extends State<ResetPassword>
           showCustomToast(context, response['message'], false);
         }
       } catch (e) {
-        showCustomToast(context, 'No se pudo enviar el correo', false);
+        showCustomToast(context, 'No se pudo enviar el correo, $e', false);
       } finally {
         setState(() {
           _isLoading = false;

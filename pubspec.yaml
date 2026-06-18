@@ -16,7 +16,7 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 2.0.1+61
+version: 2.0.12+62
 
 environment:
   sdk: ">=3.2.5 <4.0.0"
@@ -140,6 +140,25 @@ flutter:
     - assets/animations/
     - assets/images/home/Elipse.png
     - assets/images/Qr-pagos.png
+
+    # Team
+    - assets/images/home/team/Gabriel.jpeg
+    - assets/images/home/team/Jhonny.webp
+    - assets/images/home/team/Oscar.png
+    - assets/images/home/team/Mireya.png
+    - assets/images/home/team/Sebastian.png
+
+    # Alianzas
+    - assets/images/home/alliances/CogniKids.jpeg
+    - assets/images/home/alliances/ColegiodeContadoresPúblicosdeSantaCruz.jpeg
+    - assets/images/home/alliances/ColegiodeProfesionalesenComunicación.png
+    - assets/images/home/alliances/ColegiodedeIngenierosComercialesSantaCruz.jpeg
+    - assets/images/home/alliances/ConstructoraChassa.jpeg
+    - assets/images/home/alliances/CámaraInmobiliariadeSantaCruz.webp
+    - assets/images/home/alliances/EstiloColorCuracautin.jpeg
+    - assets/images/home/alliances/LaCocinadeLuchita.png
+    - assets/images/home/alliances/asociaciondeprofesionalesfinancieros.jpeg
+    - assets/images/home/alliances/CarreradeContaduríaPúblicaUAGRM.jpeg
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

@@ -347,42 +347,14 @@ class AuthProvider with ChangeNotifier {
       int? userIdValue = userId;
       print('User ID obtenido:  [32m$userIdValue [0m');
 
-      if (fcmToken != null && userIdValue != null) {
-        try {
-          print('Enviando token FCM al backend...');
-          print('URL: https://classgoapp.com/api/update-fcm-token');
-          print(
-              'Headers: Content-Type: application/json, Accept: application/json');
-          print('Body: {"user_id": $userIdValue, "fcm_token": "$fcmToken"}');
-
-          final response = await http.post(
-            Uri.parse('https://classgoapp.com/api/update-fcm-token'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'User-Agent': 'ClassGoApp/1.0',
-            },
-            body: jsonEncode({'user_id': userIdValue, 'fcm_token': fcmToken}),
-          );
-          print(
-              'Respuesta backend FCM:  [34m${response.statusCode} [0m - ${response.body}');
-
-          if (response.statusCode == 200) {
-            print('Token FCM enviado exitosamente al backend');
-          } else {
-            print('Error en respuesta del backend: ${response.statusCode}');
-          }
-        } catch (e) {
-          print('Error enviando FCM token al backend: $e');
-          print('Stack trace: ${StackTrace.current}');
-        }
-      } else {
-        print('No se pudo obtener el token FCM o el user_id');
-      }
-    } catch (e, stacktrace) {
-      print('⚠️ Error al obtener el token FCM: $e');
-      print('Stack trace: $stacktrace');
-      // No relanzamos la excepción para evitar que bloquee el inicio de sesión del usuario
+    if (fcmToken != null) {
+      await updateFcmToken(
+        fcmToken, 
+        authToken: token, 
+        userId: userIdValue
+      );
+    } else {
+      print('No se pudo obtener el token FCM');
     }
     // Escuchar cambios de token FCM y actualizar en el backend
     print('Configurando listener para cambios de token FCM...');
@@ -390,33 +362,12 @@ class AuthProvider with ChangeNotifier {
       int? userIdValue = userId;
       print('Token FCM actualizado: $newToken');
       print('User ID obtenido:  [32m$userIdValue [0m');
-      if (userIdValue != null) {
-        try {
-          print('Enviando token FCM actualizado al backend...');
-          final response = await http.post(
-            Uri.parse('https://classgoapp.com/api/update-fcm-token'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'User-Agent': 'ClassGoApp/1.0',
-            },
-            body: jsonEncode({'user_id': userIdValue, 'fcm_token': newToken}),
-          );
-          print(
-              'FCM token actualizado en backend:  [34m${response.statusCode} [0m - ${response.body}');
-
-          if (response.statusCode == 200) {
-            print('Token FCM actualizado exitosamente en el backend');
-          } else {
-            print(
-                'Error actualizando token FCM en backend: ${response.statusCode}');
-          }
-        } catch (e) {
-          print('Error actualizando FCM token en backend: $e');
-          print('Stack trace: ${StackTrace.current}');
-        }
-      } else {
-        print('No se pudo obtener el user_id para actualizar el token FCM');
+      if (_token != null) {
+        await api_service.updateFcmToken(
+          newToken, 
+          authToken: _token, 
+          userId: userIdValue
+        );
       }
     });
     print('Listener de token FCM configurado');
@@ -566,6 +517,9 @@ class AuthProvider with ChangeNotifier {
 
   Future<void> updateUserProfiles(Map<String, dynamic>? updatedProfile) async {
     if (updatedProfile != null && _userData != null) {
+      final existingProfile = Map<String, dynamic>.from(
+          (_userData!['user']?['profile'] ?? {}) as Map);
+
       // Construir full_name si tenemos first_name y last_name
       if (updatedProfile['first_name'] != null &&
           updatedProfile['last_name'] != null) {
@@ -573,8 +527,16 @@ class AuthProvider with ChangeNotifier {
             '${updatedProfile['first_name']} ${updatedProfile['last_name']}';
       }
 
-      // Actualizar _userData['user']['profile']
-      _userData!['user']['profile'] = updatedProfile;
+      final mergedProfile = {
+        ...existingProfile,
+        ...updatedProfile,
+      };
+
+      print('DEBUG - updateUserProfiles merge profile: $mergedProfile');
+
+      // Actualizar _userData['user']['profile'] sin perder campos existentes
+      _userData!['user']['profile'] = mergedProfile;
+      _userData!['profile'] = mergedProfile;
 
       // Actualizar los campos individuales para mantener sincronizados los datos
       if (updatedProfile['first_name'] != null) {
@@ -622,6 +584,29 @@ class AuthProvider with ChangeNotifier {
 
       SharedPreferences.getInstance().then((prefs) {
         prefs.setString('userData', jsonEncode(_userData));
+        notifyListeners();
+      });
+    }
+  }
+
+  void updateProfileVideo(String? newVideoUrl) {
+    if (_userData != null && _userData!['user'] != null) {
+      // Asegurar que la estructura profile existe
+      if (_userData!['user']['profile'] == null) {
+        _userData!['user']['profile'] = {};
+      }
+
+      print(
+          'DEBUG - AuthProvider actualizando intro_video con valor: $newVideoUrl');
+
+      // Actualizar la URL del video de introducción
+      _userData!['user']['profile']['intro_video'] = newVideoUrl;
+
+      final serializedUserData = jsonEncode(_userData);
+      print('DEBUG - AuthProvider userData persistido: $serializedUserData');
+
+      SharedPreferences.getInstance().then((prefs) {
+        prefs.setString('userData', serializedUserData);
         notifyListeners();
       });
     }
@@ -750,7 +735,7 @@ class AuthProvider with ChangeNotifier {
     _token = null;
     _userData = null;
     // Mantener _isSessionLoaded = true; para que el Router no se quede en "cargando"
-    
+
     _educationList.clear();
     _experienceList.clear();
     _certificateList.clear();
@@ -760,6 +745,20 @@ class AuthProvider with ChangeNotifier {
 
     // 2. Ejecutar limpieza pesada en segundo plano SIN esperar el resultado
     _performBackgroundCleanup(tokenToUse);
+  }
+
+  Future<void> markTermsAsAccepted() async {
+    if (_userData != null && _userData!['user'] != null) {
+      _userData!['user']['terms_accepted'] = true;
+      _userData!['user']['terms_accepted_at'] = DateTime.now().toIso8601String();
+
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('userData', jsonEncode(_userData));
+
+      notifyListeners();
+
+      print('DEBUG - Términos actualizados en SharedPreferences localmente');
+    }
   }
 
   /// Realiza la limpieza de persistencia en segundo plano
@@ -775,6 +774,16 @@ class AuthProvider with ChangeNotifier {
           print('Response disconnectGoogle: $response');
         } catch (e) {
           print('Error al desconectar Google en backend: $e');
+        }
+
+        try {
+          print('Desvinculando FCM Token en backend...');
+          String? currentFcm = await FirebaseMessaging.instance.getToken();
+          if (currentFcm != null) {
+            await api_service.detachFcmToken(currentFcm, token);
+          }
+        } catch (e) {
+          print('Error al desvincular FCM token: $e');
         }
 
         // 2. Llamar al logout del backend para invalidar el token

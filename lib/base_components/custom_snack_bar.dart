@@ -4,14 +4,16 @@ import 'package:flutter_projects/styles/app_styles.dart';
 class CustomToast extends StatelessWidget {
   final String message;
   final bool isSuccess;
+  final bool isWarning;
 
   const CustomToast({
     Key? key,
     required this.message,
-    required this.isSuccess,
+    this.isSuccess = true,
+    this.isWarning = false,
   }) : super(key: key);
 
-  static void show(BuildContext context, String message, {bool isSuccess = true}) {
+  static void show(BuildContext context, String message, {bool isSuccess = true, bool isWarning = false}) {
     final overlayState = Overlay.maybeOf(context);
     if (overlayState == null) return;
 
@@ -23,6 +25,7 @@ class CustomToast extends StatelessWidget {
         child: CustomToast(
           message: message,
           isSuccess: isSuccess,
+          isWarning: isWarning,
         ),
       ),
     );
@@ -35,8 +38,23 @@ class CustomToast extends StatelessWidget {
       }
     });
   }
+
   @override
   Widget build(BuildContext context) {
+    Color iconColor;
+    IconData iconData;
+
+    if (isWarning) {
+      iconColor = AppColors.brandOrange;
+      iconData = Icons.info_outline_rounded;
+    } else if (isSuccess) {
+      iconColor = Colors.green;
+      iconData = Icons.check_circle;
+    } else {
+      iconColor = AppColors.redColor;
+      iconData = Icons.cancel;
+    }
+
     return SafeArea(
       child: Material(
         type: MaterialType.transparency,
@@ -56,8 +74,8 @@ class CustomToast extends StatelessWidget {
           child: Row(
             children: [
               Icon(
-                isSuccess ? Icons.check_circle : Icons.cancel,
-                color: isSuccess ? Colors.green : AppColors.redColor,
+                iconData,
+                color: iconColor,
                 size: 30.0,
               ),
               const SizedBox(width: 12.0),

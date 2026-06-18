@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_projects/base_components/custom_snack_bar.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/helpers/simple_deep_link_handler.dart';
 import 'package:flutter_projects/helpers/email_verification_helper.dart';
@@ -6,6 +8,7 @@ import 'package:flutter_projects/view/auth/login_screen.dart';
 
 class VerificationPendingScreen extends StatefulWidget {
   final Map<String, dynamic> userData; // Datos del usuario registrado
+  
 
   const VerificationPendingScreen({
     Key? key,
@@ -20,6 +23,10 @@ class VerificationPendingScreen extends StatefulWidget {
 class _VerificationPendingScreenState extends State<VerificationPendingScreen>
     with TickerProviderStateMixin {
   bool _isResending = false;
+
+  int _cooldownSeconds = 0;
+  Timer? _cooldownTimer;
+  
   late AnimationController _animationController;
   late AnimationController _pulseController;
 
@@ -39,9 +46,31 @@ class _VerificationPendingScreenState extends State<VerificationPendingScreen>
 
   @override
   void dispose() {
+    _cooldownTimer?.cancel();
     _animationController.dispose();
     _pulseController.dispose();
     super.dispose();
+  }
+
+  void _startCooldown() {
+    setState(() {
+      _cooldownSeconds = 60;
+    });
+
+    _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
+      setState(() {
+        if (_cooldownSeconds > 0) {
+          _cooldownSeconds--;
+        } else {
+          timer.cancel();
+        }
+      });
+    });
   }
 
   Future<void> _resendVerificationEmail() async {
@@ -50,25 +79,64 @@ class _VerificationPendingScreenState extends State<VerificationPendingScreen>
     });
 
     try {
-      final email = widget.userData['email'] ?? '';
+      final String token = widget.userData['token'] ?? 
+        widget.userData['response']?['data']?['token'] ?? 
+        '';
+
+      final String email = widget.userData['email'] ?? 
+        widget.userData['response']?['data']?['user']?['email'] ?? 
+        '';
+
+      if (token.isEmpty) {
+        if (mounted) {
+          CustomToast.show(
+            context, 
+            'Tu sesión expiró o hubo un problema. Por favor, inicia sesión de nuevo.', 
+            isSuccess: false
+          );
+        }
+        return;
+      }
+      
       if (email.isEmpty) {
-        throw Exception('Email no disponible');
+        if (mounted) {
+          CustomToast.show(
+            context, 
+            'Email no disponible. Verifica tus datos.', 
+            isSuccess: false
+          );
+        }
+        return;
       }
 
-      final result =
-          await EmailVerificationHelper.resendVerificationEmail(email);
+      final result = await EmailVerificationHelper.resendVerificationEmail(token);
+      
+      final String mensajeBackend = result['message'] ?? '';
+      final bool isSuccess = (result['success'] == true) || mensajeBackend.contains('successfully');
 
       if (mounted) {
-        EmailVerificationHelper.showResultSnackBar(context, result);
+        if (isSuccess) {
+          CustomToast.show(
+            context, 
+            '¡Correo enviado correctamente! Revisa tu bandeja de entrada.',
+            isSuccess: true
+          );
+          
+          _startCooldown();
+        } else {
+          CustomToast.show(
+            context, 
+            mensajeBackend.isNotEmpty ? mensajeBackend : 'No se pudo reenviar el correo.',
+            isSuccess: false
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
-        EmailVerificationHelper.showResultSnackBar(
+        CustomToast.show(
           context,
-          {
-            'success': false,
-            'message': 'Error al reenviar el email. Inténtalo de nuevo.',
-          },
+          'No pudimos conectarnos. Por favor, revisa tu internet e inténtalo de nuevo.',
+          isSuccess: false
         );
       }
     } finally {
@@ -96,28 +164,7 @@ class _VerificationPendingScreenState extends State<VerificationPendingScreen>
             padding: EdgeInsets.all(24),
             child: Column(
               children: [
-                // Botón de volver atrás
-                Align(
-                  alignment: Alignment.topLeft,
-                                      child: IconButton(
-                      onPressed: () {
-                        // TODO: Implementar navegación al registro
-                        // Navigator.of(context).pushAndRemoveUntil(
-                        //   MaterialPageRoute(
-                        //     builder: (context) => RegisterScreen(
-                        //       initialData: widget.userData,
-                        //     ),
-                        //   ),
-                        //   (Route<dynamic> route) => false,
-                        // );
-                      },
-                    icon: Icon(
-                      Icons.arrow_back_ios,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                ),
+                const SizedBox(height: 24),            
 
                 Expanded(
                   child: SingleChildScrollView(
@@ -278,7 +325,7 @@ class _VerificationPendingScreenState extends State<VerificationPendingScreen>
                               child: SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton.icon(
-                                  onPressed: _isResending
+                                  onPressed: (_isResending || _cooldownSeconds > 0)
                                       ? null
                                       : _resendVerificationEmail,
                                   icon: _isResending
@@ -290,11 +337,16 @@ class _VerificationPendingScreenState extends State<VerificationPendingScreen>
                                             strokeWidth: 2,
                                           ),
                                         )
-                                      : Icon(Icons.refresh, color: Colors.white),
+                                      : Icon(
+                                          _cooldownSeconds > 0 ? Icons.timer : Icons.refresh, 
+                                          color: Colors.white
+                                        ),
                                   label: Text(
                                     _isResending
                                         ? 'Reenviando...'
-                                        : 'Reenviar email',
+                                        : _cooldownSeconds > 0
+                                            ? 'Reenviar en ${_cooldownSeconds}s'
+                                            : 'Reenviar email',
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 16,
@@ -313,33 +365,6 @@ class _VerificationPendingScreenState extends State<VerificationPendingScreen>
                               ),
                             );
                           },
-                        ),
-                        SizedBox(height: 16),
-                    
-                        // Botón de abrir app de email
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: () => SimpleDeepLinkHandler.openEmailApp(),
-                            icon: Icon(Icons.email,
-                                color: AppColors.lightBlueColor),
-                            label: Text(
-                              'Abrir app de email',
-                              style: TextStyle(
-                                color: AppColors.lightBlueColor,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(
-                                  color: AppColors.lightBlueColor, width: 2),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              padding: EdgeInsets.symmetric(vertical: 16),
-                            ),
-                          ),
                         ),
                         SizedBox(height: 24),
                     

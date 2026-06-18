@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_projects/base_components/custom_snack_bar.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/helpers/email_verification_helper.dart';
 import 'package:flutter_projects/view/auth/login_screen.dart';
@@ -100,20 +101,23 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
             print('No se recibieron token o datos de usuario en la respuesta');
           }
 
-          // Mostrar modal de éxito con sonido y cerrar automáticamente
           if (mounted) {
             print('Mostrando modal de éxito...');
-            await showDialog(
+            
+            showDialog(
               context: context,
               barrierDismissible: false,
-              builder: (context) => SuccessVerificationDialog(),
+              builder: (context) => const SuccessVerificationDialog(),
             );
-            // Esperar 2 segundos y luego cerrar el modal y navegar a Home
-            await Future.delayed(Duration(seconds: 2));
+            
+            await Future.delayed(const Duration(seconds: 2));
+            
             if (mounted) {
+              Navigator.of(context, rootNavigator: true).pop();
+
               print('Navegando a RoleBasedNavigation...');
               Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (context) => RoleBasedNavigation()),
+                MaterialPageRoute(builder: (context) => const RoleBasedNavigation()),
                 (Route<dynamic> route) => false,
               );
             }
@@ -121,7 +125,11 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
         } else {
           print('Verificación fallida: ${result['message']}');
           // Mostrar mensaje de error
-          EmailVerificationHelper.showResultSnackBar(context, result);
+          CustomToast.show(
+            context,
+            result['message'] ?? 'Error al verificar el enlace.',
+            isSuccess: false,
+          );
         }
       }
     } catch (e) {
@@ -134,13 +142,10 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
               'Error al verificar el email. Por favor, inténtalo de nuevo.';
         });
 
-        EmailVerificationHelper.showResultSnackBar(
+        CustomToast.show(
           context,
-          {
-            'success': false,
-            'message':
-                'Error de conexión. Verifica tu internet e inténtalo de nuevo.',
-          },
+          'Error de conexión. Verifica tu internet e inténtalo de nuevo.',
+          isSuccess: false,
         );
       }
     }
@@ -270,7 +275,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
                   ),
                   SizedBox(height: 16),
                   Text(
-                    'Tu cuenta ha sido verificada exitosamente. Te estamos redirigiendo...',
+                    'Tu correo ha sido verificado exitosamente. Te estamos redirigiendo...',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.8),
                       fontSize: 16,

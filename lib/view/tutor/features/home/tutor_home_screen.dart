@@ -48,6 +48,7 @@ class _TutorHomeScreenState extends State<TutorHomeScreen> {
         profile['image'] ?? profile['profile_image'];
 
     final bool isVerified = profile['verified'] == true;
+    final bool hasAcceptedTerms = user?['terms_accepted'] == true;
 
     if (imageUrl != null && imageUrl.isNotEmpty) {
       if (imageUrl
@@ -116,9 +117,10 @@ class _TutorHomeScreenState extends State<TutorHomeScreen> {
 
                   QuickAccessSection(onNavigate: widget.onNavigate),
 
-                  const SizedBox(height: 20),
-
-                  //const TermsAcceptanceSection(role: 'tutor'),
+                  if (!hasAcceptedTerms)
+                    const TermsAcceptanceSection(role: 'tutor')
+                  else
+                    const SizedBox.shrink(),
 
                   NextAppointmentSection(
                     isAvailable: homeProvider.isAvailable,
