@@ -101,7 +101,7 @@ class _DashboardStudentState extends State<DashboardStudent> {
   Widget _buildHomeTab() {
     final authProvider = Provider.of<AuthProvider>(context);
     final userData = authProvider.userData;
-    final String? fullName = userData != null && userData['user'] != null
+    final String? fullName = userData != null && userData['user'] != null && userData['user']['profile'] != null
         ? userData['user']['profile']['full_name']
         : null;
     return SingleChildScrollView(
@@ -113,7 +113,7 @@ class _DashboardStudentState extends State<DashboardStudent> {
           DashboardHeader(
             tutorName: fullName ?? 'Estudiante',
             profileImageUrl: profileImageUrl ??
-                (userData != null && userData['user'] != null
+                (userData != null && userData['user'] != null && userData['user']['profile'] != null
                     ? userData['user']['profile']['image']
                     : null),
             textColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.blackColor,

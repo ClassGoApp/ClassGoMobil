@@ -182,13 +182,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final bookingProvider = Provider.of<BookingProvider>(context);
     final userData = authProvider.userData;
     final int? userId = authProvider.userId;
-    final String? fullName = userData != null && userData['user'] != null
+    final String? fullName = userData != null && userData['user'] != null && userData['user']['profile'] != null
         ? (userData['user']['profile']['full_name'] ??
             (userData['user']['profile']['first_name'] != null &&
                     userData['user']['profile']['last_name'] != null
                 ? '${userData['user']['profile']['first_name']} ${userData['user']['profile']['last_name']}'
                 : userData['user']['profile']['first_name'] ??
-                    userData['user']['profile']['last_name']))
+                    userData['user']['profile']['last_name'] ??
+                    'Usuario'))
         : null;
     final String? role = userData != null && userData['user'] != null
         ? userData['user']['email']

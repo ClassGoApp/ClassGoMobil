@@ -62,7 +62,7 @@ class AuthProvider with ChangeNotifier {
     if (_userData != null &&
         _userData!.containsKey('user') &&
         _userData!['user'].containsKey('role')) {
-      String role = _userData!['user']['role'];
+      String? role = _userData!['user']['role'];
       print('DEBUG - userRole detectado: $role');
       return role;
     }
@@ -196,7 +196,8 @@ class AuthProvider with ChangeNotifier {
             print(
                 'DEBUG - Topics FCM resincronizados al cargar sesión para rol: $role');
           }).catchError((e) {
-            print('DEBUG - Error al resincronizar topics FCM al cargar sesión: $e');
+            print(
+                'DEBUG - Error al resincronizar topics FCM al cargar sesión: $e');
           });
         }
       }
@@ -347,14 +348,15 @@ class AuthProvider with ChangeNotifier {
       int? userIdValue = userId;
       print('User ID obtenido:  [32m$userIdValue [0m');
 
-    if (fcmToken != null) {
-      await updateFcmToken(
-        fcmToken, 
-        authToken: token, 
-        userId: userIdValue
-      );
-    } else {
-      print('No se pudo obtener el token FCM');
+      if (fcmToken != null) {
+        await updateFcmToken(fcmToken, authToken: token, userId: userIdValue);
+      } else {
+        print('No se pudo obtener el token FCM');
+      }
+    } catch (e, stacktrace) {
+      print('⚠️ Error al obtener el token FCM: $e');
+      print('Stack trace: $stacktrace');
+      // No relanzamos la excepción para evitar que bloquee el inicio de sesión del usuario
     }
     // Escuchar cambios de token FCM y actualizar en el backend
     print('Configurando listener para cambios de token FCM...');
@@ -363,11 +365,8 @@ class AuthProvider with ChangeNotifier {
       print('Token FCM actualizado: $newToken');
       print('User ID obtenido:  [32m$userIdValue [0m');
       if (_token != null) {
-        await api_service.updateFcmToken(
-          newToken, 
-          authToken: _token, 
-          userId: userIdValue
-        );
+        await api_service.updateFcmToken(newToken,
+            authToken: _token, userId: userIdValue);
       }
     });
     print('Listener de token FCM configurado');
@@ -750,7 +749,8 @@ class AuthProvider with ChangeNotifier {
   Future<void> markTermsAsAccepted() async {
     if (_userData != null && _userData!['user'] != null) {
       _userData!['user']['terms_accepted'] = true;
-      _userData!['user']['terms_accepted_at'] = DateTime.now().toIso8601String();
+      _userData!['user']['terms_accepted_at'] =
+          DateTime.now().toIso8601String();
 
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setString('userData', jsonEncode(_userData));
@@ -765,7 +765,7 @@ class AuthProvider with ChangeNotifier {
   Future<void> _performBackgroundCleanup(String? token) async {
     try {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
-      
+
       if (token != null) {
         // 1. Llamar al API de desconexión de Google si corresponde
         try {
