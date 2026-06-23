@@ -353,19 +353,17 @@ class _LoginScreenState extends State<LoginScreen>
     authProvider.setAuthToken(token);
     print('_saveTokenToProvider completado');
   }
-
   Future<void> signInWithGoogle(BuildContext context) async {
     setState(() {
       _isLoading = true;
     });
+    final GoogleSignIn googleSignIn = GoogleSignIn(
+      scopes: ['email', 'profile'],
+      serverClientId:
+          '777182771573-p7vjm3nh5393g3fhpbd71d2q14gclv1p.apps.googleusercontent.com',
+    );
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
-      final GoogleSignIn googleSignIn = GoogleSignIn(
-        scopes: ['email', 'profile'],
-        serverClientId:
-            '777182771573-p7vjm3nh5393g3fhpbd71d2q14gclv1p.apps.googleusercontent.com',
-      );
 
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
       if (googleUser == null) {
@@ -396,6 +394,12 @@ class _LoginScreenState extends State<LoginScreen>
 
       final responseData = jsonDecode(response.body);
       final Map<String, dynamic> loginData = responseData['data'];
+
+      final Map<String, dynamic>? userMap = loginData['user'];
+      if (userMap == null || userMap['role'] == null || userMap['profile'] == null) {
+        throw Exception('El usuario no tiene un rol asignado o no tiene un perfil asignado.');
+      }
+
       final String token = loginData['token'];
 
       // 🔥 CLAVE: loginData debe ser IGUAL al login normal
@@ -421,6 +425,11 @@ class _LoginScreenState extends State<LoginScreen>
     } catch (e, stacktrace) {
       print('🔴 ERROR REAL: $e');
       print('📜 STACKTRACE: $stacktrace');
+      try {
+        await googleSignIn.signOut();
+      } catch (signoutError) {
+        print('Error al cerrar sesión de Google tras fallo: $signoutError');
+      }
       String displayMessage = 'Error al iniciar sesión con Google';
       try {
         // Limpiamos el texto de la excepción e intentamos decodificar el JSON

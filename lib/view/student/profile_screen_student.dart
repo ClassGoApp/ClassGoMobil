@@ -103,13 +103,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildProfileContent(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final userData = authProvider.userData;
-    final String? fullName = userData != null && userData['user'] != null
+    final String? fullName = userData != null &&
+            userData['user'] != null &&
+            userData['user']['profile'] != null
         ? (userData['user']['profile']['full_name'] ??
             (userData['user']['profile']['first_name'] != null &&
                     userData['user']['profile']['last_name'] != null
                 ? '${userData['user']['profile']['first_name']} ${userData['user']['profile']['last_name']}'
                 : userData['user']['profile']['first_name'] ??
-                    userData['user']['profile']['last_name']))
+                    userData['user']['profile']['last_name'] ??
+                    'Usuario'))
         : null;
     final String? email = userData != null && userData['user'] != null
         ? userData['user']['email']

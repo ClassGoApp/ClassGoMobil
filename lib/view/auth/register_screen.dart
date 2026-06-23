@@ -825,14 +825,13 @@ class _RegistrationScreenState extends State<RegistrationScreen>
     setState(() {
       _isLoading = true;
     });
+    final GoogleSignIn googleSignIn = GoogleSignIn(
+      scopes: ['email', 'profile'],
+      serverClientId:
+          '777182771573-p7vjm3nh5393g3fhpbd71d2q14gclv1p.apps.googleusercontent.com',
+    );
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
-      final GoogleSignIn googleSignIn = GoogleSignIn(
-        scopes: ['email', 'profile'],
-        serverClientId:
-            '777182771573-p7vjm3nh5393g3fhpbd71d2q14gclv1p.apps.googleusercontent.com',
-      );
 
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
       if (googleUser == null) {
@@ -869,6 +868,12 @@ class _RegistrationScreenState extends State<RegistrationScreen>
 
       final responseData = jsonDecode(response.body);
       final Map<String, dynamic> loginData = responseData['data'];
+
+      final Map<String, dynamic>? userMap = loginData['user'];
+      if (userMap == null || userMap['role'] == null || userMap['profile'] == null) {
+        throw Exception('El usuario no tiene un rol asignado o no tiene un perfil asignado.');
+      }
+
       final String token = loginData['token'];
 
       await authProvider.setToken(token);
@@ -885,6 +890,11 @@ class _RegistrationScreenState extends State<RegistrationScreen>
         (route) => false,
       );
     } catch (e) {
+      try {
+        await googleSignIn.signOut();
+      } catch (signoutError) {
+        print('Error al cerrar sesión de Google tras fallo: $signoutError');
+      }
       String displayMessage = 'Error al registrarse con Google';
       try {
         final errorString = e.toString().replaceFirst('Exception: ', '').trim();

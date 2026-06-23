@@ -62,7 +62,7 @@ class AuthProvider with ChangeNotifier {
     if (_userData != null &&
         _userData!.containsKey('user') &&
         _userData!['user'].containsKey('role')) {
-      String role = _userData!['user']['role'];
+      String? role = _userData!['user']['role'];
       print('DEBUG - userRole detectado: $role');
       return role;
     }
@@ -192,9 +192,13 @@ class AuthProvider with ChangeNotifier {
 
         final role = userRole;
         if (role != null) {
-          await NotificationTopicService.configureTopics(role);
-          print(
-              'DEBUG - Topics FCM resincronizados al cargar sesión para rol: $role');
+          NotificationTopicService.configureTopics(role).then((_) {
+            print(
+                'DEBUG - Topics FCM resincronizados al cargar sesión para rol: $role');
+          }).catchError((e) {
+            print(
+                'DEBUG - Error al resincronizar topics FCM al cargar sesión: $e');
+          });
         }
       }
     } else {
@@ -337,20 +341,22 @@ class AuthProvider with ChangeNotifier {
     print('Listeners notificados en setAuthToken');
 
     // Enviar el token FCM al backend
-    print('Obteniendo token FCM...');
-    String? fcmToken = await FirebaseMessaging.instance.getToken();
-    print('Token FCM obtenido:  [32m${fcmToken ?? 'null'} [0m');
-    int? userIdValue = userId;
-    print('User ID obtenido:  [32m$userIdValue [0m');
+    try {
+      print('Obteniendo token FCM...');
+      String? fcmToken = await FirebaseMessaging.instance.getToken();
+      print('Token FCM obtenido:  [32m${fcmToken ?? 'null'} [0m');
+      int? userIdValue = userId;
+      print('User ID obtenido:  [32m$userIdValue [0m');
 
-    if (fcmToken != null) {
-      await updateFcmToken(
-        fcmToken, 
-        authToken: token, 
-        userId: userIdValue
-      );
-    } else {
-      print('No se pudo obtener el token FCM');
+      if (fcmToken != null) {
+        await updateFcmToken(fcmToken, authToken: token, userId: userIdValue);
+      } else {
+        print('No se pudo obtener el token FCM');
+      }
+    } catch (e, stacktrace) {
+      print('⚠️ Error al obtener el token FCM: $e');
+      print('Stack trace: $stacktrace');
+      // No relanzamos la excepción para evitar que bloquee el inicio de sesión del usuario
     }
     // Escuchar cambios de token FCM y actualizar en el backend
     print('Configurando listener para cambios de token FCM...');
@@ -359,11 +365,8 @@ class AuthProvider with ChangeNotifier {
       print('Token FCM actualizado: $newToken');
       print('User ID obtenido:  [32m$userIdValue [0m');
       if (_token != null) {
-        await api_service.updateFcmToken(
-          newToken, 
-          authToken: _token, 
-          userId: userIdValue
-        );
+        await api_service.updateFcmToken(newToken,
+            authToken: _token, userId: userIdValue);
       }
     });
     print('Listener de token FCM configurado');
@@ -384,7 +387,11 @@ class AuthProvider with ChangeNotifier {
 
     if (role != null) {
       print('Configurando topics para rol: $role');
-      await NotificationTopicService.configureTopics(role);
+      NotificationTopicService.configureTopics(role).then((_) {
+        print('DEBUG - Topics FCM configurados para rol: $role');
+      }).catchError((e) {
+        print('DEBUG - Error al configurar topics FCM al guardar datos: $e');
+      });
     } else {
       print('No se pudo detectar el rol para topics');
     }
@@ -742,7 +749,8 @@ class AuthProvider with ChangeNotifier {
   Future<void> markTermsAsAccepted() async {
     if (_userData != null && _userData!['user'] != null) {
       _userData!['user']['terms_accepted'] = true;
-      _userData!['user']['terms_accepted_at'] = DateTime.now().toIso8601String();
+      _userData!['user']['terms_accepted_at'] =
+          DateTime.now().toIso8601String();
 
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setString('userData', jsonEncode(_userData));
@@ -757,7 +765,7 @@ class AuthProvider with ChangeNotifier {
   Future<void> _performBackgroundCleanup(String? token) async {
     try {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
-      
+
       if (token != null) {
         // 1. Llamar al API de desconexión de Google si corresponde
         try {
