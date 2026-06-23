@@ -956,7 +956,7 @@ class _GuestProfile extends StatelessWidget {
                       ),
                     ),
                     child: const Text(
-                      'Iniciar se sión',
+                      'Iniciar sesión',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,

@@ -15,7 +15,7 @@ class TokenExpiredException implements Exception {
 }
 
 Future<void> updateFcmToken(String fcmToken, {String? authToken, int? userId}) async {
-  final uri = Uri.parse('$baseUrl/update-fcm-token'); // 🔥 Usa la URL global dinámica
+  final uri = Uri.parse('$baseUrl/update-fcm-token');
   
   final headers = <String, String>{
     'Accept': 'application/json',
