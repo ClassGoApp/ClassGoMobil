@@ -16,18 +16,22 @@ class QuickAccessSection extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
  
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          child: Text(
-            "Accesos Rápidos",
-            style: TextStyle(
-              color: isDark ? Colors.white : AppColors.brandBlue,
-              fontSize: 20,
-              fontFamily: 'outfit',
-              fontWeight: FontWeight.w900,
-            ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Accesos Rápidos",
+                style: TextStyle(
+                  color: isDark ? Colors.white : AppColors.brandBlue,
+                  fontSize: 20,
+                  fontFamily: 'outfit',
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 8),

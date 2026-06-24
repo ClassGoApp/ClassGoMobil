@@ -4,6 +4,7 @@ import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/student/instant_tutoring/instant_tutoring_screen.dart';
 import 'package:flutter_projects/view/student/serch_Tutor/search_tutors_screen.dart';
 import 'package:flutter_projects/view/student/reservations/reservations_screen.dart';
+import 'package:flutter_projects/view/student/reservations/services/reservations_service.dart';
 import 'package:flutter_projects/view/student/widgets/student_bottom_nav.dart';
 import 'package:flutter_projects/view/tutor/dashboard/widgets/dashboard_header.dart';
 import 'package:flutter_projects/view/student/profile_screen_student.dart';
@@ -11,6 +12,7 @@ import 'package:flutter_projects/view/student/favorite_tutor/favorite_tutors_scr
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/view/student/services/profile_service.dart';
+import 'package:intl/intl.dart';
 
 class DashboardStudent extends StatefulWidget {
   @override
@@ -20,6 +22,9 @@ class DashboardStudent extends StatefulWidget {
 class _DashboardStudentState extends State<DashboardStudent> {
   int _selectedIndex = 0;
   String? profileImageUrl;
+  List<ReservationItem> _recentReservations = [];
+  bool _isLoadingRecentReservations = true;
+  DateTime? _targetBookingDate;
   late PageController _pageController;
 
   @override
@@ -33,7 +38,11 @@ class _DashboardStudentState extends State<DashboardStudent> {
         try {
           final img = await ProfileService.fetchProfileImage(userId);
           if (mounted) setState(() => profileImageUrl = img);
-        } catch (_) {}  
+        } catch (_) {}
+      }
+
+      if (mounted) {
+        await _loadRecentReservations();
       }
     });
   }
@@ -43,6 +52,13 @@ class _DashboardStudentState extends State<DashboardStudent> {
     _pageController.jumpToPage(index);
   }
 
+  void _openBookingAgenda(DateTime? date) {
+    setState(() {
+      _targetBookingDate = date ?? DateTime.now();
+    });
+    changeTab(1);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -50,24 +66,23 @@ class _DashboardStudentState extends State<DashboardStudent> {
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
-        statusBarBrightness: Brightness.light
-      ),
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark,
+          statusBarBrightness: Brightness.light),
       child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
-        body: PageView( 
+        body: PageView(
           controller: _pageController,
           physics: const NeverScrollableScrollPhysics(),
           children: [
-            _buildHomeTab(),                         // Index 0
-            _buildBookingsTab(),                     // Index 1
-            const InstantTutoringScreen(),           // Index 2 
+            _buildHomeTab(), // Index 0
+            _buildBookingsTab(), // Index 1
+            const InstantTutoringScreen(), // Index 2
             FavoriteTutorsScreen(
               showBottomNav: false,
               isSelected: _selectedIndex == 3,
-            ),                                       // Index 3
-            const ProfileScreen(showAppBar: false),  // Index 4
+            ), // Index 3
+            const ProfileScreen(showAppBar: false), // Index 4
           ],
         ),
         bottomNavigationBar: StudentBottomNav(
@@ -101,51 +116,97 @@ class _DashboardStudentState extends State<DashboardStudent> {
   Widget _buildHomeTab() {
     final authProvider = Provider.of<AuthProvider>(context);
     final userData = authProvider.userData;
-    final String? fullName = userData != null && userData['user'] != null && userData['user']['profile'] != null
+
+    final String? fullName = userData != null &&
+            userData['user'] != null &&
+            userData['user']['profile'] != null
         ? userData['user']['profile']['full_name']
         : null;
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header estilo Tutor con padding top para status bar
-          SizedBox(height: MediaQuery.of(context).padding.top + 20),
-          DashboardHeader(
-            tutorName: fullName ?? 'Estudiante',
-            profileImageUrl: profileImageUrl ??
-                (userData != null && userData['user'] != null && userData['user']['profile'] != null
-                    ? userData['user']['profile']['image']
-                    : null),
-            textColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.blackColor,
-            rating: 0.0,
-            isVerified: false,
-            isLoadingImage: false,
-            isAvailable: false, // Not used without availability capsule
-            onLogoutTap: () {
-              final authProvider =
-                  Provider.of<AuthProvider>(context, listen: false);
-              authProvider.logout();
-            },
-            // show rating and verified only for tutors; hide for students
-            showRating: false,
-            showVerified: false,
+
+    return Column(
+      children: [
+        SizedBox(height: MediaQuery.of(context).padding.top + 20),
+        DashboardHeader(
+          tutorName: fullName ?? 'Estudiante',
+          profileImageUrl: profileImageUrl ??
+              (userData != null &&
+                      userData['user'] != null &&
+                      userData['user']['profile'] != null
+                  ? userData['user']['profile']['image']
+                  : null),
+          textColor: Theme.of(context).brightness == Brightness.dark
+              ? Colors.white
+              : AppColors.blackColor,
+          rating: 0.0,
+          isVerified: false,
+          isLoadingImage: false,
+          isAvailable: false,
+          onLogoutTap: () {
+            final authProvider =
+                Provider.of<AuthProvider>(context, listen: false);
+            authProvider.logout();
+          },
+          showRating: false,
+          showVerified: false,
+        ),
+        const SizedBox(height: 20),
+        Expanded(
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: _buildQuickActions(),
+                ),
+                const SizedBox(height: 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: _buildRecentBookings(),
+                ),
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
-          const SizedBox(height: 32),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: _buildQuickActions(),
-          ),
-          SizedBox(height: 24),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: _buildRecentBookings(),
-          ),
-          SizedBox(
-              height:
-                  24), // Reduced bottom space since nav is now in bottomNavigationBar
-        ],
-      ),
+        ),
+      ],
     );
+  }
+
+  Future<void> _loadRecentReservations() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final token = authProvider.token;
+    final userId = authProvider.userId;
+
+    if (token == null || userId == null) {
+      if (mounted) {
+        setState(() {
+          _recentReservations = [];
+          _isLoadingRecentReservations = false;
+        });
+      }
+      return;
+    }
+    try {
+      final reservations =
+          await ReservationsService.fetchUserReservations(token, userId);
+      if (!mounted) return;
+
+      setState(() {
+        _recentReservations = ReservationsService.filterRecentReservations(
+          reservations,
+          now: DateTime.now(),
+        );
+        _isLoadingRecentReservations = false;
+      });
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _recentReservations = [];
+          _isLoadingRecentReservations = false;
+        });
+      }
+    }
   }
 
   Widget _buildQuickActions() {
@@ -157,10 +218,11 @@ class _DashboardStudentState extends State<DashboardStudent> {
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.blackColor,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white
+                : AppColors.blackColor,
           ),
         ),
-        SizedBox(height: 16),
         GridView.count(
           shrinkWrap: true,
           physics: NeverScrollableScrollPhysics(),
@@ -298,68 +360,166 @@ class _DashboardStudentState extends State<DashboardStudent> {
             color: isDark ? Colors.white : AppColors.blackColor,
           ),
         ),
-        SizedBox(height: 16),
-        Container(
-          padding: EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: theme.cardTheme.color,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              if (!isDark)
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 8,
-                  offset: Offset(0, 2),
+        const SizedBox(height: 16),
+        if (_isLoadingRecentReservations)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: CircularProgressIndicator(color: AppColors.primaryGreen),
+            ),
+          )
+        else if (_recentReservations.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: theme.cardTheme.color,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                if (!isDark)
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+              ],
+              border: isDark ? Border.all(color: Colors.white10) : null,
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  size: 48,
+                  color: AppColors.primaryGreen,
                 ),
-            ],
-            border: isDark ? Border.all(color: Colors.white10) : null,
-          ),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    color: isDark ? Colors.white54 : AppColors.greyColor,
-                    size: 20,
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    'No tienes reservas recientes',
-                    style: TextStyle(
-                      color: isDark ? Colors.white54 : AppColors.greyColor,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => SearchTutorsScreen(),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryGreen,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: Text(
-                  'Buscar Tutores',
+                const SizedBox(height: 12),
+                Text(
+                  'No tienes reservas recientes',
                   style: TextStyle(
-                    color: Colors.white,
+                    fontSize: 16,
                     fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : AppColors.blackColor,
                   ),
+                  textAlign: TextAlign.center,
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
+                Text(
+                  'Reserva una tutoría para ver tu historial aquí.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDark ? Colors.white54 : AppColors.greyColor,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                Center(
+                  child: SizedBox(
+                    width: 200,
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => SearchTutorsScreen(),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryGreen,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Buscar Tutores',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+              ],
+            ),
+          )
+        else
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.cardTheme.color,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                if (!isDark)
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+              ],
+              border: isDark ? Border.all(color: Colors.white10) : null,
+            ),
+            child: Column(
+              children: _recentReservations.map((reservation) {
+                final start = reservation.start;
+                final formattedDate = start != null
+                    ? DateFormat('dd MMM', 'es').format(start)
+                    : 'Sin fecha';
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: InkWell(
+                    onTap: () => _openBookingAgenda(reservation.start),
+                    borderRadius: BorderRadius.circular(10),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryGreen.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            Icons.calendar_today_outlined,
+                            color: AppColors.primaryGreen,
+                            size: 18,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                reservation.subjectName,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark
+                                      ? Colors.white
+                                      : AppColors.blackColor,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                '$formattedDate • ${reservation.status}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isDark
+                                      ? Colors.white54
+                                      : AppColors.greyColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
           ),
-        ),
       ],
     );
   }
@@ -372,7 +532,7 @@ class _DashboardStudentState extends State<DashboardStudent> {
         Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: ReservationsContent(),
+            child: ReservationsContent(initialDate: _targetBookingDate),
           ),
         ),
       ],
@@ -402,7 +562,8 @@ class _DashboardStudentState extends State<DashboardStudent> {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: theme.textTheme.titleLarge?.color ?? AppColors.blackColor,
+                    color: theme.textTheme.titleLarge?.color ??
+                        AppColors.blackColor,
                   ),
                 ),
                 SizedBox(height: 8),

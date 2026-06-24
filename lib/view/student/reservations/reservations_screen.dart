@@ -59,7 +59,9 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
 
 /// Widget reutilizable con el contenido de la pantalla de Reservas
 class ReservationsContent extends StatefulWidget {
-  const ReservationsContent({Key? key}) : super(key: key);
+  final DateTime? initialDate;
+
+  const ReservationsContent({Key? key, this.initialDate}) : super(key: key);
 
   @override
   State<ReservationsContent> createState() => _ReservationsContentState();
@@ -73,8 +75,20 @@ class _ReservationsContentState extends State<ReservationsContent> {
   @override
   void initState() {
     super.initState();
-    _selectedDate = DateTime.now();
+    _selectedDate = widget.initialDate ?? DateTime.now();
     // Booking loading moved into ReservationsCalendar widget
+  }
+
+  @override
+  void didUpdateWidget(covariant ReservationsContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialDate != null &&
+        (oldWidget.initialDate == null ||
+            widget.initialDate!.difference(oldWidget.initialDate!) != Duration.zero)) {
+      setState(() {
+        _selectedDate = widget.initialDate!;
+      });
+    }
   }
 
   void _onNewReservation() {

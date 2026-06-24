@@ -28,6 +28,28 @@ class ReservationsService {
     return DateTime.now().toUtc().subtract(const Duration(hours: 4));
   }
 
+  static List<ReservationItem> filterRecentReservations(
+    List<ReservationItem> reservations, {
+    required DateTime now,
+    int maxResults = 3,
+    Duration lookback = const Duration(days: 30),
+  }) {
+    final lowerBound = now.subtract(lookback);
+
+    final filtered = reservations.where((reservation) {
+      if (reservation.start == null) return false;
+      return !reservation.start!.isBefore(lowerBound);
+    }).toList();
+
+    filtered.sort((a, b) {
+      final aTime = a.start ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final bTime = b.start ?? DateTime.fromMillisecondsSinceEpoch(0);
+      return bTime.compareTo(aTime);
+    });
+
+    return filtered.take(maxResults).toList();
+  }
+
   static int _extractMonthInt(dynamic value) {
     if (value is int && value >= 1 && value <= 12) return value;
     final parsed = int.tryParse(value?.toString() ?? '');
@@ -135,7 +157,8 @@ class ReservationsService {
         }
 
         // Student name
-        String studentName = b['student_name']?.toString() ?? b['student']?.toString() ?? '';
+        String studentName =
+            b['student_name']?.toString() ?? b['student']?.toString() ?? '';
         final int sId = int.tryParse(b['student_id']?.toString() ?? '') ?? 0;
 
         if (studentName.isEmpty && sId > 0) {
@@ -146,9 +169,12 @@ class ReservationsService {
               final studentResp = await getProfile(token, sId);
               if (studentResp.containsKey('user')) {
                 final u = studentResp['user'];
-                studentName = (u['first_name'] ?? '') + ' ' + (u['last_name'] ?? '');
+                studentName =
+                    (u['first_name'] ?? '') + ' ' + (u['last_name'] ?? '');
               } else if (studentResp.containsKey('first_name')) {
-                studentName = (studentResp['first_name'] ?? '') + ' ' + (studentResp['last_name'] ?? '');
+                studentName = (studentResp['first_name'] ?? '') +
+                    ' ' +
+                    (studentResp['last_name'] ?? '');
               } else if (studentResp.containsKey('name')) {
                 studentName = studentResp['name'].toString();
               }

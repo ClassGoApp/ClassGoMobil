@@ -51,6 +51,22 @@ class _ReservationsCalendarState extends State<ReservationsCalendar> {
     });
   }
 
+  @override
+  void didUpdateWidget(covariant ReservationsCalendar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialDate != null &&
+        (oldWidget.initialDate == null ||
+            widget.initialDate!.difference(oldWidget.initialDate!) !=
+                const Duration())) {
+      setState(() {
+        _selectedDate = widget.initialDate!;
+        _focusedDay = widget.initialDate!;
+      });
+      _updateSelectedEvents();
+      _loadBookingsForMonth(_focusedDay);
+    }
+  }
+
   Future<void> _loadBookingsForMonth(DateTime visibleMonth) async {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final token = auth.token;
