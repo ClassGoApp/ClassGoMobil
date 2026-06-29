@@ -399,6 +399,34 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> refreshProfileFromServer() async {
+    if (_token != null && userId != null) {
+      try {
+        final response = await getProfile(_token!, userId!);
+        if (response != null && response.containsKey('data')) {
+          final userMap = response['data'];
+          if (userMap != null && _userData != null) {
+            _userData!['user'] = userMap;
+            SharedPreferences prefs = await SharedPreferences.getInstance();
+            await prefs.setString('userData', jsonEncode(_userData));
+            
+            final profile = userMap['profile'];
+            if (profile != null) {
+              _firstName = profile['first_name'];
+              _lastName = profile['last_name'];
+              _phone = profile['phone_number'];
+              _description = profile['description'];
+            }
+            notifyListeners();
+            print('Profile refreshed successfully from server');
+          }
+        }
+      } catch (e) {
+        print('Error refreshing profile from server: $e');
+      }
+    }
+  }
+
   Future<void> clearToken() async {
     _token = null;
     _userData = null;
