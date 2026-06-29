@@ -58,7 +58,8 @@ class _LoginScreenState extends State<ResetPassword>
         final response = await forgetPassword(email);
 
         if (response['status'] == 200) {
-          showCustomToast(context, response['message'], true);
+          showCustomToast(
+              context, "Correo de recuperacion enviado correctamente", true);
         } else {
           showCustomToast(context, response['message'], false);
         }
