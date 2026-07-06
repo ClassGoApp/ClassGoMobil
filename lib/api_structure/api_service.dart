@@ -3532,3 +3532,36 @@ Future<Map<String, dynamic>> disconnectGoogle(String? token) async {
     };
   }
 }
+
+Future<Map<String, dynamic>> deleteProfileVideo({
+  required String token,
+  required int userId,
+}) async {
+  try {
+    final response = await http.delete(
+      Uri.parse('$baseUrl/user/$userId/profile-video'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 200) {
+      return data;
+    } else {
+      return {
+        'success': false,
+        'message':
+            data['message'] ?? 'Error en el servidor: ${response.statusCode}'
+      };
+    }
+  } catch (e) {
+    return {
+      'success': false,
+      'message': 'Error al eliminar el video de presentación: $e'
+    };
+  }
+}
+
