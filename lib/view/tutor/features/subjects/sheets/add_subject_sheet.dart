@@ -387,9 +387,8 @@ class _AddSubjectSheetState extends State<AddSubjectSheet> {
                         widget.onRegistrationComplete
                             ?.call(_selectedSubjectIds.toList());
                         Navigator.pop(context);
-                        // Solo cerramos y devolvemos los datos
                       } else {
-                        _saveSelections(); // Llama a tu API para guardar (Modo Edición)
+                        _saveSelections();
                       }
                     },
               style: ElevatedButton.styleFrom(

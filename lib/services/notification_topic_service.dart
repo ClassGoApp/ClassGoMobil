@@ -8,6 +8,7 @@ import 'package:flutter_projects/view/tutor/features/Instant_tutoring/confirmati
 import 'package:flutter_projects/view/tutor/features/Instant_tutoring/ready_tutoring_screen.dart';
 import 'package:flutter_projects/view/tutor/features/Instant_tutoring/view_wait_tutoring_screen.dart';
 import 'package:flutter_projects/view/tutor/features/home/providers/tutor_home_provider.dart';
+import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -149,6 +150,21 @@ class NotificationTopicService {
               );
             } catch (e) {
               print('Error al procesar tutoria_lista: $e');
+            }
+          }
+        } else if (data['type'] == 'identity_verification_approved') {
+          final context = navigatorKey.currentContext;
+          if (context != null) {
+            try {
+              final authProvider =
+                  Provider.of<AuthProvider>(context, listen: false);
+              authProvider.setIdentityStatus('accepted');
+              authProvider.refreshProfile();
+              final homeProvider =
+                  Provider.of<TutorHomeProvider>(context, listen: false);
+              homeProvider.showVerifiedBannerBriefly();
+            } catch (e) {
+              print('Error al procesar identity_verification_approved: $e');
             }
           }
         }
@@ -353,7 +369,18 @@ class NotificationTopicService {
         break;
 
       default:
-        print('Push sin pantalla manejada: ${data['screen']}');
+        if (data['type'] == 'identity_verification_approved') {
+          try {
+            final authProvider =
+                Provider.of<AuthProvider>(context, listen: false);
+            authProvider.setIdentityStatus('accepted');
+            authProvider.refreshProfile();
+          } catch (e) {
+            print('Error al procesar identity_verification_approved: $e');
+          }
+        } else {
+          print('Push sin pantalla manejada: ${data['screen']}');
+        }
         break;
     }
   }

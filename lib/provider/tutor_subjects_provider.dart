@@ -8,6 +8,16 @@ class TutorSubjectsProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _error;
 
+  List<Map<String, dynamic>> subjectGroups = [];
+  List<Map<String, dynamic>> availableSubjects = [];
+  
+  bool isLoadingGroups = false;
+  bool isSearching = false;
+  
+  int currentPage = 1;
+  int lastPage = 1;
+  bool isFetchingMore = false;
+
   List<TutorSubject> get subjects => _subjects;
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -151,6 +161,69 @@ class TutorSubjectsProvider with ChangeNotifier {
       notifyListeners();
       return false;
     }
+  }
+
+  Future<void> loadGroups(String token) async {
+    isLoadingGroups = true;
+    notifyListeners();
+
+    try {
+      final response = await fetchSubjectGroups(token); // o ApiService.fetchSubjectGroups...
+      
+      if (response['success'] == true) {
+        final List rawData = response['data'] ?? [];
+        subjectGroups = rawData.map((item) => Map<String, dynamic>.from(item)).toList();
+      } else {
+        _error = response['message'];
+        print('❌ Error de la API al cargar grupos: $_error');
+      }
+    } catch (e) {
+      _error = 'Ocurrió un error: $e';
+      print('🔥 Error interno en loadGroups: $e');
+    } finally {
+      isLoadingGroups = false;
+      notifyListeners();
+    }
+  }
+  Future<void> searchSubjects({
+    required String token,
+    required int userId,
+    String? keyword,
+    int? groupId,
+    bool isRefresh = false,
+  }) async {
+    if (isRefresh) {
+      currentPage = 1;
+      isSearching = true;
+      notifyListeners();
+    } else {
+      if (currentPage >= lastPage || isFetchingMore) return;
+      currentPage++;
+      isFetchingMore = true;
+      notifyListeners();
+    }
+
+    final response = await fetchAvailableSubjects(
+      token: token,
+      page: currentPage,
+      keyword: keyword,
+      groupId: groupId,
+      userId: userId,
+    );
+
+    if (response['success']) {
+      final newSubjects = List<Map<String, dynamic>>.from(response['data']);
+      if (isRefresh) {
+        availableSubjects = newSubjects;
+      } else {
+        availableSubjects.addAll(newSubjects);
+      }
+      lastPage = response['last_page'] ?? 1;
+    }
+
+    isSearching = false;
+    isFetchingMore = false;
+    notifyListeners();
   }
 
   void clearError() {

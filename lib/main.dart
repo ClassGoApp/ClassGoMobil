@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_projects/config/firebase_options.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/provider/connectivity_provider.dart';
+import 'package:flutter_projects/provider/location_provider.dart';
+import 'package:flutter_projects/provider/onboarding_provider.dart';
 import 'package:flutter_projects/provider/settings_provider.dart';
 import 'package:flutter_projects/services/notification_topic_service.dart';
 import 'package:flutter_projects/view/splash/splash_transicion.dart';
@@ -14,7 +16,6 @@ import 'package:overlay_support/overlay_support.dart';
 import 'package:flutter_projects/helpers/pusher_service.dart';
 import 'package:flutter_projects/services/deep_link_service.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'helpers/firebase_messaging_service.dart';
 import 'package:flutter_projects/provider/booking_provider.dart';
 import 'package:flutter_projects/provider/tutor_subjects_provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -92,6 +93,8 @@ void main() async {
         ChangeNotifierProvider(create: (_) => TutorHomeProvider()),
         ChangeNotifierProvider(create: (_) => TutorAgendaProvider()),
         ChangeNotifierProvider(create: (_) => TutorSubjectsProvider()),
+        ChangeNotifierProvider(create: (_) => OnboardingProvider()),
+        ChangeNotifierProvider(create: (_) => LocationProvider()),
       ],
       child: const MyApp(),
     ),

@@ -1244,6 +1244,70 @@ Future<Map<String, dynamic>> updateProfile(
   return jsonDecode(response.body) as Map<String, dynamic>;
 }
 
+Future<Map<String, dynamic>> submitIdentityVerification({
+  required String token,
+  required String documentKey,
+  required String name,
+  required String dateOfBirth,
+  required int countryId,
+  required int stateId,
+  required String address,
+  required File image,
+  required File document,
+}) async {
+  try {
+    var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/identity-verification'));
+    
+    request.headers.addAll({
+      'Authorization': 'Bearer $token',
+      'Accept': 'application/json',
+    });
+
+    request.fields['name'] = name;
+    request.fields['dateOfBirth'] = dateOfBirth;
+    request.fields['country'] = countryId.toString();
+    request.fields['state'] = stateId.toString();
+    request.fields['address'] = address;
+    request.fields['zipcode'] = '00000'; 
+    request.fields['lat'] = '0.0';
+    request.fields['long'] = '0.0';
+
+    request.files.add(await http.MultipartFile.fromPath('image', image.path));
+    
+    request.files.add(await http.MultipartFile.fromPath(documentKey, document.path));
+
+    final response = await http.Response.fromStream(await request.send());
+    final decoded = jsonDecode(response.body);
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return {'success': true, 'data': decoded};
+    }
+    
+    return {'success': false, 'message': decoded['message'] ?? 'Error al subir documentos'};
+  } catch (e) {
+    return {'success': false, 'message': 'Revisa tu conexión a internet.'};
+  }
+}
+
+Future<Map<String, dynamic>> getIdentityVerificationStatus(String token, int userId) async {
+  try {
+    final response = await http.get(
+      Uri.parse('$baseUrl/identity-verification/$userId'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
+    );
+    final decoded = jsonDecode(response.body);
+    if (response.statusCode == 200 && decoded['success'] == true) {
+      return {'success': true, 'data': decoded['data']};
+    }
+    return {'success': false, 'message': decoded['message'] ?? 'Error al obtener estado'};
+  } catch (e) {
+    return {'success': false, 'message': 'Error de conexión'};
+  }
+}
+
 Future<Map<String, dynamic>> getMyEarnings(String token, int id) async {
   try {
     final Uri uri = Uri.parse('$baseUrl/my-earning/$id');
@@ -2033,8 +2097,14 @@ Future<Map<String, dynamic>> getTutorSubjects(String token, int userId) async {
   }
 }
 
-Future<Map<String, dynamic>> addTutorSubject(String token, int userId,
-    int subjectId, String description, String? imagePath) async {
+Future<Map<String, dynamic>> addTutorSubject(
+  String token,
+  int userId,
+  int subjectId,
+  String? description,
+  String? imagePath, {
+  double? price,
+}) async {
   try {
     var request = http.MultipartRequest(
       'POST',
@@ -2048,18 +2118,22 @@ Future<Map<String, dynamic>> addTutorSubject(String token, int userId,
 
     request.fields['user_id'] = userId.toString();
     request.fields['subject_id'] = subjectId.toString();
-    request.fields['description'] = description;
+
+    if (description != null && description.isNotEmpty) {
+      request.fields['description'] = description;
+    }
+
+    if (price != null) {
+      request.fields['price'] = price.toString();
+    }
 
     if (imagePath != null && imagePath.isNotEmpty) {
       final file = File(imagePath);
       if (await file.exists()) {
-        final stream = http.ByteStream(file.openRead());
-        final length = await file.length();
-        final multipartFile = http.MultipartFile(
+        final multipartFile = await http.MultipartFile.fromPath(
           'image',
-          stream,
-          length,
-          filename: path.basename(imagePath),
+          file.path,
+          filename: path.basename(file.path),
         );
         request.files.add(multipartFile);
       }
@@ -2068,14 +2142,27 @@ Future<Map<String, dynamic>> addTutorSubject(String token, int userId,
     final streamedResponse = await request.send();
     final response = await http.Response.fromStream(streamedResponse);
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      return jsonDecode(response.body);
-    } else {
-      throw Exception('Failed to add tutor subject: ${response.statusCode}');
+    final responseData = jsonDecode(response.body);
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return {'success': true, 'data': responseData};
+    } 
+    else if (response.statusCode == 409) {
+      return {
+        'success': true, 
+        'message': 'El usuario ya tiene esta materia asignada', 
+        'isDuplicate': true 
+      };
+    } 
+    else {
+      return {
+        'success': false, 
+        'message': responseData['message'] ?? 'Error al guardar la materia. (Código: ${response.statusCode})'
+      };
     }
   } catch (e) {
-    print('Error adding tutor subject: $e');
-    throw e;
+    print('Error en addTutorSubject: $e');
+    return {'success': false, 'message': 'Revisa tu conexión a internet.'};
   }
 }
 
@@ -2143,11 +2230,147 @@ Future<Map<String, dynamic>> getAvailableSubjects(String token) async {
   }
 }
 
-// Create user subject slot
+Future<Map<String, dynamic>> fetchSubjectGroups(String token) async {
+  final url = Uri.parse('$baseUrl/subject-groups');
+  
+  try {
+    final response = await http.get(url, headers: {
+      'Authorization': 'Bearer $token',
+      'Accept': 'application/json',
+    });
+    
+    if (response.statusCode == 200) {
+      return {'success': true, 'data': jsonDecode(response.body)['data']};
+    }
+    return {'success': false, 'message': 'Error al cargar categorías'};
+  } catch (e) {
+    print('❌ Error Catch: $e');
+    return {'success': false, 'message': 'Error de conexión: $e'};
+  }
+}
+
+Future<Map<String, dynamic>> fetchSubjectsByGroup(String token, int groupId) async {
+  final url = Uri.parse('$baseUrl/subject-groups/$groupId/subjects');
+  try {
+    final response = await http.get(url, headers: {
+      'Authorization': 'Bearer $token',
+      'Accept': 'application/json',
+    });
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body);
+      return {'success': true, 'data': decoded['data']};
+    }
+    return {'success': false, 'message': 'Error al cargar materias del grupo'};
+  } catch (e) {
+    return {'success': false, 'message': 'Error de conexión: $e'};
+  }
+}
+
+Future<bool> hasAssignedSubjects(String token, int userId) async {
+  final url = Uri.parse('$baseUrl/users/$userId/subjects');
+  try {
+    final response = await http.get(url, headers: {
+      'Authorization': 'Bearer $token',
+      'Accept': 'application/json',
+    });
+    if (response.statusCode == 200) {
+      final List data = jsonDecode(response.body)['data'];
+      return data.isNotEmpty;
+    }
+    return false;
+  } catch (e) {
+    return false;
+  }
+}
+
+// Future<Map<String, dynamic>> searchAvailableSubjects({
+//   required String token,
+//   required String keyword,
+//   int? userId,
+// }) async {
+//   // ✅ RUTA CORRECTA
+//   final url = Uri.parse('$baseUrl/tutor-subjects/available?keyword=$keyword&user_id=$userId'); 
+//   // ... resto del código igual (maneja la paginación aquí si aplica) ...
+// }
+Future<Map<String, dynamic>> fetchAvailableSubjects({
+  required String token,
+  required int page,
+  String? keyword,
+  int? groupId,
+  int? userId,
+}) async {
+  String queryParams = '?page=$page';
+  if (keyword != null && keyword.isNotEmpty) queryParams += '&keyword=$keyword';
+  if (groupId != null) queryParams += '&group_id=$groupId';
+  if (userId != null) queryParams += '&user_id=$userId';
+
+  final url = Uri.parse('$baseUrl/tutor-subjects/available$queryParams');
+  
+  try {
+    final response = await http.get(url, headers: {
+      'Authorization': 'Bearer $token',
+      'Accept': 'application/json',
+    });
+    
+    final decoded = jsonDecode(response.body);
+
+    if (response.statusCode == 200 && decoded['status'] == 200) {
+      return {
+        'success': true, 
+        'data': decoded['data']['data'], 
+        'current_page': decoded['data']['current_page'],
+        'last_page': decoded['data']['last_page'],
+      };
+    }
+    
+    return {
+      'success': false, 
+      'message': decoded['message'] ?? 'Error al buscar materias'
+    };
+    
+  } catch (e) {
+    print("❌ Error fetchAvailableSubjects: $e");
+    return {'success': false, 'message': 'Revisa tu conexión a internet.'};
+  }
+}
+
+// Future<Map<String, dynamic>> fetchAvailableSubjects({
+//   required String token,
+//   required int page,
+//   String? keyword,
+//   int? groupId,
+//   int? userId,
+// }) async {
+//   String queryParams = '?page=$page';
+//   if (keyword != null && keyword.isNotEmpty) queryParams += '&keyword=$keyword';
+//   if (groupId != null) queryParams += '&group_id=$groupId';
+//   if (userId != null) queryParams += '&user_id=$userId';
+
+//   final url = Uri.parse('$baseUrl/tutor-subjects/available$queryParams');
+  
+//   try {
+//     final response = await http.get(url, headers: {
+//       'Authorization': 'Bearer $token',
+//       'Accept': 'application/json',
+//     });
+    
+//     if (response.statusCode == 200) {
+//       final decoded = jsonDecode(response.body);
+//       return {
+//         'success': true, 
+//         'data': decoded['data']['data'], // Array de materias
+//         'last_page': decoded['data']['last_page'],
+//       };
+//     }
+//     return {'success': false, 'message': 'Error al buscar materias'};
+//   } catch (e) {
+//     return {'success': false, 'message': 'Error de conexión: $e'};
+//   }
+// }
+
 Future<Map<String, dynamic>> createUserSubjectSlot(
     String token, Map<String, dynamic> slotData) async {
   try {
-    // Preparar los datos según el nuevo formato requerido
     final Map<String, dynamic> requestData = {
       'user_id': slotData['user_id'],
       'start_time': slotData['start_time'],
@@ -2302,7 +2525,32 @@ Future<Map<String, dynamic>> changeBookingToCursando(
   }
 }
 
-// Obtener imagen de perfil del usuario
+Future<Map<String, dynamic>> fetchCountries(String token) async {
+  final url = Uri.parse('$baseUrl/countries');
+  final response = await http.get(url, headers: {
+    'Authorization': 'Bearer $token',
+    'Accept': 'application/json',
+  });
+
+  if (response.statusCode == 200) {
+    return {'success': true, 'data': jsonDecode(response.body)['data']};
+  }
+  return {'success': false, 'message': 'Error al cargar países'};
+}
+
+Future<Map<String, dynamic>> fetchStates(String token, int countryId) async {
+  final url = Uri.parse('$baseUrl/country-states?country_id=$countryId');
+  final response = await http.get(url, headers: {
+    'Authorization': 'Bearer $token',
+    'Accept': 'application/json',
+  });
+
+  if (response.statusCode == 200) {
+    return {'success': true, 'data': jsonDecode(response.body)['data']};
+  }
+  return {'success': false, 'message': 'Error al cargar estados'};
+}
+
 Future<Map<String, dynamic>> getUserProfileImage(
     String token, int userId) async {
   try {
@@ -3532,3 +3780,5 @@ Future<Map<String, dynamic>> disconnectGoogle(String? token) async {
     };
   }
 }
+
+

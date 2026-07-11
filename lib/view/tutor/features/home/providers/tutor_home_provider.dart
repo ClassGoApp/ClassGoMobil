@@ -6,6 +6,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TutorHomeProvider extends ChangeNotifier {
@@ -15,6 +16,29 @@ class TutorHomeProvider extends ChangeNotifier {
   
   String? profileImageUrl;
   bool isLoadingProfileImage = false;
+
+  bool showVerifiedBanner = false;
+  Timer? _verifiedBannerTimer;
+
+  Future<void> showVerifiedBannerBriefly() async {
+    final prefs = await SharedPreferences.getInstance();
+    const shownKey = 'verified_banner_shown';
+    if (prefs.getBool(shownKey) == true) return;
+    await prefs.setBool(shownKey, true);
+    showVerifiedBanner = true;
+    notifyListeners();
+    _verifiedBannerTimer?.cancel();
+    _verifiedBannerTimer = Timer(const Duration(seconds: 7), () {
+      showVerifiedBanner = false;
+      notifyListeners();
+    });
+  }
+
+  void dismissVerifiedBanner() {
+    _verifiedBannerTimer?.cancel();
+    showVerifiedBanner = false;
+    notifyListeners();
+  }
 
   // NUEVO: Estado para solicitudes de tutoría pendientes (desde notificaciones)
   Map<String, dynamic>? pendingTutoringRequest;
@@ -75,6 +99,7 @@ class TutorHomeProvider extends ChangeNotifier {
 
   void clearPendingRequest() {
     _expirationTimer?.cancel();
+    _verifiedBannerTimer?.cancel();
     pendingTutoringRequest = null;
     requestTime = null;
     confirmationStartTime = null;
@@ -82,6 +107,7 @@ class TutorHomeProvider extends ChangeNotifier {
     isRequestChosen = false;
     isTutoringReady = false;
     activeMeetLink = null;
+    showVerifiedBanner = false;
     notifyListeners();
   }
 

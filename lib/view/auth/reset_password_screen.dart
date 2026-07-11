@@ -58,12 +58,12 @@ class _LoginScreenState extends State<ResetPassword>
         final response = await forgetPassword(email);
 
         if (response['status'] == 200) {
-          showCustomToast(context, response['message'], true);
+          showCustomToast(context, "Le hemos enviado por correo electrónico el enlace para restablecer su contraseña.", true);
         } else {
-          showCustomToast(context, response['message'], false);
+          showCustomToast(context, "No se pudo enviar el correo, intente nuevamente.", false);
         }
       } catch (e) {
-        showCustomToast(context, 'No se pudo enviar el correo, $e', false);
+        showCustomToast(context, 'Espere antes de volver a intentarlo.', false);
       } finally {
         setState(() {
           _isLoading = false;

@@ -30,6 +30,7 @@ class AuthProvider with ChangeNotifier {
   String? _zipCode;
   String? _description;
   String? _company;
+  String? _identityVerificationStatus;
   bool _isLoading = true;
   bool _isSessionLoaded =
       false; // Nuevo: indica si la sesión se cargó completamente
@@ -44,6 +45,7 @@ class AuthProvider with ChangeNotifier {
   String? get zipCode => _zipCode;
   String? get description => _description;
   String? get company => _company;
+  String? get identityVerificationStatus => _identityVerificationStatus;
 
   String? get token => _token;
   Map<String, dynamic>? get userData => _userData;
@@ -204,6 +206,8 @@ class AuthProvider with ChangeNotifier {
     } else {
       print('DEBUG - No se encontró userData en SharedPreferences');
     }
+
+    _identityVerificationStatus = prefs.getString('identityVerificationStatus');
 
     final educationListString = prefs.getString('educationList');
     if (educationListString != null) {
@@ -397,6 +401,47 @@ class AuthProvider with ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  Future<void> setIdentityStatus(String? status) async {
+    _identityVerificationStatus = status;
+    final prefs = await SharedPreferences.getInstance();
+    if (status != null) {
+      await prefs.setString('identityVerificationStatus', status);
+    } else {
+      await prefs.remove('identityVerificationStatus');
+    }
+    notifyListeners();
+  }
+
+  Future<void> refreshProfile() async {
+    if (_token == null || userId == null) return;
+    try {
+      final response = await getProfile(_token!, userId!);
+      if (response['success'] == true && response['data'] != null) {
+        final userData = response['data'];
+        if (userData['user'] != null) {
+          _userData = userData;
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('userData', jsonEncode(userData));
+
+          final profile = userData['user']['profile'] ?? {};
+          if (profile['verified'] == true) {
+            await setIdentityStatus('accepted');
+          }
+        }
+      }
+
+      final identityResponse = await getIdentityVerificationStatus(_token!, userId!);
+      if (identityResponse['success'] == true && identityResponse['data'] != null) {
+        final status = identityResponse['data']['status'];
+        if (status != null && _identityVerificationStatus != 'accepted') {
+          await setIdentityStatus(status.toString());
+        }
+      }
+    } catch (e) {
+      print('Error refreshing profile: $e');
+    }
   }
 
   Future<void> clearToken() async {
@@ -733,6 +778,7 @@ class AuthProvider with ChangeNotifier {
     // 1. Limpiar datos en memoria de inmediato
     _token = null;
     _userData = null;
+    _identityVerificationStatus = null;
     // Mantener _isSessionLoaded = true; para que el Router no se quede en "cargando"
 
     _educationList.clear();
@@ -824,6 +870,8 @@ class AuthProvider with ChangeNotifier {
         prefs.remove('zipCode'),
         prefs.remove('description'),
         prefs.remove('company'),
+        prefs.remove('identityVerificationStatus'),
+        prefs.remove('verified_banner_shown'),
       ]);
       print('DEBUG - Limpieza de segundo plano completada');
     } catch (e) {
