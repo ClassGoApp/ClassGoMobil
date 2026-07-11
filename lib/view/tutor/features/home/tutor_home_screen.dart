@@ -132,6 +132,12 @@ class _TutorHomeScreenState extends State<TutorHomeScreen> {
     final bool hasAcceptedTerms = user?['terms_accepted'] == true;
     final String? identityStatus = authProvider.identityVerificationStatus;
 
+    final double rating = profile['avg_rating'] != null
+        ? (profile['avg_rating'] is num
+            ? (profile['avg_rating'] as num).toDouble()
+            : double.tryParse(profile['avg_rating'].toString()) ?? 4.9)
+        : 4.9;
+
     if (imageUrl != null && imageUrl.isNotEmpty) {
       if (imageUrl
           .contains('https://classgoapp.com/storagehttps://classgoapp.com')) {
@@ -156,7 +162,7 @@ class _TutorHomeScreenState extends State<TutorHomeScreen> {
         DashboardTopSection(
           tutorName: userName,
           profileImageUrl: imageUrl,
-          rating: 4.9,
+          rating: rating,
           isVerified: isVerified,
           isLoadingImage: homeProvider.isLoading,
           isAvailable: homeProvider.isAvailable,

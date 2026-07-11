@@ -984,37 +984,57 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _deleteVideoLogic() async {
-    // Aquí puedes poner tu lógica de API para borrar el video del servidor si la tienes.
-    // Por ahora, simularemos que lo borramos vaciando la variable y deteniendo el reproductor.
-    // setState(() {
-    //   _isVideoLoading = true;
-    // });
+    if (mounted) {
+      setState(() {
+        _isVideoLoading = true;
+      });
+    }
 
     try {
-      await Future.delayed(const Duration(seconds: 1)); // Simulando red
-
-      if (_isVideoInitialized && mounted) {
-        _videoController.removeListener(() {});
-        _videoController.dispose();
-      }
-
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      if (authProvider.userData != null) {
-        authProvider.userData!['user']['profile']['intro_video'] = null;
+      final userId = authProvider.userData?['user']['id'];
+      final token = authProvider.token;
+
+      if (userId == null || token == null) {
+        throw Exception('Usuario no autenticado');
       }
 
-      setState(() {
-        _profileVideoUrl = null;
-        _isVideoInitialized = false;
-      });
+      final result = await deleteProfileVideo(
+        token: token,
+        userId: userId,
+      );
 
-      _showCustomToast('Video eliminado correctamente', true);
+      if (result['success'] == true) {
+        if (_isVideoInitialized && mounted) {
+          _videoController.removeListener(() {});
+          _videoController.dispose();
+        }
+
+        if (authProvider.userData != null) {
+          authProvider.userData!['user']['profile']['intro_video'] = null;
+        }
+
+        if (mounted) {
+          setState(() {
+            _profileVideoUrl = null;
+            _isVideoInitialized = false;
+          });
+        }
+
+        _showCustomToast('Video eliminado correctamente', true);
+      } else {
+        throw Exception(result['message'] ?? 'Error desconocido');
+      }
     } catch (e) {
-      _showCustomToast('Error al eliminar video: $e', false);
+      if (mounted) {
+        _showCustomToast('Error al eliminar video: $e', false);
+      }
     } finally {
-      setState(() {
-        _isVideoLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isVideoLoading = false;
+        });
+      }
     }
   }
 

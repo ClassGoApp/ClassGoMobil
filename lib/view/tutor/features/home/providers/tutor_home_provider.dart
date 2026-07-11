@@ -262,19 +262,21 @@ class TutorHomeProvider extends ChangeNotifier {
       print('Error obteniendo citas: $e');
     }
   }
-
   Future<void> refreshOnlySubjects(BuildContext context) async {
     try {
-      print('🔄 Refrescando tutorías...');
+      print('🔄 Refrescando tutorías y perfil...');
       
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.refreshProfileFromServer();
+
+      await loadProfileImage(context);
       await fetchNextBooking(context);
       
-      print('✅ Tutorías actualizadas correctamente');
+      print('✅ Tutorías y perfil actualizados correctamente');
     } catch (e) {
       print('❌ Error en el refresco silencioso: $e');
     }
   }
-
   Future<void> handleAvailabilityToggle(BuildContext context, bool newState) async {
     isAvailable = newState;
     notifyListeners();
