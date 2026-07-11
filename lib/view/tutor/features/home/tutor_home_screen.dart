@@ -4,7 +4,6 @@ import 'package:flutter_projects/view/auth/tutor_subject_selection_screen.dart';
 import 'package:flutter_projects/view/student/reservations/services/reservations_service.dart';
 import 'package:flutter_projects/view/tutor/features/home/providers/tutor_home_provider.dart';
 import 'package:flutter_projects/view/tutor/features/home/widgets/terms_acceptance_section.dart';
-import 'package:flutter_projects/view/tutor/onboarding/onboarding_provider.dart';
 import 'package:flutter_projects/view/tutor/onboarding/onboarding_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/styles/app_styles.dart';

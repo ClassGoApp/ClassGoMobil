@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/base_components/custom_snack_bar.dart';
 import 'package:flutter_projects/provider/onboarding_provider.dart';
-import 'package:flutter_projects/view/tutor/onboarding/onboarding_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
