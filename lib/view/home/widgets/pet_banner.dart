@@ -26,7 +26,7 @@ class MascotBanner extends StatelessWidget {
                   Text(
                     '¡Te acompañamos!',
                     style: TextStyle(
-                      fontFamily: 'outfit',
+                      fontFamily: AppFonts.heading,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: AppColors.brandBlue,
@@ -36,7 +36,7 @@ class MascotBanner extends StatelessWidget {
                   Text(
                     'Encuentra al tutor ideal para ti y alcanza tus metas hoy mismo.',
                     style: TextStyle(
-                      fontFamily: 'manrope',
+                      fontFamily: AppFonts.body,
                       fontSize: 14,
                       color: AppColors.textLightSecondary,
                       height: 1.3,

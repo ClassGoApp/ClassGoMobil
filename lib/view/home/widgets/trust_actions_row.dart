@@ -103,7 +103,7 @@ class _SmallActionCard extends StatelessWidget {
             Text(
               title,
               style: const TextStyle(
-                fontFamily: 'outfit',
+                fontFamily: AppFonts.heading,
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
                 color: AppColors.brandBlue,
@@ -115,7 +115,7 @@ class _SmallActionCard extends StatelessWidget {
             Text(
               subtitle,
               style: const TextStyle(
-                fontFamily: 'manrope',
+                fontFamily: AppFonts.body,
                 fontSize: 11,
                 color: AppColors.textLightSecondary,
                 fontWeight: FontWeight.w600,

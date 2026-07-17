@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/provider/onboarding_provider.dart';
 import 'package:flutter_projects/provider/tutor_subjects_provider.dart';
+import 'package:flutter_projects/view/components/role_based_navigation.dart';
 import 'package:flutter_projects/view/tutor/dashboard_tutor.dart';
 import 'package:flutter_projects/view/tutor/features/home/tutor_home_screen.dart';
 import 'package:flutter_projects/view/tutor/onboarding/widgets/step_one_subjects..dart';
@@ -17,12 +18,10 @@ const String _kTitleFont = 'outfit';
 
 class OnboardingScreen extends StatefulWidget {
   final String role; // 'tutor' o 'student'
-  final bool hasSubjects;
 
   const OnboardingScreen({
     super.key, 
-    required this.role, 
-    this.hasSubjects = false,
+    required this.role,
   });
 
   @override
@@ -33,33 +32,47 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
   
-  late List<Widget> _activeSteps;
-  late int _totalPages;
+  List<Widget> _activeSteps = [];
+  int _totalPages = 0;
+  bool _isLoadingSteps = true;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final auth = Provider.of<AuthProvider>(context, listen: false);
-      Provider.of<TutorSubjectsProvider>(context, listen: false).loadGroups(auth.token!);
+      _loadSteps();
     });
-    _initializeSteps();
   }
 
-  void _initializeSteps() {
-    _activeSteps = [];
+  Future<void> _loadSteps() async {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final subjectsProvider = Provider.of<TutorSubjectsProvider>(context, listen: false);
 
-    // Condición: Si es tutor Y NO tiene materias, agregamos el paso de Materias
-    if (widget.role == 'tutor' && !widget.hasSubjects) {
+    await Future.wait([
+      subjectsProvider.loadGroups(auth.token!),
+      subjectsProvider.loadTutorSubjects(auth),
+    ]);
+
+    if (mounted) {
+      setState(() {
+        _buildSteps();
+        _isLoadingSteps = false;
+      });
+    }
+  }
+
+  void _buildSteps() {
+    _activeSteps = [];
+    final subjectsProvider = Provider.of<TutorSubjectsProvider>(context, listen: false);
+    final hasSubjects = subjectsProvider.subjects.isNotEmpty;
+
+    if (widget.role == 'tutor' && !hasSubjects) {
       _activeSteps.add(const StepOneSubjects());
     }
-    
-    // Estos pasos van para TODOS (Tutor sin materias, Tutor con materias, y Estudiante)
     _activeSteps.add(const StepTwoPersonal());
     _activeSteps.add(StepThreeDocs(role: widget.role));
-
-    // El total de páginas se ajusta solo
     _totalPages = _activeSteps.length;
+    _currentPage = 0;
   }
 
   @override
@@ -79,6 +92,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     if (currentWidget is StepOneSubjects) {
       if (!freshProvider.isStepOneValid) {
         CustomToast.show(context, "Selecciona al menos una materia", isSuccess: false);
+        return;
+      }
+    } else if (currentWidget is StepTwoPersonal) {
+      if (freshProvider.dateOfBirth == null) {
+        CustomToast.show(context, "Ingresa tu fecha de nacimiento", isSuccess: false);
+        return;
+      }
+      if (freshProvider.selectedCountryId == null) {
+        CustomToast.show(context, "Selecciona tu país", isSuccess: false);
+        return;
+      }
+      if (freshProvider.gender == null) {
+        CustomToast.show(context, "Selecciona tu género", isSuccess: false);
+        return;
+      }
+      if (freshProvider.countryHasStates && freshProvider.selectedStateId == null) {
+        CustomToast.show(context, "Selecciona tu departamento", isSuccess: false);
+        return;
+      }
+      if (freshProvider.profilePhoto == null) {
+        CustomToast.show(context, "Sube tu foto de perfil", isSuccess: false);
         return;
       }
     }
@@ -181,7 +215,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         curve: Curves.easeInOut,
       );
     } else {
-      Navigator.of(context).pop(); 
+      Provider.of<OnboardingProvider>(context, listen: false).clearData();
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const RoleBasedNavigation()),
+        (route) => false,
+      );
     }
   }
 
@@ -195,10 +234,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close_rounded, color: Colors.grey),
+          icon: const Icon(Icons.arrow_back_rounded, color: Colors.grey),
           onPressed: () {
-            provider.clearData(); 
-            Navigator.of(context).pop();
+            provider.clearData();
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const RoleBasedNavigation()),
+              (route) => false,
+            );
           }
         ),
         title: const Text(
@@ -206,27 +249,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           style: TextStyle(fontFamily: _kTitleFont, color: AppColors.brandBlue, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
-        bottom: PreferredSize(
+        bottom: _isLoadingSteps ? null : PreferredSize(
           preferredSize: const Size.fromHeight(6.0),
           child: _buildProgressBar(),
         ),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: PageView(
-              controller: _pageController,
-              physics: const NeverScrollableScrollPhysics(),
-              onPageChanged: (int page) {
-                setState(() => _currentPage = page);
-              },
-              // Inyectamos nuestra lista dinámica aquí
-              children: _activeSteps,
+      body: _isLoadingSteps
+          ? const Center(child: CircularProgressIndicator(color: AppColors.brandBlue))
+          : Column(
+              children: [
+                Expanded(
+                  child: PageView(
+                    controller: _pageController,
+                    physics: const NeverScrollableScrollPhysics(),
+                    onPageChanged: (int page) {
+                      setState(() => _currentPage = page);
+                    },
+                    children: _activeSteps,
+                  ),
+                ),
+                _buildBottomControls(provider),
+              ],
             ),
-          ),
-          _buildBottomControls(provider),
-        ],
-      ),
     );
   }
 
@@ -234,7 +278,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final double width = constraints.maxWidth;
-        final double progressWidth = width * ((_currentPage + 1) / _totalPages);
+        final double progressWidth = _totalPages > 0 ? width * ((_currentPage + 1) / _totalPages) : 0;
         
         return Stack(
           children: [

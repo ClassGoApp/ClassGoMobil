@@ -12,6 +12,7 @@ import 'package:flutter_projects/view/student/favorite_tutor/favorite_tutors_scr
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/view/student/services/profile_service.dart';
+import 'package:flutter_projects/view/tutor/features/home/widgets/banner_terms_section.dart';
 import 'package:intl/intl.dart';
 
 class DashboardStudent extends StatefulWidget {
@@ -123,6 +124,8 @@ class _DashboardStudentState extends State<DashboardStudent> {
         ? userData['user']['profile']['full_name']
         : null;
 
+    final hasAcceptedTerms = userData?['user']?['terms_accepted'] == true;
+
     return Column(
       children: [
         SizedBox(height: MediaQuery.of(context).padding.top + 20),
@@ -155,6 +158,14 @@ class _DashboardStudentState extends State<DashboardStudent> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (!hasAcceptedTerms) ...[
+                  const SizedBox(height: 5),
+                  const Align(
+                    alignment: Alignment.topCenter,
+                    child: BannerTermsSection(role: 'student'),
+                  ),
+                  const SizedBox(height: 8),
+                ],
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: _buildQuickActions(),

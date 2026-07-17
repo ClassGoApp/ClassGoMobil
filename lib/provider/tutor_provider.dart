@@ -45,7 +45,7 @@ class TutorProvider with ChangeNotifier {
 
     } catch (e) {
       print('❌ Error en TutorProvider: $e');
-      rethrow; // Dejamos que la UI decida si muestra un SnackBar
+      rethrow;
     } finally {
       _isLoadingTutors = false;
       notifyListeners();

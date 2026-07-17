@@ -161,7 +161,7 @@ class _StepOneSubjectsState extends State<StepOneSubjects> {
           onTap: () {
             bool success = onboardingProvider.toggleTempSubject(subject['id'], subject['subject_group_id']);
             if (!success) {
-              CustomToast.show(context, 'Solo puedes seleccionar hasta 3 materias al inicio.', isSuccess: false);
+              CustomToast.show(context, 'Máximo 3 materias por ahora. Puedes agregar más desde tu perfil después.', isSuccess: false);
             }
           },
         );
@@ -362,7 +362,7 @@ class _SubjectSelectionModal extends StatelessWidget {
                           onTap: () {
                             bool success = onboardingProvider.toggleTempSubject(subjectId, categoryId);
                             if (!success) {
-                              CustomToast.show(context, "Límite alcanzado. Solo 3 materias permitidas.", isSuccess: false);
+                              CustomToast.show(context, "Máximo 3 materias por ahora. Puedes agregar más desde tu perfil después.", isSuccess: false);
                             }
                           },
                         );

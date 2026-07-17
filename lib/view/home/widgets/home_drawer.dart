@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/helpers/auth_helper.dart';
+import 'package:flutter_projects/styles/app_design.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/auth/login_screen.dart';
 import 'package:flutter_projects/view/home/widgets/about_us_screen.dart';
@@ -19,56 +20,60 @@ class HomeDrawer extends StatelessWidget {
         children: [
           Container(
             decoration: const BoxDecoration(
-              color: AppColors.brandBlue,
+              gradient: LinearGradient(
+                colors: [Color(0xFF0E3A4F), AppColors.brandBlue],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
               borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(15),
-                bottomRight: Radius.circular(15),
+                bottomLeft: Radius.circular(AppRadius.xl),
+                bottomRight: Radius.circular(AppRadius.xl),
               ),
             ),
             padding: EdgeInsets.only(
-              top: MediaQuery.of(context).padding.top + 10,
-              bottom: 13,
-              left: 20,
-              right: 10,
+              top: MediaQuery.of(context).padding.top + AppSpacing.md,
+              bottom: AppSpacing.lg,
+              left: AppSpacing.xxxl,
+              right: AppSpacing.md,
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Image.asset('assets/images/logo_classgo.png', height: 30),
+                Image.asset('assets/images/logo_classgo.png', height: 32),
                 IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white, size: 28),
+                  icon: const Icon(Icons.close, color: Colors.white, size: 26),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 15),
+          const SizedBox(height: AppSpacing.xl),
           Expanded(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               child: Column(
                 children: [
-                  _buildDrawerItem(Icons.bolt, 'Tutor al instante',
+                  _buildDrawerItem(Icons.bolt_rounded, 'Tutor al instante',
                       isPrimary: true, onTap: () {
                     Navigator.pop(context);
                     AuthHelper.requireAuth(context,
                         customTitle: 'Tutor',
                         customMessage: 'Inicia sesión primero.');
                   }),
-                  _buildDrawerItem(Icons.search, 'Buscar Tutores', onTap: () {
+                  _buildDrawerItem(Icons.search_rounded, 'Buscar Tutores', onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
                         context,
                         MaterialPageRoute(
                             builder: (_) => SearchTutorsScreen()));
                   }),
-                  _buildDrawerItem(Icons.people_outline, 'Sobre Nosotros',
+                  _buildDrawerItem(Icons.people_outline_rounded, 'Sobre Nosotros',
                       onTap: () {
                     Navigator.pop(context);
                     Navigator.push(context,
                         MaterialPageRoute(builder: (_) => AboutUsScreen()));
                   }),
-                  _buildDrawerItem(Icons.help_outline, 'Preguntas', onTap: () {
+                  _buildDrawerItem(Icons.help_outline_rounded, 'Preguntas Frecuentes', onTap: () {
                     Navigator.pop(context);
                     Navigator.push(context,
                         MaterialPageRoute(builder: (_) => SupportScreen()));
@@ -78,32 +83,41 @@ class HomeDrawer extends StatelessWidget {
             ),
           ),
           Padding(
-            padding:
-                const EdgeInsets.symmetric(vertical: 20.0, horizontal: 20.0),
+            padding: const EdgeInsets.symmetric(
+              vertical: AppSpacing.xxxl,
+              horizontal: AppSpacing.xxxl,
+            ),
             child: Column(
               children: [
-                ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => LoginScreen()));
-                  },
-                  icon: const Icon(Icons.login, color: Colors.white),
-                  label: const Text('Iniciar Sesión',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontFamily: 'outfit')),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGreen,
-                    minimumSize: const Size(double.infinity, 50),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (_) => LoginScreen()));
+                    },
+                    icon: const Icon(Icons.login_rounded,
+                        color: Colors.white, size: 20),
+                    label: const Text('Iniciar Sesión',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontFamily: AppFonts.heading,
+                            fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.brandOrange,
+                      disabledBackgroundColor: AppColors.brandBlue,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(AppRadius.lg)),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: AppSpacing.xxl),
                 const SocialLinksWidget(),
-                const SizedBox(height: 20),
+                const SizedBox(height: AppSpacing.xxxl),
               ],
             ),
           ),
@@ -114,22 +128,51 @@ class HomeDrawer extends StatelessWidget {
 
   Widget _buildDrawerItem(IconData icon, String title,
       {bool isPrimary = false, required VoidCallback onTap}) {
-    return ListTile(
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 30.0, vertical: 4.0),
-      leading: Icon(icon,
-          color: isPrimary ? AppColors.brandOrange : AppColors.brandBlue,
-          size: 26),
-      title: Text(
-        title,
-        style: TextStyle(
-          fontFamily: 'outfit',
-          color: isPrimary ? AppColors.brandOrange : AppColors.textLightPrimary,
-          fontSize: 18,
-          fontWeight: isPrimary ? FontWeight.bold : FontWeight.w600,
-        ),
+    return Container(
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xxl,
+        vertical: AppSpacing.xxs,
       ),
-      onTap: onTap,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        color: isPrimary ? AppColors.brandOrange.withOpacity(0.05) : null,
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xxxl,
+          vertical: AppSpacing.xxs,
+        ),
+        leading: Container(
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          decoration: BoxDecoration(
+            color: isPrimary
+                ? AppColors.brandOrange.withOpacity(0.1)
+                : AppColors.brandCyan.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+          ),
+          child: Icon(icon,
+              color: isPrimary ? AppColors.brandOrange : AppColors.brandCyan,
+              size: 22),
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontFamily: AppFonts.heading,
+            color: isPrimary
+                ? AppColors.brandOrange
+                : AppColors.textLightPrimary,
+            fontSize: 16,
+            fontWeight:
+                isPrimary ? FontWeight.bold : FontWeight.w600,
+          ),
+        ),
+        trailing: Icon(
+          Icons.chevron_right_rounded,
+          color: AppColors.lightGreyColor,
+          size: 20,
+        ),
+        onTap: onTap,
+      ),
     );
   }
 }

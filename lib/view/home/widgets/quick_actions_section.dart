@@ -125,7 +125,7 @@ class _ActionCard extends StatelessWidget {
                 title,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontFamily: 'outfit',
+                  fontFamily: AppFonts.heading,
                   fontWeight: isHighlighted ? FontWeight.w800 : FontWeight.w600,
                   fontSize: 14, 
                   color: isHighlighted ? AppColors.brandOrange : AppColors.brandBlue,

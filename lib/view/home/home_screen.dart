@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/helpers/auth_helper.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
@@ -10,8 +8,8 @@ import 'package:flutter_projects/view/home/widgets/pet_banner.dart';
 import 'package:flutter_projects/view/home/widgets/quick_actions_section.dart';
 import 'package:flutter_projects/view/home/widgets/trust_actions_row.dart';
 import 'package:flutter_projects/view/profile/profile_screen.dart';
-import 'package:flutter_projects/view/student/profile_screen_student.dart' hide ProfileScreen; 
 import 'package:flutter_projects/view/student/serch_Tutor/search_tutors_screen.dart'; 
+import 'package:flutter_projects/view/home/widgets/stats_bar.dart';
 import 'package:flutter_projects/view/home/widgets/whatsapp_button.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -27,16 +25,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _cargarDatosEnSegundoPlano();
   }
 
-  Future<void> _cargarDatosEnSegundoPlano() async {
-    try {
-      // Carga silenciosa
-    } catch (e) {
-      debugPrint("Error: $e");
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -73,7 +63,6 @@ class _HomeScreenState extends State<HomeScreen> {
                             'Para acceder a tutorías instantáneas, necesitas iniciar sesión en tu cuenta.')) {
                       return;
                     }
-                    debugPrint("Usuario verificado. Abrir lógica de Tutor al Instante...");
                   },
                   onScheduleTap: () {
                     if (!AuthHelper.requireAuth(context,
@@ -98,8 +87,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 25),
                 const MascotBanner(),
+                const SizedBox(height: 25),
+                const StatsBar(),
 
-                const SizedBox(height: 35),
+                const SizedBox(height: 30),
                 const CategoriesCarousel(),
 
                 const SizedBox(height: 35),
@@ -110,35 +101,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _placeholderBloque(String titulo,
-      {required double height, required Color color}) {
-    bool isDark =
-        color == AppColors.brandBlue || color == AppColors.brandOrange;
-    return Container(
-      height: height,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4))
-        ],
-      ),
-      child: Center(
-        child: Text(
-          titulo,
-          style: TextStyle(
-              fontFamily: 'outfit',
-              color: isDark ? Colors.white : Colors.grey.shade600,
-              fontWeight: FontWeight.bold,
-              fontSize: 16),
-        ),
       ),
     );
   }

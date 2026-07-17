@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/helpers/social_media_launcher.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/styles/app_design.dart';
 
 class SupportScreen extends StatefulWidget {
   const SupportScreen({super.key});
@@ -109,7 +110,7 @@ class _SupportScreenState extends State<SupportScreen>
         title: const Text(
           'Centro de Ayuda',
           style: TextStyle(
-            fontFamily: 'outfit',
+            fontFamily: AppFonts.heading,
             fontWeight: FontWeight.bold,
             color: AppColors.brandBlue,
           ),
@@ -161,7 +162,7 @@ class _SupportScreenState extends State<SupportScreen>
                         child: const Text(
                           '¡Hola! Soy Tugo. Estoy aquí para resolver todas tus dudas sobre ClassGo. ¿Cómo puedo ayudarte?',
                           style: TextStyle(
-                            fontFamily: 'manrope',
+                            fontFamily: AppFonts.body,
                             fontSize: 14,
                             color: AppColors.brandBlue,
                             height: 1.4,
@@ -247,7 +248,7 @@ class _SupportScreenState extends State<SupportScreen>
                               child: Text(
                                 faq['q']!,
                                 style: TextStyle(
-                                  fontFamily: 'manrope',
+                                  fontFamily: AppFonts.body,
                                   fontSize: 15,
                                   fontWeight: FontWeight.w700,
                                   color: isExpanded
@@ -274,7 +275,7 @@ class _SupportScreenState extends State<SupportScreen>
                             child: Text(
                               faq['a']!,
                               style: const TextStyle(
-                                fontFamily: 'manrope',
+                                fontFamily: AppFonts.body,
                                 fontSize: 14,
                                 color: AppColors.textLightSecondary,
                                 height: 1.6,
@@ -298,7 +299,7 @@ class _SupportScreenState extends State<SupportScreen>
               child: Text(
                 'Contacto Directo'.toUpperCase(),
                 style: const TextStyle(
-                  fontFamily: 'outfit',
+                  fontFamily: AppFonts.heading,
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                   color: AppColors.lightGreyColor,
@@ -369,7 +370,7 @@ class _SupportScreenState extends State<SupportScreen>
             Text(
               title,
               style: TextStyle(
-                fontFamily: 'outfit',
+                fontFamily: AppFonts.heading,
                 fontWeight: FontWeight.bold,
                 color:
                     isSelected ? AppColors.brandCyan : AppColors.lightGreyColor,
@@ -434,7 +435,7 @@ class _AnimatedScaleButtonState extends State<AnimatedScaleButton> {
             const SizedBox(width: 8),
             Text(widget.label,
                 style: const TextStyle(
-                    fontFamily: 'outfit',
+                    fontFamily: AppFonts.heading,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                     fontSize: 16)),

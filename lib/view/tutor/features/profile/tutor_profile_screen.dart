@@ -86,7 +86,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     final user = authProvider.userData?['user'];
     final profile = user?['profile'] ?? {};
 
-    final String email = user['email'];
+    final String email = user?['email'] ?? '';
     final bool isVerified = profile['verified'] == true;
     final String firstName = profile['first_name'] ?? '';
     final String lastName = profile['last_name'] ?? '';

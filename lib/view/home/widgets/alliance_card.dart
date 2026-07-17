@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/styles/app_design.dart';
 import 'package:flutter_projects/view/home/widgets/suport_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -122,7 +123,7 @@ class _AlliancesScreenState extends State<AlliancesScreen> {
         title: const Text(
           'Nuestras Alianzas',
           style: TextStyle(
-              fontFamily: 'outfit',
+              fontFamily: AppFonts.heading,
               fontWeight: FontWeight.bold,
               color: AppColors.brandBlue),
         ),
@@ -186,7 +187,7 @@ class _AlliancesScreenState extends State<AlliancesScreen> {
                 child: Text(
                   cat,
                   style: TextStyle(
-                    fontFamily: 'outfit',
+                    fontFamily: AppFonts.heading,
                     fontSize: 13,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                     color: isSelected ? Colors.white : AppColors.brandBlue,
@@ -259,7 +260,7 @@ class _AlliancesScreenState extends State<AlliancesScreen> {
               alianza['titulo'] ?? 'Sin título',
               textAlign: TextAlign.center,
               style: const TextStyle(
-                  fontFamily: 'outfit',
+                  fontFamily: AppFonts.heading,
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: AppColors.brandBlue),
@@ -269,7 +270,7 @@ class _AlliancesScreenState extends State<AlliancesScreen> {
               alianza['descripcion'] ?? 'Sin descripción disponible.',
               textAlign: TextAlign.center,
               style: const TextStyle(
-                  fontFamily: 'manrope',
+                  fontFamily: AppFonts.body,
                   fontSize: 14,
                   color: AppColors.textLightSecondary,
                   height: 1.5),
@@ -312,7 +313,7 @@ class _AlliancesScreenState extends State<AlliancesScreen> {
           const SizedBox(height: 16),
           const Text('No hay alianzas disponibles',
               style: TextStyle(
-                  fontFamily: 'manrope', color: AppColors.lightGreyColor)),
+                  fontFamily: AppFonts.body, color: AppColors.lightGreyColor)),
         ],
       ),
     );
@@ -371,7 +372,7 @@ class _AllianceCard extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                    fontFamily: 'outfit',
+                    fontFamily: AppFonts.heading,
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
                     color: AppColors.brandBlue),

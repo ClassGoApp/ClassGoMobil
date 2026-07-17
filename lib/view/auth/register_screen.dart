@@ -14,6 +14,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_projects/helpers/back_button_handler.dart';
 
 import 'login_screen.dart';
@@ -122,6 +123,10 @@ class _RegistrationScreenState extends State<RegistrationScreen>
           responseData['data'].containsKey('token')) {
         authProvider.setToken(responseData['data']['token']);
       }
+
+      final String email = _emailController.text;
+      final String password = _passwordController.text;
+      await _saveAccount(email, password);
 
       showCustomToast(
           context, "Registro exitoso, verifica tu correo", true);
@@ -919,5 +924,24 @@ class _RegistrationScreenState extends State<RegistrationScreen>
         });
       }
     }
+  }
+
+  Future<void> _saveAccount(String email, String password) async {
+    final prefs = await SharedPreferences.getInstance();
+    List<Map<String, dynamic>> savedAccounts = [];
+    final String? accountsJson = prefs.getString('saved_accounts');
+    if (accountsJson != null) {
+      final List decoded = jsonDecode(accountsJson);
+      savedAccounts = decoded.map((e) => Map<String, dynamic>.from(e)).toList();
+    }
+    savedAccounts.removeWhere((acc) => acc['email'] == email);
+    savedAccounts.insert(0, {
+      'email': email,
+      'password': password,
+    });
+    if (savedAccounts.length > 5) {
+      savedAccounts = savedAccounts.sublist(0, 5);
+    }
+    await prefs.setString('saved_accounts', jsonEncode(savedAccounts));
   }
 }

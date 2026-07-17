@@ -10,9 +10,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TutorHomeProvider extends ChangeNotifier {
+  bool _disposed = false;
+
   bool isAvailable = true;
   bool isLoading = false;
   List<Map<String, dynamic>>? nextBooking = [];
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
   
   String? profileImageUrl;
   bool isLoadingProfileImage = false;
@@ -140,9 +148,10 @@ class TutorHomeProvider extends ChangeNotifier {
     await Future.wait([
       loadTutoringAvailability(context),
       fetchNextBooking(context),
-      loadProfileImage(context), 
+      loadProfileImage(context),
     ]);
 
+    if (_disposed) return;
     isLoading = false;
     notifyListeners();
   }

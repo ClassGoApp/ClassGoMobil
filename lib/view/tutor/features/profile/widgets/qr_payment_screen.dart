@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/api_structure/config/app_config.dart';
+import 'package:flutter_projects/base_components/custom_snack_bar.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
@@ -89,7 +90,7 @@ class _QrPaymentScreenState extends State<QrPaymentScreen> {
         final userId = authProvider.userId;
 
         if (token == null || userId == null) {
-          _showToast('Error: No hay sesión activa', isError: true);
+          CustomToast.show(context, 'Error: No hay sesión activa', isSuccess: false);
           return;
         }
 
@@ -104,7 +105,7 @@ class _QrPaymentScreenState extends State<QrPaymentScreen> {
         if (response['status'] == 200 ||
             response['status'] == 201 ||
             response['success'] == true) {
-          _showToast('¡QR subido exitosamente!');
+          CustomToast.show(context, '¡QR subido exitosamente!', isSuccess: true);
 
           if (response['data'] != null) {
             final rawUrl = response['data']['img_qr_url'] ??
@@ -115,13 +116,13 @@ class _QrPaymentScreenState extends State<QrPaymentScreen> {
             }
           }
         } else {
-          _showToast(response['message'] ?? 'Error al subir la imagen',
-              isError: true);
+          CustomToast.show(context, response['message'] ?? 'Error al subir la imagen',
+              isSuccess: false);
           setState(() => _selectedImage = null);
         }
       }
     } catch (e) {
-      _showToast('Error al seleccionar imagen', isError: true);
+      CustomToast.show(context, 'Error al seleccionar imagen', isSuccess: false);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -143,9 +144,9 @@ class _QrPaymentScreenState extends State<QrPaymentScreen> {
         _selectedImage = null;
         _currentQrUrl = null;
       });
-      _showToast('QR eliminado correctamente');
+      CustomToast.show(context, 'QR eliminado correctamente', isSuccess: true);
     } catch (e) {
-      _showToast('Error al eliminar el QR', isError: true);
+      CustomToast.show(context, 'Error al eliminar el QR', isSuccess: false);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -205,20 +206,6 @@ class _QrPaymentScreenState extends State<QrPaymentScreen> {
           ),
         );
       },
-    );
-  }
-
-  void _showToast(String message, {bool isError = false}) {
-    if (!mounted) return; 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message,
-            style:
-                const TextStyle(color: Colors.white, fontFamily: _kBodyFont)),
-        backgroundColor: isError ? Colors.redAccent : AppColors.primaryGreen,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
     );
   }
 

@@ -167,6 +167,18 @@ class NotificationTopicService {
               print('Error al procesar identity_verification_approved: $e');
             }
           }
+        } else if (data['type'] == 'identity_verification_rejected') {
+          final context = navigatorKey.currentContext;
+          if (context != null) {
+            try {
+              final authProvider =
+                  Provider.of<AuthProvider>(context, listen: false);
+              authProvider.setIdentityStatus('rejected');
+              authProvider.refreshProfile();
+            } catch (e) {
+              print('Error al procesar identity_verification_rejected: $e');
+            }
+          }
         }
       });
 
@@ -377,6 +389,15 @@ class NotificationTopicService {
             authProvider.refreshProfile();
           } catch (e) {
             print('Error al procesar identity_verification_approved: $e');
+          }
+        } else if (data['type'] == 'identity_verification_rejected') {
+          try {
+            final authProvider =
+                Provider.of<AuthProvider>(context, listen: false);
+            authProvider.setIdentityStatus('rejected');
+            authProvider.refreshProfile();
+          } catch (e) {
+            print('Error al procesar identity_verification_rejected: $e');
           }
         } else {
           print('Push sin pantalla manejada: ${data['screen']}');

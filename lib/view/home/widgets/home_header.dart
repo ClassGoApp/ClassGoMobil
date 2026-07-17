@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_projects/api_structure/api_service.dart';
+import 'package:flutter_projects/styles/app_design.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/student/serch_Tutor/search_tutors_screen.dart';
 
-class HomeHeader extends StatelessWidget {
+class HomeHeader extends StatefulWidget {
   final VoidCallback onMenuTap;
   final VoidCallback onProfileTap;
 
@@ -12,6 +15,77 @@ class HomeHeader extends StatelessWidget {
     required this.onMenuTap,
     required this.onProfileTap,
   }) : super(key: key);
+
+  @override
+  State<HomeHeader> createState() => _HomeHeaderState();
+}
+
+class _HomeHeaderState extends State<HomeHeader> {
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  Timer? _debounce;
+  List<Map<String, dynamic>> _suggestions = [];
+  bool _showSuggestions = false;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    _debounce?.cancel();
+    if (value.trim().isEmpty) {
+      setState(() {
+        _suggestions = [];
+        _showSuggestions = false;
+      });
+      return;
+    }
+    _debounce = Timer(const Duration(milliseconds: 400), () {
+      _fetchSuggestions(value.trim());
+    });
+  }
+
+  Future<void> _fetchSuggestions(String keyword) async {
+    try {
+      final data = await findTutors(null, perPage: 5, keyword: keyword);
+      if (!mounted) return;
+      final List<dynamic>? tutors = data['data'];
+      if (tutors != null && tutors.isNotEmpty) {
+        setState(() {
+          _suggestions = tutors.cast<Map<String, dynamic>>();
+          _showSuggestions = true;
+        });
+      } else {
+        setState(() {
+          _suggestions = [];
+          _showSuggestions = false;
+        });
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _suggestions = [];
+        _showSuggestions = false;
+      });
+    }
+  }
+
+  void _navigateToSearch([String? keyword]) {
+    final value = keyword ?? _searchController.text.trim();
+    _searchFocusNode.unfocus();
+    setState(() => _showSuggestions = false);
+    if (value.isEmpty) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SearchTutorsScreen(initialKeyword: value),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,7 +140,7 @@ class HomeHeader extends StatelessWidget {
                           child: Text(
                             'Encuentra tutores\npara tus materias',
                             style: TextStyle(
-                              fontFamily: 'outfit',
+                              fontFamily: AppFonts.heading,
                               color: Colors.white,
                               fontSize: 28,
                               fontWeight: FontWeight.w800,
@@ -80,7 +154,7 @@ class HomeHeader extends StatelessWidget {
                       Container(
                         decoration: BoxDecoration(
                           color: AppColors.cardLight,
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
                           boxShadow: [
                             BoxShadow(
                                 color: Colors.black.withOpacity(0.08),
@@ -89,35 +163,73 @@ class HomeHeader extends StatelessWidget {
                           ],
                         ),
                         child: TextField(
+                          controller: _searchController,
+                          focusNode: _searchFocusNode,
                           textInputAction: TextInputAction.search,
-                          onSubmitted: (value) {
-                            if (value.trim().isNotEmpty) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => SearchTutorsScreen(
-                                    initialKeyword: value.trim(),
-                                  ),
-                                ),
-                              );
-                            }
-                          },
+                          onChanged: _onSearchChanged,
+                          onSubmitted: (value) => _navigateToSearch(),
                           style: const TextStyle(
-                              fontFamily: 'manrope',
+                              fontFamily: AppFonts.body,
                               color: AppColors.textLightPrimary),
                           decoration: InputDecoration(
                             hintText: '¿En qué materia necesitas ayuda?',
                             hintStyle: const TextStyle(
-                                fontFamily: 'manrope',
+                                fontFamily: AppFonts.body,
                                 color: AppColors.lightGreyColor,
                                 fontSize: 15),
                             prefixIcon: const Icon(Icons.search,
                                 color: AppColors.brandCyan, size: 24),
+                            suffixIcon: _searchController.text.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.close_rounded,
+                                        color: AppColors.lightGreyColor,
+                                        size: 20),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      _onSearchChanged('');
+                                    },
+                                  )
+                                : null,
                             border: InputBorder.none,
                             contentPadding:
                                 const EdgeInsets.symmetric(vertical: 16),
                           ),
                         ),
+                      ),
+                      AnimatedSize(
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeOutCubic,
+                        child: _showSuggestions && _suggestions.isNotEmpty
+                            ? Container(
+                                margin: const EdgeInsets.only(top: 6),
+                                decoration: BoxDecoration(
+                                  color: AppColors.cardLight,
+                                  borderRadius:
+                                      BorderRadius.circular(AppRadius.md),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.12),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                  ],
+                                ),
+                                child: ClipRRect(
+                                  borderRadius:
+                                      BorderRadius.circular(AppRadius.md),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      for (int i = 0;
+                                          i < _suggestions.length;
+                                          i++)
+                                        _buildSuggestionTile(
+                                            _suggestions[i], i),
+                                    ],
+                                  ),
+                                ),
+                              )
+                            : const SizedBox.shrink(),
                       ),
                     ],
                   ),
@@ -141,7 +253,7 @@ class HomeHeader extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           InkWell(
-            onTap: onMenuTap,
+            onTap: widget.onMenuTap,
             borderRadius: BorderRadius.circular(10),
             child: Container(
               decoration: BoxDecoration(
@@ -153,7 +265,7 @@ class HomeHeader extends StatelessWidget {
           ),
           Image.asset('assets/images/logo_classgo.png', height: 36),
           InkWell(
-            onTap: onProfileTap,
+            onTap: widget.onProfileTap,
             borderRadius: BorderRadius.circular(10),
             child: Container(
               decoration: BoxDecoration(
@@ -165,6 +277,123 @@ class HomeHeader extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSuggestionTile(Map<String, dynamic> tutor, int index) {
+    final name = tutor['full_name'] ?? tutor['name'] ?? 'Tutor';
+    final subjects = tutor['subjects'] ?? [];
+    final imageUrl = tutor['image'] ?? '';
+    final rating = tutor['avg_rating'];
+
+    String subjectsStr = '';
+    if (subjects is List && subjects.isNotEmpty) {
+      subjectsStr = subjects.take(3).join(', ');
+    }
+
+    return InkWell(
+      onTap: () {
+        _searchController.text = name;
+        _navigateToSearch(name);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xxl, vertical: AppSpacing.lg),
+        decoration: BoxDecoration(
+          border: index < _suggestions.length - 1
+              ? const Border(
+                  bottom: BorderSide(color: AppColors.dividerLight))
+              : null,
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppRadius.full),
+              child: imageUrl.isNotEmpty
+                  ? Image.network(
+                      imageUrl,
+                      width: 40,
+                      height: 40,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _buildDefaultAvatar(name),
+                    )
+                  : _buildDefaultAvatar(name),
+            ),
+            const SizedBox(width: AppSpacing.lg),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontFamily: AppFonts.heading,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textLightPrimary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (subjectsStr.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subjectsStr,
+                      style: const TextStyle(
+                        fontFamily: AppFonts.body,
+                        fontSize: 12,
+                        color: AppColors.textLightSecondary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (rating != null)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.brandOrange.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(AppRadius.xs),
+                ),
+                child: Text(
+                  '⭐ ${rating.toStringAsFixed(1)}',
+                  style: const TextStyle(
+                    fontFamily: AppFonts.body,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.brandOrange,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDefaultAvatar(String name) {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: const BoxDecoration(
+        color: AppColors.brandCyan,
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Text(
+          name.isNotEmpty ? name[0].toUpperCase() : '?',
+          style: const TextStyle(
+            fontFamily: AppFonts.heading,
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
       ),
     );
   }

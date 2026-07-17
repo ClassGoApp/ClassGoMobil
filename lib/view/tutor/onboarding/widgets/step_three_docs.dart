@@ -165,7 +165,7 @@ class _StepThreeDocsState extends State<StepThreeDocs> {
             title: 'Foto Personal',
             icon: Icons.face_retouching_natural_rounded,
             imageFile: _profilePic,
-            onTap: () => _showPickerOptions(context, true),
+            onTap: () => _pickImage(true, ImageSource.camera),
             isCircle: true,
           ),
 

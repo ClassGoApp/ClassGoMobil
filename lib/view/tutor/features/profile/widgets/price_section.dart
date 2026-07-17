@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_projects/base_components/custom_snack_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
@@ -239,9 +240,7 @@ class _TutorPriceSectionState extends State<TutorPriceSection> {
           setState(() => _price = newPrice);
           Navigator.pop(context);
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('Tarifa actualizada correctamente'),
-              backgroundColor: AppColors.brandCyan));
+          CustomToast.show(context, 'Tarifa actualizada correctamente', isSuccess: true);
         }
       }
     } catch (e) {

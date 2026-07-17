@@ -65,7 +65,7 @@ class _CategoriesCarouselState extends State<CategoriesCarousel> {
           child: Text(
             'Explorar Materias',
             style: TextStyle(
-              fontFamily: 'outfit',
+              fontFamily: AppFonts.heading,
               fontSize: 20,
               fontWeight: FontWeight.bold,
               color: AppColors.brandBlue,
@@ -159,7 +159,7 @@ class _CategoriesCarouselState extends State<CategoriesCarousel> {
                 category['title'] ?? '',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontFamily: 'outfit',
+                  fontFamily: AppFonts.heading,
                   fontSize: isActive ? 22 : 16,
                   fontWeight: FontWeight.w900,
                   color: Colors.white,

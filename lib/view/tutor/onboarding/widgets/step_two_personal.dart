@@ -302,7 +302,7 @@ class _StepTwoPersonalState extends State<StepTwoPersonal> {
 
                 if (!_countryHasStates) {
                   _countryHasStates = true;
-                  _syncWithProvider();
+                  WidgetsBinding.instance.addPostFrameCallback((_) => _syncWithProvider());
                 }
 
                 return Column(
@@ -331,7 +331,7 @@ class _StepTwoPersonalState extends State<StepTwoPersonal> {
               if (_countryHasStates) {
                 _countryHasStates = false;
                 _selectedStateId = null;
-                _syncWithProvider();
+                WidgetsBinding.instance.addPostFrameCallback((_) => _syncWithProvider());
               }
 
               return const SizedBox.shrink();

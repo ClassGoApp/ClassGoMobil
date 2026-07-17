@@ -1299,10 +1299,29 @@ Future<Map<String, dynamic>> getIdentityVerificationStatus(String token, int use
       },
     );
     final decoded = jsonDecode(response.body);
-    if (response.statusCode == 200 && decoded['success'] == true) {
-      return {'success': true, 'data': decoded['data']};
+    if (response.statusCode == 200) {
+      return {'success': true, 'data': decoded['data'] ?? decoded};
     }
     return {'success': false, 'message': decoded['message'] ?? 'Error al obtener estado'};
+  } catch (e) {
+    return {'success': false, 'message': 'Error de conexión'};
+  }
+}
+
+Future<Map<String, dynamic>> cancelIdentityVerification(String token, int userId) async {
+  try {
+    final response = await http.delete(
+      Uri.parse('$baseUrl/identity-verification/$userId'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
+    );
+    final decoded = jsonDecode(response.body);
+    if (response.statusCode == 200) {
+      return {'success': true};
+    }
+    return {'success': false, 'message': decoded['message'] ?? 'Error al cancelar verificación'};
   } catch (e) {
     return {'success': false, 'message': 'Error de conexión'};
   }
@@ -3454,6 +3473,19 @@ Future<Map<String, dynamic>> tutorAceptWaitlist(
     }
   } catch (e) {
     throw 'Failed to accept waitlist: $e';
+  }
+}
+
+Future<Map<String, dynamic>> fetchStats() async {
+  try {
+    final response = await http.get(Uri.parse('$baseUrl/stats'));
+    if (response.statusCode == 200) {
+      return json.decode(response.body) as Map<String, dynamic>;
+    } else {
+      throw Exception('Error al obtener estadísticas');
+    }
+  } catch (e) {
+    throw Exception('Error de conexión: $e');
   }
 }
 

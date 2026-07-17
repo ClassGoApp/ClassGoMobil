@@ -64,30 +64,12 @@ class OnboardingProvider extends ChangeNotifier {
     isLoading = true;
     notifyListeners();
 
-    if (selectedCountryId == null) {
+    if (selectedCountryId == null || gender == null || profilePhoto == null ||
+        (countryHasStates && selectedStateId == null) ||
+        personalPhoto == null || documentFile == null) {
       isLoading = false;
       notifyListeners();
-      return {'success': false, 'message': 'Faltan datos de ubicación.'};
-    }
-    if (gender == null) {
-      isLoading = false;
-      notifyListeners();
-      return {'success': false, 'message': 'Selecciona tu género.'};
-    }
-    if (countryHasStates && selectedStateId == null) {
-      isLoading = false;
-      notifyListeners();
-      return {'success': false, 'message': 'Selecciona tu departamento.'};
-    }
-    if (profilePhoto == null) {
-      isLoading = false;
-      notifyListeners();
-      return {'success': false, 'message': 'Sube tu foto de perfil.'};
-    }
-    if (personalPhoto == null || documentFile == null) {
-      isLoading = false;
-      notifyListeners();
-      return {'success': false, 'message': 'Faltan documentos obligatorios.'};
+      return {'success': false, 'message': 'Completa todos los campos requeridos.'};
     }
 
     String docKey = role == 'tutor' ? 'identificationCard' : 'transcript';

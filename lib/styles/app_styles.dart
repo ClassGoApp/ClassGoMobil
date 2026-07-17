@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+class AppFonts {
+  static const String heading = 'outfit';
+  static const String body = 'manrope';
+}
+
 class AppColors {
   static const primaryColor = Color(0xff023047);
   static const secundaryColor = Color(0xff219EBC);

@@ -899,7 +899,6 @@ class AuthProvider with ChangeNotifier {
         prefs.remove('description'),
         prefs.remove('company'),
         prefs.remove('identityVerificationStatus'),
-        prefs.remove('verified_banner_shown'),
       ]);
       print('DEBUG - Limpieza de segundo plano completada');
     } catch (e) {

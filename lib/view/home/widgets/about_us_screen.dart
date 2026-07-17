@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
+import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TeamMember {
@@ -48,8 +49,8 @@ class AboutUsScreen extends StatefulWidget {
 }
 
 class _AboutUsScreenState extends State<AboutUsScreen> {
-  static const String _titleFont = 'outfit';
-  static const String _bodyFont = 'manrope';
+  static const String _titleFont = AppFonts.heading;
+  static const String _bodyFont = AppFonts.body;
 
   late Future<List<TeamMember>> _teamFuture;
 
