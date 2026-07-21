@@ -14,6 +14,7 @@ class RadarController extends ChangeNotifier {
   List<TutorResponse> acceptedTutors = [];
   String? batchId;
   bool isProcessing = false;
+  bool isCancelling = false;
 
   Timer? _countdownTimer;
   Timer? _pollingTimer;
@@ -43,16 +44,7 @@ class RadarController extends ChangeNotifier {
         sendRadarEmails(int.parse(batchId!), token);
       }
 
-      final String? expiresAtStr = data['expires_at'];
-      if (expiresAtStr != null) {
-        final DateTime expiresAt = DateTime.parse(expiresAtStr);
-        final int secondsLeft = expiresAt.difference(DateTime.now()).inSeconds;
-        // 🚨 PRINTS PARA CAZAR LOS 15 SEGUNDOS 🚨
-        print("🕵️‍♂️ HORA DE EXPIRACIÓN (BACKEND): $expiresAtStr");
-        print("🕵️‍♂️ DIFERENCIA CALCULADA: $secondsLeft segundos");
-        
-        currentSeconds = secondsLeft > 300 ? 300 : secondsLeft;
-      }
+      currentSeconds = initialSeconds;
 
       _startTimers(token);
       notifyListeners();
@@ -78,7 +70,8 @@ class RadarController extends ChangeNotifier {
       try {
         final jsonResponse = await pollAcceptedTutors(batchId!, token);
 
-        final String status = jsonResponse['status']?.toString().toLowerCase() ?? '';
+        final String status =
+            jsonResponse['status']?.toString().toLowerCase() ?? '';
         final List<dynamic> candidatosNuevos = jsonResponse['data'] ?? [];
 
         if (candidatosNuevos.isNotEmpty) {
@@ -121,7 +114,7 @@ class RadarController extends ChangeNotifier {
     _countdownTimer?.cancel();
     _pollingTimer?.cancel();
     currentSeconds = 0;
-    isTimeout = true; 
+    isTimeout = true;
     notifyListeners();
   }
 
@@ -132,6 +125,34 @@ class RadarController extends ChangeNotifier {
       isSearching = true;
     }
     notifyListeners();
+  }
+
+  // CANCELAR BÚSQUEDA
+  Future<bool> cancelBatch() async {
+    if (batchId == null || isCancelling) return false;
+
+    isCancelling = true;
+    notifyListeners();
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+      if (token.isEmpty) return false;
+
+      final result = await cancelRadarSearch(int.parse(batchId!), token);
+
+      if (result['success'] == true) {
+        _triggerTimeout();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print("Error al cancelar batch: $e");
+      return false;
+    } finally {
+      isCancelling = false;
+      notifyListeners();
+    }
   }
 
   // 5. CONFIRMAR (Ir a pago)

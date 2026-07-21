@@ -3368,6 +3368,30 @@ Future<Map<String, dynamic>> reserveTutor(
   }
 }
 
+Future<Map<String, dynamic>> cancelRadarSearch(
+    int batchId, String token) async {
+  try {
+    final response = await http.post(
+      Uri.parse('$baseUrl/batches/$batchId/cancel'),
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    final data = json.decode(response.body);
+
+    if (response.statusCode == 200) {
+      return data;
+    } else {
+      return data;
+    }
+  } catch (e) {
+    return {'success': false, 'message': 'Error de conexión al cancelar: $e'};
+  }
+}
+
 /// Obtener la lista de categorías y sus materias disponibles
 Future<Map<String, dynamic>> getCategoriasMaterias(String token) async {
   try {
