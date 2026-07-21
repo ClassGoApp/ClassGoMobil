@@ -25,6 +25,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
   List<dynamic> _allSubjects = [];
   List<dynamic> _searchResults = [];
   Map<String, List<dynamic>> _subjectsByCategory = {};
+  List<Map<String, dynamic>> _gridCategories = [];
 
   final List<Map<String, dynamic>> _uiCategories = [
     {'name': 'Primaria', 'icon': Icons.backpack_rounded, 'color': 0xFFF59E0B},
@@ -201,6 +202,19 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
 
         grouped[catName] = materiasAdaptadas;
       }
+
+      _gridCategories = categoriasApi.map((cat) {
+        final name = cat['categoria'] ?? '';
+        final matched = _uiCategories.cast<Map<String, dynamic>?>().firstWhere(
+              (u) => u?['name'] == name,
+              orElse: () => null,
+            );
+        return {
+          'name': name,
+          'icon': matched?['icon'] ?? Icons.category_rounded,
+          'color': matched?['color'] ?? 0xFF6366F1,
+        };
+      }).toList();
 
       if (mounted) {
         setState(() {
@@ -548,7 +562,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                           ),
                           delegate: SliverChildBuilderDelegate(
                             (context, index) {
-                              final cat = _uiCategories[index];
+                              final cat = _gridCategories[index];
                               return GestureDetector(
                                 onTap: () {
                                   HapticFeedback.lightImpact();
@@ -603,7 +617,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                                 ),
                               );
                             },
-                            childCount: _uiCategories.length,
+                            childCount: _gridCategories.length,
                           ),
                         ),
                       ),
