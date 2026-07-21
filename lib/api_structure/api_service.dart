@@ -14,9 +14,10 @@ class TokenExpiredException implements Exception {
       "Tu sesión ha expirado. Por favor, inicia sesión de nuevo.";
 }
 
-Future<void> updateFcmToken(String fcmToken, {String? authToken, int? userId}) async {
+Future<void> updateFcmToken(String fcmToken,
+    {String? authToken, int? userId}) async {
   final uri = Uri.parse('$baseUrl/update-fcm-token');
-  
+
   final headers = <String, String>{
     'Accept': 'application/json',
     'Content-Type': 'application/json',
@@ -29,13 +30,14 @@ Future<void> updateFcmToken(String fcmToken, {String? authToken, int? userId}) a
   final bodyData = <String, dynamic>{
     'fcm_token': fcmToken,
   };
-  
+
   if (userId != null) {
     bodyData['user_id'] = userId;
   }
 
   try {
-    final response = await http.post(uri, headers: headers, body: json.encode(bodyData));
+    final response =
+        await http.post(uri, headers: headers, body: json.encode(bodyData));
     print('Respuesta backend FCM: ${response.statusCode} - ${response.body}');
   } catch (e) {
     print('Excepción al guardar FCM Token: $e');
@@ -44,7 +46,7 @@ Future<void> updateFcmToken(String fcmToken, {String? authToken, int? userId}) a
 
 Future<void> detachFcmToken(String fcmToken, String authToken) async {
   final uri = Uri.parse('$baseUrl/detach-fcm-token');
-  
+
   final headers = <String, String>{
     'Accept': 'application/json',
     'Content-Type': 'application/json',
@@ -52,7 +54,8 @@ Future<void> detachFcmToken(String fcmToken, String authToken) async {
   };
 
   try {
-    final response = await http.post(uri, headers: headers, body: json.encode({'fcm_token': fcmToken}));
+    final response = await http.post(uri,
+        headers: headers, body: json.encode({'fcm_token': fcmToken}));
     print('Respuesta backend FCM Detach: ${response.statusCode}');
   } catch (e) {
     print('Excepción al desvincular FCM Token: $e');
@@ -243,7 +246,7 @@ Future<Map<String, dynamic>> verifyEmail(String id, String hash) async {
     );
 
     final data = jsonDecode(response.body);
-    
+
     if (response.statusCode == 200) {
       return {
         'success': data['status'] == true || data['success'] == true,
@@ -253,14 +256,12 @@ Future<Map<String, dynamic>> verifyEmail(String id, String hash) async {
     } else {
       return {
         'success': false,
-        'message': data['message'] ?? 'Error en el servidor: ${response.statusCode}'
+        'message':
+            data['message'] ?? 'Error en el servidor: ${response.statusCode}'
       };
     }
   } catch (e) {
-    return {
-      'success': false,
-      'message': 'Error al verificar el email: $e'
-    };
+    return {'success': false, 'message': 'Error al verificar el email: $e'};
   }
 }
 
@@ -282,7 +283,8 @@ Future<Map<String, dynamic>> resendEmail(String token) async {
     if (response.statusCode == 200 || response.statusCode == 201) {
       return decodedData;
     } else {
-      final errorMessage = decodedData['message'] ?? 'Error desconocido al reenviar correo';
+      final errorMessage =
+          decodedData['message'] ?? 'Error desconocido al reenviar correo';
       print('Error del servidor: $errorMessage');
       throw Exception(errorMessage);
     }
@@ -1256,8 +1258,9 @@ Future<Map<String, dynamic>> submitIdentityVerification({
   required File document,
 }) async {
   try {
-    var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/identity-verification'));
-    
+    var request = http.MultipartRequest(
+        'POST', Uri.parse('$baseUrl/identity-verification'));
+
     request.headers.addAll({
       'Authorization': 'Bearer $token',
       'Accept': 'application/json',
@@ -1268,13 +1271,14 @@ Future<Map<String, dynamic>> submitIdentityVerification({
     request.fields['country'] = countryId.toString();
     request.fields['state'] = stateId.toString();
     request.fields['address'] = address;
-    request.fields['zipcode'] = '00000'; 
+    request.fields['zipcode'] = '00000';
     request.fields['lat'] = '0.0';
     request.fields['long'] = '0.0';
 
     request.files.add(await http.MultipartFile.fromPath('image', image.path));
-    
-    request.files.add(await http.MultipartFile.fromPath(documentKey, document.path));
+
+    request.files
+        .add(await http.MultipartFile.fromPath(documentKey, document.path));
 
     final response = await http.Response.fromStream(await request.send());
     final decoded = jsonDecode(response.body);
@@ -1282,14 +1286,18 @@ Future<Map<String, dynamic>> submitIdentityVerification({
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return {'success': true, 'data': decoded};
     }
-    
-    return {'success': false, 'message': decoded['message'] ?? 'Error al subir documentos'};
+
+    return {
+      'success': false,
+      'message': decoded['message'] ?? 'Error al subir documentos'
+    };
   } catch (e) {
     return {'success': false, 'message': 'Revisa tu conexión a internet.'};
   }
 }
 
-Future<Map<String, dynamic>> getIdentityVerificationStatus(String token, int userId) async {
+Future<Map<String, dynamic>> getIdentityVerificationStatus(
+    String token, int userId) async {
   try {
     final response = await http.get(
       Uri.parse('$baseUrl/identity-verification/$userId'),
@@ -1302,13 +1310,17 @@ Future<Map<String, dynamic>> getIdentityVerificationStatus(String token, int use
     if (response.statusCode == 200) {
       return {'success': true, 'data': decoded['data'] ?? decoded};
     }
-    return {'success': false, 'message': decoded['message'] ?? 'Error al obtener estado'};
+    return {
+      'success': false,
+      'message': decoded['message'] ?? 'Error al obtener estado'
+    };
   } catch (e) {
     return {'success': false, 'message': 'Error de conexión'};
   }
 }
 
-Future<Map<String, dynamic>> cancelIdentityVerification(String token, int userId) async {
+Future<Map<String, dynamic>> cancelIdentityVerification(
+    String token, int userId) async {
   try {
     final response = await http.delete(
       Uri.parse('$baseUrl/identity-verification/$userId'),
@@ -1321,7 +1333,10 @@ Future<Map<String, dynamic>> cancelIdentityVerification(String token, int userId
     if (response.statusCode == 200) {
       return {'success': true};
     }
-    return {'success': false, 'message': decoded['message'] ?? 'Error al cancelar verificación'};
+    return {
+      'success': false,
+      'message': decoded['message'] ?? 'Error al cancelar verificación'
+    };
   } catch (e) {
     return {'success': false, 'message': 'Error de conexión'};
   }
@@ -2165,18 +2180,17 @@ Future<Map<String, dynamic>> addTutorSubject(
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return {'success': true, 'data': responseData};
-    } 
-    else if (response.statusCode == 409) {
+    } else if (response.statusCode == 409) {
       return {
-        'success': true, 
-        'message': 'El usuario ya tiene esta materia asignada', 
-        'isDuplicate': true 
+        'success': true,
+        'message': 'El usuario ya tiene esta materia asignada',
+        'isDuplicate': true
       };
-    } 
-    else {
+    } else {
       return {
-        'success': false, 
-        'message': responseData['message'] ?? 'Error al guardar la materia. (Código: ${response.statusCode})'
+        'success': false,
+        'message': responseData['message'] ??
+            'Error al guardar la materia. (Código: ${response.statusCode})'
       };
     }
   } catch (e) {
@@ -2251,13 +2265,13 @@ Future<Map<String, dynamic>> getAvailableSubjects(String token) async {
 
 Future<Map<String, dynamic>> fetchSubjectGroups(String token) async {
   final url = Uri.parse('$baseUrl/subject-groups');
-  
+
   try {
     final response = await http.get(url, headers: {
       'Authorization': 'Bearer $token',
       'Accept': 'application/json',
     });
-    
+
     if (response.statusCode == 200) {
       return {'success': true, 'data': jsonDecode(response.body)['data']};
     }
@@ -2268,7 +2282,8 @@ Future<Map<String, dynamic>> fetchSubjectGroups(String token) async {
   }
 }
 
-Future<Map<String, dynamic>> fetchSubjectsByGroup(String token, int groupId) async {
+Future<Map<String, dynamic>> fetchSubjectsByGroup(
+    String token, int groupId) async {
   final url = Uri.parse('$baseUrl/subject-groups/$groupId/subjects');
   try {
     final response = await http.get(url, headers: {
@@ -2308,7 +2323,7 @@ Future<bool> hasAssignedSubjects(String token, int userId) async {
 //   int? userId,
 // }) async {
 //   // ✅ RUTA CORRECTA
-//   final url = Uri.parse('$baseUrl/tutor-subjects/available?keyword=$keyword&user_id=$userId'); 
+//   final url = Uri.parse('$baseUrl/tutor-subjects/available?keyword=$keyword&user_id=$userId');
 //   // ... resto del código igual (maneja la paginación aquí si aplica) ...
 // }
 Future<Map<String, dynamic>> fetchAvailableSubjects({
@@ -2324,29 +2339,28 @@ Future<Map<String, dynamic>> fetchAvailableSubjects({
   if (userId != null) queryParams += '&user_id=$userId';
 
   final url = Uri.parse('$baseUrl/tutor-subjects/available$queryParams');
-  
+
   try {
     final response = await http.get(url, headers: {
       'Authorization': 'Bearer $token',
       'Accept': 'application/json',
     });
-    
+
     final decoded = jsonDecode(response.body);
 
     if (response.statusCode == 200 && decoded['status'] == 200) {
       return {
-        'success': true, 
-        'data': decoded['data']['data'], 
+        'success': true,
+        'data': decoded['data']['data'],
         'current_page': decoded['data']['current_page'],
         'last_page': decoded['data']['last_page'],
       };
     }
-    
+
     return {
-      'success': false, 
+      'success': false,
       'message': decoded['message'] ?? 'Error al buscar materias'
     };
-    
   } catch (e) {
     print("❌ Error fetchAvailableSubjects: $e");
     return {'success': false, 'message': 'Revisa tu conexión a internet.'};
@@ -2366,17 +2380,17 @@ Future<Map<String, dynamic>> fetchAvailableSubjects({
 //   if (userId != null) queryParams += '&user_id=$userId';
 
 //   final url = Uri.parse('$baseUrl/tutor-subjects/available$queryParams');
-  
+
 //   try {
 //     final response = await http.get(url, headers: {
 //       'Authorization': 'Bearer $token',
 //       'Accept': 'application/json',
 //     });
-    
+
 //     if (response.statusCode == 200) {
 //       final decoded = jsonDecode(response.body);
 //       return {
-//         'success': true, 
+//         'success': true,
 //         'data': decoded['data']['data'], // Array de materias
 //         'last_page': decoded['data']['last_page'],
 //       };
@@ -3616,8 +3630,9 @@ Future<Map<String, dynamic>> updateProfileImage({
   required String imagePath,
 }) async {
   try {
-    print('DEBUG - Subiendo imagen de perfil para usuario: $userId desde $imagePath');
-    
+    print(
+        'DEBUG - Subiendo imagen de perfil para usuario: $userId desde $imagePath');
+
     final file = File(imagePath);
     if (!await file.exists()) {
       return {
@@ -3633,7 +3648,8 @@ Future<Map<String, dynamic>> updateProfileImage({
     if (fileSizeInMB > 5.0) {
       return {
         'success': false,
-        'message': 'La imagen supera el límite de 5MB permitido (${fileSizeInMB.toStringAsFixed(1)}MB).',
+        'message':
+            'La imagen supera el límite de 5MB permitido (${fileSizeInMB.toStringAsFixed(1)}MB).',
       };
     }
 
@@ -3654,8 +3670,9 @@ Future<Map<String, dynamic>> updateProfileImage({
 
     final streamedResponse = await request.send();
     final response = await http.Response.fromStream(streamedResponse);
-    
-    print('DEBUG - Respuesta updateProfileImage status: ${response.statusCode}');
+
+    print(
+        'DEBUG - Respuesta updateProfileImage status: ${response.statusCode}');
     final responseData = json.decode(response.body);
 
     if (response.statusCode == 200 || response.statusCode == 201) {
@@ -3686,8 +3703,9 @@ Future<Map<String, dynamic>> updateProfileVideo({
   Function(double percentage)? onProgress,
 }) async {
   try {
-    print('DEBUG - Subiendo video de introducción para usuario: $userId desde $videoPath');
-    
+    print(
+        'DEBUG - Subiendo video de introducción para usuario: $userId desde $videoPath');
+
     final file = File(videoPath);
     if (!await file.exists()) {
       return {
@@ -3695,15 +3713,16 @@ Future<Map<String, dynamic>> updateProfileVideo({
         'message': 'El archivo de video seleccionado no existe.',
       };
     }
-    
+
     final int fileSizeInBytes = await file.length();
     final double fileSizeInMB = fileSizeInBytes / (1024 * 1024);
     print('DEBUG - Tamaño de video: ${fileSizeInMB.toStringAsFixed(2)}MB');
-    
+
     if (fileSizeInMB > 50.0) {
       return {
         'success': false,
-        'message': 'El video supera el límite de 50MB permitido (${fileSizeInMB.toStringAsFixed(1)}MB).',
+        'message':
+            'El video supera el límite de 50MB permitido (${fileSizeInMB.toStringAsFixed(1)}MB).',
       };
     }
 
@@ -3730,8 +3749,9 @@ Future<Map<String, dynamic>> updateProfileVideo({
 
     final streamedResponse = await request.send();
     final response = await http.Response.fromStream(streamedResponse);
-    
-    print('DEBUG - Respuesta updateProfileVideo status: ${response.statusCode}');
+
+    print(
+        'DEBUG - Respuesta updateProfileVideo status: ${response.statusCode}');
     final responseData = json.decode(response.body);
 
     if (response.statusCode == 200 && responseData['success'] == true) {
@@ -3845,3 +3865,196 @@ Future<Map<String, dynamic>> deleteProfileVideo({
   }
 }
 
+Future<Map<String, dynamic>> solicitarTutor(
+  String token, {
+  required int subjectId,
+  required String preferredDate,
+  required String preferredTime,
+  String? note,
+  int? tutorId,
+}) async {
+  final Uri uri = Uri.parse('$baseUrl/solicitar-tutor');
+
+  final headers = {
+    'Authorization': 'Bearer $token',
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  };
+
+  final payload = {
+    'subject_id': subjectId,
+    'preferred_date': preferredDate,
+    'preferred_time': preferredTime,
+    if (note != null && note.isNotEmpty) 'note': note,
+    if (tutorId != null) 'tutor_id': tutorId,
+  };
+
+  try {
+    final response = await http.post(
+      uri,
+      headers: headers,
+      body: jsonEncode(payload),
+    );
+
+    final decoded = response.body.isNotEmpty
+        ? jsonDecode(response.body)
+        : <String, dynamic>{};
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return {
+        'success': true,
+        'message': decoded['message'] ?? 'Solicitud enviada con éxito.',
+        'data': decoded,
+      };
+    } else {
+      return {
+        'success': false,
+        'message': decoded['message'] ?? 'Error al enviar la solicitud.',
+        'status': response.statusCode,
+        'errors': decoded['errors'],
+      };
+    }
+  } catch (e) {
+    return {
+      'success': false,
+      'message': 'Error de conexión: $e',
+    };
+  }
+}
+
+Future<Map<String, dynamic>> getNegotiationDetail(String token) async {
+  final Uri uri = Uri.parse('$baseUrl/solicitud-clase/$token');
+
+  final headers = {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  };
+
+  try {
+    final response = await http.get(uri, headers: headers);
+    final decoded = response.body.isNotEmpty
+        ? jsonDecode(response.body)
+        : <String, dynamic>{};
+
+    if (response.statusCode == 200) {
+      return {
+        'success': true,
+        'data': decoded,
+      };
+    } else {
+      return {
+        'success': false,
+        'message': decoded['message'] ?? 'Error al obtener detalles.',
+      };
+    }
+  } catch (e) {
+    return {
+      'success': false,
+      'message': 'Error de conexión: $e',
+    };
+  }
+}
+
+Future<Map<String, dynamic>> acceptNegotiation(String token) async {
+  final Uri uri = Uri.parse('$baseUrl/solicitud-clase/$token/aceptar');
+
+  final headers = {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  };
+
+  try {
+    final response = await http.post(uri, headers: headers);
+    final decoded = response.body.isNotEmpty
+        ? jsonDecode(response.body)
+        : <String, dynamic>{};
+
+    if (response.statusCode == 200) {
+      return {
+        'success': true,
+        'message': decoded['message'] ?? 'Solicitud aceptada con éxito.',
+      };
+    } else {
+      return {
+        'success': false,
+        'message': decoded['message'] ?? 'Error al aceptar la solicitud.',
+      };
+    }
+  } catch (e) {
+    return {
+      'success': false,
+      'message': 'Error de conexión: $e',
+    };
+  }
+}
+
+Future<Map<String, dynamic>> rejectNegotiation(String token) async {
+  final Uri uri = Uri.parse('$baseUrl/solicitud-clase/$token/rechazar');
+
+  final headers = {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  };
+
+  try {
+    final response = await http.post(uri, headers: headers);
+    final decoded = response.body.isNotEmpty
+        ? jsonDecode(response.body)
+        : <String, dynamic>{};
+
+    if (response.statusCode == 200) {
+      return {
+        'success': true,
+        'message': decoded['message'] ?? 'Solicitud rechazada con éxito.',
+      };
+    } else {
+      return {
+        'success': false,
+        'message': decoded['message'] ?? 'Error al rechazar la solicitud.',
+      };
+    }
+  } catch (e) {
+    return {
+      'success': false,
+      'message': 'Error de conexión: $e',
+    };
+  }
+}
+
+Future<Map<String, dynamic>> counterNegotiation(
+    String token, Map<String, dynamic> payload) async {
+  final Uri uri = Uri.parse('$baseUrl/solicitud-clase/$token/contraofertar');
+
+  final headers = {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  };
+
+  try {
+    final response = await http.post(
+      uri,
+      headers: headers,
+      body: jsonEncode(payload),
+    );
+    final decoded = response.body.isNotEmpty
+        ? jsonDecode(response.body)
+        : <String, dynamic>{};
+
+    if (response.statusCode == 200) {
+      return {
+        'success': true,
+        'message': decoded['message'] ?? 'Contraoferta enviada con éxito.',
+      };
+    } else {
+      return {
+        'success': false,
+        'message': decoded['message'] ?? 'Error al enviar la contraoferta.',
+      };
+    }
+  } catch (e) {
+    return {
+      'success': false,
+      'message': 'Error de conexión: $e',
+    };
+  }
+}

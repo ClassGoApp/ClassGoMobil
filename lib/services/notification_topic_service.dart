@@ -11,6 +11,7 @@ import 'package:flutter_projects/view/tutor/features/home/providers/tutor_home_p
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_projects/view/tutor/features/agenda/schedule_request_detail_screen.dart';
 
 class NotificationTopicService {
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
@@ -345,9 +346,38 @@ class NotificationTopicService {
         }
         break;
 
+      case 'solicitud_detalle':
       case 'detalle_solicitud':
-        print(
-            'Push detalle recibida, pero no existe vista de chat configurada');
+        try {
+          var decodificado = data['data_tutor'];
+          String? tutorToken;
+          if (decodificado != null) {
+            if (decodificado is String) {
+              decodificado = jsonDecode(decodificado);
+              if (decodificado is String) {
+                decodificado = jsonDecode(decodificado);
+              }
+            }
+            if (decodificado is Map) {
+              tutorToken = decodificado['token']?.toString();
+            }
+          }
+          if (tutorToken == null && data['token'] != null) {
+            tutorToken = data['token'].toString();
+          }
+
+          if (tutorToken != null && tutorToken.isNotEmpty) {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => ScheduleRequestDetailScreen(token: tutorToken!),
+              ),
+            );
+          } else {
+            print('Error: Token de tutor no disponible en la notificación');
+          }
+        } catch (e) {
+          print('Error en navegación de solicitud_detalle: $e');
+        }
         break;
 
       case 'tutoria_lista':

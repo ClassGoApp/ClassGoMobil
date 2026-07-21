@@ -8,6 +8,7 @@ import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/view/student/reservations/instant-reservation/instant_tutoring_screen.dart';
 import 'package:flutter_projects/view/student/reservations/services/reservations_service.dart';
+import 'package:flutter_projects/view/student/reservations/request_schedule_screen.dart';
 
 class BookingModal extends StatefulWidget {
   final String tutorName;
@@ -898,6 +899,42 @@ class BookingModalState extends State<BookingModal> {
                   )
                 ]
               ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 18),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => RequestScheduleScreen(
+                    tutorId: widget.tutorId,
+                    tutorName: widget.tutorName,
+                    tutorImage: widget.tutorImage,
+                    subjects: widget.subjects,
+                    selectedSubject: selectedSubject,
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(Icons.more_time, color: AppColors.lightBlueColor),
+            label: const Text(
+              'Solicitar Horario Personalizado',
+              style: TextStyle(
+                color: AppColors.lightBlueColor,
+                fontWeight: FontWeight.bold,
+                fontFamily: AppFonts.heading,
+              ),
+            ),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: AppColors.lightBlueColor, width: 1.5),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 14),
             ),
           ),
         ),

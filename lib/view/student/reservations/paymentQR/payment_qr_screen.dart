@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
 import 'package:flutter_projects/base_components/custom_snack_bar.dart';
@@ -24,7 +25,9 @@ class PaymentQRScreen extends StatefulWidget {
   final DateTime? scheduledDate;
   final String? scheduledTime;
   final bool isScheduledBooking;
+  final bool isScheduleRequest;
   final String? slotId;
+  final VoidCallback? onCancel;
 
   const PaymentQRScreen({
     Key? key,
@@ -39,7 +42,9 @@ class PaymentQRScreen extends StatefulWidget {
     this.scheduledDate,
     this.scheduledTime,
     this.isScheduledBooking = false,
+    this.isScheduleRequest = false,
     this.slotId,
+    this.onCancel,
   }) : super(key: key);
 
   @override
@@ -487,7 +492,41 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
         metaData = {'comentario': 'Tutoría instantánea'};
       }
 
-      final String? normalizedSlotId = widget.slotId?.trim();
+      String? normalizedSlotId = widget.slotId?.trim();
+
+      // Únicamente si se trata de una solicitud de horario y no posee un slotId válido:
+      if (widget.isScheduleRequest && (normalizedSlotId == null || normalizedSlotId.isEmpty || !normalizedSlotId.contains('|'))) {
+        final dateStr = DateFormat('yyyy-MM-dd').format(startTime);
+        final startTimeStr = DateFormat('HH:mm').format(startTime);
+        final endTimeStr = DateFormat('HH:mm').format(endTime);
+        final int durationMins = endTime.difference(startTime).inMinutes;
+        final duracionStr = "$durationMins minutos";
+
+        print('[PaymentQRScreen] 🔄 Creando slot base en el servidor...');
+        final slotResp = await createUserSubjectSlot(token, {
+          'user_id': widget.tutorId,
+          'start_time': startTimeStr,
+          'end_time': endTimeStr,
+          'date': dateStr,
+          'duracion': duracionStr,
+        });
+
+        if (slotResp['success'] == true && slotResp['data'] != null) {
+          final createdSlotId = slotResp['data']['id'];
+          normalizedSlotId = "$createdSlotId|$startTimeStr|$endTimeStr";
+          print('[PaymentQRScreen] ✅ Slot base creado exitosamente: $normalizedSlotId');
+        } else {
+          showCustomToast(
+            context,
+            slotResp['message'] ?? 'Error al crear la disponibilidad del horario.',
+            false,
+          );
+          setState(() {
+            _isPaymentCompleted = false;
+          });
+          return;
+        }
+      }
 
       print('[PaymentQRScreen] 🔍 DEBUG - slotId enviado: $normalizedSlotId');
 
@@ -588,11 +627,21 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: makeDismissible(
-        context: context,
-        child: SlideTransition(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (widget.onCancel != null) {
+          widget.onCancel!();
+        } else {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Material(
+        color: Colors.transparent,
+        child: makeDismissible(
+          context: context,
+          child: SlideTransition(
           position: _slideAnimation,
           child: DraggableScrollableSheet(
             initialChildSize: 0.9,
@@ -659,6 +708,16 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
                                         ),
                                       ],
                                     ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.close, color: Colors.white70),
+                                    onPressed: () {
+                                      if (widget.onCancel != null) {
+                                        widget.onCancel!();
+                                      } else {
+                                        Navigator.of(context).pop();
+                                      }
+                                    },
                                   ),
                                 ],
                               ),
@@ -778,8 +837,9 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   // Widget para la página del QR
   Widget _buildQRPage() {
@@ -1016,7 +1076,13 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
       {required Widget child, required BuildContext context}) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => Navigator.of(context).pop(),
+      onTap: () {
+        if (widget.onCancel != null) {
+          widget.onCancel!();
+        } else {
+          Navigator.of(context).pop();
+        }
+      },
       child: GestureDetector(onTap: () {}, child: child),
     );
   }

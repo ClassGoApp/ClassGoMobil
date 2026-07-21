@@ -3,6 +3,7 @@ import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/student/instant_tutoring/logic/radar_controller.dart';
 import 'package:flutter_projects/view/student/instant_tutoring/widgets/tutor_card.dart';
 import 'package:flutter_projects/view/student/instant_tutoring/widgets/student_payment_screen.dart';
+import 'package:flutter_projects/view/student/reservations/request_schedule_screen.dart';
 import 'dart:math';
 
 import 'radar_painter.dart';
@@ -184,21 +185,56 @@ class _RadarSearchScreenState extends State<RadarSearchScreen> with SingleTicker
         if (isTimeout)
           Padding(
             padding: const EdgeInsets.all(24.0),
-            child: SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.brandBlue,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  elevation: 0,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.brandCyan,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      elevation: 0,
+                    ),
+                    onPressed: () {
+                      final int subId = int.tryParse(widget.subjectId) ?? 0;
+                      final subjectMap = {'id': subId, 'name': widget.subjectName};
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => RequestScheduleScreen(
+                            subjects: [subjectMap],
+                            selectedSubject: subjectMap,
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.more_time, color: Colors.white),
+                    label: const Text(
+                      "Solicitar Horario",
+                      style: TextStyle(fontFamily: _kFontFamily, fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                  ),
                 ),
-                onPressed: () => Navigator.pop(context),
-                child: const Text(
-                  "Nueva solicitud",
-                  style: TextStyle(fontFamily: _kFontFamily, fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.brandBlue,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      elevation: 0,
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text(
+                      "Nueva solicitud",
+                      style: TextStyle(fontFamily: _kFontFamily, fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
           )
         else
