@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_projects/view/student/instant_tutoring/widgets/tutor_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
+import 'package:flutter_projects/api_structure/config/app_config.dart';
 
 class RadarController extends ChangeNotifier {
   final String subjectId;
@@ -79,10 +80,8 @@ class RadarController extends ChangeNotifier {
           acceptedTutors = candidatosNuevos.map<TutorResponse>((json) {
             String img = json['image'] ?? 'assets/images/default_avatar.png';
             
-            // TODO: PRODUCCIÓN - Esta URL base debe ser dinámica (del .env o config)
             if (!img.startsWith('http') && !img.startsWith('assets')) {
-              img = !img.startsWith('/') ? '/$img' : img;
-              img = 'https://classgoapp.com$img';
+              img = '${AppConfig.mediaBaseUrl}/$img';
             }
 
             return TutorResponse(
@@ -139,17 +138,14 @@ class RadarController extends ChangeNotifier {
       final token = prefs.getString('token') ?? '';
       if (token.isEmpty) return false;
 
-      final result = await cancelRadarSearch(int.parse(batchId!), token);
-
-      if (result['success'] == true) {
-        _triggerTimeout();
-        return true;
-      }
-      return false;
+      await cancelRadarSearch(int.parse(batchId!), token);
+      return true;
     } catch (e) {
       print("Error al cancelar batch: $e");
-      return false;
+      return true;
     } finally {
+      _countdownTimer?.cancel();
+      _pollingTimer?.cancel();
       isCancelling = false;
       notifyListeners();
     }

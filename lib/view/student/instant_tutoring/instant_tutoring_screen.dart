@@ -161,6 +161,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                     borderRadius: BorderRadius.circular(10)),
               ),
               onPressed: () {
+                FocusScope.of(context).unfocus();
                 Navigator.pop(context);
                 _navegarAlRadar(materiaName, materiaId, 300);
               },
@@ -280,7 +281,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
         if (query.trim().isEmpty) {
           _searchResults = [];
         } else {
-          final lowerQuery = query.toLowerCase();
+          final lowerQuery = query.trim().toLowerCase();
           _searchResults = _allSubjects.where((subject) {
             final materia = subject['Materia']?.toString().toLowerCase() ?? '';
             return materia.contains(lowerQuery);

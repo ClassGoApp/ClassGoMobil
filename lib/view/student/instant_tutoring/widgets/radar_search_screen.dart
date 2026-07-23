@@ -317,13 +317,13 @@ class _RadarSearchScreenState extends State<RadarSearchScreen>
 
     if (confirmed == true && mounted) {
       final ok = await _logicController.cancelBatch();
-      if (ok && mounted) {
+      if (mounted) {
+        FocusManager.instance.primaryFocus?.unfocus();
+        FocusScope.of(context).unfocus();
         Navigator.pop(context);
-      } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("No se pudo cancelar la solicitud"),
-            backgroundColor: Colors.red,
+          SnackBar(
+            content: Text(ok ? "Búsqueda cancelada" : "No se pudo cancelar"),
           ),
         );
       }
