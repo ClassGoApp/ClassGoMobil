@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/base_components/custom_snack_bar.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
@@ -13,7 +14,7 @@ class LogoutSection extends StatelessWidget {
   static void executeLogout(BuildContext context) {
     Provider.of<AuthProvider>(context, listen: false).logout();
 
-    CustomToast.show(context, "Sesión cerrada correctamente.", isSuccess: true);
+    CustomToast.show(context, AppLocalizations.of(context)!.logoutSuccess, isSuccess: true);
   }
 
   static void showLogoutDialog(BuildContext context) {
@@ -53,7 +54,7 @@ class LogoutSection extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  "CERRAR SESIÓN",
+                  AppLocalizations.of(dialogContext)!.logoutTitle,
                   style: TextStyle(
                     fontFamily: _kTitleFont,
                     color: textColor,
@@ -63,10 +64,10 @@ class LogoutSection extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  "¿Estás seguro de que deseas salir de tu cuenta de Tutor?",
+                Text(
+                  AppLocalizations.of(dialogContext)!.logoutConfirmMessage,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontFamily: _kBodyFont,
                     color: Colors.grey,
                     fontSize: 13,
@@ -83,9 +84,9 @@ class LogoutSection extends StatelessWidget {
                           side: BorderSide(color: Colors.grey.withOpacity(0.3)),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
-                        child: const Text(
-                          "Cancelar",
-                          style: TextStyle(
+                        child: Text(
+                          AppLocalizations.of(dialogContext)!.cancelButton,
+                          style: const TextStyle(
                             fontFamily: _kTitleFont,
                             color: Colors.grey,
                             fontWeight: FontWeight.bold,
@@ -106,9 +107,9 @@ class LogoutSection extends StatelessWidget {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           elevation: 0,
                         ),
-                        child: const Text(
-                          "Salir",
-                          style: TextStyle(
+                        child: Text(
+                          AppLocalizations.of(dialogContext)!.logoutButton,
+                          style: const TextStyle(
                             fontFamily: _kTitleFont,
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -148,9 +149,9 @@ class LogoutSection extends StatelessWidget {
           child: const Icon(Icons.power_settings_new_rounded,
               color: Colors.redAccent, size: 20),
         ),
-        title: const Text(
-          "CERRAR SESIÓN",
-          style: TextStyle(
+        title: Text(
+          AppLocalizations.of(context)!.logoutTitle,
+          style: const TextStyle(
             fontFamily: _kTitleFont,
             color: Colors.redAccent,
             fontSize: 12,

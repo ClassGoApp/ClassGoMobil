@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'reservations_day_modal.dart';
 import '../services/reservations_service.dart';
 
@@ -165,8 +166,14 @@ class _ReservationsCalendarState extends State<ReservationsCalendar> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
+    
+    // Obtener el locale actual de la app
+    final currentLocale = Localizations.localeOf(context);
+    final localeString = currentLocale.languageCode == 'en' ? 'en_US' : 'es_ES';
+    
     final monthLabel =
-        "${toBeginningOfSentenceCase(DateFormat('MMMM', 'es').format(_focusedDay))} ${DateFormat('yyyy').format(_focusedDay)}";
+        "${toBeginningOfSentenceCase(DateFormat('MMMM', localeString).format(_focusedDay))} ${DateFormat('yyyy').format(_focusedDay)}";
 
     return Card(
       color: Theme.of(context).cardTheme.color,
@@ -206,7 +213,7 @@ class _ReservationsCalendarState extends State<ReservationsCalendar> {
                                   isDark ? Colors.white : AppColors.blackColor,
                               fontWeight: FontWeight.bold)),
                       const SizedBox(height: 2),
-                      Text('CALENDARIO',
+                      Text(l10n.calendar,
                           style: TextStyle(
                               color: AppColors.greyColor,
                               fontSize: 11,
@@ -374,7 +381,7 @@ class _ReservationsCalendarState extends State<ReservationsCalendar> {
                 _loadBookingsForMonth(focusedDay);
               },
               startingDayOfWeek: StartingDayOfWeek.monday,
-              locale: 'es_ES',
+              locale: currentLocale.languageCode == 'en' ? 'en_US' : 'es_ES',
               rowHeight: 46,
               headerVisible: false,
               daysOfWeekStyle: const DaysOfWeekStyle(
@@ -422,7 +429,7 @@ class _ReservationsCalendarState extends State<ReservationsCalendar> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Fecha Seleccionada: ${_selectedDate.toLocal().toString().split(' ')[0]}',
+              l10n.selectedDate(_selectedDate.toLocal().toString().split(' ')[0]),
               style: TextStyle(
                   color: isDark ? Colors.white54 : AppColors.greyColor,
                   fontSize: 13),

@@ -3,6 +3,7 @@ import 'package:flutter_projects/view/student/reservations/tutor_reservation_scr
 import 'package:flutter_projects/view/student/services/text_normalization.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import '../services/tutors_formatter_service.dart';
 import 'package:flutter_projects/helpers/slide_up_route.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
@@ -150,7 +151,7 @@ class _NewReservationModalState extends State<NewReservationModal> {
     }
   }
 
-  Future<void> _showSubjectsPicker() async {
+  Future<void> _showSubjectsPicker(AppLocalizations l10n) async {
     // Ensure filteredSubjects initialized
     _filterSubjects(_subjectFilterController.text);
     // We'll attach a modal-scoped listener that calls sheetSetState so
@@ -213,7 +214,7 @@ class _NewReservationModalState extends State<NewReservationModal> {
                         final items =
                             List<Map<String, dynamic>>.from(_filteredSubjects);
                         if (items.isEmpty)
-                          return Center(child: Text('No hay materias'));
+                          return Center(child: Text(l10n.noSubjects));
                         return ListView.separated(
                           controller: scrollController,
                           itemCount: items.length,
@@ -283,6 +284,7 @@ class _NewReservationModalState extends State<NewReservationModal> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -290,12 +292,12 @@ class _NewReservationModalState extends State<NewReservationModal> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Crear nueva reserva',
+            Text(l10n.createNewReservationModal,
                 style: const TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               value: _selectedInstitution,
-              hint: const Text('Selecciona tipo de institución'),
+              hint: Text(l10n.selectInstitutionTypeHint),
               isExpanded: true,
               items: _institutions
                   .map((i) => DropdownMenuItem(value: i, child: Text(i)))
@@ -318,11 +320,11 @@ class _NewReservationModalState extends State<NewReservationModal> {
             if (!_loading)
               GestureDetector(
                 onTap: () {
-                  if (_subjects.isNotEmpty) _showSubjectsPicker();
+                  if (_subjects.isNotEmpty) _showSubjectsPicker(l10n);
                 },
                 child: InputDecorator(
                   decoration: InputDecoration(
-                    hintText: 'Selecciona materia',
+                    hintText: l10n.selectMatterHint,
                     suffixIcon: Icon(Icons.arrow_drop_down),
                     isDense: true,
                   ),
@@ -332,7 +334,7 @@ class _NewReservationModalState extends State<NewReservationModal> {
                                 _selectedSubject!['title'] ??
                                 _selectedSubject!['subject'])
                             .toString())
-                        : 'Seleccione una materia',
+                        : l10n.selectMatterHint,
                     style: TextStyle(
                         color: _selectedSubject != null
                             ? Colors.black87
@@ -471,7 +473,7 @@ class _NewReservationModalState extends State<NewReservationModal> {
                 Expanded(
                     child: OutlinedButton(
                         onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('Cancelar'))),
+                        child: Text(l10n.cancel))),
                 const SizedBox(width: 12),
               ],
             ),

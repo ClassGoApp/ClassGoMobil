@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 
 const String _kTitleFont = 'outfit';
 const String _kBodyFont = 'manrope';
@@ -74,7 +75,7 @@ class _VideoPresentationDialogState extends State<VideoPresentationDialog> {
 
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Container(
         decoration: BoxDecoration(
           color: dialogBgColor,
@@ -93,7 +94,7 @@ class _VideoPresentationDialogState extends State<VideoPresentationDialog> {
             mainAxisSize: MainAxisSize.min, 
             children: [
               Text(
-                "MI VIDEO",
+                AppLocalizations.of(context)!.myVideo,
                 style: TextStyle(
                   fontFamily: _kTitleFont,
                   color: textColor,
@@ -122,7 +123,7 @@ class _VideoPresentationDialogState extends State<VideoPresentationDialog> {
                   ),
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 8),
 
               SizedBox(
                 width: double.infinity,
@@ -134,9 +135,9 @@ class _VideoPresentationDialogState extends State<VideoPresentationDialog> {
                     side: BorderSide(color: Colors.redAccent.withOpacity(isDark ? 0.4 : 0.3)),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
-                  child: const Text(
-                    "Cerrar",
-                    style: TextStyle(
+                  child: Text(
+                    AppLocalizations.of(context)!.closeButton,
+                    style: const TextStyle(
                       fontFamily: _kTitleFont,
                       color: Colors.redAccent, 
                       fontWeight: FontWeight.bold,
@@ -161,9 +162,9 @@ class _VideoPresentationDialogState extends State<VideoPresentationDialog> {
           children: [
             Icon(Icons.broken_image_rounded, color: Colors.grey.withOpacity(0.5), size: 40),
             const SizedBox(height: 8),
-            const Text(
-              "No se pudo cargar el video",
-              style: TextStyle(fontFamily: _kBodyFont, color: Colors.grey, fontSize: 12),
+            Text(
+              AppLocalizations.of(context)!.videoLoadError,
+              style: const TextStyle(fontFamily: _kBodyFont, color: Colors.grey, fontSize: 12),
             ),
           ],
         ),

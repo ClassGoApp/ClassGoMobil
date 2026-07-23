@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'dart:ui';
 
 const String kFontFamily = 'outfit';
@@ -13,6 +13,7 @@ class AddSubjectButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
 
     return GestureDetector(
       onTap: onPressed,
@@ -42,8 +43,8 @@ class AddSubjectButton extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                AppLocalizations.of(context)!.addSubject,
-                style: const TextStyle(
+                l10n.addSubject,
+                style: TextStyle(
                   color: AppColors.brandCyan,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,

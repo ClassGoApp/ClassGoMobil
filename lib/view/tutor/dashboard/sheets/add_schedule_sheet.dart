@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/base_components/custom_snack_bar.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/tutor/features/agenda/tutor_agenda_screen.dart' show AgendaMode;
@@ -73,7 +74,7 @@ class _AddScheduleSheetState extends State<AddScheduleSheet> {
   }
 
   String _getDaysDisplayText() {
-    if (_currentSelectedDays.isEmpty) return "SIN FECHA";
+    if (_currentSelectedDays.isEmpty) return AppLocalizations.of(context)!.noDate;
     final days = List<DateTime>.from(_currentSelectedDays)..sort();
     if (days.length == 1) return DateFormat('MMM dd', 'es').format(days.first).toUpperCase();
     
@@ -111,7 +112,7 @@ class _AddScheduleSheetState extends State<AddScheduleSheet> {
     if (startDouble >= endDouble) {
       CustomToast.show(
         context,
-        "La hora de fin debe ser mayor a la de inicio",
+        AppLocalizations.of(context)!.endTimeGreaterThanStart,
         isSuccess: false,
       );
       return;
@@ -161,9 +162,9 @@ class _AddScheduleSheetState extends State<AddScheduleSheet> {
               ),
               const SizedBox(height: 16),
 
-              Text("Horario de Trabajo", style: TextStyle(color: textColor, fontSize: 20, fontWeight: FontWeight.w900, fontFamily: 'outfit')),
+              Text(AppLocalizations.of(context)!.workingHours, style: TextStyle(color: textColor, fontSize: 20, fontWeight: FontWeight.w900, fontFamily: 'outfit')),
               const SizedBox(height: 4),
-              Text("Define el rango para los días seleccionados", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+              Text(AppLocalizations.of(context)!.defineRangeSelectedDays, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey[500], fontSize: 12)),
               
               const SizedBox(height: 24),
 
@@ -192,9 +193,9 @@ class _AddScheduleSheetState extends State<AddScheduleSheet> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Expanded(child: _buildTab("INICIA", _startTime, 0, isDark)),
+                  Expanded(child: _buildTab(AppLocalizations.of(context)!.startTime, _startTime, 0, isDark)),
                   const SizedBox(width: 12),
-                  Expanded(child: _buildTab("FINALIZA", _endTime, 1, isDark)),
+                  Expanded(child: _buildTab(AppLocalizations.of(context)!.endTime, _endTime, 1, isDark)),
                 ],
               ),
 
@@ -212,7 +213,7 @@ class _AddScheduleSheetState extends State<AddScheduleSheet> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     elevation: 0,
                   ),
-                  child: const Text("CONFIRMAR HORARIO", style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                  child: Text(AppLocalizations.of(context)!.confirmSchedule, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
                 ),
               )
             ],

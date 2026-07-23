@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
-import 'package:flutter_projects/view/tutor/dashboard/widgets/theme_toggle_button.dart';
 import 'package:flutter_projects/view/tutor/features/profile/widgets/logout_section.dart';
 
 class DashboardHeader extends StatelessWidget {
@@ -208,7 +208,7 @@ class _HeaderUserInfo extends StatelessWidget {
       children: [
         // 1. SALUDO
         Text(
-          "Hola, ${_getFirstName(tutorName)}",
+          AppLocalizations.of(context)!.greeting(_getFirstName(tutorName)),
           style: TextStyle(
               color: textColor,
               fontSize: 24,
@@ -275,7 +275,7 @@ class _HeaderUserInfo extends StatelessWidget {
                         size: 14,
                       ),
                       const SizedBox(width: 4),
-                      Text(isVerified ? "VERIFICADO" : "SIN VERIFICAR",
+                      Text(isVerified ? AppLocalizations.of(context)!.verified : AppLocalizations.of(context)!.unverified,
                           style: TextStyle(
                             color: isVerified ? verifiedText : unverifiedText,
                             fontSize: 10,

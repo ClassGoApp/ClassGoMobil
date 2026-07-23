@@ -7,7 +7,7 @@ import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as path;
 
-final String baseUrl = 'https://classgoapp.com/api';
+final String baseUrl = 'http://192.168.0.145:8000/api';
 
 class TokenExpiredException implements Exception {
   final String message =

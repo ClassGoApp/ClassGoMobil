@@ -6,6 +6,7 @@ import 'package:flutter_projects/view/tutor/features/home/widgets/reservation_de
 import 'package:flutter_projects/view/tutor/features/home/providers/tutor_home_provider.dart';
 import 'package:flutter_projects/view/tutor/features/home/widgets/start_session_dialog.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 const String _kTitleFont = 'outfit';
@@ -49,7 +50,7 @@ class _NextAppointmentSectionState extends State<NextAppointmentSection> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Clases de hoy",
+                AppLocalizations.of(context)!.todaysClasses,
                 style: TextStyle(
                   color: isDark ? Colors.white : AppColors.brandBlue,
                   fontSize: 20,
@@ -98,7 +99,7 @@ class _NextAppointmentSectionState extends State<NextAppointmentSection> {
                     child: Row(
                       children: [
                         Text(
-                          "Ver Agenda",
+                          AppLocalizations.of(context)!.viewSchedule,
                           style: TextStyle(
                             fontFamily: _kTitleFont,
                             fontWeight: FontWeight.bold,
@@ -171,12 +172,12 @@ class _AppointmentCard extends StatelessWidget {
 
   const _AppointmentCard({Key? key, required this.data}) : super(key: key);
 
-  Color _getStatusColor(String status) {
+  Color _getStatusColor(String status, BuildContext context) {
     final s = status.toLowerCase();
-    if (s.contains('pendiente')) return AppColors.brandOrange;
-    if (s.contains('aceptad')) return AppColors.neonGreen;
-    if (s.contains('cursando')) return AppColors.brandBlue;
-    if (s.contains('completad')) return Colors.grey;
+    if (s.contains(AppLocalizations.of(context)!.statusPending)) return AppColors.brandOrange;
+    if (s.contains(AppLocalizations.of(context)!.statusAccepted)) return AppColors.neonGreen;
+    if (s.contains(AppLocalizations.of(context)!.statusInProgress)) return AppColors.brandBlue;
+    if (s.contains(AppLocalizations.of(context)!.statusCompleted)) return Colors.grey;
     return AppColors.brandCyan;
   }
 
@@ -184,11 +185,11 @@ class _AppointmentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final statusColor = _getStatusColor(data.status);
+    final statusColor = _getStatusColor(data.status, context);
 
     final String dateStr = data.start != null 
         ? DateFormat('dd MMM yyyy', 'es').format(data.start!) 
-        : 'Sin fecha';
+        : AppLocalizations.of(context)!.noDate;
     final String timeStr = data.start != null 
         ? DateFormat('HH:mm').format(data.start!) 
         : '--:--';
@@ -254,7 +255,7 @@ class _AppointmentCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      data.status.toLowerCase().contains('cursando')
+                      data.status.toLowerCase().contains(AppLocalizations.of(context)!.statusInProgress)
                           ? Icons.play_circle_fill
                           : Icons.access_time_rounded,
                       size: 12,
@@ -290,7 +291,7 @@ class _AppointmentCard extends StatelessWidget {
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
-                  "con ${data.studentName}",
+                  AppLocalizations.of(context)!.withStudent + " ${data.studentName}",
                   style: TextStyle(
                     color: isDark ? Colors.grey : Colors.grey[700],
                     fontSize: 16,
@@ -395,7 +396,7 @@ class _AppointmentCard extends StatelessWidget {
                         size: 16,
                         color: isDark ? Colors.white : AppColors.brandBlue),
                     label: Text(
-                      "Detalles",
+                      AppLocalizations.of(context)!.details,
                       style: TextStyle(
                         color: isDark ? Colors.white : AppColors.brandBlue,
                         fontWeight: FontWeight.bold,
@@ -427,10 +428,10 @@ class _AppointmentCard extends StatelessWidget {
                           provider.openMeetLink(context, data.meetingLink);
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
+                            SnackBar(
                               content: Text(
-                                  'El enlace de Meet aún no está disponible.',
-                                  style: TextStyle(fontFamily: _kBodyFont)),
+                                  AppLocalizations.of(context)!.meetLinkNotAvailable,
+                                  style: const TextStyle(fontFamily: _kBodyFont)),
                               backgroundColor: Colors.orange,
                             ),
                           );
@@ -449,9 +450,9 @@ class _AppointmentCard extends StatelessWidget {
                                   provider.openMeetLink(context, data.meetingLink);
                                 } else {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
+                                    SnackBar(
                                       content: Text(
-                                          'Reunión iniciada, esperando enlace...',
+                                          AppLocalizations.of(context)!.meetingStartedWaitingLink,
                                           style: TextStyle(
                                               fontFamily: _kBodyFont)),
                                       backgroundColor: Colors.green,
@@ -472,7 +473,7 @@ class _AppointmentCard extends StatelessWidget {
                       color: Colors.white,
                     ),
                     label: Text(
-                      isCursando ? "Entrar" : "Iniciar",
+                      isCursando ? AppLocalizations.of(context)!.enterSession : AppLocalizations.of(context)!.startSession,
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -533,7 +534,7 @@ class _EmptyStateCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              isAvailable ? "¡Todo despejado!" : "Modo offline",
+              isAvailable ? AppLocalizations.of(context)!.allClear : AppLocalizations.of(context)!.offlineMode,
               style: TextStyle(
                 color: isDark ? Colors.white : AppColors.brandBlue,
                 fontSize: 18,
@@ -544,8 +545,8 @@ class _EmptyStateCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               isAvailable
-                  ? "No tienes clases programadas para hoy."
-                  : "Activa tu disponibilidad para que los alumnos te vean.",
+                  ? AppLocalizations.of(context)!.noClassesToday
+                  : AppLocalizations.of(context)!.activateAvailability,
               style: TextStyle(
                 color: isDark ? Colors.grey : Colors.grey[500],
                 fontSize: 14,

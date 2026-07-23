@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_projects/helpers/social_media_launcher.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/styles/app_design.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 
 class SupportScreen extends StatefulWidget {
   const SupportScreen({super.key});
@@ -17,63 +18,6 @@ class _SupportScreenState extends State<SupportScreen>
 
   bool _showForStudents = true;
   int? _expandedIndex;
-
-  final Map<String, List<Map<String, String>>> faqsData = {
-    'estudiantes': [
-      {
-        'q': '¿Cómo encontrar un tutor?',
-        'a':
-            'Utilice la barra de búsqueda para encontrar tutores disponibles según la materia o tema que necesites.'
-      },
-      {
-        'q': '¿Cómo reservo una sesión?',
-        'a':
-            'Una vez que encuentres un tutor, consulta su perfil y selecciona un horario disponible que te convenga. Haz clic en "Reservar” y sigue las instrucciones para confirmar tu sesión.'
-      },
-      {
-        'q': '¿Qué pasa si necesito cancelar o reprogramar?',
-        'a':
-            'Las tutorías no pueden cancelarse una vez reservadas. Si ocurrió algún inconveniente, contáctanos y con gusto te ayudaremos.'
-      },
-      {
-        'q': '¿Cómo pago las sesiones?',
-        'a':
-            'Los pagos se realizan a través del QR proporcionado en tu reserva o también por transferencia bancaria con los datos que se muestran en pantalla.'
-      },
-      {
-        'q': '¿Qué debo hacer si mi tutor no se presenta?',
-        'a':
-            'Si tu tutor no se presenta a una sesión programada, comunícate con soporte de inmediato para obtener ayuda y agendar una reprogramación o un reembolso.'
-      },
-      {
-        'q': '¿Cómo puedo dejar comentarios?',
-        'a':
-            'Entra al perfil del tutor, desliza hacia abajo y dirígete a la sección de reseñas, donde podrás ver las calificaciones y comentarios de los estudiantes.'
-      },
-    ],
-    'tutores': [
-      {
-        'q': '¿Cómo puedo ser tutor?',
-        'a':
-            'Crea una cuenta, rellena el formulario y al final selecciona "Tutor". Crea tu perfil y envía la documentación necesaria para su aprobación.'
-      },
-      {
-        'q': '¿Qué cualificaciones necesito para ser tutor?',
-        'a':
-            'No es requisito tener titulación académica. Si quieres enseñar "algo" puedes hacerlo.'
-      },
-      {
-        'q': '¿Cómo configuro mi disponibilidad?',
-        'a':
-            'Inicia sesión en tu cuenta, accede a la sección “Administrar tiempo disponible” y actualiza tu calendario con tus franjas horarias disponibles.'
-      },
-      {
-        'q': '¿Qué debo hacer si un estudiante cancela?',
-        'a':
-            'Los estudiantes no tienen la opción de cancelar una sesión después de reservarla. Si el alumno te informa de algún problema, recomiéndale escribir a nuestro contacto para recibir ayuda.'
-      },
-    ]
-  };
 
   @override
   void initState() {
@@ -96,9 +40,25 @@ class _SupportScreenState extends State<SupportScreen>
 
   @override
   Widget build(BuildContext context) {
-    final currentFaqs =
-        _showForStudents ? faqsData['estudiantes']! : faqsData['tutores']!;
+    final l10n = AppLocalizations.of(context)!;
 
+    final List<Map<String, String>> studentFaqs = [
+      {'q': l10n.faqStudentQ1, 'a': l10n.faqStudentA1},
+      {'q': l10n.faqStudentQ2, 'a': l10n.faqStudentA2},
+      {'q': l10n.faqStudentQ3, 'a': l10n.faqStudentA3},
+      {'q': l10n.faqStudentQ4, 'a': l10n.faqStudentA4},
+      {'q': l10n.faqStudentQ5, 'a': l10n.faqStudentA5},
+      {'q': l10n.faqStudentQ6, 'a': l10n.faqStudentA6},
+    ];
+
+    final List<Map<String, String>> tutorFaqs = [
+      {'q': l10n.faqTutorQ1, 'a': l10n.faqTutorA1},
+      {'q': l10n.faqTutorQ2, 'a': l10n.faqTutorA2},
+      {'q': l10n.faqTutorQ3, 'a': l10n.faqTutorA3},
+      {'q': l10n.faqTutorQ4, 'a': l10n.faqTutorA4},
+    ];
+
+    final currentFaqs = _showForStudents ? studentFaqs : tutorFaqs;
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
       appBar: AppBar(
@@ -107,9 +67,9 @@ class _SupportScreenState extends State<SupportScreen>
               const Icon(Icons.arrow_back_rounded, color: AppColors.brandBlue),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Centro de Ayuda',
-          style: TextStyle(
+        title: Text(
+          l10n.helpCenter,
+          style: const TextStyle(
             fontFamily: AppFonts.heading,
             fontWeight: FontWeight.bold,
             color: AppColors.brandBlue,
@@ -159,9 +119,9 @@ class _SupportScreenState extends State<SupportScreen>
                             bottomRight: Radius.circular(24),
                           ),
                         ),
-                        child: const Text(
-                          '¡Hola! Soy Tugo. Estoy aquí para resolver todas tus dudas sobre ClassGo. ¿Cómo puedo ayudarte?',
-                          style: TextStyle(
+                        child: Text(
+                          l10n.tugoHelpMessage,
+                          style: const TextStyle(
                             fontFamily: AppFonts.body,
                             fontSize: 14,
                             color: AppColors.brandBlue,
@@ -179,7 +139,7 @@ class _SupportScreenState extends State<SupportScreen>
               children: [
                 Expanded(
                   child: _buildRoleSelector(
-                    title: 'Estudiantes',
+                    title: l10n.students,
                     icon: Icons.school_rounded,
                     isSelected: _showForStudents,
                     onTap: () => setState(() {
@@ -191,7 +151,7 @@ class _SupportScreenState extends State<SupportScreen>
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildRoleSelector(
-                    title: 'Tutores',
+                    title: l10n.tutors,
                     icon: Icons.work_rounded,
                     isSelected: !_showForStudents,
                     onTap: () => setState(() {
@@ -297,7 +257,7 @@ class _SupportScreenState extends State<SupportScreen>
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                'Contacto Directo'.toUpperCase(),
+                l10n.directContact.toUpperCase(),
                 style: const TextStyle(
                   fontFamily: AppFonts.heading,
                   fontSize: 14,
@@ -316,7 +276,7 @@ class _SupportScreenState extends State<SupportScreen>
                         email: "classgobol@gmail.com"),
                     color: AppColors.brandBlue,
                     icon: Icons.email_outlined,
-                    label: 'Correo',
+                    label: l10n.email,
                   ),
                 ),
                 const SizedBox(width: 15),
@@ -327,7 +287,7 @@ class _SupportScreenState extends State<SupportScreen>
                         message: "Hola ClassGo! Necesito ayuda con..."),
                     color: const Color(0xFF25D366),
                     icon: Icons.chat_bubble_outline_rounded,
-                    label: 'WhatsApp',
+                    label: l10n.whatsapp,
                   ),
                 ),
               ],

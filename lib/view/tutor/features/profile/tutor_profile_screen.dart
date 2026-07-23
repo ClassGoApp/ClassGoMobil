@@ -7,6 +7,8 @@ import 'package:flutter_projects/view/tutor/features/profile/widgets/price_secti
 import 'package:flutter_projects/view/tutor/features/profile/widgets/qr_payment_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
+import 'package:flutter_projects/provider/locale_provider.dart';
 
 import 'package:flutter_projects/provider/tutor_subjects_provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
@@ -54,12 +56,72 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     }
   }
 
-  String _getShortName(String fullName) {
-    if (fullName.trim().isEmpty) return "";
-    List<String> parts = fullName.trim().split(RegExp(r'\s+'));
-    if (parts.length == 1) return parts[0];
-    if (parts.length == 2) return "${parts[0]} ${parts[1]}";
-    return "${parts[0]} ${parts[2]}";
+  void _showLanguageSelectionDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        final localeProvider = Provider.of<LocaleProvider>(dialogContext, listen: false);
+        final currentLocale = localeProvider.locale?.languageCode ?? Localizations.localeOf(dialogContext).languageCode;
+
+        return AlertDialog(
+          title: Text(AppLocalizations.of(dialogContext)!.selectLanguage),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              ListTile(
+                title: Text(AppLocalizations.of(dialogContext)!.spanish),
+                trailing: currentLocale == 'es' ? const Icon(Icons.check) : null,
+                onTap: () {
+                  localeProvider.setLocale(const Locale('es'));
+                  Navigator.of(dialogContext).pop();
+                },
+              ),
+              ListTile(
+                title: Text(AppLocalizations.of(dialogContext)!.english),
+                trailing: currentLocale == 'en' ? const Icon(Icons.check) : null,
+                onTap: () {
+                  localeProvider.setLocale(const Locale('en'));
+                  Navigator.of(dialogContext).pop();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Obtiene la primera parte de un texto (dividido por espacios)
+  String _getFirstPart(String? text) {
+    if (text == null || text.trim().isEmpty) return '';
+    final parts = text.trim().split(RegExp(r'\s+'));
+    return parts.isNotEmpty ? parts[0] : '';
+  }
+
+  // Obtiene el nombre corto de display (primer nombre + primer apellido)
+  String _getDisplayName(String? firstName, String? lastName, Map<String, dynamic>? user) {
+    // Obtener primera parte del nombre y primera parte del apellido
+    final shortFirstName = _getFirstPart(firstName);
+    final shortLastName = _getFirstPart(lastName);
+
+    // Combinar nombre y apellido si existen
+    if (shortFirstName.isNotEmpty && shortLastName.isNotEmpty) {
+      return '$shortFirstName $shortLastName';
+    } else if (shortFirstName.isNotEmpty) {
+      return shortFirstName;
+    } else if (shortLastName.isNotEmpty) {
+      return shortLastName;
+    }
+
+    // Fallback si no hay nombre ni apellido
+    final fallbackName = user?['name'] ?? 'Tutor';
+    final fallbackParts = fallbackName.trim().split(RegExp(r'\s+'));
+    if (fallbackParts.length == 1) {
+      return fallbackParts[0];
+    } else if (fallbackParts.length >= 2) {
+      return '${fallbackParts[0]} ${fallbackParts[1]}';
+    }
+    return 'Tutor';
   }
 
   String _buildFullVideoUrl(String videoPath) {
@@ -89,10 +151,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     final String email = user?['email'] ?? '';
     final bool isVerified = profile['verified'] == true;
     final String firstName = profile['first_name'] ?? '';
-    final String lastName = profile['last_name'] ?? '';
-    final String userName = '$firstName $lastName'.trim().isEmpty
-        ? (user?['name'] ?? 'Tutor')
-        : '$firstName $lastName'.trim();
+  final String lastName = profile['last_name'] ?? '';
+  final String userName = _getDisplayName(firstName, lastName, user);
 
     final String? photoUrl =
         profile['image'] ?? profile['profile_image'] ?? user?['profile_image'];
@@ -114,7 +174,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
       subjectNames =
           subjectsProvider.subjects.map((s) => s.subject.name).toList();
     }
-    final shortName = _getShortName(userName);
+    final shortName = userName;
 
     final scaffoldBg = isDark ? AppColors.blackColor : AppColors.whiteColor;
     final cardBgColor = isDark ? AppColors.blackColor : AppColors.whiteColor;
@@ -126,52 +186,55 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
         statusBarIconBrightness: Brightness.light,
         statusBarBrightness: Brightness.dark,
       ),
-      child: Scaffold(
-        backgroundColor: scaffoldBg,
-        body: SafeArea(
-          top: false,
-          child: Column(
-            children: [
-              const TutorHeader(
-                title: "MI PERFIL",
-                subtitle: "GESTIÓN DE PERFIL",
-                //onBackTap: () {Navigator.maybePop(context);},
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  physics: const ClampingScrollPhysics(),
-                  padding: const EdgeInsets.only(bottom: 120),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 20),
-                        _buildTopCard(
-                            photoUrl, shortName, isDark, isVerified, email),
-                        Container(
-                          margin: const EdgeInsets.only(top: 20),
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: cardBgColor,
-                            borderRadius: BorderRadius.circular(40),
-                            boxShadow: [
-                              BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 10)),
-                            ],
+      child: PopScope(
+        canPop: Navigator.canPop(context),
+        child: Scaffold(
+          backgroundColor: scaffoldBg,
+          body: SafeArea(
+            top: false,
+            child: Column(
+              children: [
+                TutorHeader(
+                  title: AppLocalizations.of(context)!.myProfile.toUpperCase(),
+                  subtitle: AppLocalizations.of(context)!.profileSettings.toUpperCase(),
+                  //onBackTap: () {Navigator.maybePop(context);},
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const ClampingScrollPhysics(),
+                    padding: const EdgeInsets.only(bottom: 120),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 20),
+                          _buildTopCard(
+                              photoUrl, shortName, isDark, isVerified, email),
+                          Container(
+                            margin: const EdgeInsets.only(top: 20),
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: cardBgColor,
+                              borderRadius: BorderRadius.circular(40),
+                              boxShadow: [
+                                BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 10)),
+                              ],
+                            ),
+                            child: Padding(
+                                padding: const EdgeInsets.all(24),
+                                child: _buildMainView(description, subjectNames,
+                                    isDark, mainTextColor, videoUrl)),
                           ),
-                          child: Padding(
-                              padding: const EdgeInsets.all(24),
-                              child: _buildMainView(description, subjectNames,
-                                  isDark, mainTextColor, videoUrl)),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -338,8 +401,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                         const SizedBox(width: 6),
                         Text(
                           isVerified
-                              ? "TUTOR VERIFICADO"
-                              : "TUTOR SIN VERIFICAR",
+                              ? AppLocalizations.of(context)!.verifiedTutor.toUpperCase()
+                              : AppLocalizations.of(context)!.pendingVerification.toUpperCase(),
                           style: TextStyle(
                               fontFamily: _kBodyFont,
                               color:
@@ -375,8 +438,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
           children: [
             Expanded(
               child: _buildActionCard(
-                  title: "PERFIL COMPLETO",
-                  value: "EDITAR",
+                  title: AppLocalizations.of(context)!.profile.toUpperCase(),
+                  value: AppLocalizations.of(context)!.edit.toUpperCase(),
                   icon: Icons.edit_document,
                   gradientColors: [
                     AppColors.brandOrange,
@@ -397,8 +460,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: _buildActionCard(
-                  title: "MI PRESENTACIÓN",
-                  value: "VIDEO",
+                  title: AppLocalizations.of(context)!.profile.toUpperCase(),
+                  value: AppLocalizations.of(context)!.videoProfile.toUpperCase(),
                   icon: Icons.play_circle_fill_rounded,
                   gradientColors: [
                     AppColors.brandCyan,
@@ -430,7 +493,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                           color: AppColors.brandCyan,
                           borderRadius: BorderRadius.circular(10))),
                   const SizedBox(width: 10),
-                  Text("FILOSOFÍA DE ENSEÑANZA",
+                  Text(AppLocalizations.of(context)!.teachingPhilosophy.toUpperCase(),
                       style: TextStyle(
                           fontFamily: _kTitleFont,
                           color: mainTextColor,
@@ -461,7 +524,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                   color: AppColors.brandOrange,
                   borderRadius: BorderRadius.circular(10))),
           const SizedBox(width: 10),
-          Text("CONFIGURACION DE PAGOS ",
+          Text(AppLocalizations.of(context)!.accountSettings.toUpperCase(),
               style: TextStyle(
                   fontFamily: _kTitleFont,
                   color: mainTextColor,
@@ -472,7 +535,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
         const SizedBox(height: 12),
         const TutorPriceSection(),
         const SizedBox(height: 12),
-        _buildListTile("MÉTODO DE PAGO (QR)", Icons.qr_code_scanner_rounded,
+        _buildListTile(AppLocalizations.of(context)!.qrPaymentMethod, Icons.qr_code_scanner_rounded,
             mainTextColor, innerBgColor, onTap: () {
           Navigator.push(
             context,
@@ -492,7 +555,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                     color: Colors.grey,
                     borderRadius: BorderRadius.circular(10))),
             const SizedBox(width: 10),
-            Text("LEGAL",
+            Text(AppLocalizations.of(context)!.legalSection,
                 style: TextStyle(
                     fontFamily: _kTitleFont,
                     color: mainTextColor,
@@ -503,9 +566,9 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
         ),
         const SizedBox(height: 12),
         _buildListTile(
-            user?['terms_accepted'] == true
-                ? "TÉRMINOS Y CONDICIONES"
-                : "TÉRMINOS Y CONDICIONES (PENDIENTE)",
+          user?['terms_accepted'] == true
+              ? AppLocalizations.of(context)!.termsAndConditions
+              : AppLocalizations.of(context)!.pendingTermsAndConditions,
             Icons.gavel_rounded,
             mainTextColor,
             isDark ? const Color(0xFF1E222A) : const Color(0xFFF4F6F9),
@@ -515,14 +578,14 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
           } else {
             CustomToast.show(
               context,
-              "Debes aceptar los términos y condiciones",
+              AppLocalizations.of(context)!.mustAcceptTerms,
               isWarning: true,
             );
             widget.onNavigate(0);
           }
         }),
 
-        const SizedBox(height: 40),
+        const SizedBox(height: 12),
         // const SizedBox(height: 12),
         // _buildListTile("DIPLOMAS Y CERTIFICADOS",
         //     Icons.workspace_premium_outlined, mainTextColor, innerBgColor),
@@ -569,6 +632,14 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
         ),
         const SizedBox(height: 30),
         */
+        _buildListTile(
+          AppLocalizations.of(context)!.language,
+          Icons.language,
+          mainTextColor,
+          innerBgColor,
+          onTap: () => _showLanguageSelectionDialog(context),
+        ),
+        const SizedBox(height: 40),
         const LogoutSection(),
       ],
     );

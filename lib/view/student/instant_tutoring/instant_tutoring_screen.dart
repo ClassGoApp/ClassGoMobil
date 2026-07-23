@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/student/instant_tutoring/widgets/radar_search_screen.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class InstantTutoringScreen extends StatefulWidget {
@@ -27,56 +28,39 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
   Map<String, List<dynamic>> _subjectsByCategory = {};
   List<Map<String, dynamic>> _gridCategories = [];
 
+  // Mapeo dinámico de categoría API → clave de traducción
+  Map<String, String> _apiNameToCategoryKey = {};
+
   final List<Map<String, dynamic>> _uiCategories = [
-    {'name': 'Primaria', 'icon': Icons.backpack_rounded, 'color': 0xFFF59E0B},
-    {'name': 'Secundaria', 'icon': Icons.school_rounded, 'color': 0xFF3B82F6},
-    {
-      'name': 'Ciencias Exactas',
-      'icon': Icons.calculate_rounded,
-      'color': 0xFF10B981
-    },
-    {
-      'name': 'Ingeniería Avanzada',
-      'icon': Icons.precision_manufacturing_rounded,
-      'color': 0xFFEF4444
-    },
-    {
-      'name': 'Ciencias Sociales y Económicas',
-      'icon': Icons.public_rounded,
-      'color': 0xFF8B5CF6
-    },
-    {'name': 'Idiomas', 'icon': Icons.translate_rounded, 'color': 0xFFEC4899},
-    {
-      'name': 'Marketing y Comunicación Digital',
-      'icon': Icons.campaign_rounded,
-      'color': 0xFFF97316
-    },
-    {
-      'name': 'Arte y Diseño',
-      'icon': Icons.palette_rounded,
-      'color': 0xFF14B8A6
-    },
-    {
-      'name': 'Gastronomía y Repostería',
-      'icon': Icons.restaurant_rounded,
-      'color': 0xFFEAB308
-    },
-    {
-      'name': 'Ingeniería y Tecnología',
-      'icon': Icons.computer_rounded,
-      'color': 0xFF6366F1
-    },
-    {
-      'name': 'Psicología y Desarrollo Personal',
-      'icon': Icons.psychology_rounded,
-      'color': 0xFF06B6D4
-    },
-    {
-      'name': 'Deporte y Bienestar',
-      'icon': Icons.fitness_center_rounded,
-      'color': 0xFF84CC16
-    },
+    {'key': 'primary', 'icon': Icons.backpack_rounded, 'color': 0xFFF59E0B, 'apiName': ''},
+    {'key': 'secondary', 'icon': Icons.school_rounded, 'color': 0xFF3B82F6, 'apiName': ''},
+    {'key': 'exactSciences', 'icon': Icons.calculate_rounded, 'color': 0xFF10B981, 'apiName': ''},
+    {'key': 'advancedEngineering', 'icon': Icons.precision_manufacturing_rounded, 'color': 0xFFEF4444, 'apiName': ''},
+    {'key': 'socialAndEconomicSciences', 'icon': Icons.public_rounded, 'color': 0xFF8B5CF6, 'apiName': ''},
+    {'key': 'languages', 'icon': Icons.translate_rounded, 'color': 0xFFEC4899, 'apiName': ''},
+    {'key': 'marketingAndDigitalCommunication', 'icon': Icons.campaign_rounded, 'color': 0xFFF97316, 'apiName': ''},
+    {'key': 'artAndDesign', 'icon': Icons.palette_rounded, 'color': 0xFF14B8A6, 'apiName': ''},
+    {'key': 'gastronomyAndPastry', 'icon': Icons.restaurant_rounded, 'color': 0xFFEAB308, 'apiName': ''},
+    {'key': 'engineeringAndTechnology', 'icon': Icons.computer_rounded, 'color': 0xFF6366F1, 'apiName': ''},
+    {'key': 'psychologyAndPersonalDevelopment', 'icon': Icons.psychology_rounded, 'color': 0xFF06B6D4, 'apiName': ''},
+    {'key': 'sportsAndWellness', 'icon': Icons.fitness_center_rounded, 'color': 0xFF84CC16, 'apiName': ''},
   ];
+
+  // Mapeo de claves de traducción a nombres de categoría en español (del API)
+  final Map<String, String> _categoryKeyToApiName = {
+    'primary': 'Primaria',
+    'secondary': 'Secundaria',
+    'exactSciences': 'Ciencias Exactas',
+    'advancedEngineering': 'Ingeniería Avanzada',
+    'socialAndEconomicSciences': 'Ciencias Sociales y Económicas',
+    'languages': 'Idiomas',
+    'marketingAndDigitalCommunication': 'Marketing y Comunicación Digital',
+    'artAndDesign': 'Arte y Diseño',
+    'gastronomyAndPastry': 'Gastronomía y Repostería',
+    'engineeringAndTechnology': 'Ingeniería y Tecnología',
+    'psychologyAndPersonalDevelopment': 'Psicología y Desarrollo Personal',
+    'sportsAndWellness': 'Deporte y Bienestar',
+  };
 
   @override
   void initState() {
@@ -127,6 +111,25 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
     }
   }
 
+  String _getCategoryName(BuildContext context, String key) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (key) {
+      case 'primary': return l10n.primary;
+      case 'secondary': return l10n.secondary;
+      case 'exactSciences': return l10n.exactSciences;
+      case 'advancedEngineering': return l10n.advancedEngineering;
+      case 'socialAndEconomicSciences': return l10n.socialAndEconomicSciences;
+      case 'languages': return l10n.languages;
+      case 'marketingAndDigitalCommunication': return l10n.marketingAndDigitalCommunication;
+      case 'artAndDesign': return l10n.artAndDesign;
+      case 'gastronomyAndPastry': return l10n.gastronomyAndPastry;
+      case 'engineeringAndTechnology': return l10n.engineeringAndTechnology;
+      case 'psychologyAndPersonalDevelopment': return l10n.psychologyAndPersonalDevelopment;
+      case 'sportsAndWellness': return l10n.sportsAndWellness;
+      default: return key;
+    }
+  }
+
   String _getSubjectNameFromId(String subjectId) {
     for (var subject in _allSubjects) {
       if (subject['id_materia'].toString() == subjectId) {
@@ -138,21 +141,22 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
 
   void _confirmarYNavegarAlRadar(
       BuildContext context, String materiaName, String materiaId) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text("Confirmar Búsqueda",
-              style: TextStyle(fontWeight: FontWeight.bold)),
+          title: Text(l10n.confirmSearch,
+              style: const TextStyle(fontWeight: FontWeight.bold)),
           content: Text(
-              "¿Deseas buscar un tutor disponible ahora mismo para la materia de $materiaName?"),
+              l10n.confirmSearchMessage(materiaName)),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
               child:
-                  const Text("Cancelar", style: TextStyle(color: Colors.grey)),
+                  Text(l10n.cancel, style: const TextStyle(color: Colors.grey)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -165,8 +169,8 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                 Navigator.pop(context);
                 _navegarAlRadar(materiaName, materiaId, 300);
               },
-              child: const Text("Sí, Buscar Tutor",
-                  style: TextStyle(
+              child: Text(l10n.yesSearchTutor,
+                  style: const TextStyle(
                       color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ],
@@ -185,6 +189,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
       final List<dynamic> categoriasApi = jsonData['data'];
       final Map<String, List<dynamic>> grouped = {};
       final List<dynamic> allSubjectsFlat = [];
+      final Map<String, String> apiToCategoryKey = {};
 
       for (var cat in categoriasApi) {
         String catName = cat['categoria'] ?? 'Sin Categoría';
@@ -202,6 +207,21 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
         }
 
         grouped[catName] = materiasAdaptadas;
+        
+        // Mapear el nombre del API al key de traducción
+        for (var key in _categoryKeyToApiName.entries) {
+          if (key.value == catName) {
+            apiToCategoryKey[catName] = key.key;
+            // Actualizar el apiName en _uiCategories
+            for (var uiCat in _uiCategories) {
+              if (uiCat['key'] == key.key) {
+                uiCat['apiName'] = catName;
+                break;
+              }
+            }
+            break;
+          }
+        }
       }
 
       _gridCategories = categoriasApi.map((cat) {
@@ -221,6 +241,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
         setState(() {
           _allSubjects = allSubjectsFlat;
           _subjectsByCategory = grouped;
+          _apiNameToCategoryKey = apiToCategoryKey;
           _isLoadingData = false;
         });
       }
@@ -293,9 +314,22 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
 
   // CARGA INSTANTÁNEA GRACIAS A LA PRE-INDEXACIÓN O(1)
   void _openCategoryBottomSheet(
-      BuildContext context, String categoryName, int colorHex) {
+      BuildContext context, String categoryKey, int colorHex) {
+    final l10n = AppLocalizations.of(context)!;
+    final categoryName = _getCategoryName(context, categoryKey);
+    
     FocusScope.of(context).unfocus();
-    final subjects = _subjectsByCategory[categoryName] ?? [];
+    
+    // Obtener el nombre API almacenado (rellenado en _loadJsonData)
+    String apiName = '';
+    for (var cat in _uiCategories) {
+      if (cat['key'] == categoryKey) {
+        apiName = cat['apiName'] ?? '';
+        break;
+      }
+    }
+    
+    var subjects = _subjectsByCategory[apiName] ?? [];
 
     showModalBottomSheet(
       context: context,
@@ -348,9 +382,9 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
               // LISTA DE MATERIAS DENTRO DE LA CATEGORÍA
               Expanded(
                 child: subjects.isEmpty
-                    ? const Center(
-                        child: Text('Error de conexión.',
-                            style: TextStyle(color: Colors.grey)))
+                    ? Center(
+                        child: Text(l10n.connectionError,
+                            style: const TextStyle(color: Colors.grey)))
                     : ListView.builder(
                         physics: const BouncingScrollPhysics(),
                         itemCount: subjects.length,
@@ -386,6 +420,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final bool isSearching = _searchController.text.trim().isNotEmpty;
 
     return Scaffold(
@@ -405,18 +440,13 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                       floating: false,
                       elevation: 1,
                       automaticallyImplyLeading: false,
-                      title: const Text(
-                        'Tutor Instantáneo',
-                        style: TextStyle(
+                      title: Text(
+                        l10n.instantTutor,
+                        style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w700,
                             color: Color(0xFF0F172A)),
                       ),
-                      // leading: IconButton(
-                      //   icon: const Icon(Icons.arrow_back_rounded,
-                      //       color: Color(0xFF0F172A)),
-                      //   onPressed: () => Navigator.of(context).pop(),
-                      // ),
                     ),
 
                     // 2. BUSCADOR
@@ -427,7 +457,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '¿En qué te\nacompañamos hoy?',
+                              l10n.whatSubjectNeedHelp,
                               style: Theme.of(context)
                                   .textTheme
                                   .headlineMedium!
@@ -456,7 +486,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                                 onChanged: _onSearchChanged,
                                 autofocus: false,
                                 decoration: InputDecoration(
-                                  hintText: 'Ej. Matemáticas, Inglés...',
+                                  hintText: l10n.searchSubjectPlaceholder,
                                   hintStyle:
                                       TextStyle(color: Colors.grey.shade400),
                                   prefixIcon: const Icon(Icons.search_rounded,
@@ -489,7 +519,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                           padding: const EdgeInsets.only(
                               left: 24, bottom: 10, top: 10),
                           child: Text(
-                            "Resultados (${_searchResults.length})",
+                            l10n.searchResults(_searchResults.length),
                             style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
@@ -498,12 +528,12 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                         ),
                       ),
                       _searchResults.isEmpty
-                          ? const SliverToBoxAdapter(
+                          ? SliverToBoxAdapter(
                               child: Center(
                                 child: Padding(
-                                  padding: EdgeInsets.all(40.0),
-                                  child: Text("No se encontraron materias.",
-                                      style: TextStyle(color: Colors.grey)),
+                                  padding: const EdgeInsets.all(40.0),
+                                  child: Text(l10n.noSubjectsFound,
+                                      style: const TextStyle(color: Colors.grey)),
                                 ),
                               ),
                             )
@@ -538,13 +568,13 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                               ),
                             ),
                     ] else ...[
-                      const SliverToBoxAdapter(
+                      SliverToBoxAdapter(
                         child: Padding(
-                          padding: EdgeInsets.symmetric(
+                          padding: const EdgeInsets.symmetric(
                               horizontal: 20, vertical: 10),
                           child: Text(
-                            'Explorar Categorías',
-                            style: TextStyle(
+                            l10n.exploreCategoriesTitle,
+                            style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w800,
                                 color: Color(0xFF0F172A)),
@@ -564,11 +594,13 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                           delegate: SliverChildBuilderDelegate(
                             (context, index) {
                               final cat = _gridCategories[index];
+                              final catKey = cat['key'] as String;
+                              final catName = _getCategoryName(context, catKey);
                               return GestureDetector(
                                 onTap: () {
                                   HapticFeedback.lightImpact();
                                   _openCategoryBottomSheet(
-                                      context, cat['name'], cat['color']);
+                                      context, catKey, cat['color']);
                                 },
                                 child: Container(
                                   decoration: BoxDecoration(
@@ -602,7 +634,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                                               size: 26),
                                         ),
                                         Text(
-                                          cat['name'],
+                                          catName,
                                           style: const TextStyle(
                                               fontWeight: FontWeight.w700,
                                               fontFamily: 'manrope',

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/tutor/features/Instant_tutoring/accept_tutoring_screen.dart';
 import 'package:flutter_projects/view/tutor/features/Instant_tutoring/confirmation_tutoring_screen.dart';
@@ -153,14 +154,14 @@ class SolicitudTutoriaCard extends StatelessWidget {
                           children: [
                             Text(
                               isReady
-                                  ? '¡TUTORÍA LISTA!'
+                                  ? AppLocalizations.of(context)!.tutoriaReady
                                   : isChosen
-                                      ? '¡FUISTE ELEGIDO!'
+                                      ? AppLocalizations.of(context)!.fuisteElegido
                                       : isRejected
-                                          ? 'SOLICITUD YA TOMADA'
+                                          ? AppLocalizations.of(context)!.solicitudTomada
                                           : isExpired
-                                              ? 'SOLICITUD EXPIRADA'
-                                              : '¡NUEVA SOLICITUD!',
+                                              ? AppLocalizations.of(context)!.solicitudExpirada
+                                              : AppLocalizations.of(context)!.nuevaSolicitud,
                               style: TextStyle(
                                 fontFamily: 'outfit',
                                 fontSize: isReady ? 16 : 13,
@@ -180,14 +181,14 @@ class SolicitudTutoriaCard extends StatelessWidget {
                             const SizedBox(height: 2),
                             Text(
                               isReady
-                                  ? 'El pago fue confirmado. ¡Entra a la clase ahora!'
+                                  ? AppLocalizations.of(context)!.tutoriaReadySubtitle
                                   : isChosen
-                                      ? 'El estudiante está pagando. Toca para ver detalles.'
+                                      ? AppLocalizations.of(context)!.fuisteElegidoSubtitle
                                       : isRejected
-                                          ? 'Esta tutoría ya ha sido asignada a otro profesor'
+                                          ? AppLocalizations.of(context)!.solicitudTomadaSubtitle
                                           : isExpired
-                                              ? 'Esta invitación ya no está disponible'
-                                              : 'Un estudiante necesita tu ayuda ahora',
+                                              ? AppLocalizations.of(context)!.solicitudExpiradaSubtitle
+                                              : AppLocalizations.of(context)!.nuevaSolicitudSubtitle,
                               style: TextStyle(
                                 fontFamily: 'manrope',
                                 fontSize: isReady ? 14 : 16,
@@ -293,10 +294,10 @@ class SolicitudTutoriaCard extends StatelessWidget {
                           children: [
                             Text(
                               isReady
-                                  ? 'Unirse a la Clase'
+                                  ? AppLocalizations.of(context)!.unirseAlasClase
                                   : (isChosen
-                                      ? 'Ver Estado de Pago'
-                                      : 'Revisar Solicitud'),
+                                      ? AppLocalizations.of(context)!.verEstadoPago
+                                      : AppLocalizations.of(context)!.revisarSolicitud),
                               style: const TextStyle(
                                 fontFamily: 'outfit',
                                 fontSize: 16,

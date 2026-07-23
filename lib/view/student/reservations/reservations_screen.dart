@@ -4,6 +4,7 @@ import 'package:flutter_projects/view/student/widgets/student_bottom_nav.dart';
 import 'package:flutter_projects/view/components/role_based_navigation.dart';
 import 'package:flutter_projects/view/student/reservations/widgets/reservations_calendar.dart';
 import 'package:flutter_projects/view/student/reservations/widgets/new_reservation_modal.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 
 class ReservationsScreen extends StatefulWidget {
   const ReservationsScreen({Key? key}) : super(key: key);
@@ -16,20 +17,22 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
   DateTime _selectedDate = DateTime.now();
 
   void _onNewReservation() {
+    final l10n = AppLocalizations.of(context)!;
     // Placeholder: abrir flujo de nueva reserva
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
           content: Text(
-              'Crear nueva reserva para ${_selectedDate.toLocal().toString().split(' ')[0]}')),
+              '${l10n.createNewReservation} ${_selectedDate.toLocal().toString().split(' ')[0]}')),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: Text('Reservaciones', style: TextStyle(fontFamily: 'outfit', fontWeight: FontWeight.bold)),
+        title: Text(l10n.reservations, style: TextStyle(fontFamily: 'outfit', fontWeight: FontWeight.bold)),
         backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         centerTitle: true,
@@ -52,6 +55,10 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
             (route) => false,
           );
         },
+        homeLabel: AppLocalizations.of(context)!.homeNavigation,
+        scheduleLabel: AppLocalizations.of(context)!.scheduleNavigation,
+        favoritesLabel: AppLocalizations.of(context)!.favorites_nav,
+        profileLabel: AppLocalizations.of(context)!.profile_nav,
       ),
     );
   }
@@ -92,6 +99,7 @@ class _ReservationsContentState extends State<ReservationsContent> {
   }
 
   void _onNewReservation() {
+    final l10n = AppLocalizations.of(context)!;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -109,7 +117,7 @@ class _ReservationsContentState extends State<ReservationsContent> {
         final subj = res['subject'];
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(
-                'Seleccionado: $inst - ${subj?['name'] ?? subj?['title'] ?? ''}')));
+                '${l10n.selected}: $inst - ${subj?['name'] ?? subj?['title'] ?? ''}')));
       }
     });
   }
@@ -119,6 +127,7 @@ class _ReservationsContentState extends State<ReservationsContent> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -133,7 +142,7 @@ class _ReservationsContentState extends State<ReservationsContent> {
           ),
           icon: Icon(Icons.add_circle_outline, color: Colors.white),
           label: Text(
-            'Nueva reserva',
+            l10n.newReservation,
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
           ),
         ),
@@ -159,7 +168,7 @@ class _ReservationsContentState extends State<ReservationsContent> {
             : Expanded(
                 child: _selectedEvents.isEmpty
                     ? Center(
-                        child: Text('No hay reservas para esta fecha',
+                        child: Text(l10n.noReservationsForDate,
                             style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.white54 : AppColors.greyColor)))
                     : ListView.separated(
                         itemCount: _selectedEvents.length,
@@ -167,7 +176,7 @@ class _ReservationsContentState extends State<ReservationsContent> {
                         itemBuilder: (context, index) {
                           final ev = _selectedEvents[index];
                           final title = ev is Map
-                              ? (ev['title'] ?? ev['subject'] ?? 'Reserva')
+                              ? (ev['title'] ?? ev['subject'] ?? l10n.reservation)
                               : ev.toString();
                           final time = ev is Map
                               ? (ev['time'] ??

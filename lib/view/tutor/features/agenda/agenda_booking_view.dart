@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/view/tutor/features/agenda/providers/tutor_agenda_provider.dart';
 import 'package:flutter_projects/view/tutor/features/home/widgets/reservation_details_dialog.dart';
@@ -92,7 +93,7 @@ class _AgendaBookingViewState extends State<AgendaBookingView> {
             ),
             const SizedBox(height: 20),
             Text(
-              "DÍA LIBRE",
+              AppLocalizations.of(context)!.freeDay,
               style: TextStyle(
                 fontFamily: 'outfit',
                 fontWeight: FontWeight.w900,
@@ -102,7 +103,7 @@ class _AgendaBookingViewState extends State<AgendaBookingView> {
             ),
             const SizedBox(height: 8),
             Text(
-              "No tienes clases programadas para hoy.\n¡Aprovecha para descansar!",
+              AppLocalizations.of(context)!.noClassesTodayMessage,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: 'manrope',

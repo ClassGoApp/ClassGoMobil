@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/base_components/custom_snack_bar.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/view/tutor/dashboard/sheets/add_schedule_sheet.dart';
 import 'package:flutter_projects/view/tutor/features/agenda/widgets/agenda_schedule_modal.dart';
@@ -86,15 +87,15 @@ class _AgendaAvailabilityViewState extends State<AgendaAvailabilityView> {
 
         if (success) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Horario de trabajo configurado correctamente"),
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.scheduleConfiguredSuccessfully),
               backgroundColor: AppColors.brandCyan,
             ),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("No se pudo guardar el horario. Inténtalo de nuevo."),
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.couldNotSaveSchedule),
               backgroundColor: Colors.redAccent,
             ),
           );
@@ -110,13 +111,13 @@ class _AgendaAvailabilityViewState extends State<AgendaAvailabilityView> {
     if (!success) {
       CustomToast.show(
         context,
-        "Error al eliminar el horario. Verifica tu conexión.",
+        AppLocalizations.of(context)!.errorDeletingSchedule,
         isSuccess: false,
       );
     } else {
       CustomToast.show(
         context,
-        "Horario eliminado correctamente",
+        AppLocalizations.of(context)!.scheduleDeletedSuccessfully,
         isSuccess: true,
       );
     }
@@ -189,8 +190,8 @@ class _AgendaAvailabilityViewState extends State<AgendaAvailabilityView> {
             ),
             child: Row(
               children: [
-                _buildSegmentButton("DÍA", AvailabilityViewType.daily, isDark),
-                _buildSegmentButton("MES", AvailabilityViewType.monthly, isDark),
+                _buildSegmentButton(AppLocalizations.of(context)!.dayLabel, AvailabilityViewType.daily, isDark),
+                _buildSegmentButton(AppLocalizations.of(context)!.monthLabel, AvailabilityViewType.monthly, isDark),
               ],
             ),
           ),
@@ -218,7 +219,7 @@ class _AgendaAvailabilityViewState extends State<AgendaAvailabilityView> {
                       size: 16),
                   const SizedBox(width: 4),
                   Text(
-                    "AÑADIR",
+                    AppLocalizations.of(context)!.addSchedule,
                     style: TextStyle(
                       fontFamily: 'outfit',
                       fontWeight: FontWeight.w900,
@@ -271,7 +272,7 @@ class _AgendaAvailabilityViewState extends State<AgendaAvailabilityView> {
             Icon(Icons.event_busy_rounded, size: 48, color: isDark ? Colors.white24 : Colors.grey[300]),
             const SizedBox(height: 16),
             Text(
-              _viewType == AvailabilityViewType.daily ? "SIN HORARIOS HOY" : "SIN HORARIOS ESTE MES",
+              _viewType == AvailabilityViewType.daily ? AppLocalizations.of(context)!.withoutScheduleToday : AppLocalizations.of(context)!.withoutScheduleThisMonth,
               style: TextStyle(fontFamily: 'outfit', fontWeight: FontWeight.w900, fontSize: 16, color: isDark ? Colors.white70 : Colors.grey[800]),
             ),
           ],
@@ -324,7 +325,7 @@ class _AvailabilityBlockCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(DateFormat("dd").format(date), style: const TextStyle(fontFamily: 'outfit', fontWeight: FontWeight.w900, color: AppColors.brandCyan, fontSize: 16, height: 1.0)),
-                Text(DateFormat("MMM", "es").format(date).toUpperCase(), style: const TextStyle(fontFamily: 'outfit', fontWeight: FontWeight.bold, color: AppColors.brandCyan, fontSize: 9, height: 1.3)),
+                Text(DateFormat("MMM").format(date).toUpperCase(), style: const TextStyle(fontFamily: 'outfit', fontWeight: FontWeight.bold, color: AppColors.brandCyan, fontSize: 9, height: 1.3)),
               ],
             ),
           ),
@@ -334,7 +335,7 @@ class _AvailabilityBlockCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  showFullDate ? DateFormat("EEEE, d 'de' MMMM", "es").format(date).toUpperCase() : "HORARIO",
+                  showFullDate ? DateFormat("EEEE, d MMM").format(date).toUpperCase() : AppLocalizations.of(context)!.hourlySchedule,
                   style: TextStyle(fontFamily: 'manrope', fontWeight: FontWeight.bold, fontSize: 10, color: showFullDate ? AppColors.textLightPrimary : (isDark ? Colors.white54 : Colors.grey[500])),
                 ),
                 const SizedBox(height: 2),

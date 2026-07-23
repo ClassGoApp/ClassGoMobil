@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/student/serch_Tutor/search_tutors_screen.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 
 class CategoriesCarousel extends StatefulWidget {
   const CategoriesCarousel({super.key});
@@ -15,30 +16,30 @@ class _CategoriesCarouselState extends State<CategoriesCarousel> {
 
   final List<Map<String, dynamic>> _categories = [
     {
-      'title': 'Contabilidad',
+      'key': 'categoryAccounting',
       'image':
           'https://www.classgoapp.com/images/home/Tugo-skin/contabilidad.webp'
     },
     {
-      'title': 'Química',
+      'key': 'categoryChemistry',
       'image': 'https://www.classgoapp.com/images/home/Tugo-skin/quimica.webp'
     },
     {
-      'title': 'Programación',
+      'key': 'categoryProgramming',
       'image':
           'https://www.classgoapp.com/images/home/Tugo-skin/programacion.webp'
     },
     {
-      'title': 'Inglés',
+      'key': 'categoryEnglish',
       'image': 'https://www.classgoapp.com/images/home/Tugo-skin/ingles.webp'
     },
     {
-      'title': 'Ciencias Exactas',
+      'key': 'categoryExactSciences',
       'image':
           'https://www.classgoapp.com/images/home/Tugo-skin/matematicas.webp'
     },
     {
-      'title': 'Música',
+      'key': 'categoryMusic',
       'image': 'https://www.classgoapp.com/images/home/Tugo-skin/musica.webp'
     },
   ];
@@ -57,14 +58,15 @@ class _CategoriesCarouselState extends State<CategoriesCarousel> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.0),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
           child: Text(
-            'Explorar Materias',
-            style: TextStyle(
+            l10n.exploreSubjects,
+            style: const TextStyle(
               fontFamily: AppFonts.heading,
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -96,6 +98,10 @@ class _CategoriesCarouselState extends State<CategoriesCarousel> {
 
   Widget _buildPosterCard(
       {required bool isActive, required Map<String, dynamic> category}) {
+    final l10n = AppLocalizations.of(context)!;
+    final categoryKey = category['key'] as String;
+    final categoryTitle = _getCategoryTitle(l10n, categoryKey);
+    
     return AnimatedContainer(
       duration: const Duration(milliseconds: 350),
       curve: Curves.easeOutCubic,
@@ -156,7 +162,7 @@ class _CategoriesCarouselState extends State<CategoriesCarousel> {
               left: 12,
               right: 12,
               child: Text(
-                category['title'] ?? '',
+                categoryTitle,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: AppFonts.heading,
@@ -182,7 +188,7 @@ class _CategoriesCarouselState extends State<CategoriesCarousel> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => SearchTutorsScreen(
-                        initialKeyword: category['title'],
+                        initialKeyword: categoryTitle,
                       ),
                     ),
                   );
@@ -193,5 +199,24 @@ class _CategoriesCarouselState extends State<CategoriesCarousel> {
         ),
       ),
     );
+  }
+  
+  String _getCategoryTitle(AppLocalizations l10n, String key) {
+    switch (key) {
+      case 'categoryAccounting':
+        return l10n.categoryAccounting;
+      case 'categoryChemistry':
+        return l10n.categoryChemistry;
+      case 'categoryProgramming':
+        return l10n.categoryProgramming;
+      case 'categoryEnglish':
+        return l10n.categoryEnglish;
+      case 'categoryExactSciences':
+        return l10n.categoryExactSciences;
+      case 'categoryMusic':
+        return l10n.categoryMusic;
+      default:
+        return '';
+    }
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 
 class QuickActionsRow extends StatelessWidget {
   final VoidCallback onInstantTutorTap;
@@ -15,6 +16,7 @@ class QuickActionsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0),
       child: Row(
@@ -22,7 +24,7 @@ class QuickActionsRow extends StatelessWidget {
           // 1. TUTOR AL INSTANTE
           Expanded(
             child: _ActionCard(
-              title: 'Tutor al\nInstante',
+              title: l10n.instantTutor,
               imageAsset: 'assets/images/aguilaTI.png',
               fallbackIcon: Icons.flash_on_rounded,
               isHighlighted: true,
@@ -35,7 +37,7 @@ class QuickActionsRow extends StatelessWidget {
           // 2. AGENDAR TUTORÍA
           Expanded(
             child: _ActionCard(
-              title: 'Agendar\nTutoría',
+              title: l10n.scheduleTutoring,
               imageAsset: 'assets/images/calendario.png',
               fallbackIcon: Icons.calendar_month_rounded,
               isHighlighted: false,
@@ -48,7 +50,7 @@ class QuickActionsRow extends StatelessWidget {
           // 3. EXPLORAR TUTORES
           Expanded(
             child: _ActionCard(
-              title: 'Explorar\nTutores',
+              title: l10n.exploreTutors,
               imageAsset: 'assets/images/Buscar.png',
               fallbackIcon: Icons.search_rounded,
               isHighlighted: false,

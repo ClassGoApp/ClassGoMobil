@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 
 const String kFontFamily = 'outfit'; 
@@ -62,7 +63,7 @@ class _SubjectsSearchBarState extends State<SubjectsSearchBar> {
           fontSize: 15,
         ),
         decoration: InputDecoration(
-          hintText: "Agrega tu próxima materia...",
+          hintText: AppLocalizations.of(context)!.addSubjectHint,
           hintStyle: TextStyle(
             color: isDark ? Colors.white30 : Colors.grey[400],
             fontWeight: FontWeight.normal,

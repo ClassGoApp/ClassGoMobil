@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:flutter_projects/models/tutor_subject.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/provider/tutor_subjects_provider.dart';
@@ -23,13 +24,13 @@ class QuickAccessSection extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Accesos Rápidos",
+                AppLocalizations.of(context)!.quickAccessTitle,
                 style: TextStyle(
                   color: isDark ? Colors.white : AppColors.brandBlue,
                   fontSize: 20,
                   fontFamily: 'outfit',
                   fontWeight: FontWeight.w900,
-                ),
+            ),
               ),
             ],
           ),
@@ -43,7 +44,7 @@ class QuickAccessSection extends StatelessWidget {
             children: [
               _QuickAccessCard(
                 icon: Icons.calendar_today_rounded,
-                title: "Mi Agenda",
+                title: AppLocalizations.of(context)!.mySchedule,
                 themeColor: AppColors.brandCyan,
                 onTap: () => onNavigate(1),
               ),
@@ -51,14 +52,14 @@ class QuickAccessSection extends StatelessWidget {
              // ACCESO 2: LAS MATERIAS
               _QuickAccessCard(
                 icon: Icons.menu_book_rounded,
-                title: "Mis Materias",
+                title: AppLocalizations.of(context)!.mySubjects,
                 themeColor: AppColors.brandOrange, 
                 onTap: () => onNavigate(2),
               ),
               const SizedBox(width: 15),
               _QuickAccessCard(
                 icon: Icons.person_pin_rounded,
-                title: "Ver Perfil",
+                title: AppLocalizations.of(context)!.viewProfile,
                 themeColor: isDark ? Colors.white : AppColors.brandBlue,
                 onTap: () => onNavigate(3),
               ),

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 
 class MascotBanner extends StatelessWidget {
   const MascotBanner({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0),
       child: Container(
@@ -19,23 +21,23 @@ class MascotBanner extends StatelessWidget {
         child: Row(
           children: [
             // --- TEXTO MOTIVACIONAL ---
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '¡Te acompañamos!',
-                    style: TextStyle(
+                    l10n.weAreWithYou,
+                    style: const TextStyle(
                       fontFamily: AppFonts.heading,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: AppColors.brandBlue,
                     ),
                   ),
-                  SizedBox(height: 6),
+                  const SizedBox(height: 6),
                   Text(
-                    'Encuentra al tutor ideal para ti y alcanza tus metas hoy mismo.',
-                    style: TextStyle(
+                    l10n.findIdealTutor,
+                    style: const TextStyle(
                       fontFamily: AppFonts.body,
                       fontSize: 14,
                       color: AppColors.textLightSecondary,

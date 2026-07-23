@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
@@ -11,6 +12,8 @@ import 'package:flutter_projects/view/student/profile_screen_student.dart';
 import 'package:flutter_projects/view/student/favorite_tutor/favorite_tutors_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
+import 'package:flutter_projects/provider/locale_provider.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:flutter_projects/view/student/services/profile_service.dart';
 import 'package:flutter_projects/view/tutor/features/home/widgets/banner_terms_section.dart';
 import 'package:intl/intl.dart';
@@ -27,6 +30,10 @@ class _DashboardStudentState extends State<DashboardStudent> {
   bool _isLoadingRecentReservations = true;
   DateTime? _targetBookingDate;
   late PageController _pageController;
+  
+  // Variables para el doble tap para salir
+  DateTime? _lastBackPressedTime;
+  static const Duration _exitDelay = Duration(seconds: 2);
 
   @override
   void initState() {
@@ -64,13 +71,50 @@ class _DashboardStudentState extends State<DashboardStudent> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
 
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        // Si no estamos en Home (índice 0), navegar a Home
+        if (_selectedIndex != 0) {
+          setState(() => _selectedIndex = 0);
+          _pageController.jumpToPage(0);
+          return;
+        }
+        
+        // Si estamos en Home, verificar doble tap
+        final now = DateTime.now();
+        
+        if (_lastBackPressedTime == null || 
+            now.difference(_lastBackPressedTime!) > _exitDelay) {
+          _lastBackPressedTime = now;
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(l10n.pressBackAgainToExit),
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+          return;
+        }
+        
+        // Doble tap detectado - cerrar la app
+        if (Platform.isAndroid || Platform.isIOS) {
+          exit(0);
+        } else {
+          SystemNavigator.pop();
+        }
+      },
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
           statusBarIconBrightness: Brightness.dark,
-          statusBarBrightness: Brightness.light),
-      child: Scaffold(
+          statusBarBrightness: Brightness.light
+        ),
+        child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
         body: PageView(
           controller: _pageController,
@@ -94,7 +138,12 @@ class _DashboardStudentState extends State<DashboardStudent> {
           onCenterTap: () {
             changeTab(2);
           },
+          homeLabel: l10n.homeNavigation,
+          scheduleLabel: l10n.scheduleNavigation,
+          favoritesLabel: l10n.favorites_nav,
+          profileLabel: l10n.profile_nav,
         ),
+      ),
       ),
     );
   }
@@ -116,6 +165,8 @@ class _DashboardStudentState extends State<DashboardStudent> {
 
   Widget _buildHomeTab() {
     final authProvider = Provider.of<AuthProvider>(context);
+    final localeProvider = Provider.of<LocaleProvider>(context);
+    final l10n = AppLocalizations.of(context)!;
     final userData = authProvider.userData;
 
     final String? fullName = userData != null &&
@@ -125,12 +176,13 @@ class _DashboardStudentState extends State<DashboardStudent> {
         : null;
 
     final hasAcceptedTerms = userData?['user']?['terms_accepted'] == true;
+    final currentLocale = localeProvider.locale?.languageCode ?? 'es';
 
     return Column(
       children: [
         SizedBox(height: MediaQuery.of(context).padding.top + 20),
         DashboardHeader(
-          tutorName: fullName ?? 'Estudiante',
+          tutorName: fullName ?? l10n.defaultStudentName,
           profileImageUrl: profileImageUrl ??
               (userData != null &&
                       userData['user'] != null &&
@@ -168,12 +220,12 @@ class _DashboardStudentState extends State<DashboardStudent> {
                 ],
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: _buildQuickActions(),
+                  child: _buildQuickActions(l10n),
                 ),
                 const SizedBox(height: 20),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: _buildRecentBookings(),
+                  child: _buildRecentBookings(l10n),
                 ),
                 const SizedBox(height: 24),
               ],
@@ -220,12 +272,12 @@ class _DashboardStudentState extends State<DashboardStudent> {
     }
   }
 
-  Widget _buildQuickActions() {
+  Widget _buildQuickActions(AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Acciones Rápidas',
+          l10n.quickActions,
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -244,8 +296,8 @@ class _DashboardStudentState extends State<DashboardStudent> {
           children: [
             _buildActionCard(
               icon: Icons.search,
-              title: 'Buscar Tutores',
-              subtitle: 'Encuentra expertos',
+              title: l10n.searchTutors,
+              subtitle: l10n.findExperts,
               color: AppColors.primaryGreen,
               onTap: () {
                 Navigator.push(
@@ -258,8 +310,8 @@ class _DashboardStudentState extends State<DashboardStudent> {
             ),
             _buildActionCard(
               icon: Icons.calendar_today,
-              title: 'Mis Reservas',
-              subtitle: 'Ver sesiones',
+              title: l10n.myBookings,
+              subtitle: l10n.viewSessions,
               color: AppColors.lightBlueColor,
               onTap: () {
                 changeTab(1);
@@ -267,8 +319,8 @@ class _DashboardStudentState extends State<DashboardStudent> {
             ),
             _buildActionCard(
               icon: Icons.favorite,
-              title: 'Favoritos',
-              subtitle: 'Tutores favoritos',
+              title: l10n.favorites,
+              subtitle: l10n.favoriteTutors,
               color: const Color.fromARGB(255, 255, 100, 88),
               onTap: () {
                 changeTab(3);
@@ -276,8 +328,8 @@ class _DashboardStudentState extends State<DashboardStudent> {
             ),
             _buildActionCard(
               icon: Icons.person_rounded,
-              title: 'Perfil',
-              subtitle: 'Ajustes del perfil',
+              title: l10n.profile,
+              subtitle: l10n.profileSettings,
               color: Colors.purple,
               onTap: () {
                 changeTab(4);
@@ -356,7 +408,7 @@ class _DashboardStudentState extends State<DashboardStudent> {
     );
   }
 
-  Widget _buildRecentBookings() {
+  Widget _buildRecentBookings(AppLocalizations l10n) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -364,7 +416,7 @@ class _DashboardStudentState extends State<DashboardStudent> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Reservas Recientes',
+          l10n.recentBookings,
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -402,9 +454,9 @@ class _DashboardStudentState extends State<DashboardStudent> {
                   size: 48,
                   color: AppColors.primaryGreen,
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Text(
-                  'No tienes reservas recientes',
+                  l10n.searchTutors,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -414,7 +466,7 @@ class _DashboardStudentState extends State<DashboardStudent> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Reserva una tutoría para ver tu historial aquí.',
+                  l10n.noRecentBookings,
                   style: TextStyle(
                     fontSize: 14,
                     color: isDark ? Colors.white54 : AppColors.greyColor,
@@ -550,7 +602,7 @@ class _DashboardStudentState extends State<DashboardStudent> {
     );
   }
 
-  Widget _buildSubjectsTab() {
+  Widget _buildSubjectsTab(AppLocalizations l10n) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -569,7 +621,7 @@ class _DashboardStudentState extends State<DashboardStudent> {
                 ),
                 SizedBox(height: 16),
                 Text(
-                  'Favoritos',
+                  l10n.subjectsTabTitle,
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -579,7 +631,7 @@ class _DashboardStudentState extends State<DashboardStudent> {
                 ),
                 SizedBox(height: 8),
                 Text(
-                  'Aquí verás todas las materias que estás estudiando',
+                  l10n.subjectsTabSubtitle,
                   style: TextStyle(
                     color: isDark ? Colors.white54 : AppColors.greyColor,
                     fontSize: 16,

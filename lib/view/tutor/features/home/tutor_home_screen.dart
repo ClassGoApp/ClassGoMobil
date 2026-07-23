@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/view/auth/tutor_subject_selection_screen.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
+import 'package:flutter_projects/view/bookings/bookings.dart';
+import 'package:flutter_projects/view/detailPage/detail_screen.dart';
 import 'package:flutter_projects/view/student/reservations/services/reservations_service.dart';
 import 'package:flutter_projects/view/tutor/features/home/providers/tutor_home_provider.dart';
 import 'package:flutter_projects/view/tutor/features/home/widgets/banner_terms_section.dart';
@@ -125,7 +128,7 @@ class _TutorHomeScreenState extends State<TutorHomeScreen> {
 
     final user = authProvider.userData?['user'];
     final profile = user?['profile'] ?? {};
-    final String userName = user != null ? (user['name'] ?? 'Tutor') : 'Tutor';
+    final String userName = user != null ? (user['name'] ?? AppLocalizations.of(context)!.defaultTutorName) : AppLocalizations.of(context)!.defaultTutorName;
 
     String? imageUrl =
         profile['image'] ?? profile['profile_image'];
@@ -218,12 +221,12 @@ class _TutorHomeScreenState extends State<TutorHomeScreen> {
                               
                       return ReservationItem(
                           id: booking['id'] ?? 0,
-                          subjectName: booking['subject_name'] ?? 'Tutoría',
-                          tutorName: booking['tutor_name'] ?? 'Tutor',
-                          studentName: booking['student_name'] ?? 'Estudiante',
+                          subjectName: booking['subject_name'] ?? AppLocalizations.of(context)!.defaultSubjectName,
+                          tutorName: booking['tutor_name'] ?? AppLocalizations.of(context)!.defaultTutorName,
+                          studentName: booking['student_name'] ?? AppLocalizations.of(context)!.defaultStudentName,
                           start: start,
                           end: end,
-                          status: booking['status'] ?? 'pendiente',
+                          status: booking['status'] ?? AppLocalizations.of(context)!.defaultPendingStatus,
                           meetingLink: booking['meeting_link'] ?? '');
                     }).toList(),
                   ),
@@ -308,6 +311,78 @@ class _ActionCarouselSectionState extends State<_ActionCarouselSection> {
             ),
           ),
       ],
+      // TODO: mover las traducciones al onboarding
+      //   ],
+      // ),
+      // child: Column(
+      //   crossAxisAlignment: CrossAxisAlignment.start,
+      //   children: [
+      //     Row(
+      //       children: [
+      //         Container(
+      //           padding: const EdgeInsets.all(8),
+      //           decoration: BoxDecoration(
+      //             color: Colors.white.withOpacity(0.2),
+      //             shape: BoxShape.circle,
+      //           ),
+      //           child: const Icon(Icons.rocket_launch_rounded,
+      //               color: Colors.white, size: 24),
+      //         ),
+      //         const SizedBox(width: 12),
+      //         Expanded(
+      //           child: Text(
+      //             AppLocalizations.of(context)!.onboardingBannerTitle,
+      //             style: TextStyle(
+      //               fontFamily: 'outfit',
+      //               fontSize: 18,
+      //               fontWeight: FontWeight.bold,
+      //               color: Colors.white,
+      //             ),
+      //           ),
+      //         ),
+      //       ],
+      //     ),
+      //     const SizedBox(height: 12),
+      //     Text(
+      //       AppLocalizations.of(context)!.onboardingBannerSubtitle,
+      //       style: TextStyle(
+      //         fontFamily: 'manrope',
+      //         fontSize: 14,
+      //         color: Colors.white.withOpacity(0.9),
+      //         height: 1.4,
+      //       ),
+      //     ),
+      //     const SizedBox(height: 16),
+      //     SizedBox(
+      //       width: double.infinity,
+      //       height: 48,
+      //       child: ElevatedButton(
+      //         onPressed: () {
+      //           Navigator.push(
+      //             context,
+      //             MaterialPageRoute(
+      //                 builder: (context) => const TutorOnboardingScreen()),
+      //           );
+      //         },
+      //         style: ElevatedButton.styleFrom(
+      //           backgroundColor: Colors.white,
+      //           foregroundColor: const Color(0xFFF76B1C),
+      //           elevation: 0,
+      //           shape: RoundedRectangleBorder(
+      //               borderRadius: BorderRadius.circular(12)),
+      //         ),
+      //         child: Text(
+      //           AppLocalizations.of(context)!.onboardingBannerButton,
+      //           style: TextStyle(
+      //             fontFamily: 'outfit',
+      //             fontSize: 16,
+      //             fontWeight: FontWeight.bold,
+      //           ),
+      //         ),
+      //       ),
+      //     ),
+      //   ],
+      // ),
     );
   }
 }

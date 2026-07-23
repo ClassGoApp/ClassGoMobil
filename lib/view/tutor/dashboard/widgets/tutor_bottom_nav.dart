@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 
 class TutorBottomNav extends StatelessWidget {
@@ -49,25 +50,25 @@ class TutorBottomNav extends StatelessWidget {
           children: [
             _AnimatedNavItem(
               icon: Icons.home_rounded,
-              label: "INICIO",
+              label: AppLocalizations.of(context)!.homeNavigation,
               isSelected: currentIndex == 0,
               onTap: () => onTap(0),
             ),
             _AnimatedNavItem(
               icon: Icons.calendar_today_rounded, 
-              label: "AGENDA",
+              label: AppLocalizations.of(context)!.scheduleNavigation,
               isSelected: currentIndex == 1,
               onTap: () => onTap(1),
             ),
             _AnimatedNavItem(
               icon: Icons.menu_book_rounded,
-              label: "MATERIAS",
+              label: AppLocalizations.of(context)!.subjectsNavigation,
               isSelected: currentIndex == 2,
               onTap: () => onTap(2),
             ),
             _AnimatedNavItem(
               icon: Icons.person_rounded, 
-              label: "PERFIL",
+              label: AppLocalizations.of(context)!.profileNavigation,
               isSelected: currentIndex == 3,
               onTap: () => onTap(3),
             ),

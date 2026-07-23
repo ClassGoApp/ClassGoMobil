@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_projects/base_components/custom_snack_bar.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/view/tutor/dashboard/sheets/add_schedule_sheet.dart';
 import 'package:intl/intl.dart';
@@ -206,7 +207,7 @@ class _AgendaCalendarModalState extends State<AgendaCalendarModal> {
                         height: 1.1)),
               ),
               const SizedBox(height: 4),
-              Text("CALENDARIO",
+              Text(AppLocalizations.of(context)!.calendarLabel,
                   style: TextStyle(
                       color: AppColors.brandBlue.withOpacity(0.6),
                       fontSize: 9,
@@ -258,8 +259,8 @@ class _AgendaCalendarModalState extends State<AgendaCalendarModal> {
         Expanded(
           child: TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("CANCELAR",
-                style: TextStyle(fontFamily: 'outfit', color: Colors.grey)),
+            child: Text(AppLocalizations.of(context)!.cancelModal,
+                style: const TextStyle(fontFamily: 'outfit', color: Colors.grey)),
           ),
         ),
         const SizedBox(width: 10),
@@ -276,8 +277,8 @@ class _AgendaCalendarModalState extends State<AgendaCalendarModal> {
             ),
             child: Text(
               widget.mode == AgendaMode.classes
-                  ? "ACEPTAR"
-                  : "CONFIGURAR HORARIOS",
+                  ? AppLocalizations.of(context)!.acceptButton
+                  : AppLocalizations.of(context)!.configureSchedulesButton,
               textAlign: TextAlign.center,
               style: const TextStyle(
                   fontFamily: 'outfit',
@@ -295,8 +296,8 @@ class _AgendaCalendarModalState extends State<AgendaCalendarModal> {
         ? AppColors.brandOrange
         : (_isMultiSelectMode ? AppColors.brandBlue : AppColors.brandCyan);
     String activeText = _isRangeMode
-        ? "RANGO ACTIVO"
-        : (_isMultiSelectMode ? "SELECCIÓN MÚLTIPLE" : "DÍA ACTIVO");
+        ? AppLocalizations.of(context)!.rangeActive
+        : (_isMultiSelectMode ? AppLocalizations.of(context)!.multipleSelection : AppLocalizations.of(context)!.dayActive);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -324,7 +325,8 @@ class _AgendaCalendarModalState extends State<AgendaCalendarModal> {
                   borderRadius: BorderRadius.circular(20))),
           child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 250),
-              child: Text("MODO RANGO",
+              child: Text(
+                  AppLocalizations.of(context)!.rangeMode,
                   key: ValueKey(_isRangeMode),
                   style: TextStyle(
                       color: _isRangeMode
@@ -345,7 +347,7 @@ class _AgendaCalendarModalState extends State<AgendaCalendarModal> {
             const SizedBox(width: 6),
             AnimatedSwitcher(
                 duration: const Duration(milliseconds: 250),
-                child: Text(activeText,
+                child: Text(AppLocalizations.of(context)!.clearSelection,
                     key: ValueKey(activeText),
                     style: TextStyle(
                         color: activeColor,
@@ -697,10 +699,10 @@ bool _isPastDay(DateTime day) {
   Widget _buildSectionTitleRow(
       bool isDark, bool isActivelySelecting, int count) {
     String title = _isRangeMode && _rangeStart == null
-        ? "SELECCIONA UN RANGO"
+        ? AppLocalizations.of(context)!.selectRange
         : (isActivelySelecting
-            ? "DÍAS SELECCIONADOS ($count)"
-            : "BLOQUES DEL DÍA ${_viewedDay.day}");
+            ? "${AppLocalizations.of(context)!.selectedDaysLabel} ($count)"
+            : "${AppLocalizations.of(context)!.dayBlocksLabel} ${_viewedDay.day}");
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Row(
@@ -725,8 +727,8 @@ bool _isPastDay(DateTime day) {
                       style: TextButton.styleFrom(
                           padding: EdgeInsets.zero,
                           minimumSize: const Size(0, 0)),
-                      child: const Text("LIMPIAR",
-                          style: TextStyle(
+                      child: Text(AppLocalizations.of(context)!.clearSelection,
+                          style: const TextStyle(
                               color: Colors.redAccent,
                               fontSize: 10,
                               fontWeight: FontWeight.bold))))),
@@ -779,8 +781,8 @@ bool _isPastDay(DateTime day) {
             const SizedBox(height: 16),
             Text(
                 isSelecting
-                    ? "LISTO PARA CONFIGURAR HORARIOS"
-                    : "SIN BLOQUES REGISTRADOS",
+                    ? AppLocalizations.of(context)!.readyToConfigureSchedules
+                    : AppLocalizations.of(context)!.noBlocksRegistered,
                 style: TextStyle(
                     color: isDark
                         ? Colors.white54
@@ -806,19 +808,19 @@ bool _isPastDay(DateTime day) {
                           isDark ? const Color(0xFF151A24) : Colors.white,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20)),
-                      title: Text('Eliminar horario',
+                      title: Text(AppLocalizations.of(context)!.deleteScheduleTitle,
                           style: TextStyle(
                               color:
                                   isDark ? Colors.white : AppColors.brandBlue,
                               fontWeight: FontWeight.bold)),
                       content: Text(
-                          '¿Estás seguro de que quieres eliminar este horario?',
+                          AppLocalizations.of(context)!.deleteScheduleConfirm,
                           style: TextStyle(color: Colors.grey[500])),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.of(dialogContext).pop(),
-                          child: const Text('Cancelar',
-                              style: TextStyle(color: Colors.grey)),
+                          child: Text(AppLocalizations.of(context)!.cancelDialogButton,
+                              style: const TextStyle(color: Colors.grey)),
                         ),
                         ElevatedButton(
                           onPressed: () async {
@@ -833,13 +835,13 @@ bool _isPastDay(DateTime day) {
                             if (ok && mounted) {
                               CustomToast.show(
                                 context,
-                                "Horario eliminado exitosamente",
+                                AppLocalizations.of(context)!.scheduleDeletedSuccessfully2,
                                 isSuccess: true,
                               );
                             } else {
                               CustomToast.show(
                                 context,
-                                "Error al eliminar el horario",
+                                AppLocalizations.of(context)!.errorDeletingScheduleMsg,
                                 isSuccess: false,
                               );
                             }
@@ -848,8 +850,8 @@ bool _isPastDay(DateTime day) {
                               backgroundColor: Colors.redAccent,
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12))),
-                          child: const Text('Eliminar',
-                              style: TextStyle(
+                          child: Text(AppLocalizations.of(context)!.deleteButton2,
+                              style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold)),
                         ),
@@ -974,7 +976,7 @@ class _TimeCard extends StatelessWidget {
                         fontWeight: FontWeight.w900,
                         fontFamily: 'outfit')),
                 const SizedBox(height: 2),
-                Text("SESIÓN DE 20 MIN",
+                Text(AppLocalizations.of(context)!.sessionDuration,
                     style: TextStyle(
                         color: Colors.grey[500],
                         fontSize: 10,

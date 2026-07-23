@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 
 const String kFontFamily = 'outfit';
 
@@ -40,6 +41,7 @@ class _SubjectListItemState extends State<SubjectListItem> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardBgColor = isDark ? const Color(0xFF16181D) : Colors.white;
     final textColor = isDark ? Colors.white : AppColors.brandBlue;
+    final l10n = AppLocalizations.of(context)!;
 
     // 🔥 ANIMATED OPACITY Y IGNORE POINTER PARA BLOQUEAR TOQUES
     return AnimatedOpacity(
@@ -113,7 +115,7 @@ class _SubjectListItemState extends State<SubjectListItem> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          "MATERIA",
+                          l10n.subjectLabel,
                           style: TextStyle(color: isDark ? Colors.white70 : AppColors.brandBlue.withOpacity(0.6), fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5, fontFamily: kFontFamily),
                         ),
                       ),

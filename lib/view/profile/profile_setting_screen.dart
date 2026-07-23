@@ -12,6 +12,7 @@ import 'package:flutter_projects/view/components/internet_alert.dart';
 import 'package:flutter_projects/view/components/video_widget.dart';
 import 'package:flutter_projects/view/profile/component/user_language_bottom_sheet.dart';
 import 'package:flutter_projects/view/profile/skeleton/profile_setting_skeleton.dart';
+import 'package:flutter_projects/widgets/language_selector_button.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
@@ -1234,7 +1235,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                           Divider(
                             color: AppColors.dividerColor,
                           ),
-                          SizedBox(height: 20),
+
                           ElevatedButton(
                             onPressed:
                                 _onPressLoading ? null : _saveAndUpdateProfile,

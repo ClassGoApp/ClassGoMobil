@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/base_components/custom_snack_bar.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
@@ -89,8 +90,8 @@ class _TutorPriceSectionState extends State<TutorPriceSection> {
           child: const Icon(Icons.payments_rounded,
               color: AppColors.brandCyan, size: 20),
         ),
-        title: const Text(
-          "PRECIO POR TUTORÍA",
+        title: Text(
+          AppLocalizations.of(context)!.pricePerTutoring.toUpperCase(),
           style: TextStyle(
               fontFamily: _kTitleFont,
               color: Colors.grey,
@@ -101,7 +102,7 @@ class _TutorPriceSectionState extends State<TutorPriceSection> {
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 4.0),
           child: Text(
-            "$_price Bs / 20min.",
+            AppLocalizations.of(context)!.pricePerTutoringDetails(_price),
             style: TextStyle(
                 fontFamily: _kTitleFont,
                 color: mainTextColor,
@@ -153,15 +154,14 @@ class _TutorPriceSectionState extends State<TutorPriceSection> {
                           color: Colors.grey.withOpacity(0.3),
                           borderRadius: BorderRadius.circular(10)))),
               const SizedBox(height: 24),
-              Text("Definir Precio",
+              Text(AppLocalizations.of(context)!.definePrice,
                   style: TextStyle(
                       fontFamily: _kTitleFont,
                       color: textColor,
                       fontSize: 20,
                       fontWeight: FontWeight.w900)),
               const SizedBox(height: 8),
-              const Text(
-                  "Ingresa el monto que cobrarás por 20 minutos de tutoría.",
+              Text(AppLocalizations.of(context)!.enterTutoringAmount,
                   style: TextStyle(
                       fontFamily: _kBodyFont,
                       color: Colors.grey,
@@ -179,7 +179,7 @@ class _TutorPriceSectionState extends State<TutorPriceSection> {
                 decoration: InputDecoration(
                   prefixIcon: const Icon(Icons.attach_money_rounded,
                       color: AppColors.brandCyan),
-                  suffixText: "Bs / 20min",
+                  suffixText: AppLocalizations.of(context)!.priceSuffix,
                   filled: true,
                   fillColor: inputBg,
                   border: OutlineInputBorder(
@@ -198,7 +198,7 @@ class _TutorPriceSectionState extends State<TutorPriceSection> {
                           borderRadius: BorderRadius.circular(16))),
                   onPressed: () =>
                       _updatePrice(context, priceController.text.trim()),
-                  child: const Text("GUARDAR PRECIO",
+                  child: Text(AppLocalizations.of(context)!.savePrice.toUpperCase(),
                       style: TextStyle(
                           fontFamily: _kTitleFont,
                           color: Colors.white,
@@ -240,7 +240,7 @@ class _TutorPriceSectionState extends State<TutorPriceSection> {
           setState(() => _price = newPrice);
           Navigator.pop(context);
           Navigator.pop(context);
-          CustomToast.show(context, 'Tarifa actualizada correctamente', isSuccess: true);
+          CustomToast.show(context, AppLocalizations.of(context)!.rateUpdatedSuccessfully, isSuccess: true);
         }
       }
     } catch (e) {

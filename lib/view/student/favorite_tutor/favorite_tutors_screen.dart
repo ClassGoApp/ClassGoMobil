@@ -11,6 +11,7 @@ import 'package:flutter_projects/view/student/favorite_tutor/services/favorite_t
 import 'package:flutter_projects/view/student/serch_Tutor/search_tutors_screen.dart';
 import 'package:flutter_projects/view/student/serch_Tutor/widgets/tutor_card.dart';
 import 'package:flutter_projects/view/student/reservations/instant-reservation/instant_tutoring_screen.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/helpers/slide_up_route.dart';
@@ -31,6 +32,7 @@ class FavoriteTutorsScreen extends StatefulWidget {
 class _FavoriteTutorsScreenState extends State<FavoriteTutorsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: theme.scaffoldBackgroundColor,
@@ -38,7 +40,7 @@ class _FavoriteTutorsScreenState extends State<FavoriteTutorsScreen> {
         centerTitle: true,
         automaticallyImplyLeading: false,
         title: Text(
-          'Tutores Favoritos',
+          l10n.favoriteTutors,
           style: TextStyle(
             color: theme.colorScheme.onSurface,
             fontSize: 20,
@@ -65,6 +67,10 @@ class _FavoriteTutorsScreenState extends State<FavoriteTutorsScreen> {
                   (route) => false,
                 );
               },
+              homeLabel: AppLocalizations.of(context)!.homeNavigation,
+              scheduleLabel: AppLocalizations.of(context)!.scheduleNavigation,
+              favoritesLabel: AppLocalizations.of(context)!.favorites_nav,
+              profileLabel: AppLocalizations.of(context)!.profile_nav,
             )
           : null,
     );
@@ -186,6 +192,7 @@ class _FavoriteTutorsContentState extends State<FavoriteTutorsContent> {
     Map<String, dynamic> profile,
     List<Map<String, dynamic>> validSubjects,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     _searchFocusNode.unfocus();
 
     Navigator.push(
@@ -194,13 +201,13 @@ class _FavoriteTutorsContentState extends State<FavoriteTutorsContent> {
         page: ReservationTutorProfileScreen(
           tutorId: (tutor['id'] ?? profile['id'] ?? '').toString(),
           tutorName:
-              (profile['full_name'] ?? tutor['name'] ?? 'No name available')
+              (profile['full_name'] ?? tutor['name'] ?? l10n.noNameAvailable)
                   .toString(),
           tutorImage:
               (profile['image'] ?? AppImages.placeHolderImage).toString(),
           tutorVideo: (profile['intro_video'] ?? '').toString(),
           description:
-              (profile['description'] ?? 'No hay descripción disponible.')
+              (profile['description'] ?? l10n.noDescriptionAvailable)
                   .toString(),
           rating: _toDouble(tutor['avg_rating']),
           subjects: validSubjects,
@@ -246,6 +253,7 @@ class _FavoriteTutorsContentState extends State<FavoriteTutorsContent> {
 
   Widget _buildEmptyState() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
 
     return RefreshIndicator(
       onRefresh: _onRefresh,
@@ -266,7 +274,7 @@ class _FavoriteTutorsContentState extends State<FavoriteTutorsContent> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(
-                        'Aún no tienes tutores favoritos',
+                        l10n.noFavoriteTutors,
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -276,7 +284,7 @@ class _FavoriteTutorsContentState extends State<FavoriteTutorsContent> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Guarda tutores que te gusten para encontrarlos rápidamente.',
+                        l10n.noFavoriteTutorsDesc,
                         style: TextStyle(
                             color: isDark ? Colors.white54 : AppColors.greyColor,
                             fontSize: 14),
@@ -303,8 +311,8 @@ class _FavoriteTutorsContentState extends State<FavoriteTutorsContent> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text(
-                            'Buscar Tutores',
+                          child: Text(
+                            l10n.searchTutors,
                             style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.w600,
@@ -324,6 +332,7 @@ class _FavoriteTutorsContentState extends State<FavoriteTutorsContent> {
   }
 
   Widget _buildList() {
+    final l10n = AppLocalizations.of(context)!;
     return RefreshIndicator(
       onRefresh: _onRefresh,
       color: AppColors.primaryGreen,
@@ -358,8 +367,9 @@ class _FavoriteTutorsContentState extends State<FavoriteTutorsContent> {
                     child: GestureDetector(
                       onTap: () => _openTutorProfile(t, profile, validSubjects),
                       child: TutorCard(
+                        l10n: l10n,
                         name:
-                            (profile['full_name'] ?? t['name'] ?? 'Sin nombre')
+                            (profile['full_name'] ?? t['name'] ?? l10n.noName)
                                 .toString(),
                         rating: _toDouble(t['avg_rating']),
                         reviews: _toInt(t['total_reviews']),
@@ -386,7 +396,7 @@ class _FavoriteTutorsContentState extends State<FavoriteTutorsContent> {
                               ),
                               child: InstantTutoringScreen(
                                 tutorName: (profile['full_name'] ??
-                                        'No name available')
+                                        l10n.noNameAvailable)
                                     .toString(),
                                 tutorImage: (profile['image'] ??
                                         AppImages.placeHolderImage)
@@ -402,8 +412,8 @@ class _FavoriteTutorsContentState extends State<FavoriteTutorsContent> {
                         },
                         tutorProfession: validSubjectNames.isNotEmpty
                             ? validSubjectNames.first
-                            : 'No especificada',
-                        sessionDuration: 'Clases de 20 minutos',
+                            : l10n.notSpecified,
+                        sessionDuration: l10n.classes20Min,
                         isFavoriteInitial: true,
                         onFavoritePressed: (isFavorite) async {
                           if (!isFavorite && mounted) {
