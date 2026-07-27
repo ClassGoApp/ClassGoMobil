@@ -8,9 +8,7 @@ import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class InstantTutoringScreen extends StatefulWidget {
-  const InstantTutoringScreen({
-    super.key,
-  });
+  const InstantTutoringScreen({super.key});
 
   @override
   State<InstantTutoringScreen> createState() => _InstantTutoringScreenState();
@@ -28,25 +26,21 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
   Map<String, List<dynamic>> _subjectsByCategory = {};
   List<Map<String, dynamic>> _gridCategories = [];
 
-  // Mapeo dinámico de categoría API → clave de traducción
-  Map<String, String> _apiNameToCategoryKey = {};
-
   final List<Map<String, dynamic>> _uiCategories = [
-    {'key': 'primary', 'icon': Icons.backpack_rounded, 'color': 0xFFF59E0B, 'apiName': ''},
-    {'key': 'secondary', 'icon': Icons.school_rounded, 'color': 0xFF3B82F6, 'apiName': ''},
-    {'key': 'exactSciences', 'icon': Icons.calculate_rounded, 'color': 0xFF10B981, 'apiName': ''},
-    {'key': 'advancedEngineering', 'icon': Icons.precision_manufacturing_rounded, 'color': 0xFFEF4444, 'apiName': ''},
-    {'key': 'socialAndEconomicSciences', 'icon': Icons.public_rounded, 'color': 0xFF8B5CF6, 'apiName': ''},
-    {'key': 'languages', 'icon': Icons.translate_rounded, 'color': 0xFFEC4899, 'apiName': ''},
-    {'key': 'marketingAndDigitalCommunication', 'icon': Icons.campaign_rounded, 'color': 0xFFF97316, 'apiName': ''},
-    {'key': 'artAndDesign', 'icon': Icons.palette_rounded, 'color': 0xFF14B8A6, 'apiName': ''},
-    {'key': 'gastronomyAndPastry', 'icon': Icons.restaurant_rounded, 'color': 0xFFEAB308, 'apiName': ''},
-    {'key': 'engineeringAndTechnology', 'icon': Icons.computer_rounded, 'color': 0xFF6366F1, 'apiName': ''},
-    {'key': 'psychologyAndPersonalDevelopment', 'icon': Icons.psychology_rounded, 'color': 0xFF06B6D4, 'apiName': ''},
-    {'key': 'sportsAndWellness', 'icon': Icons.fitness_center_rounded, 'color': 0xFF84CC16, 'apiName': ''},
+    {'key': 'primary', 'icon': Icons.backpack_rounded, 'color': 0xFFF59E0B},
+    {'key': 'secondary', 'icon': Icons.school_rounded, 'color': 0xFF3B82F6},
+    {'key': 'exactSciences', 'icon': Icons.calculate_rounded, 'color': 0xFF10B981},
+    {'key': 'advancedEngineering', 'icon': Icons.precision_manufacturing_rounded, 'color': 0xFFEF4444},
+    {'key': 'socialAndEconomicSciences', 'icon': Icons.public_rounded, 'color': 0xFF8B5CF6},
+    {'key': 'languages', 'icon': Icons.translate_rounded, 'color': 0xFFEC4899},
+    {'key': 'marketingAndDigitalCommunication', 'icon': Icons.campaign_rounded, 'color': 0xFFF97316},
+    {'key': 'artAndDesign', 'icon': Icons.palette_rounded, 'color': 0xFF14B8A6},
+    {'key': 'gastronomyAndPastry', 'icon': Icons.restaurant_rounded, 'color': 0xFFEAB308},
+    {'key': 'engineeringAndTechnology', 'icon': Icons.computer_rounded, 'color': 0xFF6366F1},
+    {'key': 'psychologyAndPersonalDevelopment', 'icon': Icons.psychology_rounded, 'color': 0xFF06B6D4},
+    {'key': 'sportsAndWellness', 'icon': Icons.fitness_center_rounded, 'color': 0xFF84CC16},
   ];
 
-  // Mapeo de claves de traducción a nombres de categoría en español (del API)
   final Map<String, String> _categoryKeyToApiName = {
     'primary': 'Primaria',
     'secondary': 'Secundaria',
@@ -189,7 +183,6 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
       final List<dynamic> categoriasApi = jsonData['data'];
       final Map<String, List<dynamic>> grouped = {};
       final List<dynamic> allSubjectsFlat = [];
-      final Map<String, String> apiToCategoryKey = {};
 
       for (var cat in categoriasApi) {
         String catName = cat['categoria'] ?? 'Sin Categoría';
@@ -207,33 +200,28 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
         }
 
         grouped[catName] = materiasAdaptadas;
-        
-        // Mapear el nombre del API al key de traducción
-        for (var key in _categoryKeyToApiName.entries) {
-          if (key.value == catName) {
-            apiToCategoryKey[catName] = key.key;
-            // Actualizar el apiName en _uiCategories
-            for (var uiCat in _uiCategories) {
-              if (uiCat['key'] == key.key) {
-                uiCat['apiName'] = catName;
-                break;
-              }
-            }
-            break;
-          }
-        }
       }
 
       _gridCategories = categoriasApi.map((cat) {
-        final name = cat['categoria'] ?? '';
-        final matched = _uiCategories.cast<Map<String, dynamic>?>().firstWhere(
-              (u) => u?['name'] == name,
+        final apiName = cat['categoria'] ?? '';
+
+        String matchedKey = apiName;
+        _categoryKeyToApiName.forEach((key, val) {
+          if (val == apiName) {
+            matchedKey = key;
+          }
+        });
+
+        final matchedUi = _uiCategories.cast<Map<String, dynamic>?>().firstWhere(
+              (u) => u?['key'] == matchedKey,
               orElse: () => null,
             );
+
         return {
-          'name': name,
-          'icon': matched?['icon'] ?? Icons.category_rounded,
-          'color': matched?['color'] ?? 0xFF6366F1,
+          'apiName': apiName,
+          'key': matchedKey,
+          'icon': matchedUi?['icon'] ?? Icons.category_rounded,
+          'color': matchedUi?['color'] ?? 0xFF6366F1,
         };
       }).toList();
 
@@ -241,13 +229,11 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
         setState(() {
           _allSubjects = allSubjectsFlat;
           _subjectsByCategory = grouped;
-          _apiNameToCategoryKey = apiToCategoryKey;
           _isLoadingData = false;
         });
       }
     } catch (e) {
       print("🔥 Error al cargar materias: $e");
-
       if (mounted) setState(() => _isLoadingData = false);
     }
   }
@@ -261,11 +247,9 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
       final activeSubjectId = _activeBatch!['subject_id'].toString();
       final activeSubjectName = _getSubjectNameFromId(activeSubjectId);
 
-      // 💡 CIRUGÍA 1: Conversión segura para evitar el crasheo de Double a Int
       final rawSeconds = _activeBatch!['seconds_left'];
       final int secondsToPass = (rawSeconds is num) ? rawSeconds.toInt() : 300;
 
-      // Usamos la variable convertida "secondsToPass"
       _navegarAlRadar(activeSubjectName, activeSubjectId, secondsToPass,
           isRecovered: true);
     } else {
@@ -273,7 +257,6 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
     }
   }
 
-  // 💡 Le agregamos el parámetro opcional "isRecovered"
   void _navegarAlRadar(String name, String id, int seconds,
       {bool isRecovered = false}) {
     Navigator.push(
@@ -283,7 +266,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
           subjectName: name,
           subjectId: id,
           timerSeconds: seconds,
-          isRecovered: isRecovered, // 💡 Se lo pasamos al Radar
+          isRecovered: isRecovered,
         ),
       ),
     ).then((_) {
@@ -291,7 +274,6 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
     });
   }
 
-  // BUSCADOR OPTIMIZADO CON DEBOUNCE (Evita trabar el teclado)
   void _onSearchChanged(String query) {
     if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
 
@@ -312,24 +294,12 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
     });
   }
 
-  // CARGA INSTANTÁNEA GRACIAS A LA PRE-INDEXACIÓN O(1)
   void _openCategoryBottomSheet(
-      BuildContext context, String categoryKey, int colorHex) {
+      BuildContext context, String apiName, String uiTranslatedName, int colorHex) {
     final l10n = AppLocalizations.of(context)!;
-    final categoryName = _getCategoryName(context, categoryKey);
-    
     FocusScope.of(context).unfocus();
-    
-    // Obtener el nombre API almacenado (rellenado en _loadJsonData)
-    String apiName = '';
-    for (var cat in _uiCategories) {
-      if (cat['key'] == categoryKey) {
-        apiName = cat['apiName'] ?? '';
-        break;
-      }
-    }
-    
-    var subjects = _subjectsByCategory[apiName] ?? [];
+
+    final subjects = _subjectsByCategory[apiName] ?? [];
 
     showModalBottomSheet(
       context: context,
@@ -367,7 +337,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                     const SizedBox(width: 15),
                     Expanded(
                       child: Text(
-                        categoryName,
+                        uiTranslatedName,
                         style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -379,7 +349,6 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
               ),
               const Divider(height: 30),
 
-              // LISTA DE MATERIAS DENTRO DE LA CATEGORÍA
               Expanded(
                 child: subjects.isEmpty
                     ? Center(
@@ -403,7 +372,6 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                                 color: Colors.grey),
                             onTap: () {
                               Navigator.pop(context);
-
                               _procesarToqueMateria(subject['Materia'],
                                   subject['id_materia'].toString());
                             },
@@ -433,7 +401,6 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                 CustomScrollView(
                   physics: const ClampingScrollPhysics(),
                   slivers: [
-                    // 1. HEADER
                     SliverAppBar(
                       backgroundColor: const Color(0xFFF4F4FB),
                       pinned: true,
@@ -448,8 +415,6 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                             color: Color(0xFF0F172A)),
                       ),
                     ),
-
-                    // 2. BUSCADOR
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
@@ -558,7 +523,6 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                                         color: Colors.grey),
                                     onTap: () {
                                       FocusScope.of(context).unfocus();
-
                                       _procesarToqueMateria(subject['Materia'],
                                           subject['id_materia'].toString());
                                     },
@@ -594,13 +558,19 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                           delegate: SliverChildBuilderDelegate(
                             (context, index) {
                               final cat = _gridCategories[index];
+
                               final catKey = cat['key'] as String;
-                              final catName = _getCategoryName(context, catKey);
+                              final apiName = cat['apiName'] as String;
+                              final color = cat['color'] as int;
+                              final icon = cat['icon'] as IconData;
+
+                              final translatedName = _getCategoryName(context, catKey);
+
                               return GestureDetector(
                                 onTap: () {
                                   HapticFeedback.lightImpact();
                                   _openCategoryBottomSheet(
-                                      context, catKey, cat['color']);
+                                      context, apiName, translatedName, color);
                                 },
                                 child: Container(
                                   decoration: BoxDecoration(
@@ -624,17 +594,17 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                                         Container(
                                           padding: const EdgeInsets.all(10),
                                           decoration: BoxDecoration(
-                                            color: Color(cat['color'])
+                                            color: Color(color)
                                                 .withOpacity(0.1),
                                             borderRadius:
                                                 BorderRadius.circular(14),
                                           ),
-                                          child: Icon(cat['icon'],
-                                              color: Color(cat['color']),
+                                          child: Icon(icon,
+                                              color: Color(color),
                                               size: 26),
                                         ),
                                         Text(
-                                          catName,
+                                          translatedName,
                                           style: const TextStyle(
                                               fontWeight: FontWeight.w700,
                                               fontFamily: 'manrope',
@@ -655,9 +625,8 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
                         ),
                       ),
                     ],
-
                     const SliverToBoxAdapter(
-                        child: SizedBox(height: 100)), // Espacio para el navbar
+                        child: SizedBox(height: 100)),
                   ],
                 ),
                 if (_isCheckingActive)

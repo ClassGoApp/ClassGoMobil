@@ -7,7 +7,7 @@ import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as path;
 
-final String baseUrl = 'http://192.168.0.145:8000/api';
+final String baseUrl = 'https://classgoapp.com/api';
 
 class TokenExpiredException implements Exception {
   final String message =
@@ -2366,40 +2366,6 @@ Future<Map<String, dynamic>> fetchAvailableSubjects({
     return {'success': false, 'message': 'Revisa tu conexión a internet.'};
   }
 }
-
-// Future<Map<String, dynamic>> fetchAvailableSubjects({
-//   required String token,
-//   required int page,
-//   String? keyword,
-//   int? groupId,
-//   int? userId,
-// }) async {
-//   String queryParams = '?page=$page';
-//   if (keyword != null && keyword.isNotEmpty) queryParams += '&keyword=$keyword';
-//   if (groupId != null) queryParams += '&group_id=$groupId';
-//   if (userId != null) queryParams += '&user_id=$userId';
-
-//   final url = Uri.parse('$baseUrl/tutor-subjects/available$queryParams');
-
-//   try {
-//     final response = await http.get(url, headers: {
-//       'Authorization': 'Bearer $token',
-//       'Accept': 'application/json',
-//     });
-
-//     if (response.statusCode == 200) {
-//       final decoded = jsonDecode(response.body);
-//       return {
-//         'success': true,
-//         'data': decoded['data']['data'], // Array de materias
-//         'last_page': decoded['data']['last_page'],
-//       };
-//     }
-//     return {'success': false, 'message': 'Error al buscar materias'};
-//   } catch (e) {
-//     return {'success': false, 'message': 'Error de conexión: $e'};
-//   }
-// }
 
 Future<Map<String, dynamic>> createUserSubjectSlot(
     String token, Map<String, dynamic> slotData) async {

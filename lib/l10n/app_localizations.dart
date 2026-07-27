@@ -2576,6 +2576,18 @@ abstract class AppLocalizations {
   /// **'Register as a student or tutor and start your educational journey with us.'**
   String get registerAsStudentOrTutor;
 
+  /// No description provided for @signUpWithGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign up with Google'**
+  String get signUpWithGoogle;
+
+  /// No description provided for @authGoogleSelectRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Select how you want to register on ClassGo'**
+  String get authGoogleSelectRole;
+
   /// No description provided for @iHaveReadAndAgreeToAll.
   ///
   /// In en, this message translates to:

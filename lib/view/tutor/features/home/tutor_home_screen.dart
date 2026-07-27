@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_projects/view/auth/tutor_subject_selection_screen.dart';
 import 'package:flutter_projects/l10n/app_localizations.dart';
-import 'package:flutter_projects/view/bookings/bookings.dart';
-import 'package:flutter_projects/view/detailPage/detail_screen.dart';
 import 'package:flutter_projects/view/student/reservations/services/reservations_service.dart';
 import 'package:flutter_projects/view/tutor/features/home/providers/tutor_home_provider.dart';
 import 'package:flutter_projects/view/tutor/features/home/widgets/banner_terms_section.dart';

@@ -1,12 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart'; // Para debugPrint
 import 'package:flutter_projects/base_components/custom_snack_bar.dart';
 import 'package:provider/provider.dart';
 
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
-import 'package:flutter_projects/provider/tutor_subjects_provider.dart'; // Tu Especialista
+import 'package:flutter_projects/provider/tutor_subjects_provider.dart';
 import 'package:flutter_projects/provider/onboarding_provider.dart';
 
 class StepOneSubjects extends StatefulWidget {
@@ -19,16 +18,30 @@ class StepOneSubjects extends StatefulWidget {
 class _StepOneSubjectsState extends State<StepOneSubjects> {
   Timer? _debounce;
   String _searchQuery = '';
-  // Diccionario Visual (Se mantiene para no guardar colores en base de datos)
-  final Map<String, Map<String, dynamic>> _visualStyles = {
-    'Contabilidad': {'icon': Icons.calculate_rounded, 'color': const Color(0xFF4A90E2)},
-    'Química': {'icon': Icons.science_rounded, 'color': const Color(0xFF50E3C2)},
-    'Programación': {'icon': Icons.terminal_rounded, 'color': const Color(0xFF9013FE)},
-    'Inglés': {'icon': Icons.language_rounded, 'color': const Color(0xFFF5A623)},
-    'Matemáticas': {'icon': Icons.functions_rounded, 'color': const Color(0xFFE1145C)},
-    'Música': {'icon': Icons.music_note_rounded, 'color': const Color(0xFF8B572A)},
-    'Default': {'icon': Icons.menu_book_rounded, 'color': AppColors.brandBlue},
-  };
+
+  static const List<IconData> _categoryIcons = [
+    Icons.calculate_rounded,
+    Icons.science_rounded,
+    Icons.terminal_rounded,
+    Icons.language_rounded,
+    Icons.functions_rounded,
+    Icons.music_note_rounded,
+    Icons.menu_book_rounded,
+    Icons.brush_rounded,
+    Icons.business_rounded,
+    Icons.account_balance_rounded,
+    Icons.palette_rounded,
+    Icons.code_rounded,
+    Icons.biotech_rounded,
+    Icons.history_rounded,
+    Icons.psychology_rounded,
+  ];
+
+  Color _getCategoryColor(int index) {
+    const goldenAngle = 0.381966;
+    final hue = (index * goldenAngle % 1.0) * 360;
+    return HSLColor.fromAHSL(1.0, hue, 0.55, 0.55).toColor();
+  }
 
   @override
   void initState() {
@@ -49,7 +62,7 @@ class _StepOneSubjectsState extends State<StepOneSubjects> {
         await subjectsProvider.loadGroups(auth.token!);
       }
     } catch (e) {
-      if (kDebugMode) debugPrint("Error cargando grupos: $e");
+      print("Error cargando grupos: $e");
     }
   }
 
@@ -78,7 +91,7 @@ class _StepOneSubjectsState extends State<StepOneSubjects> {
           else if (subjectsProvider.subjectGroups.isEmpty)
             const Center(child: Text("No hay categorías disponibles", style: TextStyle(fontFamily: 'manrope')))
           else
-            _buildCategoryGrid(subjectsProvider, onboardingProvider),
+            _buildCategoryGrid(context, subjectsProvider, onboardingProvider),
       ],
       ),
     );
@@ -169,7 +182,7 @@ class _StepOneSubjectsState extends State<StepOneSubjects> {
     );
   }
 
-  Widget _buildCategoryGrid(TutorSubjectsProvider subjectsProvider, OnboardingProvider onboardingProvider) {
+  Widget _buildCategoryGrid(BuildContext context, TutorSubjectsProvider subjectsProvider, OnboardingProvider onboardingProvider) {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -185,22 +198,22 @@ class _StepOneSubjectsState extends State<StepOneSubjects> {
         final String categoryName = category['name'] ?? 'Desconocida';
         final int categoryId = category['id'];
 
-        final style = _visualStyles[categoryName] ?? _visualStyles['Default']!;
+        final Color categoryColor = _getCategoryColor(index);
+        final IconData categoryIcon = _categoryIcons[index % _categoryIcons.length];
         final int selectedCount = onboardingProvider.getSelectedCountForGroup(categoryId);
 
         return _CategoryCard(
           name: categoryName,
-          icon: style['icon'],
-          color: style['color'],
+          icon: categoryIcon,
+          color: categoryColor,
           selectedCount: selectedCount,
-          onTap: () => _openSubjectModal(context, categoryName, categoryId, style['color']),
+          onTap: () => _openSubjectModal(context, categoryName, categoryId, categoryColor),
         );
       },
     );
   }
 
   void _openSubjectModal(BuildContext context, String categoryName, int categoryId, Color brandColor) {
-    // Al abrir el modal, disparamos la búsqueda de materias para esa categoría específica
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final subjectsProvider = Provider.of<TutorSubjectsProvider>(context, listen: false);
     
@@ -212,7 +225,7 @@ class _StepOneSubjectsState extends State<StepOneSubjects> {
       groupId: categoryId, 
       isRefresh: true
     ).catchError((e) {
-      if (kDebugMode) debugPrint("Error al cargar materias del grupo: $e");
+      print("Error al cargar materias del grupo: $e");
     });
 
     showModalBottomSheet(
@@ -232,10 +245,6 @@ class _StepOneSubjectsState extends State<StepOneSubjects> {
     );
   }
 }
-
-// -----------------------------------------------------------------------------
-// SUB-WIDGETS 
-// -----------------------------------------------------------------------------
 
 class _CategoryCard extends StatelessWidget {
   final String name;
@@ -326,7 +335,9 @@ class _SubjectSelectionModal extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(categoryName, style: const TextStyle(fontFamily: 'outfit', fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.brandBlue)),
+              Expanded(
+                child: Text(categoryName, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'outfit', fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.brandBlue)),
+              ),
               IconButton(icon: const Icon(Icons.close_rounded, color: Colors.grey), onPressed: () => Navigator.pop(context))
             ],
           ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_projects/base_components/confirm_dialog.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/student/instant_tutoring/logic/radar_controller.dart';
 import 'package:flutter_projects/view/student/instant_tutoring/widgets/tutor_card.dart';
@@ -285,35 +286,15 @@ class _RadarSearchScreenState extends State<RadarSearchScreen>
   }
 
   Future<void> _confirmCancel(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await ConfirmDialog.show(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          "Cancelar búsqueda",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: const Text(
-          "¿Seguro que deseas cancelar esta solicitud de tutoría? Podrás volver a elegir otra materia e intentarlo de nuevo.",
-          style: TextStyle(fontSize: 14),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text(
-              "No, volver",
-              style: TextStyle(color: Colors.grey),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text(
-              "Sí, cancelar",
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
+      icon: Icons.close_rounded,
+      iconColor: Colors.redAccent,
+      title: "Cancelar búsqueda",
+      message: "¿Seguro que deseas cancelar esta solicitud de tutoría? Podrás volver a elegir otra materia e intentarlo de nuevo.",
+      cancelLabel: "No, volver",
+      confirmLabel: "Sí, cancelar",
+      confirmColor: Colors.redAccent,
     );
 
     if (confirmed == true && mounted) {

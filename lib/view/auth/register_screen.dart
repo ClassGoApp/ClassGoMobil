@@ -7,7 +7,7 @@ import 'package:flutter_projects/base_components/custom_snack_bar.dart';
 import 'package:flutter_projects/base_components/textfield.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
-import 'package:flutter_projects/view/auth/tutor_subject_selection_screen.dart';
+import 'package:flutter_projects/view/auth/widgets/google_role_modal.dart';
 import 'package:flutter_projects/view/components/role_based_navigation.dart';
 import 'package:flutter_projects/view/home/home_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -854,21 +854,28 @@ class _RegistrationScreenState extends State<RegistrationScreen>
         throw Exception('No se pudo obtener el token de Google');
       }
 
+      String roleToUse = this.role;
+      if (roleToUse.isEmpty || _isChecked != 'accepted') {
+        if (!mounted) return;
+        final selectedRole = await showGoogleRoleSelectionDialog(context);
+        if (selectedRole == null) {
+          setState(() { _isLoading = false; });
+          return;
+        }
+        roleToUse = selectedRole;
+      }
+
       final response = await http.post(
         Uri.parse('$baseUrl/auth/google'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'id_token': idToken,
-          'role': this.role,
+          'role': roleToUse,
         }),
       );
 
-      if (response.statusCode == 403) {
-        throw Exception(response.body);
-      }
-
       if (response.statusCode != 200) {
-        throw Exception('Error backend Google login');
+        throw Exception(response.body);
       }
 
       final responseData = jsonDecode(response.body);

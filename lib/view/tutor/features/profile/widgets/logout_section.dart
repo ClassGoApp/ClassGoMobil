@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/base_components/custom_snack_bar.dart';
+import 'package:flutter_projects/base_components/confirm_dialog.dart';
 import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
@@ -17,114 +18,20 @@ class LogoutSection extends StatelessWidget {
     CustomToast.show(context, AppLocalizations.of(context)!.logoutSuccess, isSuccess: true);
   }
 
-  static void showLogoutDialog(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    showDialog(
+  static void showLogoutDialog(BuildContext context) async {
+    final confirmed = await ConfirmDialog.show(
       context: context,
-      builder: (dialogContext) {
-        final dialogBgColor = isDark ? const Color(0xFF1A1D24) : Colors.white;
-        final textColor = isDark ? Colors.white : AppColors.brandBlue;
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: dialogBgColor,
-              borderRadius: BorderRadius.circular(28),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
-                  blurRadius: 25,
-                  offset: const Offset(0, 10),
-                )
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.redAccent.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.logout_rounded, color: Colors.redAccent, size: 32),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  AppLocalizations.of(dialogContext)!.logoutTitle,
-                  style: TextStyle(
-                    fontFamily: _kTitleFont,
-                    color: textColor,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  AppLocalizations.of(dialogContext)!.logoutConfirmMessage,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontFamily: _kBodyFont,
-                    color: Colors.grey,
-                    fontSize: 13,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(dialogContext), 
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          side: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        ),
-                        child: Text(
-                          AppLocalizations.of(dialogContext)!.cancelButton,
-                          style: const TextStyle(
-                            fontFamily: _kTitleFont,
-                            color: Colors.grey,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pop(dialogContext); 
-                          executeLogout(context);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.redAccent,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          elevation: 0,
-                        ),
-                        child: Text(
-                          AppLocalizations.of(dialogContext)!.logoutButton,
-                          style: const TextStyle(
-                            fontFamily: _kTitleFont,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+      icon: Icons.logout_rounded,
+      iconColor: Colors.redAccent,
+      title: AppLocalizations.of(context)!.logoutTitle,
+      message: AppLocalizations.of(context)!.logoutConfirmMessage,
+      cancelLabel: AppLocalizations.of(context)!.cancelButton,
+      confirmLabel: AppLocalizations.of(context)!.logoutButton,
+      confirmColor: Colors.redAccent,
     );
+    if (confirmed == true) {
+      executeLogout(context);
+    }
   }
 
   @override

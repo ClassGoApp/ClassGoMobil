@@ -559,6 +559,8 @@
   "registerWithGoogle": "Registrarse con Google",
   "createYourAccount": "Crea tu cuenta",
   "registerAsStudentOrTutor": "Regístrate como estudiante o tutor y comienza tu viaje educativo con nosotros.",
+  "signUpWithGoogle": "Registrarse con Google",
+  "authGoogleSelectRole": "Selecciona cómo deseas registrarte en ClassGo",
   "iHaveReadAndAgreeToAll": "He leído y estoy de acuerdo con todos los ",
   "andWord": "y ",
   "privacyPolicy": "Políticas de Privacidad",

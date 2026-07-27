@@ -13,6 +13,7 @@ import 'package:flutter_projects/base_components/textfield.dart';
 import 'package:flutter_projects/view/auth/register_screen.dart';
 import 'package:flutter_projects/view/auth/reset_password_screen.dart';
 import 'package:flutter_projects/helpers/back_button_handler.dart';
+import 'package:flutter_projects/view/auth/widgets/google_role_modal.dart';
 import 'package:flutter_projects/view/components/role_based_navigation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_projects/l10n/app_localizations.dart';
@@ -356,6 +357,24 @@ class _LoginScreenState extends State<LoginScreen>
     authProvider.setAuthToken(token);
     print('_saveTokenToProvider completado');
   }
+
+  Future<Map<String, dynamic>?> _googleSignInRetry(
+      String idToken, BuildContext context) async {
+    final selectedRole = await showGoogleRoleSelectionDialog(context);
+    if (selectedRole == null) return null;
+
+    final retryResponse = await http.post(
+      Uri.parse('$baseUrl/auth/google'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'id_token': idToken, 'role': selectedRole}),
+    );
+    if (retryResponse.statusCode != 200) {
+      throw Exception(retryResponse.body);
+    }
+    final responseData = jsonDecode(retryResponse.body);
+    return responseData['data'];
+  }
+
   Future<void> signInWithGoogle(BuildContext context) async {
     final l10n = AppLocalizations.of(context)!;
     setState(() {
@@ -392,16 +411,38 @@ class _LoginScreenState extends State<LoginScreen>
         body: jsonEncode({'id_token': idToken}),
       );
 
-      if (response.statusCode != 200) {
+      Map<String, dynamic> loginData;
+
+      if (response.statusCode == 403) {
+        final errorBody = jsonDecode(response.body);
+        final errorMsg = (errorBody['message'] as String?) ?? '';
+        if (errorMsg.contains('no encontrado') || errorMsg.contains('not found')) {
+          if (!mounted) return;
+          final retryData = await _googleSignInRetry(idToken, context);
+          if (retryData == null) {
+            setState(() { _isLoading = false; });
+            return;
+          }
+          loginData = retryData;
+        } else {
+          throw Exception(response.body);
+        }
+      } else if (response.statusCode != 200) {
         throw Exception(response.body);
-      }
+      } else {
+        final responseData = jsonDecode(response.body);
+        loginData = responseData['data'];
 
-      final responseData = jsonDecode(response.body);
-      final Map<String, dynamic> loginData = responseData['data'];
-
-      final Map<String, dynamic>? userMap = loginData['user'];
-      if (userMap == null || userMap['role'] == null || userMap['profile'] == null) {
-        throw Exception('El usuario no tiene un rol asignado o no tiene un perfil asignado.');
+        final userMap = loginData['user'];
+        if (userMap == null || userMap['role'] == null || userMap['profile'] == null) {
+          if (!mounted) return;
+          final retryData = await _googleSignInRetry(idToken, context);
+          if (retryData == null) {
+            setState(() { _isLoading = false; });
+            return;
+          }
+          loginData = retryData;
+        }
       }
 
       final String token = loginData['token'];

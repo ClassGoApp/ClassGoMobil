@@ -1387,6 +1387,13 @@ class AppLocalizationsEs extends AppLocalizations {
       'Regístrate como estudiante o tutor y comienza tu viaje educativo con nosotros.';
 
   @override
+  String get signUpWithGoogle => 'Registrarse con Google';
+
+  @override
+  String get authGoogleSelectRole =>
+      'Selecciona cómo deseas registrarte en ClassGo';
+
+  @override
   String get iHaveReadAndAgreeToAll =>
       'He leído y estoy de acuerdo con todos los ';
 
