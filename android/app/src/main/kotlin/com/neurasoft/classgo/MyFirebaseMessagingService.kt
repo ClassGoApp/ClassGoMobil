@@ -38,8 +38,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val isTutorPush =
             fromValue.endsWith("/topics/tutor") ||
             fromValue.endsWith("/topics/tutores") ||
-            screenValue == "solicitud_tutor" ||
-            isFlexiblePush
+            screenValue == "solicitud_tutor"
 
         if (isTutorPush && currentRole != "tutor") {
             Log.w(

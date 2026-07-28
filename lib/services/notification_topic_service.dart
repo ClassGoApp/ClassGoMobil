@@ -166,24 +166,84 @@ class NotificationTopicService {
           }
         } else if (data['screen'] == 'solicitud_detalle' ||
             data['screen'] == 'detalle_solicitud' ||
-            data['type'] == 'solicitud_tutor_personalizada') {
+            data['type'] == 'solicitud_tutor_personalizada' ||
+            data['type'] == 'solicitud_flexible') {
           print('📩 [FCM] Procesando notificación de solicitud flexible...');
+
+          // Guardamos en SharedPreferences independientemente del rol para persistencia
+          SharedPreferences.getInstance().then((prefs) async {
+            try {
+              await prefs.reload();
+              const storageKey = 'cached_pending_flexible_requests';
+              final jsonStr = prefs.getString(storageKey);
+              List<dynamic> list = [];
+              if (jsonStr != null && jsonStr.isNotEmpty) {
+                try {
+                  list = jsonDecode(jsonStr);
+                } catch (_) {}
+              }
+
+              // Deduplicar por token
+              String? newToken;
+              var decodificado = data['data_tutor'];
+              if (decodificado != null) {
+                if (decodificado is String) {
+                  try {
+                    var parsed = jsonDecode(decodificado);
+                    if (parsed is String) parsed = jsonDecode(parsed);
+                    decodificado = parsed;
+                  } catch (_) {}
+                }
+                if (decodificado is Map) {
+                  newToken = decodificado['token']?.toString() ??
+                      decodificado['accept_token']?.toString();
+                }
+              }
+              newToken ??= data['token']?.toString() ??
+                  data['accept_token']?.toString();
+
+              if (newToken != null && newToken.isNotEmpty) {
+                list.removeWhere((item) {
+                  if (item is Map) {
+                    var d = item['data_tutor'];
+                    String? t;
+                    if (d != null) {
+                      if (d is String) {
+                        try {
+                          var p = jsonDecode(d);
+                          if (p is String) p = jsonDecode(p);
+                          d = p;
+                        } catch (_) {}
+                      }
+                      if (d is Map) {
+                        t = d['token']?.toString() ??
+                            d['accept_token']?.toString();
+                      }
+                    }
+                    t ??= item['token']?.toString() ??
+                        item['accept_token']?.toString();
+                    return t == newToken;
+                  }
+                  return false;
+                });
+              }
+
+              list.insert(0, data);
+              await prefs.setString(storageKey, jsonEncode(list));
+              print(
+                  '💾 [FCM Foreground] Guardada solicitud flexible en SharedPreferences');
+            } catch (e) {
+              print('Error guardando push foreground en prefs: $e');
+            }
+          });
+
           final context = navigatorKey.currentContext;
-          print('🔍 Navigator context disponible: ${context != null}');
           if (context != null) {
             try {
               final homeProvider =
                   Provider.of<TutorHomeProvider>(context, listen: false);
-              print(
-                  '✅ Asignando pendingFlexibleRequest en TutorHomeProvider...');
               homeProvider.setPendingFlexibleRequest(data);
-            } catch (e) {
-              print(
-                  '❌ Error al actualizar solicitud flexible en primer plano: $e');
-            }
-          } else {
-            print(
-                '⚠️ No hay context en navigatorKey para mostrar tarjeta flexible');
+            } catch (_) {}
           }
         } else if (data['screen'] == 'tutor_aceptado') {
           final context = navigatorKey.currentContext;

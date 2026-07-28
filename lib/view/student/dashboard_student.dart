@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_projects/view/tutor/features/home/widgets/solicitud_flexible_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
@@ -20,10 +23,12 @@ class DashboardStudent extends StatefulWidget {
   _DashboardStudentState createState() => _DashboardStudentState();
 }
 
-class _DashboardStudentState extends State<DashboardStudent> {
+class _DashboardStudentState extends State<DashboardStudent>
+    with WidgetsBindingObserver {
   int _selectedIndex = 0;
   String? profileImageUrl;
   List<ReservationItem> _recentReservations = [];
+  List<Map<String, dynamic>> _pendingFlexibleRequests = [];
   bool _isLoadingRecentReservations = true;
   DateTime? _targetBookingDate;
   late PageController _pageController;
@@ -31,6 +36,7 @@ class _DashboardStudentState extends State<DashboardStudent> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _pageController = PageController(initialPage: _selectedIndex);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -44,8 +50,125 @@ class _DashboardStudentState extends State<DashboardStudent> {
 
       if (mounted) {
         await _loadRecentReservations();
+        await _loadPendingFlexibleRequestsFromStorage();
       }
     });
+  }
+
+  Future<void> _loadPendingFlexibleRequestsFromStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.reload();
+      final jsonStr = prefs.getString('cached_pending_flexible_requests');
+      print(
+          '🔍 [DashboardStudent] Leyendo cached_pending_flexible_requests. Valor: $jsonStr');
+      if (jsonStr != null && jsonStr.isNotEmpty) {
+        final List<dynamic> decoded = jsonDecode(jsonStr);
+        if (mounted) {
+          setState(() {
+            _pendingFlexibleRequests = decoded
+                .map((item) => Map<String, dynamic>.from(item as Map))
+                .toList();
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _pendingFlexibleRequests = [];
+          });
+        }
+      }
+    } catch (e) {
+      print('Error cargando solicitudes flexibles en estudiante: $e');
+    }
+  }
+
+  Future<void> _removePendingFlexibleRequest(
+      Map<String, dynamic> itemData) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.reload();
+      final jsonStr = prefs.getString('cached_pending_flexible_requests');
+      List<dynamic> list = [];
+      if (jsonStr != null && jsonStr.isNotEmpty) {
+        try {
+          list = jsonDecode(jsonStr);
+        } catch (_) {}
+      }
+
+      var decodificado = itemData['data_tutor'];
+      String? targetToken;
+      if (decodificado != null) {
+        if (decodificado is String) {
+          try {
+            var p = jsonDecode(decodificado);
+            if (p is String) p = jsonDecode(p);
+            decodificado = p;
+          } catch (_) {}
+        }
+        if (decodificado is Map) {
+          targetToken = decodificado['token']?.toString() ??
+              decodificado['accept_token']?.toString();
+        }
+      }
+      targetToken ??=
+          itemData['token']?.toString() ?? itemData['accept_token']?.toString();
+
+      if (targetToken != null && targetToken.isNotEmpty) {
+        list.removeWhere((item) {
+          if (item is Map) {
+            var d = item['data_tutor'];
+            String? t;
+            if (d != null) {
+              if (d is String) {
+                try {
+                  var p = jsonDecode(d);
+                  if (p is String) p = jsonDecode(p);
+                  d = p;
+                } catch (_) {}
+              }
+              if (d is Map) {
+                t = d['token']?.toString() ?? d['accept_token']?.toString();
+              }
+            }
+            t ??=
+                item['token']?.toString() ?? item['accept_token']?.toString();
+            return t == targetToken;
+          }
+          return false;
+        });
+      } else {
+        list.remove(itemData);
+      }
+
+      await prefs.setString(
+          'cached_pending_flexible_requests', jsonEncode(list));
+      await _loadPendingFlexibleRequestsFromStorage();
+    } catch (e) {
+      print('Error removiendo solicitud flexible en estudiante: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      print(
+          '📱 [DashboardStudent] App reanudada desde segundo plano. Refrescando reservas y solicitudes...');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _loadRecentReservations();
+          _loadPendingFlexibleRequestsFromStorage();
+        }
+      });
+    }
   }
 
   void changeTab(int index) {
@@ -165,6 +288,16 @@ class _DashboardStudentState extends State<DashboardStudent> {
                     child: BannerTermsSection(role: 'student'),
                   ),
                   const SizedBox(height: 8),
+                ],
+                if (_pendingFlexibleRequests.isNotEmpty) ...[
+                  const SizedBox(height: 5),
+                  ..._pendingFlexibleRequests.map(
+                    (data) => SolicitudFlexibleCard(
+                      data: data,
+                      onClose: () => _removePendingFlexibleRequest(data),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
                 ],
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),

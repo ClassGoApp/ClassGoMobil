@@ -6,18 +6,27 @@ import 'package:flutter_projects/view/tutor/features/home/providers/tutor_home_p
 
 class SolicitudFlexibleCard extends StatelessWidget {
   final Map<String, dynamic> data;
+  final VoidCallback? onClose;
 
-  const SolicitudFlexibleCard({Key? key, required this.data}) : super(key: key);
+  const SolicitudFlexibleCard({
+    Key? key,
+    required this.data,
+    this.onClose,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final homeProvider = Provider.of<TutorHomeProvider>(context);
+    TutorHomeProvider? homeProvider;
+    try {
+      homeProvider = Provider.of<TutorHomeProvider>(context, listen: false);
+    } catch (_) {}
 
     // Extraer datos de la notificación
     var decodificado = data['data_tutor'];
     String? token;
-    String? studentName;
+    String? personName;
     String? subjectName;
+    String? status;
 
     if (decodificado != null) {
       if (decodificado is String) {
@@ -32,24 +41,39 @@ class SolicitudFlexibleCard extends StatelessWidget {
       if (decodificado is Map) {
         token = decodificado['token']?.toString() ??
             decodificado['accept_token']?.toString();
-        studentName = decodificado['nombre'] ??
+        personName = decodificado['nombre'] ??
             decodificado['student_name'] ??
+            decodificado['tutor_name'] ??
             decodificado['estudiante_nombre'] ??
             decodificado['user_name'];
         subjectName = decodificado['materia'] ??
             decodificado['subject_name'] ??
             decodificado['subject'];
+        status = decodificado['status']?.toString();
       }
     }
 
     token ??= data['token']?.toString() ?? data['accept_token']?.toString();
-    studentName ??= data['nombre'] ?? data['student_name'] ?? data['estudiante_nombre'];
+    personName ??= data['nombre'] ??
+        data['student_name'] ??
+        data['tutor_name'] ??
+        data['estudiante_nombre'];
     subjectName ??= data['materia'] ?? data['subject_name'];
+    status ??= data['status']?.toString();
 
-    final String titleText = '¡NUEVA PROPUESTA DE HORARIO!';
-    final String subtitleText = (studentName != null && studentName.isNotEmpty)
-        ? '$studentName quiere agendar una clase${subjectName != null ? " de $subjectName" : ""}.'
-        : 'Un estudiante te ha enviado una propuesta de horario flexible.';
+    final bool isCountered = status == 'countered_by_tutor';
+
+    final String titleText = isCountered
+        ? '¡NUEVA CONTRAOFERTA DE HORARIO!'
+        : '¡PROPUESTA DE HORARIO FLEXIBLE!';
+
+    final String subtitleText = isCountered
+        ? ((personName != null && personName.isNotEmpty)
+            ? '$personName ha enviado una contraoferta de horario${subjectName != null ? " para tu clase de $subjectName" : ""}.'
+            : 'Un tutor ha enviado una nueva propuesta de horario.')
+        : ((personName != null && personName.isNotEmpty)
+            ? '$personName ha actualizado una propuesta de horario${subjectName != null ? " de $subjectName" : ""}.'
+            : 'Tienes una actualización de propuesta de horario flexible.');
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -139,7 +163,13 @@ class SolicitudFlexibleCard extends StatelessWidget {
                         ),
                       ),
                       IconButton(
-                        onPressed: () => homeProvider.removePendingFlexibleRequest(data),
+                        onPressed: () {
+                          if (onClose != null) {
+                            onClose!();
+                          } else {
+                            homeProvider?.removePendingFlexibleRequest(data);
+                          }
+                        },
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                         icon: const Icon(Icons.close_rounded,
