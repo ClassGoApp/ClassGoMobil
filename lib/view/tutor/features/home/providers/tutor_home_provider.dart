@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter_projects/models/booking_status.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -253,7 +254,8 @@ class TutorHomeProvider extends ChangeNotifier {
         final validBookings = bookings.where((b) {
           final status = (b['status'] ?? '').toString().toLowerCase();
           final start = DateTime.tryParse(b['start_time'] ?? '') ?? now;
-          final isValidStatus = ['aceptado', 'aceptada', 'cursando', 'pendiente'].contains(status);
+          final bookingStatus = BookingStatus.fromString(status);
+          final isValidStatus = bookingStatus.isActive || bookingStatus.isPending;
           final isFuture = start.isAfter(now.subtract(const Duration(minutes: 30)));
           return isValidStatus && isFuture;
         }).toList();

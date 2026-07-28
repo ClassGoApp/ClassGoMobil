@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/models/booking_status.dart';
 import 'package:flutter_projects/view/tutor/dashboard/widgets/tutor_bottom_nav.dart';
 import 'package:flutter_projects/view/tutor/features/agenda/tutor_agenda_screen.dart';
 import 'package:flutter_projects/view/tutor/features/home/tutor_home_screen.dart';
@@ -204,11 +205,7 @@ class _DashboardTutorState extends State<DashboardTutor>
           final start = DateTime.tryParse(b['start_time'] ?? '') ?? now;
 
           // Solo mostrar tutorías aceptadas, en curso, completadas, etc.
-          final isAcceptedOrHigher = status == 'aceptado' ||
-              status == 'aceptada' ||
-              status == 'cursando' ||
-              status == 'completada' ||
-              status == 'completado';
+          final isAcceptedOrHigher = !BookingStatus.fromString(status).isFinished;
 
           // Solo mostrar tutorías de hoy o futuras
           final isTodayOrFuture = start.year == today.year &&

@@ -348,7 +348,16 @@ class _RadarSearchScreenState extends State<RadarSearchScreen>
               ),
               const SizedBox(height: 8),
               
-              Text(l10n.tutorsResponded(widget.subjectName), style: const TextStyle(fontFamily: _kFontFamily, color: AppColors.greyColor, fontSize: 14)),
+              Text.rich(
+                TextSpan(
+                  style: const TextStyle(fontFamily: _kFontFamily, color: AppColors.greyColor, fontSize: 14),
+                  children: [
+                    TextSpan(text: 'Han respondido a tu solicitud de '),
+                    TextSpan(text: widget.subjectName, style: const TextStyle(fontWeight: FontWeight.w800)),
+                    TextSpan(text: '.'),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -363,7 +372,6 @@ class _RadarSearchScreenState extends State<RadarSearchScreen>
               return TutorCard(
                 tutor: tutor,
                 subjectName: widget.subjectName,
-                onReject: () => _logicController.removeTutor(index),
                 onAccept: () async {
                   if (_logicController.isProcessing) return;
 

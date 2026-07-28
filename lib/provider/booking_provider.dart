@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/services/sound_service.dart';
+import 'package:flutter_projects/models/booking_status.dart';
 import 'package:flutter_projects/services/vibration_service.dart';
 import 'dart:convert'; 
 
@@ -137,7 +138,8 @@ class BookingProvider extends ChangeNotifier {
       // Guardamos en la variable de la clase Provider, ya filtradas
       _bookings = bookings.where((b) {
         final status = b['status'].toString().toLowerCase();
-        if (status == 'completado' || status == 'rechazado') return false;
+        final bStatus = BookingStatus.fromString(status);
+        if (bStatus.isFinished) return false;
 
         final start = DateTime.tryParse(b['start_time'] ?? '') ?? now;
         return start.year == today.year &&

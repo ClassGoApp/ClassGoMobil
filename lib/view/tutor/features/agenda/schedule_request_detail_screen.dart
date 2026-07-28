@@ -518,18 +518,30 @@ class _ScheduleRequestDetailScreenState
                           child: Row(
                             children: [
                               CircleAvatar(
-                                backgroundColor:
-                                    AppColors.brandCyan.withOpacity(0.15),
                                 radius: 24,
-                                child: Text(
-                                  counterPartyInitial,
-                                  style: const TextStyle(
-                                    color: AppColors.brandCyan,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                    fontFamily: AppFonts.heading,
-                                  ),
-                                ),
+                                backgroundImage: () {
+                                  final String? url = counterParty?['profile_image_url'] as String?;
+                                  if (url != null && url.startsWith('http')) {
+                                    return NetworkImage(url);
+                                  }
+                                  return null;
+                                }(),
+                                backgroundColor: AppColors.brandCyan.withOpacity(0.15),
+                                child: () {
+                                  final String? url = counterParty?['profile_image_url'] as String?;
+                                  if (url != null && url.startsWith('http')) {
+                                    return null;
+                                  }
+                                  return Text(
+                                    counterPartyInitial,
+                                    style: const TextStyle(
+                                      color: AppColors.brandCyan,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18,
+                                      fontFamily: AppFonts.heading,
+                                    ),
+                                  );
+                                }(),
                               ),
                               const SizedBox(width: 14),
                               Expanded(

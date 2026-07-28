@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_projects/models/booking_status.dart';
 import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/view/tutor/features/agenda/providers/tutor_agenda_provider.dart';
@@ -134,7 +135,7 @@ class _BookingSummaryCard extends StatelessWidget {
     final startTime = reservation.start != null ? DateFormat('HH:mm').format(reservation.start!) : '--:--';
     final endTime = reservation.end != null ? DateFormat('HH:mm').format(reservation.end!) : '--:--';
     
-    final isPending = reservation.status.toLowerCase().contains('pendiente');
+    final isPending = BookingStatus.fromString(reservation.status).isPending;
     final accentColor = isPending ? AppColors.brandOrange : AppColors.brandCyan;
 
     return GestureDetector(

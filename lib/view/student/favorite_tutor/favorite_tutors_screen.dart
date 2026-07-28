@@ -10,7 +10,7 @@ import 'package:flutter_projects/view/components/role_based_navigation.dart';
 import 'package:flutter_projects/view/student/favorite_tutor/services/favorite_tutor_service.dart';
 import 'package:flutter_projects/view/student/serch_Tutor/search_tutors_screen.dart';
 import 'package:flutter_projects/view/student/serch_Tutor/widgets/tutor_card.dart';
-import 'package:flutter_projects/view/student/reservations/instant-reservation/instant_tutoring_screen.dart';
+import 'package:flutter_projects/view/student/reservations/widgets/booking_modal.dart';
 import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:provider/provider.dart';
@@ -386,25 +386,16 @@ class _FavoriteTutorsContentState extends State<FavoriteTutorsContent> {
                             context: context,
                             isScrollControlled: true,
                             backgroundColor: Colors.transparent,
-                            builder: (context) => Container(
-                              margin: const EdgeInsets.only(top: 60),
-                              decoration: const BoxDecoration(
-                                color: AppColors.darkBlue,
-                                borderRadius: BorderRadius.vertical(
-                                  top: Radius.circular(24),
-                                ),
-                              ),
-                              child: InstantTutoringScreen(
-                                tutorName: (profile['full_name'] ??
-                                        l10n.noNameAvailable)
-                                    .toString(),
-                                tutorImage: (profile['image'] ??
-                                        AppImages.placeHolderImage)
-                                    .toString(),
-                                subjects: validSubjects,
-                                tutorId: t['id'],
-                                subjectId: selectedSubjectId,
-                              ),
+                            builder: (context) => BookingModal(
+                              tutorName: (profile['full_name'] ??
+                                      l10n.noNameAvailable)
+                                  .toString(),
+                              tutorImage: (profile['image'] ??
+                                      AppImages.placeHolderImage)
+                                  .toString(),
+                              subjects: validSubjects,
+                              tutorId: t['id'],
+                              subjectId: selectedSubjectId,
                             ),
                           ).then((_) {
                             _loadFavorites();
@@ -448,7 +439,7 @@ class _FavoriteTutorsContentState extends State<FavoriteTutorsContent> {
                         description: (profile['description'] ?? '').toString(),
                         isVerified:
                             t['is_verified'] == true || t['is_verified'] == 1,
-                        showStartButton: true,
+                        showStartButton: false,
                       ),
                     ),
                   ),

@@ -21,6 +21,7 @@ class ConfirmDialog {
         backgroundColor: Colors.transparent,
         insetPadding: const EdgeInsets.symmetric(horizontal: 20),
         child: Container(
+          constraints: const BoxConstraints(maxWidth: 400),
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: Colors.white,
@@ -67,44 +68,48 @@ class ConfirmDialog {
               ),
               const SizedBox(height: 24),
               Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  OutlinedButton(
-                    onPressed: () => Navigator.pop(ctx, false),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      side: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        side: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                       ),
-                    ),
-                    child: Text(
-                      cancelLabel,
-                      style: const TextStyle(
-                        fontFamily: _kDialogTitleFont,
-                        color: Colors.grey,
-                        fontWeight: FontWeight.bold,
+                      child: Text(
+                        cancelLabel,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontFamily: _kDialogTitleFont,
+                          color: Colors.grey,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(width: 12),
-                  ElevatedButton(
-                    onPressed: () => Navigator.pop(ctx, true),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: confirmBg,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: confirmBg,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 0,
                       ),
-                      elevation: 0,
-                    ),
-                    child: Text(
-                      confirmLabel,
-                      style: const TextStyle(
-                        fontFamily: _kDialogTitleFont,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                      child: Text(
+                        confirmLabel,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontFamily: _kDialogTitleFont,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),

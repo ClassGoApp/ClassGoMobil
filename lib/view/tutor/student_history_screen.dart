@@ -3,6 +3,7 @@ import 'package:flutter_projects/view/layout/main_shell.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/booking_provider.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/models/booking_status.dart';
 import 'package:flutter_projects/l10n/app_localizations.dart';
 
 class StudentHistoryScreen extends StatefulWidget {
@@ -27,20 +28,8 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> {
   ];
 
   Color _statusColor(String status) {
-    switch (status) {
-      case 'completado':
-        return AppColors.primaryGreen;
-      case 'pendiente':
-        return AppColors.orangeprimary;
-      case 'aceptado':
-        return AppColors.lightBlueColor;
-      case 'observada':
-        return AppColors.yellowColor;
-      case 'rechazado':
-        return AppColors.redColor;
-      default:
-        return Colors.white24;
-    }
+    if (status == 'observada') return AppColors.yellowColor;
+    return BookingStatus.fromString(status).statusColor;
   }
 
   List<Map<String, dynamic>> _applyFilters(

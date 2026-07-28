@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/models/booking_status.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/provider/booking_provider.dart';
@@ -28,22 +29,18 @@ class _StudentCalendarScreenState extends State<StudentCalendarScreen> {
   }
 
   Color _statusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'completed':
-      case 'completada':
+    final bStatus = BookingStatus.fromString(status);
+    switch (bStatus) {
+      case BookingStatus.completado:
         return AppColors.primaryGreen;
-      case 'pending':
-      case 'pendiente':
+      case BookingStatus.pendiente:
         return AppColors.orangeprimary.withOpacity(0.85);
-      case 'accepted':
-      case 'aceptada':
+      case BookingStatus.aceptado:
         return AppColors.lightBlueColor;
-      case 'observed':
-      case 'observada':
-        return AppColors.darkBlue.withOpacity(0.85);
-      case 'rejected':
-      case 'rechazada':
+      case BookingStatus.rechazado:
         return Colors.redAccent.withOpacity(0.85);
+      case BookingStatus.noCompletado:
+        return AppColors.darkBlue.withOpacity(0.85);
       default:
         return Colors.grey;
     }
