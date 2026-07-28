@@ -22,6 +22,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_projects/provider/theme_provider.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 
+import 'package:firebase_messaging/firebase_messaging.dart';
+
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -77,7 +79,7 @@ void main() async {
 
   // El resto de tu lógica de Messaging y Config...
   if (firebaseInitialized) {
-    //await FirebaseMessagingService.initialize(navigatorKey: navigatorKey);
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   }
 
   runApp(

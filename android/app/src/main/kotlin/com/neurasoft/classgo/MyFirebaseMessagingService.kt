@@ -24,11 +24,22 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val currentRole = rolePrefs.getString("flutter.fcm_user_role", "unknown")?.lowercase()
         val fromValue = remoteMessage.from?.lowercase() ?: ""
         val screenValue = remoteMessage.data["screen"]?.lowercase() ?: ""
+        val typeValue = remoteMessage.data["type"]?.lowercase() ?: ""
+        val isFlexiblePush =
+            screenValue == "solicitud_detalle" ||
+            screenValue == "detalle_solicitud" ||
+            typeValue == "solicitud_tutor_personalizada" ||
+            typeValue == "solicitud_flexible"
+
+        if (isFlexiblePush) {
+            saveFlexibleRequestToFlutterPrefs(remoteMessage.data)
+        }
 
         val isTutorPush =
             fromValue.endsWith("/topics/tutor") ||
             fromValue.endsWith("/topics/tutores") ||
-            screenValue == "solicitud_tutor"
+            screenValue == "solicitud_tutor" ||
+            isFlexiblePush
 
         if (isTutorPush && currentRole != "tutor") {
             Log.w(
@@ -122,5 +133,74 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val notificationId = (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
         notificationManager.notify(notificationId, notificationBuilder.build())
         Log.d("MyFirebaseMsgService", "Notificacion publicada con id: $notificationId")
+    }
+
+    private fun saveFlexibleRequestToFlutterPrefs(data: Map<String, String>) {
+        try {
+            val rolePrefs = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+            val existingJson = rolePrefs.getString("flutter.cached_pending_flexible_requests", null)
+
+            val jsonArray = if (!existingJson.isNullOrEmpty()) {
+                try {
+                    org.json.JSONArray(existingJson)
+                } catch (e: Exception) {
+                    org.json.JSONArray()
+                }
+            } else {
+                org.json.JSONArray()
+            }
+
+            val newObject = org.json.JSONObject()
+            for ((k, v) in data) {
+                newObject.put(k, v)
+            }
+
+            val dataTutorStr = data["data_tutor"]
+            var newToken: String? = data["token"] ?: data["accept_token"]
+            if (dataTutorStr != null) {
+                try {
+                    var dtObj: org.json.JSONObject? = null
+                    if (dataTutorStr.startsWith("{")) {
+                        dtObj = org.json.JSONObject(dataTutorStr)
+                    }
+                    if (dtObj != null) {
+                        newToken = dtObj.optString("token", dtObj.optString("accept_token", newToken))
+                    }
+                } catch (_: Exception) {}
+            }
+
+            val filteredArray = org.json.JSONArray()
+            if (!newToken.isNullOrEmpty()) {
+                for (i in 0 until jsonArray.length()) {
+                    val item = jsonArray.optJSONObject(i) ?: continue
+                    var existingToken = item.optString("token", item.optString("accept_token", ""))
+                    val itemDtStr = item.optString("data_tutor", null)
+                    if (itemDtStr != null && itemDtStr.startsWith("{")) {
+                        try {
+                            val dtObj = org.json.JSONObject(itemDtStr)
+                            existingToken = dtObj.optString("token", dtObj.optString("accept_token", existingToken))
+                        } catch (_: Exception) {}
+                    }
+                    if (existingToken != newToken) {
+                        filteredArray.put(item)
+                    }
+                }
+            } else {
+                for (i in 0 until jsonArray.length()) {
+                    filteredArray.put(jsonArray.get(i))
+                }
+            }
+
+            val finalArray = org.json.JSONArray()
+            finalArray.put(newObject)
+            for (i in 0 until filteredArray.length()) {
+                finalArray.put(filteredArray.get(i))
+            }
+
+            rolePrefs.edit().putString("flutter.cached_pending_flexible_requests", finalArray.toString()).apply()
+            Log.d("MyFirebaseMsgService", "💾 Guardada solicitud flexible en SharedPreferences de Flutter desde Kotlin!")
+        } catch (e: Exception) {
+            Log.e("MyFirebaseMsgService", "❌ Error guardando solicitud flexible en Kotlin: ${e.message}")
+        }
     }
 } 
