@@ -90,12 +90,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   List<int>? selectedLanguageIds;
   int? selectedSubjectId;
   String? _selectedSortOption;
-  final List<String> _sortOptions = [
-    'Nombre (A-Z)',
-    'Nombre (Z-A)',
-    'Materia (A-Z)',
-    'Materia (Z-A)'
-  ];
+  String _selectedFilterChip = 'Todos';
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
   int? _minCourses;
@@ -167,6 +162,18 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
+    final List<String> options;
+    switch (_selectedFilterChip) {
+      case 'Mejor Valorado':
+        options = ['Mayor calificación', 'Menor calificación'];
+        break;
+      case 'Precio':
+        options = ['Menor precio', 'Mayor precio'];
+        break;
+      default:
+        options = ['Nombre (A-Z)', 'Nombre (Z-A)', 'Materia (A-Z)', 'Materia (Z-A)'];
+    }
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -186,7 +193,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                   style: TextStyle(color: theme.textTheme.bodyLarge?.color),
                 ),
                 trailing: _selectedSortOption == null ||
-                        _selectedSortOption == 'Sin ordenar'
+                        _selectedSortOption == 'Sin ordenar' ||
+                        !options.contains(_selectedSortOption)
                     ? Icon(Icons.check, color: AppColors.primaryGreen)
                     : null,
                 onTap: () {
@@ -198,7 +206,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                   Navigator.pop(ctx);
                 },
               ),
-              ..._sortOptions.map((opt) => ListTile(
+              ...options.map((opt) => ListTile(
                     title: Text(
                       opt,
                       style: TextStyle(color: theme.textTheme.bodyLarge?.color),
@@ -1050,13 +1058,11 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                       padding: EdgeInsets.symmetric(horizontal: 20),
                       child: Row(
                         children: [
-                          _buildFilterChip('Todos', true),
+                          _buildFilterChip('Todos', _selectedFilterChip == 'Todos'),
+                          SizedBox(width: 20),
+                          _buildFilterChip('Mejor Valorado', _selectedFilterChip == 'Mejor Valorado'),
                           SizedBox(width: 8),
-                          _buildFilterChip('Disponible', true),
-                          SizedBox(width: 8),
-                          _buildFilterChip('Mejor Valorado', false),
-                          SizedBox(width: 8),
-                          _buildFilterChip('Precio', false),
+                          _buildFilterChip('Precio', _selectedFilterChip == 'Precio'),
                         ],
                       ),
                     ),
@@ -1152,7 +1158,20 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
 
     return GestureDetector(
       onTap: () {
-        // Implementar lógica de filtrado según el chip seleccionado
+        if (_selectedFilterChip == label) return;
+        setState(() {
+          _selectedFilterChip = label;
+        });
+        if (label == 'Todos') {
+          _sortTutors('Sin ordenar');
+        } else {
+          final sortLabel = label == 'Mejor Valorado'
+              ? 'Mayor calificación'
+              : label == 'Precio'
+                  ? 'Menor precio'
+                  : label;
+          _sortTutors(sortLabel);
+        }
       },
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),

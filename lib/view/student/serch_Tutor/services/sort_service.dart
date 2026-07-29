@@ -52,8 +52,43 @@ List<Map<String, dynamic>> sortTutors(
       list.sort((a, b) => normalize(_firstValidSubject(b))
           .compareTo(normalize(_firstValidSubject(a))));
       break;
+    case 'Mejor Valorado':
+    case 'Mayor calificación':
+    case 'Menor calificación': {
+      final bool desc = sortOption == 'Mejor Valorado' || sortOption == 'Mayor calificación';
+      list.sort((a, b) {
+        final ratingA = (a['avg_rating'] ?? 0) is num
+            ? (a['avg_rating'] ?? 0).toDouble()
+            : double.tryParse((a['avg_rating'] ?? '0').toString()) ?? 0;
+        final ratingB = (b['avg_rating'] ?? 0) is num
+            ? (b['avg_rating'] ?? 0).toDouble()
+            : double.tryParse((b['avg_rating'] ?? '0').toString()) ?? 0;
+        return desc
+            ? ratingB.compareTo(ratingA)
+            : ratingA.compareTo(ratingB);
+      });
+      break;
+    }
+    case 'Precio':
+    case 'Más barato':
+    case 'Menor precio':
+    case 'Más caro':
+    case 'Mayor precio': {
+      final bool asc = sortOption == 'Precio' || sortOption == 'Más barato' || sortOption == 'Menor precio';
+      list.sort((a, b) {
+        final priceA = (a['profile']?['price'] ?? 0) is num
+            ? (a['profile']?['price'] ?? 0).toDouble()
+            : double.tryParse((a['profile']?['price'] ?? '0').toString()) ?? 0;
+        final priceB = (b['profile']?['price'] ?? 0) is num
+            ? (b['profile']?['price'] ?? 0).toDouble()
+            : double.tryParse((b['profile']?['price'] ?? '0').toString()) ?? 0;
+        return asc
+            ? priceA.compareTo(priceB)
+            : priceB.compareTo(priceA);
+      });
+      break;
+    }
     default:
-      // Sin cambios
       break;
   }
 

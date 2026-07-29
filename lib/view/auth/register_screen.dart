@@ -16,6 +16,7 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_projects/helpers/back_button_handler.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'login_screen.dart';
 import 'verification_pending_screen.dart';
@@ -680,7 +681,15 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                                                 decoration:
                                                     TextDecoration.underline),
                                             recognizer: TapGestureRecognizer()
-                                              ..onTap = () {},
+                                              ..onTap = () async {
+                                                final uri = Uri.parse(
+                                                    'https://classgoapp.com/terminos');
+                                                if (await canLaunchUrl(uri)) {
+                                                  await launchUrl(uri,
+                                                      mode: LaunchMode
+                                                          .inAppWebView);
+                                                }
+                                              },
                                           ),
                                           TextSpan(
                                             text: ' ',
@@ -707,7 +716,15 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                                                 decoration:
                                                     TextDecoration.underline),
                                             recognizer: TapGestureRecognizer()
-                                              ..onTap = () {},
+                                              ..onTap = () async {
+                                                final uri = Uri.parse(
+                                                    'https://classgoapp.com/terminos');
+                                                if (await canLaunchUrl(uri)) {
+                                                  await launchUrl(uri,
+                                                      mode: LaunchMode
+                                                          .inAppWebView);
+                                                }
+                                              },
                                           ),
                                         ],
                                       ),
