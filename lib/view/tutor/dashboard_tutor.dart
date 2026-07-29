@@ -16,6 +16,7 @@ import 'package:flutter_projects/l10n/app_localizations.dart';
 
 // Provider y Modelos
 import 'package:flutter_projects/provider/tutor_subjects_provider.dart';
+import 'package:flutter_projects/view/tutor/features/home/providers/tutor_home_provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
 
@@ -434,11 +435,20 @@ class _DashboardTutorState extends State<DashboardTutor>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
-      // Recargar la imagen del perfil cuando la app se reanuda
+      print(
+          '📱 [DashboardTutor] App reanudada desde segundo plano. Cargando solicitudes flexibles...');
 
       // Usar addPostFrameCallback para evitar problemas de setState
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
+          try {
+            final homeProvider =
+                Provider.of<TutorHomeProvider>(context, listen: false);
+            homeProvider.loadPendingFlexibleRequestsFromStorage();
+          } catch (e) {
+            print('Error cargando solicitudes flexibles en DashboardTutor: $e');
+          }
+
           // Sincronizar imagen del AuthProvider
           _syncProfileImageFromAuthProvider();
 

@@ -14,6 +14,7 @@ import 'package:flutter_projects/view/tutor/dashboard/widgets/quick_access_secti
 import 'package:flutter_projects/view/tutor/dashboard/widgets/dashboard_top_section.dart';
 import 'package:flutter_projects/view/tutor/dashboard/widgets/next_appointment_section.dart';
 import 'package:flutter_projects/view/tutor/features/home/widgets/solicitud_tutoria_card.dart';
+import 'package:flutter_projects/view/tutor/features/home/widgets/solicitud_flexible_card.dart';
 
 class TutorHomeScreen extends StatefulWidget {
   final Function(int) onNavigate;
@@ -24,15 +25,38 @@ class TutorHomeScreen extends StatefulWidget {
   State<TutorHomeScreen> createState() => _TutorHomeScreenState();
 }
 
-class _TutorHomeScreenState extends State<TutorHomeScreen> {
+class _TutorHomeScreenState extends State<TutorHomeScreen>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<TutorHomeProvider>(context, listen: false)
           .loadHomeData(context);
       _loadIdentityStatus();
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      print(
+          '📱 [TutorHomeScreen] App reanudada desde segundo plano. Cargando solicitudes flexibles...');
+      try {
+        final homeProvider =
+            Provider.of<TutorHomeProvider>(context, listen: false);
+        homeProvider.loadPendingFlexibleRequestsFromStorage();
+      } catch (e) {
+        print('Error reanudando solicitudes flexibles: $e');
+      }
+    }
   }
 
   Future<void> _loadIdentityStatus() async {
@@ -45,7 +69,8 @@ class _TutorHomeScreenState extends State<TutorHomeScreen> {
       if (!mounted) return;
       if (response['success'] == true && response['data'] != null) {
         final status = response['data']['status'];
-        if (status != null && authProvider.identityVerificationStatus != 'accepted') {
+        if (status != null &&
+            authProvider.identityVerificationStatus != 'accepted') {
           await authProvider.setIdentityStatus(status.toString());
         }
       }
@@ -67,7 +92,21 @@ class _TutorHomeScreenState extends State<TutorHomeScreen> {
       alerts.add(
         Align(
           alignment: Alignment.topCenter,
-          child: SolicitudTutoriaCard(data: homeProvider.pendingTutoringRequest!),
+          child:
+              SolicitudTutoriaCard(data: homeProvider.pendingTutoringRequest!),
+        ),
+      );
+    }
+
+    for (int i = 0; i < homeProvider.pendingFlexibleRequests.length; i++) {
+      final reqData = homeProvider.pendingFlexibleRequests[i];
+      alerts.add(
+        Align(
+          alignment: Alignment.topCenter,
+          child: SolicitudFlexibleCard(
+            key: ValueKey('flexible_req_${i}_${reqData['token'] ?? reqData.hashCode}'),
+            data: reqData,
+          ),
         ),
       );
     }
@@ -127,8 +166,7 @@ class _TutorHomeScreenState extends State<TutorHomeScreen> {
     final profile = user?['profile'] ?? {};
     final String userName = user != null ? (user['name'] ?? AppLocalizations.of(context)!.defaultTutorName) : AppLocalizations.of(context)!.defaultTutorName;
 
-    String? imageUrl =
-        profile['image'] ?? profile['profile_image'];
+    String? imageUrl = profile['image'] ?? profile['profile_image'];
 
     final bool isVerified = profile['verified'] == true;
     final bool hasAcceptedTerms = user?['terms_accepted'] == true;
@@ -194,7 +232,8 @@ class _TutorHomeScreenState extends State<TutorHomeScreen> {
                     },
                     child: activeAlerts.isNotEmpty
                         ? Column(
-                            key: const ValueKey('alerts'),
+                            key: ValueKey(
+                                'alerts_${activeAlerts.length}_${homeProvider.pendingFlexibleRequest != null}'),
                             children: [
                               const SizedBox(height: 5),
                               _ActionCarouselSection(alerts: activeAlerts),
@@ -202,9 +241,7 @@ class _TutorHomeScreenState extends State<TutorHomeScreen> {
                           )
                         : const SizedBox(key: ValueKey('no_alerts')),
                   ),
-
                   QuickAccessSection(onNavigate: widget.onNavigate),
-
                   NextAppointmentSection(
                     isAvailable: homeProvider.isAvailable,
                     onNavigate: widget.onNavigate,
@@ -215,7 +252,7 @@ class _TutorHomeScreenState extends State<TutorHomeScreen> {
                       final end =
                           DateTime.tryParse(booking['end_time'] ?? '') ??
                               start.add(const Duration(minutes: 20));
-                              
+
                       return ReservationItem(
                           id: booking['id'] ?? 0,
                           subjectName: booking['subject_name'] ?? AppLocalizations.of(context)!.defaultSubjectName,
@@ -235,13 +272,13 @@ class _TutorHomeScreenState extends State<TutorHomeScreen> {
       ],
     );
   }
-
 }
 
 class _ActionCarouselSection extends StatefulWidget {
   final List<Widget> alerts;
 
-  const _ActionCarouselSection({Key? key, required this.alerts}) : super(key: key);
+  const _ActionCarouselSection({Key? key, required this.alerts})
+      : super(key: key);
 
   @override
   State<_ActionCarouselSection> createState() => _ActionCarouselSectionState();
@@ -255,6 +292,23 @@ class _ActionCarouselSectionState extends State<_ActionCarouselSection> {
   void initState() {
     super.initState();
     _pageController = PageController(viewportFraction: 0.95);
+  }
+
+  @override
+  void didUpdateWidget(covariant _ActionCarouselSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.alerts.length > oldWidget.alerts.length) {
+      if (_pageController.hasClients) {
+        _pageController.animateToPage(
+          0,
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeOutCubic,
+        );
+      }
+      setState(() {
+        _currentPage = 0;
+      });
+    }
   }
 
   @override
@@ -298,8 +352,8 @@ class _ActionCarouselSectionState extends State<_ActionCarouselSection> {
                   height: 4.0,
                   width: _currentPage == index ? 24.0 : 12.0,
                   decoration: BoxDecoration(
-                    color: _currentPage == index 
-                        ? AppColors.brandCyan 
+                    color: _currentPage == index
+                        ? AppColors.brandCyan
                         : Colors.grey.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(2.0),
                   ),

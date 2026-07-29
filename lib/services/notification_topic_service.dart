@@ -13,6 +13,82 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_projects/view/tutor/features/agenda/schedule_request_detail_screen.dart';
 
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  print('🔔 [FCM Background] Notificación recibida en segundo plano: ${message.data}');
+
+  final data = message.data;
+  final screen = data['screen'];
+  final type = data['type'];
+
+  if (screen == 'solicitud_detalle' ||
+      screen == 'detalle_solicitud' ||
+      type == 'solicitud_tutor_personalizada' ||
+      type == 'solicitud_flexible') {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.reload();
+      const storageKey = 'cached_pending_flexible_requests';
+      final jsonStr = prefs.getString(storageKey);
+      List<dynamic> list = [];
+      if (jsonStr != null && jsonStr.isNotEmpty) {
+        try {
+          list = jsonDecode(jsonStr);
+        } catch (_) {}
+      }
+
+      String? newToken;
+      var decodificado = data['data_tutor'];
+      if (decodificado != null) {
+        if (decodificado is String) {
+          try {
+            var parsed = jsonDecode(decodificado);
+            if (parsed is String) parsed = jsonDecode(parsed);
+            decodificado = parsed;
+          } catch (_) {}
+        }
+        if (decodificado is Map) {
+          newToken = decodificado['token']?.toString() ??
+              decodificado['accept_token']?.toString();
+        }
+      }
+      newToken ??=
+          data['token']?.toString() ?? data['accept_token']?.toString();
+
+      if (newToken != null && newToken.isNotEmpty) {
+        list.removeWhere((item) {
+          if (item is Map) {
+            var d = item['data_tutor'];
+            String? t;
+            if (d != null) {
+              if (d is String) {
+                try {
+                  var p = jsonDecode(d);
+                  if (p is String) p = jsonDecode(p);
+                  d = p;
+                } catch (_) {}
+              }
+              if (d is Map) {
+                t = d['token']?.toString() ?? d['accept_token']?.toString();
+              }
+            }
+            t ??= item['token']?.toString() ?? item['accept_token']?.toString();
+            return t == newToken;
+          }
+          return false;
+        });
+      }
+
+      list.insert(0, data);
+      await prefs.setString(storageKey, jsonEncode(list));
+      print(
+          '💾 [FCM Background] Solicitud flexible guardada exitosamente en SharedPreferences!');
+    } catch (e) {
+      print('❌ [FCM Background] Error al guardar notificación flexible: $e');
+    }
+  }
+}
+
 class NotificationTopicService {
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   static const String _tutorTopic = 'tutor';
@@ -87,6 +163,87 @@ class NotificationTopicService {
               print(
                   'Error al actualizar TutorHomeProvider desde notificación: $e');
             }
+          }
+        } else if (data['screen'] == 'solicitud_detalle' ||
+            data['screen'] == 'detalle_solicitud' ||
+            data['type'] == 'solicitud_tutor_personalizada' ||
+            data['type'] == 'solicitud_flexible') {
+          print('📩 [FCM] Procesando notificación de solicitud flexible...');
+
+          // Guardamos en SharedPreferences independientemente del rol para persistencia
+          SharedPreferences.getInstance().then((prefs) async {
+            try {
+              await prefs.reload();
+              const storageKey = 'cached_pending_flexible_requests';
+              final jsonStr = prefs.getString(storageKey);
+              List<dynamic> list = [];
+              if (jsonStr != null && jsonStr.isNotEmpty) {
+                try {
+                  list = jsonDecode(jsonStr);
+                } catch (_) {}
+              }
+
+              // Deduplicar por token
+              String? newToken;
+              var decodificado = data['data_tutor'];
+              if (decodificado != null) {
+                if (decodificado is String) {
+                  try {
+                    var parsed = jsonDecode(decodificado);
+                    if (parsed is String) parsed = jsonDecode(parsed);
+                    decodificado = parsed;
+                  } catch (_) {}
+                }
+                if (decodificado is Map) {
+                  newToken = decodificado['token']?.toString() ??
+                      decodificado['accept_token']?.toString();
+                }
+              }
+              newToken ??= data['token']?.toString() ??
+                  data['accept_token']?.toString();
+
+              if (newToken != null && newToken.isNotEmpty) {
+                list.removeWhere((item) {
+                  if (item is Map) {
+                    var d = item['data_tutor'];
+                    String? t;
+                    if (d != null) {
+                      if (d is String) {
+                        try {
+                          var p = jsonDecode(d);
+                          if (p is String) p = jsonDecode(p);
+                          d = p;
+                        } catch (_) {}
+                      }
+                      if (d is Map) {
+                        t = d['token']?.toString() ??
+                            d['accept_token']?.toString();
+                      }
+                    }
+                    t ??= item['token']?.toString() ??
+                        item['accept_token']?.toString();
+                    return t == newToken;
+                  }
+                  return false;
+                });
+              }
+
+              list.insert(0, data);
+              await prefs.setString(storageKey, jsonEncode(list));
+              print(
+                  '💾 [FCM Foreground] Guardada solicitud flexible en SharedPreferences');
+            } catch (e) {
+              print('Error guardando push foreground en prefs: $e');
+            }
+          });
+
+          final context = navigatorKey.currentContext;
+          if (context != null) {
+            try {
+              final homeProvider =
+                  Provider.of<TutorHomeProvider>(context, listen: false);
+              homeProvider.setPendingFlexibleRequest(data);
+            } catch (_) {}
           }
         } else if (data['screen'] == 'tutor_aceptado') {
           final context = navigatorKey.currentContext;
@@ -270,7 +427,27 @@ class NotificationTopicService {
     RemoteMessage message,
     GlobalKey<NavigatorState> navigatorKey,
   ) {
-    _handleNavigationFromData(message.data, navigatorKey);
+    final data = Map<String, dynamic>.from(message.data);
+    print('🔔 FCM _handleNavigation recibido. Data: $data');
+
+    final context = navigatorKey.currentContext;
+    if (context != null) {
+      try {
+        final homeProvider =
+            Provider.of<TutorHomeProvider>(context, listen: false);
+        final screen = data['screen'];
+        final type = data['type'];
+        if (screen == 'solicitud_detalle' ||
+            screen == 'detalle_solicitud' ||
+            type == 'solicitud_tutor_personalizada' ||
+            type == 'solicitud_flexible') {
+          homeProvider.addPendingFlexibleRequest(data);
+        }
+      } catch (e) {
+        print('Error añadiendo desde _handleNavigation: $e');
+      }
+    }
+    _handleNavigationFromData(data, navigatorKey);
   }
 
   static Future<void> _setupNativeNotificationClickBridge() async {
@@ -349,6 +526,12 @@ class NotificationTopicService {
       case 'solicitud_detalle':
       case 'detalle_solicitud':
         try {
+          try {
+            final homeProvider =
+                Provider.of<TutorHomeProvider>(context, listen: false);
+            homeProvider.setPendingFlexibleRequest(data);
+          } catch (_) {}
+
           var decodificado = data['data_tutor'];
           String? tutorToken;
           if (decodificado != null) {
@@ -429,6 +612,13 @@ class NotificationTopicService {
           } catch (e) {
             print('Error al procesar identity_verification_rejected: $e');
           }
+        } else if (data['type'] == 'solicitud_tutor_personalizada' ||
+            data['type'] == 'solicitud_flexible') {
+          try {
+            final homeProvider =
+                Provider.of<TutorHomeProvider>(context, listen: false);
+            homeProvider.setPendingFlexibleRequest(data);
+          } catch (_) {}
         } else {
           print('Push sin pantalla manejada: ${data['screen']}');
         }
