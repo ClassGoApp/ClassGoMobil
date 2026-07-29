@@ -92,7 +92,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   List<int>? selectedLanguageIds;
   int? selectedSubjectId;
   String? _selectedSortOption;
-  String _selectedFilterChip = 'Todos';
+  String _selectedFilterChip = 'all';
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
   int? _minCourses;
@@ -166,10 +166,10 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
 
     final List<String> options;
     switch (_selectedFilterChip) {
-      case 'Mejor Valorado':
+      case 'top_rated':
         options = ['Mayor calificación', 'Menor calificación'];
         break;
-      case 'Precio':
+      case 'price':
         options = ['Menor precio', 'Mayor precio'];
         break;
       default:
@@ -270,13 +270,6 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final l10n = AppLocalizations.of(context)!;
-    _sortOptions = [
-      l10n.nameAZ,
-      l10n.nameZA,
-      l10n.subjectAZ,
-      l10n.subjectZA
-    ];
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final userData = authProvider.userData;
@@ -1060,11 +1053,11 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                       padding: EdgeInsets.symmetric(horizontal: 20),
                       child: Row(
                         children: [
-                          _buildFilterChip(l10n.all, _selectedFilterChip == 'Todos'),
+                          _buildFilterChip('all', l10n.all, _selectedFilterChip == 'all'),
                           SizedBox(width: 20),
-                          _buildFilterChip(l10n.topRated, _selectedFilterChip == 'Mejor Valorado'),
+                          _buildFilterChip('top_rated', l10n.topRated, _selectedFilterChip == 'top_rated'),
                           SizedBox(width: 8),
-                          _buildFilterChip(l10n.price, _selectedFilterChip == 'Precio'),
+                          _buildFilterChip('price', l10n.price, _selectedFilterChip == 'price'),
                         ],
                       ),
                     ),
@@ -1154,25 +1147,22 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     );
   }
 
-  Widget _buildFilterChip(String label, bool isSelected) {
+  Widget _buildFilterChip(String id, String label, bool isSelected) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
     return GestureDetector(
       onTap: () {
-        if (_selectedFilterChip == label) return;
+        if (_selectedFilterChip == id) return;
         setState(() {
-          _selectedFilterChip = label;
+          _selectedFilterChip = id;
         });
-        if (label == 'Todos') {
+        if (id == 'all') {
           _sortTutors('Sin ordenar');
-        } else {
-          final sortLabel = label == 'Mejor Valorado'
-              ? 'Mayor calificación'
-              : label == 'Precio'
-                  ? 'Menor precio'
-                  : label;
-          _sortTutors(sortLabel);
+        } else if (id == 'top_rated') {
+          _sortTutors('Mayor calificación');
+        } else if (id == 'price') {
+          _sortTutors('Menor precio');
         }
       },
       child: Container(
