@@ -1,4 +1,5 @@
 import 'package:vibration/vibration.dart';
+import 'package:flutter_projects/models/booking_status.dart';
 
 class VibrationService {
   static Future<void> vibrateForStatus(String status) async {
@@ -6,21 +7,18 @@ class VibrationService {
       final hasVibrator = await Vibration.hasVibrator();
 
       if (hasVibrator ?? false) {
-        final normalizedStatus = status.toLowerCase();
-        
-        switch (normalizedStatus) {
-          case 'aceptada':
-          case 'aceptado':
+        final bookingStatus = BookingStatus.fromString(status);
+        switch (bookingStatus) {
+          case BookingStatus.aceptado:
             await Vibration.vibrate(duration: 800);
             break;
-          case 'rechazada':
-          case 'rechazado':
+          case BookingStatus.rechazado:
             await Vibration.vibrate(duration: 300);
             break;
-          case 'cursando':
+          case BookingStatus.cursando:
             await Vibration.vibrate(pattern: [0, 400, 100, 400, 100, 400]);
             break;
-          case 'pendiente':
+          case BookingStatus.pendiente:
             await Vibration.vibrate(duration: 200);
             break;
           default:
@@ -28,7 +26,7 @@ class VibrationService {
         }
       }
     } catch (e) {
-      print('❌ Error en VibrationService: $e');
+      print('Error en VibrationService: $e');
     }
   }
 }

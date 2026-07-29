@@ -7,12 +7,14 @@ import 'package:flutter_projects/view/home/widgets/about_us_screen.dart';
 import 'package:flutter_projects/view/home/widgets/social_links.dart';
 import 'package:flutter_projects/view/home/widgets/suport_screen.dart';
 import 'package:flutter_projects/view/student/serch_Tutor/search_tutors_screen.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 
 class HomeDrawer extends StatelessWidget {
   const HomeDrawer({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Drawer(
       backgroundColor: AppColors.cardLight,
       surfaceTintColor: Colors.transparent,
@@ -53,27 +55,27 @@ class HomeDrawer extends StatelessWidget {
               physics: const BouncingScrollPhysics(),
               child: Column(
                 children: [
-                  _buildDrawerItem(Icons.bolt_rounded, 'Tutor al instante',
+                  _buildDrawerItem(Icons.bolt_rounded, l10n.instantTutorDrawer,
                       isPrimary: true, onTap: () {
                     Navigator.pop(context);
                     AuthHelper.requireAuth(context,
-                        customTitle: 'Tutor',
-                        customMessage: 'Inicia sesión primero.');
+                        customTitle: l10n.instantTutorDrawer,
+                        customMessage: l10n.login);
                   }),
-                  _buildDrawerItem(Icons.search_rounded, 'Buscar Tutores', onTap: () {
+                  _buildDrawerItem(Icons.search, l10n.searchTutorsDrawer, onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
                         context,
                         MaterialPageRoute(
                             builder: (_) => SearchTutorsScreen()));
                   }),
-                  _buildDrawerItem(Icons.people_outline_rounded, 'Sobre Nosotros',
+                  _buildDrawerItem(Icons.people_outline, l10n.aboutUs,
                       onTap: () {
                     Navigator.pop(context);
                     Navigator.push(context,
                         MaterialPageRoute(builder: (_) => AboutUsScreen()));
                   }),
-                  _buildDrawerItem(Icons.help_outline_rounded, 'Preguntas Frecuentes', onTap: () {
+                  _buildDrawerItem(Icons.help_outline, l10n.questions, onTap: () {
                     Navigator.pop(context);
                     Navigator.push(context,
                         MaterialPageRoute(builder: (_) => SupportScreen()));
@@ -99,8 +101,8 @@ class HomeDrawer extends StatelessWidget {
                     },
                     icon: const Icon(Icons.login_rounded,
                         color: Colors.white, size: 20),
-                    label: const Text('Iniciar Sesión',
-                        style: TextStyle(
+                    label: Text(l10n.logIn,
+                        style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
                             fontFamily: AppFonts.heading,

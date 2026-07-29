@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:flutter_projects/view/tutor/features/widgets/tutor_header.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 
@@ -79,20 +80,20 @@ class EditProfileView extends StatelessWidget {
           child: Column(
             children: [
               TutorHeader(
-                title: "EDITAR PERFIL",
-                subtitle: "ACTUALIZA TUS DATOS",
+                title: AppLocalizations.of(context)!.edit.toUpperCase(),
+                subtitle: AppLocalizations.of(context)!.updateYourData.toUpperCase(),
                 onBackTap: onClose,
               ),
 
               Expanded(
                 child: SingleChildScrollView(
                   physics: const ClampingScrollPhysics(),
-                  padding: const EdgeInsets.only(bottom: 40),
+                  padding: const EdgeInsets.only(bottom: 60),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Column(
                       children: [
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 10),
 
                         Container(
                           padding: const EdgeInsets.all(20),
@@ -178,10 +179,10 @@ class EditProfileView extends StatelessWidget {
                                           const SizedBox(width: 4),
                                           Text(
                                             isStudent 
-                                                ? "ESTUDIANTE"
+                                                ? AppLocalizations.of(context)!.student.toUpperCase()
                                                 : isVerified
-                                                  ? "TUTOR VERIFICADO"
-                                                  : "PENDIENTE DE VERIFICACIÓN",
+                                                  ? AppLocalizations.of(context)!.verifiedTutor.toUpperCase()
+                                                  : AppLocalizations.of(context)!.pendingVerification.toUpperCase(),
                                             style: TextStyle(
                                               fontFamily: 'manrope',
                                               color: (isVerified || isStudent) ? Colors.white: Colors.grey[400],
@@ -199,7 +200,7 @@ class EditProfileView extends StatelessWidget {
                           ),
                         ),
 
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 12),
 
                         Container(
                           width: double.infinity,
@@ -218,37 +219,37 @@ class EditProfileView extends StatelessWidget {
                               children: [
                                 _buildTextField(
                                   controller: firstNameController,
-                                  label: 'NOMBRE',
-                                  hint: 'Tu nombre',
+                                  label: AppLocalizations.of(context)!.firstName.toUpperCase(),
+                                  hint: AppLocalizations.of(context)!.yourFirstName,
                                   icon: Icons.person_outline,
                                   fillColor: cardBgColor,
                                   textColor: mainTextColor,
-                                  validator: (value) => value == null || value.trim().isEmpty ? 'Requerido' : null,
+                                  validator: (value) => value == null || value.trim().isEmpty ? AppLocalizations.of(context)!.requiredField : null,
                                 ),
                                 const SizedBox(height: 16),
                                 
                                 _buildTextField(
                                   controller: lastNameController,
-                                  label: 'APELLIDO',
-                                  hint: 'Tu apellido',
+                                  label: AppLocalizations.of(context)!.lastName.toUpperCase(),
+                                  hint: AppLocalizations.of(context)!.yourLastName,
                                   icon: Icons.person_outline,
                                   fillColor: cardBgColor,
                                   textColor: mainTextColor,
-                                  validator: (value) => value == null || value.trim().isEmpty ? 'Requerido' : null,
+                                  validator: (value) => value == null || value.trim().isEmpty ? AppLocalizations.of(context)!.requiredField : null,
                                 ),
                                 const SizedBox(height: 16),
                                 
                                 _buildTextField(
                                   controller: phoneController,
-                                  label: 'CELULAR',
-                                  hint: 'Ingresa tu número de celular',
+                                  label: AppLocalizations.of(context)!.cellphone.toUpperCase(),
+                                  hint: AppLocalizations.of(context)!.enterYourCellphone,
                                   icon: Icons.phone_outlined,
                                   keyboardType: TextInputType.phone,
                                   fillColor: cardBgColor,
                                   textColor: mainTextColor,
                                   onChanged: onPhoneChanged,
                                   validator: (value) {
-                                    if (value == null || value.trim().isEmpty) return 'Requerido';
+                                    if (value == null || value.trim().isEmpty) return AppLocalizations.of(context)!.requiredField;
                                     return null; 
                                   },
                                 ),
@@ -257,17 +258,17 @@ class EditProfileView extends StatelessWidget {
                                 if (!isStudent) ...[
                                   _buildTextField(
                                     controller: descriptionController,
-                                    label: 'DESCRIPCIÓN',
-                                    hint: 'Cuéntanos algo sobre ti ...',
+                                    label: AppLocalizations.of(context)!.description.toUpperCase(),
+                                    hint: AppLocalizations.of(context)!.tellUsAboutYou,
                                     icon: Icons.description_outlined,
                                     maxLines: 4,
                                     fillColor: cardBgColor,
                                     textColor: mainTextColor,
                                   ),
-                                  const SizedBox(height: 30),
+                                  const SizedBox(height: 15),
 
-                                  Text("VIDEO DE PRESENTACIÓN (OPCIONAL)", style: TextStyle(fontFamily: 'outfit', color: mainTextColor, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-                                  const SizedBox(height: 12),
+                                  Text(AppLocalizations.of(context)!.presentationVideoOptional.toUpperCase(), style: TextStyle(fontFamily: 'outfit', color: mainTextColor, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                                  const SizedBox(height: 4),
                               
                                   Stack(
                                     children: [
@@ -299,8 +300,8 @@ class EditProfileView extends StatelessWidget {
                                                   const SizedBox(height: 16),
                                                   Text(
                                                     progress > 0.0
-                                                        ? 'Subiendo... ${progress.toStringAsFixed(0)}%'
-                                                        : 'Procesando...',
+                                                        ? '${AppLocalizations.of(context)!.uploading}... ${progress.toStringAsFixed(0)}%'
+                                                        : AppLocalizations.of(context)!.processing,
                                                     style: const TextStyle(
                                                       fontFamily: 'outfit',
                                                       color: Colors.white,
@@ -339,9 +340,9 @@ class EditProfileView extends StatelessWidget {
                                               : const Icon(Icons.video_library, size: 18),
                                             label: Text(isVideoLoading 
                                               ? (progress > 0.0
-                                                  ? 'Subiendo ${progress.toStringAsFixed(0)}%'
-                                                  : 'Actualizando...')
-                                              : 'Cambiar Video'),
+                                                  ? '${AppLocalizations.of(context)!.uploading} ${progress.toStringAsFixed(0)}%'
+                                                  : AppLocalizations.of(context)!.updating)
+                                              : AppLocalizations.of(context)!.changeVideo),
                                             style: OutlinedButton.styleFrom(
                                               foregroundColor: AppColors.brandCyan,
                                               side: const BorderSide(color: AppColors.brandCyan),
@@ -380,7 +381,7 @@ class EditProfileView extends StatelessWidget {
                                     icon: isLoading 
                                       ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                                       : const Icon(Icons.save_outlined, color: Colors.white, size: 20),
-                                    label: Text(isLoading ? "GUARDANDO..." : "GUARDAR CAMBIOS", style: const TextStyle(fontFamily: 'outfit', color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                                    label: Text(isLoading ? AppLocalizations.of(context)!.saving.toUpperCase() : AppLocalizations.of(context)!.saveChanges.toUpperCase(), style: const TextStyle(fontFamily: 'outfit', color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: AppColors.brandCyan,
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

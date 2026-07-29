@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:io';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/models/booking_status.dart';
 import 'package:flutter_projects/view/tutor/dashboard/widgets/tutor_bottom_nav.dart';
 import 'package:flutter_projects/view/tutor/features/agenda/tutor_agenda_screen.dart';
 import 'package:flutter_projects/view/tutor/features/home/tutor_home_screen.dart';
@@ -10,9 +12,11 @@ import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 
 // Provider y Modelos
 import 'package:flutter_projects/provider/tutor_subjects_provider.dart';
+import 'package:flutter_projects/view/tutor/features/home/providers/tutor_home_provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
 
@@ -38,6 +42,10 @@ class _DashboardTutorState extends State<DashboardTutor>
     with WidgetsBindingObserver {
   bool _isBottomNavVisible = true;
   bool isAvailable = false;
+
+  // Variables para el doble tap para salir
+  DateTime? _lastBackPressedTime;
+  static const Duration _exitDelay = Duration(seconds: 2);
 
   int _currentIndex = 0;
   DateTime _focusedDay = DateTime.now();
@@ -198,11 +206,7 @@ class _DashboardTutorState extends State<DashboardTutor>
           final start = DateTime.tryParse(b['start_time'] ?? '') ?? now;
 
           // Solo mostrar tutorías aceptadas, en curso, completadas, etc.
-          final isAcceptedOrHigher = status == 'aceptado' ||
-              status == 'aceptada' ||
-              status == 'cursando' ||
-              status == 'completada' ||
-              status == 'completado';
+          final isAcceptedOrHigher = !BookingStatus.fromString(status).isFinished;
 
           // Solo mostrar tutorías de hoy o futuras
           final isTodayOrFuture = start.year == today.year &&
@@ -431,11 +435,20 @@ class _DashboardTutorState extends State<DashboardTutor>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
-      // Recargar la imagen del perfil cuando la app se reanuda
+      print(
+          '📱 [DashboardTutor] App reanudada desde segundo plano. Cargando solicitudes flexibles...');
 
       // Usar addPostFrameCallback para evitar problemas de setState
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
+          try {
+            final homeProvider =
+                Provider.of<TutorHomeProvider>(context, listen: false);
+            homeProvider.loadPendingFlexibleRequestsFromStorage();
+          } catch (e) {
+            print('Error cargando solicitudes flexibles en DashboardTutor: $e');
+          }
+
           // Sincronizar imagen del AuthProvider
           _syncProfileImageFromAuthProvider();
 
@@ -526,18 +539,18 @@ class _DashboardTutorState extends State<DashboardTutor>
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.darkBlue,
         title: Text(
-          'Eliminar materia',
+          AppLocalizations.of(context)!.deleteSubject,
           style: TextStyle(color: Colors.white),
         ),
         content: Text(
-          '¿Estás seguro de que quieres eliminar esta materia?',
+          AppLocalizations.of(context)!.deleteSubjectConfirm,
           style: TextStyle(color: Colors.white70),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
-              'Cancelar',
+              AppLocalizations.of(context)!.cancelDialogButton,
               style: TextStyle(color: Colors.white70),
             ),
           ),
@@ -557,7 +570,7 @@ class _DashboardTutorState extends State<DashboardTutor>
               if (success) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Materia eliminada exitosamente'),
+                    content: Text(AppLocalizations.of(context)!.subjectDeletedSuccessfully),
                     backgroundColor: AppColors.primaryGreen,
                   ),
                 );
@@ -565,7 +578,7 @@ class _DashboardTutorState extends State<DashboardTutor>
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(subjectsProvider.error ??
-                        'Error al eliminar la materia'),
+                        AppLocalizations.of(context)!.errorDeletingSubject),
                     backgroundColor: AppColors.redColor,
                   ),
                 );
@@ -575,7 +588,7 @@ class _DashboardTutorState extends State<DashboardTutor>
               backgroundColor: AppColors.redColor,
             ),
             child: Text(
-              'Eliminar',
+              AppLocalizations.of(context)!.deleteButton2,
               style: TextStyle(color: Colors.white),
             ),
           ),
@@ -707,28 +720,63 @@ class _DashboardTutorState extends State<DashboardTutor>
     ];
 
     // bool showNavbar = false;
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Stack(children: [
-        IndexedStack(
-          index: _currentIndex,
-          children: _screens,
-        ),
-        Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: TutorBottomNav(
-              currentIndex: _currentIndex,
-              onTap: (index) {
-                setState(() => _currentIndex = index);
-                // lógica de navegación real:
-                // if (index == 1) Navigator.pushNamed...
-                print("Navegar a tab: $index");
-              },
-            ))
-      ]),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (_currentIndex != 0) {
+          // Si no estamos en Home (índice 0), navegar a Home
+          setState(() => _currentIndex = 0);
+          return;
+        }
+        
+        // Si estamos en Home, verificar doble tap
+        final now = DateTime.now();
+        
+        if (_lastBackPressedTime == null || 
+            now.difference(_lastBackPressedTime!) > _exitDelay) {
+          _lastBackPressedTime = now;
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Presiona el botón de retroceso de nuevo para salir'),
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+          return;
+        }
+        
+        // Doble tap detectado - cerrar la app
+        if (Platform.isAndroid || Platform.isIOS) {
+          exit(0);
+        } else {
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
+        resizeToAvoidBottomInset: false,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: Stack(children: [
+          IndexedStack(
+            index: _currentIndex,
+            children: _screens,
+          ),
+          Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: TutorBottomNav(
+                currentIndex: _currentIndex,
+                onTap: (index) {
+                  setState(() => _currentIndex = index);
+                  // lógica de navegación real:
+                  // if (index == 1) Navigator.pushNamed...
+                  print("Navegar a tab: $index");
+                },
+              ))
+        ]),
+      ),
     );
   }
 

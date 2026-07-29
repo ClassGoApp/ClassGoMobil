@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import '../services/reservations_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -42,43 +43,44 @@ class _ReservationsDayModalState extends State<ReservationsDayModal> {
     }
   }
 
-  String _timeKeyFromItem(ReservationItem item) {
+  String _timeKeyFromItem(ReservationItem item, AppLocalizations l10n) {
     final dt = item.start;
-    if (dt == null) return 'Sin hora';
+    if (dt == null) return l10n.withoutTime;
     return DateFormat('HH:mm').format(dt);
   }
 
   void _showBookingDetails(BuildContext context, ReservationItem booking) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Detalle de la reserva'),
+        title: Text(l10n.reservationDetails),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _detailRow('ID', booking.id.toString()),
-              _detailRow('Tutor', booking.tutorName),
-              _detailRow('Materia', booking.subjectName),
+              _detailRow(l10n.id, booking.id.toString()),
+              _detailRow(l10n.tutor, booking.tutorName),
+              _detailRow(l10n.subject, booking.subjectName),
               _detailRow(
-                  'Inicio',
+                  l10n.start,
                   booking.start != null
                       ? DateFormat('HH:mm').format(booking.start!)
                       : '-'),
               _detailRow(
-                  'Fin',
+                  l10n.end,
                   booking.end != null
                       ? DateFormat('HH:mm').format(booking.end!)
                       : '-'),
-              _detailRow('Estado', booking.status),
-              _detailRowLink(ctx, 'Meet', booking.meetingLink),
+              _detailRow(l10n.status, booking.status),
+              _detailRowLink(ctx, l10n.meet, booking.meetingLink),
             ],
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cerrar'),
+            child: Text(l10n.close),
           ),
         ],
       ),
@@ -113,6 +115,7 @@ class _ReservationsDayModalState extends State<ReservationsDayModal> {
   }
 
   Future<void> _openMeetLink(BuildContext context, String link) async {
+    final l10n = AppLocalizations.of(context)!;
     var url = link.trim();
     if (url.isEmpty) return;
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
@@ -128,7 +131,7 @@ class _ReservationsDayModalState extends State<ReservationsDayModal> {
       await launchUrl(uri);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No se pudo abrir el enlace')));
+          SnackBar(content: Text(l10n.couldNotOpenLink)));
     }
   }
 
@@ -153,6 +156,10 @@ class _ReservationsDayModalState extends State<ReservationsDayModal> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final currentLocale = Localizations.localeOf(context);
+    final localeString = currentLocale.languageCode == 'en' ? 'en_US' : 'es_ES';
+    
     final date = widget.date;
     final events = _events;
 
@@ -164,12 +171,12 @@ class _ReservationsDayModalState extends State<ReservationsDayModal> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(DateFormat('EEEE, d MMMM yyyy', 'es').format(date),
+              Text(DateFormat('EEEE, d MMMM yyyy', localeString).format(date),
                   style: const TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
               const Center(child: CircularProgressIndicator()),
               const SizedBox(height: 12),
-              Text('Cargando reservas...',
+              Text(l10n.loadingReservations,
                   style: TextStyle(color: AppColors.greyColor)),
             ],
           ),
@@ -179,14 +186,14 @@ class _ReservationsDayModalState extends State<ReservationsDayModal> {
 
     final grouped = <String, List<ReservationItem>>{};
     for (var e in events) {
-      final key = _timeKeyFromItem(e);
+      final key = _timeKeyFromItem(e, l10n);
       grouped.putIfAbsent(key, () => []).add(e);
     }
 
     final sortedKeys = grouped.keys.toList()
       ..sort((a, b) {
-        if (a == 'Sin hora') return 1;
-        if (b == 'Sin hora') return -1;
+        if (a == l10n.withoutTime) return 1;
+        if (b == l10n.withoutTime) return -1;
         try {
           final da = DateFormat('HH:mm').parse(a);
           final db = DateFormat('HH:mm').parse(b);
@@ -209,10 +216,10 @@ class _ReservationsDayModalState extends State<ReservationsDayModal> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(DateFormat('EEEE, d MMMM yyyy', 'es').format(date),
+                    Text(DateFormat('EEEE, d MMMM yyyy', localeString).format(date),
                         style: const TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 4),
-                    Text('${events.length} reserva(s)',
+                    Text(l10n.reservationCount(events.length),
                         style: TextStyle(color: AppColors.greyColor)),
                   ],
                 ),
@@ -225,7 +232,7 @@ class _ReservationsDayModalState extends State<ReservationsDayModal> {
             if (events.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text('No hay reservas para este día',
+                child: Text(l10n.noReservationsForThisDay,
                     style: TextStyle(color: AppColors.greyColor)),
               )
             else
@@ -279,7 +286,7 @@ class _ReservationsDayModalState extends State<ReservationsDayModal> {
                         return ListTile(
                           title: Text(b.subjectName.isNotEmpty
                               ? b.subjectName
-                              : 'Reserva'),
+                              : l10n.reservation),
                           subtitle: Text(b.tutorName),
                           trailing: const Icon(Icons.chevron_right_rounded),
                           onTap: () => _showBookingDetails(context, b),

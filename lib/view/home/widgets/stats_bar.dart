@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
 import 'package:flutter_projects/styles/app_design.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 
 class StatsBar extends StatefulWidget {
   const StatsBar({super.key});
@@ -40,6 +41,7 @@ class _StatsBarState extends State<StatsBar> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     if (_loading) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxxl),
@@ -70,17 +72,17 @@ class _StatsBarState extends State<StatsBar> {
         ),
         child: Row(
           children: [
-            Expanded(child: _StatColumn(label: 'Usuarios', count: _users, icon: Icons.people_rounded, isCenter: false)),
+            Expanded(child: _StatColumn(label: l10n.users, count: _users, icon: Icons.people_rounded, isCenter: false)),
             SizedBox(
               height: 50,
               child: VerticalDivider(width: 1, color: AppColors.dividerLight),
             ),
-            Expanded(child: _StatColumn(label: 'Tutores', count: _tutors, icon: Icons.school_rounded, isCenter: true)),
+            Expanded(child: _StatColumn(label: l10n.tutors, count: _tutors, icon: Icons.school_rounded, isCenter: true)),
             SizedBox(
               height: 50,
               child: VerticalDivider(width: 1, color: AppColors.dividerLight),
             ),
-            Expanded(child: _StatColumn(label: 'Estudiantes', count: _students, icon: Icons.person_rounded, isCenter: false)),
+            Expanded(child: _StatColumn(label: l10n.students, count: _students, icon: Icons.person_rounded, isCenter: false)),
           ],
         ),
       ),

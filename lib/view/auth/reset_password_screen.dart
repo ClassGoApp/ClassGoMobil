@@ -8,6 +8,7 @@ import 'package:flutter_projects/view/auth/login_screen.dart';
 import 'package:flutter_projects/view/home/home_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_projects/helpers/back_button_handler.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'register_screen.dart';
 
 class ResetPassword extends StatefulWidget {

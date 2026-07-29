@@ -1,0 +1,651 @@
+{
+  "@@locale": "en",
+  "appName": "ClassGo",
+  "language": "Language",
+  "spanish": "Spanish",
+  "english": "English",
+  "selectLanguage": "Select language",
+  "welcome": "Welcome!",
+  "login": "Log in",
+  "register": "Register",
+  "settings": "Settings",
+  "findTutors": "Find tutors\nfor your subjects",
+  "searchSubjectHint": "What subject do you need help with?",
+  "instantTutor": "Instant\nTutor",
+  "scheduleTutoring": "Schedule\nTutoring",
+  "exploreTutors": "Explore\nTutors",
+  "weAreWithYou": "We're with you!",
+  "findIdealTutor": "Find the ideal tutor for you and reach your goals today.",
+  "ourAlliances": "Our\nAlliances",
+  "institutions": "Institutions",
+  "needHelp": "Need\nHelp?",
+  "support247": "24/7 Support",
+  "exploreSubjects": "Explore Subjects",
+  "instantTutorDrawer": "Instant Tutor",
+  "searchTutorsDrawer": "Search Tutors",
+  "aboutUs": "About Us",
+  "questions": "Questions",
+  "logIn": "Log In",
+  "accessToInstantTutorTitle": "Instant Tutor Access",
+  "accessToInstantTutorMessage": "To access instant tutoring, you need to log in to your account.",
+  "scheduleTutoringTitle": "Schedule Tutoring",
+  "scheduleTutoringMessage": "To schedule a class with a tutor, you need to log in.",
+  "categoryAccounting": "Accounting",
+  "categoryChemistry": "Chemistry",
+  "categoryProgramming": "Programming",
+  "categoryEnglish": "English",
+  "categoryExactSciences": "Exact Sciences",
+  "categoryMusic": "Music",
+  "calendarTitle": "My Calendar",
+  "historyTitle": "Tutoring History",
+  "addSubject": "ADD SUBJECT",
+  "subjectLabel": "SUBJECT",
+  "addSubjectHint": "Add your next subject...",
+  "noTutoringsDay": "No tutoring sessions for this day",
+  "noTutoringsDisplay": "No tutoring sessions to display",
+  "tutoringLabel": "Tutoring",
+  "statusLabel": "Status:",
+  "dateRange": "From {start} to {end}",
+  "tutoringsOnDate": "Tutoring on {date}",
+  "@tutoringsOnDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "@dateRange": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "quickActions": "Quick Actions",
+  "searchTutors": "Search Tutors",
+  "findExperts": "Find experts",
+  "myBookings": "My Bookings",
+  "viewSessions": "View sessions",
+  "favorites": "Favorites",
+  "favoriteTutors": "Favorite tutors",
+  "profile": "Profile",
+  "profileSettings": "Profile settings",
+  "noRecentBookings": "You have no recent bookings",
+  "recentBookings": "Recent Bookings",
+  "myProfile": "My Profile",
+  "student": "Student",
+  "editProfile": "Edit Profile",
+  "editProfileSubtitle": "Modify personal information",
+  "edit": "Edit",
+  "pricePerTutoring": "PRICE PER TUTORING",
+  "pricePerTutoringDetails": "{_price} Bs / 20min.",
+  "@pricePerTutoringDetails": {
+    "placeholders": {
+      "_price": {
+        "type": "String",
+        "example": "100"
+      }
+    }
+  },
+  "definePrice": "Define Price",
+  "enterTutoringAmount": "Enter the amount you will charge for 20 minutes of tutoring.",
+  "priceSuffix": "Bs / 20min",
+  "savePrice": "SAVE PRICE",
+  "rateUpdatedSuccessfully": "Rate updated successfully",
+  "updateYourData": "Update your data",
+  "saveChanges": "Save changes",
+  "firstName": "Name",
+  "yourFirstName": "Your name",
+  "lastName": "Last name",
+  "yourLastName": "Your last name",
+  "cellphone": "Cellphone",
+  "enterYourCellphone": "Enter your cellphone number",
+  "description": "Description",
+  "tellUsAboutYou": "Tell us something about yourself...",
+  "verifiedTutor": "Verified Tutor",
+  "pendingVerification": "Pending Verification",
+  "presentationVideoOptional": "Presentation Video (Optional)",
+  "video": "Video",
+  "uploading": "Uploading",
+  "processing": "Processing...",
+  "updating": "Updating...",
+  "changeVideo": "Change Video",
+  "saving": "Saving...",
+  "requiredField": "Required",
+  "accountSettings": "Account Settings",
+  "accountSettingsSubtitle": "Change password and settings",
+  "help": "Help",
+  "helpSubtitle": "Help center and support",
+  "logout": "Log Out",
+  "logoutSubtitle": "Sign out of the app",
+  "logoutConfirm": "Are you sure you want to log out?",
+  "cancel": "Cancel",
+  "logoutError": "Error logging out",
+  "loginToAccessProfile": "Log in to access your profile",
+  "loginToAccessProfileDesc": "Review your history, statistics, payments and personal settings.",
+  "noSort": "No sort",
+  "nameAZ": "Name (A-Z)",
+  "nameZA": "Name (Z-A)",
+  "subjectAZ": "Subject (A-Z)",
+  "subjectZA": "Subject (Z-A)",
+  "tutorsFor": "tutors for",
+  "tutorsFound": "{total} tutors found",
+  "@tutorsFound": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "subject": "Subject",
+  "tutor": "Tutor",
+  "sort": "Sort",
+  "noTutorsAvailable": "No tutors available",
+  "tutorRemovedFromFavorites": "Tutor removed from favorites",
+  "tutorAddedToFavorites": "Tutor added to favorites",
+  "favoriteError": "Could not add/remove from favorites",
+  "loginRequired": "Login required!",
+  "loginRequiredMessage": "You need to be logged in to enter",
+  "goToLogin": "Go to Login",
+  "favoriteTutors": "Favorite Tutors",
+  "noFavoriteTutors": "You don't have favorite tutors yet",
+  "noFavoriteTutorsDesc": "Save tutors you like to find them quickly.",
+  "noDescriptionAvailable": "No description available.",
+  "teachingPhilosophy": "Teaching Philosophy",
+  "qrPaymentMethod": "QR Payment Method",
+  "legal": "Legal",
+  "termsAndConditions": "Terms and Conditions",
+  "pendingTermsAndConditions": "Terms and Conditions (Pending)",
+  "noNameAvailable": "No name available",
+  "notSpecified": "Not specified",
+  "classes20Min": "20-minute classes",
+  "noName": "No name",
+  "reservations": "Reservations",
+  "newReservation": "New reservation",
+  "createNewReservation": "Create new reservation for",
+  "selected": "Selected",
+  "noReservationsForDate": "No reservations for this date",
+  "reservation": "Reservation",
+  "passwordSettings": "Password Settings",
+  "changePassword": "Change password",
+  "newPassword": "New password",
+  "confirmPassword": "Confirm password",
+  "update": "Update",
+  "passwordRequired": "The password field is required.",
+  "passwordLengthError": "The password field must be at least 8 characters.",
+  "confirmPasswordRequired": "The confirm field is required.",
+  "passwordMismatch": "The confirm field must match password.",
+  "passwordUpdateError": "Password not updated, please try again: {error}",
+  "helpCenter": "Help Center",
+  "tugoHelpMessage": "Hi! I'm Tuggo. I'm here to answer all your questions about ClassGo. How can I help you?",
+  "users": "Users",
+  "students": "Students",
+  "tutors": "Tutors",
+  "directContact": "Direct Contact",
+  "email": "Email",
+  "whatsapp": "WhatsApp",
+  "faqStudentQ1": "How to find a tutor?",
+  "faqStudentA1": "Use the search bar to find available tutors based on the subject or topic you need.",
+  "faqStudentQ2": "How do I book a session?",
+  "faqStudentA2": "Once you find a tutor, check their profile and select an available time slot that suits you. Click \"Book\" and follow the instructions to confirm your session.",
+  "faqStudentQ3": "What if I need to cancel or reschedule?",
+  "faqStudentA3": "Tutoring sessions cannot be canceled once booked. If any inconvenience occurred, contact us and we will gladly help you.",
+  "faqStudentQ4": "How do I pay for sessions?",
+  "faqStudentA4": "Payments are made through the QR provided in your reservation or by bank transfer with the data shown on the screen.",
+  "faqStudentQ5": "What should I do if my tutor doesn't show up?",
+  "faqStudentA5": "If your tutor does not show up for a scheduled session, contact support immediately for assistance and to schedule a reschedule or refund.",
+  "faqStudentQ6": "How can I leave feedback?",
+  "faqStudentA6": "Go to the tutor's profile, scroll down to the reviews section, where you can see student ratings and comments.",
+  "faqTutorQ1": "How can I become a tutor?",
+  "faqTutorA1": "Create an account, fill out the form, and at the end select \"Tutor\". Create your profile and send the necessary documentation for approval.",
+  "faqTutorQ2": "What qualifications do I need to be a tutor?",
+  "faqTutorA2": "Academic qualification is not a requirement. If you want to teach \"something\" you can do it.",
+  "faqTutorQ3": "How do I set my availability?",
+  "faqTutorA3": "Log in to your account, go to the “Manage available time” section, and update your calendar with your available time slots.",
+  "faqTutorQ4": "What should I do if a student cancels?",
+  "faqTutorA4": "Students do not have the option to cancel a session after booking. If the student informs you of a problem, recommend them to write to our contact for help.",
+  "professionNotAvailable": "Profession not available",
+  "search": "Search",
+  "bookings": "Bookings",
+  "history": "History",
+  "profile": "Profile",
+  "tutorsFoundForTutor": "{count, plural, =0{No tutors found for {tutorName}} one{{count} tutor found for {tutorName}} other{{count} tutors found for {tutorName}}}",
+  "@tutorsFoundForTutor": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "tutorName": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorsFoundForKeyword": "{count, plural, =0{No tutors found for {keyword}} one{{count} tutor found for {keyword}} other{{count} tutors found for {keyword}}}",
+  "@tutorsFoundForKeyword": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "keyword": {
+        "type": "String"
+      }
+    }
+  },
+  "studentReviewsTitle": "Student Reviews",
+  "resultsFound": "{count, plural, =0{No results found} one{{count} result found} other{{count} results found}}",
+  "@resultsFound": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noReviewsAvailable": "No reviews available",
+  "defaultStudentName": "Student",
+  "defaultGuestEmail": "email@example.com",
+  "emailCannotBeEmpty": "Email cannot be empty",
+  "enterValidEmail": "Enter a valid email",
+  "passwordCannotBeEmpty": "Password cannot be empty",
+  "passwordMinLength": "Password must be at least 6 characters",
+  "loginSuccessful": "Login successful",
+  "emailNotVerified": "Your email is not verified. Check your inbox and confirm your account.",
+  "serverNotAvailable": "Server is not available. Please try again later.",
+  "serverDownTitle": "Server temporarily out of service",
+  "serverDownMessage": "The server is not available at this moment. Please try again later.",
+  "ok": "OK",
+  "loginFailed": "Login failed. Please check your details and try again.",
+  "resendEmailSuccess": "We have resent the email. Check your inbox to verify your account.",
+  "resendEmailFailed": "Could not resend email. Please try again later.",
+  "noActiveSession": "No active session found. Please log in again.",
+  "emailVerificationTitle": "Email Verification",
+  "resendEmailButton": "Resend Email",
+  "googleTokenError": "Could not get Google token",
+  "googleLoginError": "Error logging in with Google",
+  "homeButton": "HOME",
+  "loginScreenTitle": "Log in to your account",
+  "loginScreenSubtitle": "Access courses, manage your schedule,\nand stay connected.",
+  "emailHint": "Email",
+  "passwordHint": "Password",
+  "rememberAccount": "Remember account on device",
+  "loginButton": "Log In",
+  "loginWithGoogle": "Log in with Google",
+  "forgotPassword": "Forgot your password?",
+  "noAccountRegister": "Don't have an account?, Register",
+  "video": "Video",
+  "termsAndConditions": "Terms and conditions",
+  "pendingTermsAndConditions": "Pending terms and conditions",
+  "defaultTutorName": "Tutor",
+  "defaultSubjectName": "Tutoring",
+  "defaultPendingStatus": "pending",
+  "onboardingBannerTitle": "You are one step away from teaching!",
+  "onboardingBannerSubtitle": "Your profile is incomplete. Set it up now to start receiving students.",
+  "onboardingBannerButton": "Complete my profile now",
+  "quickAccessTitle": "Quick Access",
+  "mySchedule": "My Schedule",
+  "mySubjects": "My Subjects",
+  "viewProfile": "View Profile",
+  "todaysClasses": "Today's Classes",
+  "viewSchedule": "View Schedule",
+  "noDate": "No date",
+  "statusPending": "pending",
+  "statusAccepted": "accepted",
+  "statusInProgress": "in progress",
+  "statusCompleted": "completed",
+  "meetLinkNotAvailable": "Meet link is not yet available.",
+  "meetingStartedWaitingLink": "Meeting started, waiting for link...",
+  "enterSession": "Enter",
+  "startSession": "Start",
+  "details": "Details",
+  "allClear": "All clear!",
+  "offlineMode": "Offline mode",
+  "noClassesToday": "You have no classes scheduled for today.",
+  "activateAvailability": "Activate your availability for students to see you.",
+  "termsAcceptedSuccessfully": "Terms accepted successfully!",
+  "errorAcceptingTerms": "Error accepting terms. Please try again.",
+  "couldNotOpenLink": "Could not open the link",
+  "tutoriaReady": "TUTORING READY!",
+  "tutoriaReadySubtitle": "Payment was confirmed. Enter the class now!",
+  "fuisteElegido": "YOU WERE CHOSEN!",
+  "fuisteElegidoSubtitle": "The student is paying. Tap to see details.",
+  "solicitudTomada": "REQUEST ALREADY TAKEN",
+  "solicitudTomadaSubtitle": "This tutoring has already been assigned to another teacher",
+  "solicitudExpirada": "REQUEST EXPIRED",
+  "solicitudExpiradaSubtitle": "This invitation is no longer available",
+  "nuevaSolicitud": "NEW REQUEST!",
+  "nuevaSolicitudSubtitle": "A student needs your help now",
+  "unirseAlasClase": "Enter the Class",
+  "verEstadoPago": "Check Payment Status",
+  "revisarSolicitud": "Review Request",
+  "greeting": "Hello, {name}",
+  "@greeting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "verified": "VERIFIED",
+  "unverified": "UNVERIFIED",
+  "agendaTitle": "SCHEDULE",
+  "myClasses": "MY CLASSES",
+  "availability": "AVAILABILITY",
+  "myNextClasses": "MY NEXT CLASSES",
+  "configureSchedule": "CONFIGURE SCHEDULES",
+  "selectedDays": "{count, plural, =1{{count} day selected} other{{count} days selected}}",
+  "@selectedDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scheduleAddedSuccessfully": "Schedule added successfully",
+  "errorSavingSchedule": "Error saving schedule",
+  "freeDay": "FREE DAY",
+  "noClassesTodayMessage": "You have no classes scheduled today.\nTake a break!",
+  "daysSelected": "{count} Days selected",
+  "subjectsTitle": "Subjects",
+  "subjectsManagement": "SUBJECTS MANAGEMENT",
+  "youHaveSubjects": "You have {count, plural, =1{{count} subject} other{{count} subjects}}",
+  "@youHaveSubjects": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "addSubjectHint": "Add your next subject...",
+  "addSubject": "ADD SUBJECT",
+  "noSubjectsYet": "You haven't added any subjects yet.",
+  "noSearchResults": "No results found.",
+  "subjectAlreadyAdded": "You already have this subject",
+  "subjectAddedSuccess": "The subject \"{name}\" was added successfully.",
+  "@subjectAddedSuccess": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "subjectAddedError": "Could not add \"{name}\". Try again.",
+  "@subjectAddedError": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "subjectDeletedSuccess": "Subject \"{name}\" deleted successfully.",
+  "@subjectDeletedSuccess": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "subjectDeleteError": "Error deleting \"{name}\". Try again.",
+  "@subjectDeleteError": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "profileTitle": "MY PROFILE",
+  "editProfile": "EDIT",
+  "videoProfile": "VIDEO",
+  "legalSection": "LEGAL",
+  "mustAcceptTerms": "You must accept the terms and conditions",
+  "youMustAcceptTerms": "You must accept the terms and conditions to continue",
+  "logoutTitle": "LOGOUT",
+  "logoutConfirmMessage": "Are you sure you want to log out of your Tutor account?",
+  "logoutButton": "Exit",
+  "cancelButton": "Cancel",
+  "logoutSuccess": "Session closed successfully.",
+  "configureQR": "Configure QR Code",
+  "speedUpPayments": "Speed up your payments",
+  "qrDescription": "Upload your banking QR code to receive your payments quickly and securely.",
+  "noQRCode": "No QR Code",
+  "changeQRCode": "Change QR Code",
+  "deleteQRCode": "Delete QR Code",
+  "uploadQRCode": "Upload QR Code",
+  "deleteQRConfirmTitle": "Delete QR?",
+  "deleteQRConfirmMessage": "If you delete your QR, students won't be able to make direct payments until you upload a new one.",
+  "deleteButton": "Delete",
+  "qrUploadedSuccessfully": "QR uploaded successfully!",
+  "qrDeletedSuccessfully": "QR deleted successfully",
+  "errorUploadingQR": "Error uploading image",
+  "errorSelectingImage": "Error selecting image",
+  "noActiveSession": "Error: No active session",
+  "errorLoadingQR": "Error loading",
+  "closeQRViewer": "Close QR",
+  "searchByTutorHint": "Search by tutor...",
+  "searchBySubjectHint": "Search by subject...",
+  "all": "All",
+  "available": "Available",
+  "topRated": "Top Rated",
+  "price": "Price",
+  "reviewsCount": "{count,plural, =0{0 reviews} =1{1 review} other{{count} reviews}}",
+  "@reviewsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "viewProfile": "View Profile",
+  "start": "Start",
+  "schedule": "Schedule",
+  "pressBackAgainToExit": "Press back button again to exit",
+  "subjectsTabTitle": "Subjects",
+  "subjectsTabSubtitle": "Here you will see all the subjects you are studying",
+  "homeNavigation": "HOME",
+  "scheduleNavigation": "SCHEDULE",
+  "subjectsNavigation": "SUBJECTS",
+  "profileNavigation": "PROFILE",
+  "dayLabel": "DAY",
+  "monthLabel": "MONTH",
+  "withoutScheduleToday": "NO SCHEDULES TODAY",
+  "withoutScheduleThisMonth": "NO SCHEDULES THIS MONTH",
+  "workingHours": "Working Hours",
+  "defineRangeSelectedDays": "Define the range for the selected days",
+  "startTime": "STARTS",
+  "endTime": "ENDS",
+  "confirmSchedule": "CONFIRM SCHEDULE",
+  "scheduleConfiguredSuccessfully": "Working schedule configured successfully",
+  "couldNotSaveSchedule": "Could not save schedule. Try again.",
+  "scheduleDeletedSuccessfully": "Schedule deleted successfully",
+  "errorDeletingSchedule": "Error deleting schedule. Check your connection.",
+  "endTimeGreaterThanStart": "End time must be greater than start time",
+  "noDate": "NO DATE",
+  "addSchedule": "ADD",
+  "hourlySchedule": "SCHEDULE",
+  "calendarLabel": "CALENDAR",
+  "rangeMode": "RANGE MODE",
+  "rangeActive": "ACTIVE RANGE",
+  "multipleSelection": "MULTIPLE SELECTION",
+  "dayActive": "ACTIVE DAY",
+  "acceptButton": "ACCEPT",
+  "configureSchedulesButton": "CONFIGURE SCHEDULES",
+  "cancelModal": "CANCEL",
+  "selectRange": "SELECT A RANGE",
+  "selectedDaysLabel": "SELECTED DAYS",
+  "dayBlocksLabel": "DAY BLOCKS",
+  "clearSelection": "CLEAR",
+  "noBlocksRegistered": "NO BLOCKS REGISTERED",
+  "readyToConfigureSchedules": "READY TO CONFIGURE SCHEDULES",
+  "deleteScheduleTitle": "Delete schedule",
+  "deleteScheduleConfirm": "Are you sure you want to delete this schedule?",
+  "cancelDialogButton": "Cancel",
+  "deleteButton2": "Delete",
+  "scheduleDeletedSuccessfully2": "Schedule deleted successfully",
+  "errorDeletingScheduleMsg": "Error deleting schedule",
+  "sessionDuration": "20 MIN SESSION",
+  "configureSchedulesCount": "CONFIGURE SCHEDULES",
+  "daysSelected": "{count, plural, =1{1 day selected} other{{count} days selected}}",
+  "previousDay": "Previous day",
+  "nextDay": "Next day",
+  "instantTutoring": "Instant tutoring,",
+  "multiplyYourClasses": "multiply your classes",
+  "receiveTutoringRequests": "Receive tutoring requests from students in real-time. Accept the regulatory terms to enable your push alerts and start teaching instantly.",
+  "iHaveReadAndAccept": "I have read and accept the ",
+  "termsAndConditions": "terms and conditions",
+  "acceptAndContinue": "ACCEPT AND CONTINUE",
+  "withStudent": "with",
+  "deleteSubject": "Delete subject",
+  "deleteSubjectConfirm": "Are you sure you want to delete this subject?",
+  "subjectDeletedSuccessfully": "Subject deleted successfully",
+  "errorDeletingSubject": "Error deleting the subject",
+  "enterEmail": "Enter your email",
+  "invalidEmail": "Enter a valid email",
+  "sendResetLink": "Send reset link",
+  "resetPassword": "Reset password",
+  "enterEmailToReset": "Enter your email to reset your account password.",
+  "verifyEmail": "Verify your email!",
+  "verificationEmailSent": "We sent you a verification email to:",
+  "resendVerificationEmail": "Resend verification email",
+  "checkInboxAndClick": "Check your inbox and click the link to activate your account.",
+  "backToRegistration": "Back to registration",
+  "enterFirstName": "Enter your first name",
+  "enterLastName": "Enter your last name",
+  "enterPhoneNumber": "Enter your phone number",
+  "invalidPhoneNumber": "Enter a valid number",
+  "enterPassword": "Enter a password",
+  "passwordMinChars": "Use at least 8 characters",
+  "passwordsDontMatch": "Passwords must match",
+  "acceptTermsAndPrivacy": "Accept terms and privacy to continue",
+  "successfulRegistration": "Successful registration, verify your email",
+  "failedToRegister": "Could not register",
+  "secureConnectionError": "Secure connection error. Check your internet connection.",
+  "serverConnectionError": "Could not connect to server. Check your internet connection.",
+  "home_nav": "HOME",
+  "schedule_nav": "SCHEDULE",
+  "favorites_nav": "FAVORITES",
+  "profile_nav": "PROFILE",
+  "loadingVideo": "Loading video...",
+  "thisMayTakeFewSeconds": "This may take a few seconds",
+  "clearCache": "Clear Cache",
+  "profileUpdatedSuccessfully": "Profile updated successfully",
+  "errorUpdatingProfile": "Error updating profile",
+  "invoices": "Invoices",
+  "noInvoices": "No invoices",
+  "couldNotGetUserToken": "Could not get user token.",
+  "errorResendingEmail": "Error resending email",
+  "time": "Time",
+  "viewFullDetails": "View full details",
+  "joinSession": "Join session",
+  "confirmPasswordPrompt": "Confirm password",
+  "registerWithGoogle": "Register with Google",
+  "createYourAccount": "Create your account",
+  "registerAsStudentOrTutor": "Register as a student or tutor and start your educational journey with us.",
+  "signUpWithGoogle": "Sign up with Google",
+  "authGoogleSelectRole": "Select how you want to register on ClassGo",
+  "iHaveReadAndAgreeToAll": "I have read and agree to all ",
+  "andWord": "and ",
+  "privacyPolicy": "Privacy Policy",
+  "alreadyHaveAnAccount": "Already have an account? ",
+  "signIn": "Sign in",
+  "successfulUserRegistration": "Successful user registration",
+  "couldNotObtainGoogleToken": "Could not obtain Google token",
+  "errorRegisteringWithGoogle": "Error registering with Google",
+  "registrationSuccess": "Registration successful, verify your email",
+  "home": "Home",
+  "phoneNumber": "Phone number",
+  "nombres": "First names",
+  "apellidos": "Last names",
+  "calendar": "CALENDAR",
+  "filterSubjects": "Filter subjects...",
+  "selectInstitutionType": "Select institution type",
+  "selectSubject": "Select a subject",
+  "selectedDate": "Selected Date: {date}",
+  "@selectedDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "noSubjects": "No subjects",
+  "createNewReservationModal": "Create new reservation",
+  "selectInstitutionTypeHint": "Select institution type",
+  "selectMatterHint": "Select a subject",
+  "withoutTime": "Without time",
+  "reservationDetails": "Reservation Details",
+  "id": "ID",
+  "tutor": "Tutor",
+  "subject": "Subject",
+  "start": "Start",
+  "end": "End",
+  "status": "Status",
+  "meet": "Meet",
+  "close": "Close",
+  "couldNotOpenLink": "Could not open the link",
+  "loadingReservations": "Loading reservations...",
+  "reservationCount": "{count, plural, =1{1 reservation} other{{count} reservations}}",
+  "@reservationCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noReservationsForThisDay": "No reservations for this day",
+  "instantTutor": "Instant Tutor",
+  "whatSubjectNeedHelp": "What subject do\nyou need help with today?",
+  "searchSubjectPlaceholder": "E.g. Mathematics, English...",
+  "exploreCategoriesTitle": "Explore Categories",
+  "confirmSearch": "Confirm Search",
+  "confirmSearchMessage": "Do you want to search for an available tutor right now for {subject}?",
+  "@confirmSearchMessage": {
+    "placeholders": {
+      "subject": {
+        "type": "String"
+      }
+    }
+  },
+  "cancel": "Cancel",
+  "yesSearchTutor": "Yes, Search Tutor",
+  "searchResults": "Results ({count})",
+  "@searchResults": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noSubjectsFound": "No subjects found.",
+  "connectionError": "Connection error.",
+  "activeTutoring": "Active Tutoring",
+  "primary": "Primary",
+  "secondary": "Secondary",
+  "exactSciences": "Exact Sciences",
+  "advancedEngineering": "Advanced Engineering",
+  "socialAndEconomicSciences": "Social and Economic Sciences",
+  "languages": "Languages",
+  "marketingAndDigitalCommunication": "Marketing and Digital Communication",
+  "artAndDesign": "Art and Design",
+  "gastronomyAndPastry": "Gastronomy and Pastry",
+  "engineeringAndTechnology": "Engineering and Technology",
+  "psychologyAndPersonalDevelopment": "Psychology and Personal Development",
+  "sportsAndWellness": "Sports and Wellness",
+  "searchingForTutors": "Searching for tutors...",
+  "timeoutMessage": "Time's up. No tutors available.",
+  "resumingActiveTutoring": "Resuming your active tutoring",
+  "tutorsReady": "Ready Tutors",
+  "tutorsResponded": "They have responded to your request for {subject}.",
+  "@tutorsResponded": {
+    "placeholders": {
+      "subject": {
+        "type": "String"
+      }
+    }
+  },
+  "confirmingTutor": "Confirming tutor...",
+  "newRequest": "New Request",
+  "myVideo": "My Video",
+  "closeButton": "Close",
+  "videoLoadError": "Could not load video"
+}

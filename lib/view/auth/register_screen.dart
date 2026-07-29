@@ -7,7 +7,7 @@ import 'package:flutter_projects/base_components/custom_snack_bar.dart';
 import 'package:flutter_projects/base_components/textfield.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
-import 'package:flutter_projects/view/auth/tutor_subject_selection_screen.dart';
+import 'package:flutter_projects/view/auth/widgets/google_role_modal.dart';
 import 'package:flutter_projects/view/components/role_based_navigation.dart';
 import 'package:flutter_projects/view/home/home_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -17,6 +17,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_projects/helpers/back_button_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 
 import 'login_screen.dart';
 import 'verification_pending_screen.dart';
@@ -201,7 +202,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
 
     setState(() {
       if (firstName.isEmpty) {
-        _firstNameErrorMessage = "Ingresa tu nombre";
+        _firstNameErrorMessage = AppLocalizations.of(context)!.enterFirstName;
         _isFirstNameValid = false;
       } else {
         _firstNameErrorMessage = '';
@@ -209,7 +210,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
       }
 
       if (lastName.isEmpty) {
-        _lastNameErrorMessage = "Ingresa tus apellidos";
+        _lastNameErrorMessage = AppLocalizations.of(context)!.enterLastName;
         _isLastNameValid = false;
       } else {
         _lastNameErrorMessage = '';
@@ -217,10 +218,10 @@ class _RegistrationScreenState extends State<RegistrationScreen>
       }
 
       if (email.isEmpty) {
-        _emailErrorMessage = "Ingresa tu correo";
+        _emailErrorMessage = AppLocalizations.of(context)!.enterEmail;
         _isEmailValid = false;
       } else if (!_isValidEmail(email)) {
-        _emailErrorMessage = 'Ingresa un correo válido';
+        _emailErrorMessage = AppLocalizations.of(context)!.invalidEmail;
         _isEmailValid = false;
       } else {
         _emailErrorMessage = '';
@@ -228,10 +229,10 @@ class _RegistrationScreenState extends State<RegistrationScreen>
       }
 
       if (phoneNumber.isEmpty) {
-        _phoneNumberErrorMessage = 'Ingresa tu número de celular';
+        _phoneNumberErrorMessage = AppLocalizations.of(context)!.enterPhoneNumber;
         _isPhoneNumberValid = false;
       } else if (!RegExp(r'^[0-9+\-\s()]{8,15}$').hasMatch(phoneNumber)) {
-        _phoneNumberErrorMessage = 'Ingresa un número válido';
+        _phoneNumberErrorMessage = AppLocalizations.of(context)!.invalidPhoneNumber;
         _isPhoneNumberValid = false;
       } else {
         _phoneNumberErrorMessage = '';
@@ -239,10 +240,10 @@ class _RegistrationScreenState extends State<RegistrationScreen>
       }
 
       if (password.isEmpty) {
-        _passwordErrorMessage = "Ingresa una contraseña";
+        _passwordErrorMessage = AppLocalizations.of(context)!.enterPassword;
         _isPasswordValid = false;
       } else if (password.length < 8) {
-        _passwordErrorMessage = 'Usa al menos 8 caracteres';
+        _passwordErrorMessage = AppLocalizations.of(context)!.passwordMinChars;
         _isPasswordValid = false;
       } else {
         _passwordErrorMessage = '';
@@ -250,10 +251,10 @@ class _RegistrationScreenState extends State<RegistrationScreen>
       }
 
       if (confirmPassword.isEmpty) {
-        _confirmPasswordErrorMessage = "Confirma la contraseña";
+        _confirmPasswordErrorMessage = AppLocalizations.of(context)!.confirmPasswordPrompt;
         _isConfirmPasswordValid = false;
       } else if (password != confirmPassword) {
-        _confirmPasswordErrorMessage = 'Las contraseñas deben coincidir';
+        _confirmPasswordErrorMessage = AppLocalizations.of(context)!.passwordsDontMatch;
         _isConfirmPasswordValid = false;
       } else {
         _confirmPasswordErrorMessage = '';
@@ -323,7 +324,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              'Inicio',
+                              AppLocalizations.of(context)!.home,
                               style: TextStyle(
                                 color: AppColors.whiteColor,
                                 fontSize: FontSize.scale(context, 15),
@@ -362,7 +363,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                             ),
                             SizedBox(height: 20),
                             Text(
-                              'Crea tu cuenta',
+                              AppLocalizations.of(context)!.createYourAccount,
                               textScaler: TextScaler.noScaling,
                               style: TextStyle(
                                 fontFamily: 'SF-Pro-Text',
@@ -378,7 +379,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 10.0),
                               child: Text(
-                                'Regístrate como estudiante o tutor y comienza tu viaje educativo con nosotros.',
+                                AppLocalizations.of(context)!.registerAsStudentOrTutor,
                                 textScaler: TextScaler.noScaling,
                                 style: TextStyle(
                                   fontFamily: 'SF-Pro-Text',
@@ -395,7 +396,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 CustomTextField(
-                                  hint: 'Nombres',
+                                  hint: AppLocalizations.of(context)!.nombres,
                                   obscureText: false,
                                   controller: _firstNameController,
                                   focusNode: _firstNameFocusNode,
@@ -417,7 +418,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 CustomTextField(
-                                  hint: 'Apellidos',
+                                  hint: AppLocalizations.of(context)!.apellidos,
                                   obscureText: false,
                                   controller: _lastNameController,
                                   focusNode: _lastNameFocusNode,
@@ -436,7 +437,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                             ),
                             SizedBox(height: 15),
                             CustomTextField(
-                              hint: 'Correo electrónico',
+                              hint: AppLocalizations.of(context)!.emailHint,
                               obscureText: false,
                               controller: _emailController,
                               focusNode: _emailFocusNode,
@@ -452,7 +453,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                               ),
                             SizedBox(height: 15),
                             CustomTextField(
-                              hint: 'Número de celular',
+                              hint: AppLocalizations.of(context)!.phoneNumber,
                               obscureText: false,
                               controller: _phoneController,
                               focusNode: _phoneFocusNode,
@@ -469,7 +470,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                               ),
                             SizedBox(height: 15),
                             CustomTextField(
-                              hint: 'Contraseña',
+                              hint: AppLocalizations.of(context)!.passwordHint,
                               obscureText: true,
                               controller: _passwordController,
                               focusNode: _passwordFocusNode,
@@ -485,7 +486,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                               ),
                             SizedBox(height: 15),
                             CustomTextField(
-                              hint: 'Confirmar Contraseña',
+                              hint: AppLocalizations.of(context)!.confirmPasswordPrompt,
                               obscureText: true,
                               controller: _confirmPasswordController,
                               focusNode: _confirmPasswordFocusNode,
@@ -545,7 +546,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                                           ),
                                           SizedBox(width: 8),
                                           Text(
-                                            'Estudiante',
+                                            'Student',
                                             style: TextStyle(
                                               fontSize:
                                                   FontSize.scale(context, 16),
@@ -661,8 +662,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                                     offset: Offset(-12, 0),
                                     child: RichText(
                                       text: TextSpan(
-                                        text:
-                                            'He leído y estoy de acuerdo con todos los ',
+                                        text: AppLocalizations.of(context)!.iHaveReadAndAgreeToAll,
                                         style: TextStyle(
                                           fontSize: FontSize.scale(context, 14),
                                           fontFamily: 'SF-Pro-Text',
@@ -671,7 +671,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                                         ),
                                         children: [
                                           TextSpan(
-                                            text: 'Términos y condiciones',
+                                            text: AppLocalizations.of(context)!.termsAndConditions,
                                             style: TextStyle(
                                                 fontSize:
                                                     FontSize.scale(context, 14),
@@ -695,7 +695,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                                             text: ' ',
                                           ),
                                           TextSpan(
-                                            text: 'y ',
+                                            text: AppLocalizations.of(context)!.andWord,
                                             style: TextStyle(
                                               fontSize:
                                                   FontSize.scale(context, 14),
@@ -706,7 +706,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                                             ),
                                           ),
                                           TextSpan(
-                                            text: 'Políticas de Privacidad',
+                                            text: AppLocalizations.of(context)!.privacyPolicy,
                                             style: TextStyle(
                                                 fontSize:
                                                     FontSize.scale(context, 14),
@@ -745,7 +745,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                                 ),
                               ),
                               child: Text(
-                                'Registrarse',
+                                AppLocalizations.of(context)!.register,
                                 style: TextStyle(
                                   color: AppColors.whiteColor,
                                   fontSize: FontSize.scale(context, 16),
@@ -761,7 +761,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                                 width: 24,
                                 height: 24,
                               ),
-                              label: Text('Registrarse con Google'),
+                              label: Text(AppLocalizations.of(context)!.registerWithGoogle),
                               onPressed: _isLoading
                                   ? null
                                   : () => _signInWithGoogle(context),
@@ -782,7 +782,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                                     vertical: 15.0, horizontal: 16.0),
                                 child: RichText(
                                   text: TextSpan(
-                                    text: '¿Ya tienes una cuenta? ',
+                                    text: AppLocalizations.of(context)!.alreadyHaveAnAccount,
                                     style: TextStyle(
                                       fontSize: FontSize.scale(context, 16),
                                       color: AppColors.whiteColor,
@@ -792,7 +792,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                                     ),
                                     children: [
                                       TextSpan(
-                                        text: 'Iniciar sesión',
+                                        text: AppLocalizations.of(context)!.signIn,
                                         style: TextStyle(
                                           fontSize: FontSize.scale(context, 16),
                                           fontFamily: 'SF-Pro-Text',
@@ -871,21 +871,28 @@ class _RegistrationScreenState extends State<RegistrationScreen>
         throw Exception('No se pudo obtener el token de Google');
       }
 
+      String roleToUse = this.role;
+      if (roleToUse.isEmpty || _isChecked != 'accepted') {
+        if (!mounted) return;
+        final selectedRole = await showGoogleRoleSelectionDialog(context);
+        if (selectedRole == null) {
+          setState(() { _isLoading = false; });
+          return;
+        }
+        roleToUse = selectedRole;
+      }
+
       final response = await http.post(
         Uri.parse('$baseUrl/auth/google'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'id_token': idToken,
-          'role': this.role,
+          'role': roleToUse,
         }),
       );
 
-      if (response.statusCode == 403) {
-        throw Exception(response.body);
-      }
-
       if (response.statusCode != 200) {
-        throw Exception('Error backend Google login');
+        throw Exception(response.body);
       }
 
       final responseData = jsonDecode(response.body);

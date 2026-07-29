@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 
 const String kFontFamily = 'outfit'; 
 
@@ -43,6 +44,7 @@ class _SubjectsSearchBarState extends State<SubjectsSearchBar> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardBgColor = isDark ? const Color(0xFF16181D) : Colors.white;
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
       decoration: BoxDecoration(
@@ -62,7 +64,7 @@ class _SubjectsSearchBarState extends State<SubjectsSearchBar> {
           fontSize: 15,
         ),
         decoration: InputDecoration(
-          hintText: "Agrega tu próxima materia...",
+          hintText: l10n.addSubjectHint,
           hintStyle: TextStyle(
             color: isDark ? Colors.white30 : Colors.grey[400],
             fontWeight: FontWeight.normal,

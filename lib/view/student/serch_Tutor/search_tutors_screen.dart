@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -14,6 +15,7 @@ import 'package:flutter_projects/view/tutor/component/filter_turtor_bottom_sheet
 import 'package:flutter_projects/view/student/services/text_normalization.dart';
 import 'package:flutter_projects/view/student/serch_Tutor/services/sort_service.dart';
 import 'package:flutter_projects/view/student/reservations/tutor_reservation_screen.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
@@ -160,7 +162,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
 
   void _showSortOptions() {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
 
     final List<String> options;
     switch (_selectedFilterChip) {
@@ -189,11 +191,11 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
             children: [
               ListTile(
                 title: Text(
-                  'Sin ordenar',
+                  l10n.noSort,
                   style: TextStyle(color: theme.textTheme.bodyLarge?.color),
                 ),
                 trailing: _selectedSortOption == null ||
-                        _selectedSortOption == 'Sin ordenar' ||
+                        _selectedSortOption == l10n.noSort ||
                         !options.contains(_selectedSortOption)
                     ? Icon(Icons.check, color: AppColors.primaryGreen)
                     : null,
@@ -266,18 +268,16 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   }
 
   @override
-  void dispose() {
-    // Cancelar debounce timer para evitar setState después de dispose
-    _debounce?.cancel();
-    _searchController.dispose();
-    _searchFocusNode.dispose();
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final l10n = AppLocalizations.of(context)!;
+    _sortOptions = [
+      l10n.nameAZ,
+      l10n.nameZA,
+      l10n.subjectAZ,
+      l10n.subjectZA
+    ];
+
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final userData = authProvider.userData;
     profileImageUrl = userData?['user']?['profile']?['image'] ?? '';
@@ -678,15 +678,16 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   void _onItemTapped(int index) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final token = authProvider.token;
+    final l10n = AppLocalizations.of(context)!;
 
     if (token == null && index != 0) {
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return CustomAlertDialog(
-            title: "Es necesario el Logeo!",
-            content: "Necesitas estar logeado para ingresar",
-            buttonText: "Ir al Login",
+            title: l10n.loginRequired,
+            content: l10n.loginRequiredMessage,
+            buttonText: l10n.goToLogin,
             buttonAction: () {
               Navigator.push(
                 context,
@@ -831,6 +832,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   Widget _buildFiltrosYBuscador() {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
 
     double searchHeight = 60.0;
     double counterHeight = 50.0;
@@ -879,11 +881,11 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                         child: Text(
                           (searchByTutor
                               ? (tutorName != null && tutorName!.isNotEmpty
-                                  ? '${totalTutors} tutores para "${tutorName!}"'
-                                  : '${totalTutors} tutores encontrados')
+                                  ? l10n.tutorsFoundForTutor(totalTutors, tutorName!)
+                                  : l10n.tutorsFound(totalTutors))
                               : (keyword != null && keyword!.isNotEmpty
-                                  ? '${totalTutors} tutores para "${keyword!}"'
-                                  : '${totalTutors} tutores encontrados')),
+                                  ? l10n.tutorsFoundForKeyword(totalTutors, keyword!)
+                                  : l10n.tutorsFound(totalTutors))),
                           overflow: TextOverflow.ellipsis,
                           style: AppTextStyles.body.copyWith(
                             color: AppColors.whiteColor.withOpacity(0.9),
@@ -915,8 +917,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                     onChanged: _onSearchChanged,
                     decoration: InputDecoration(
                       hintText: searchByTutor
-                          ? 'Busca por tutor...'
-                          : 'Busca por materia...',
+                          ? l10n.searchByTutorHint
+                          : l10n.searchBySubjectHint,
                       hintStyle: AppTextStyles.body.copyWith(
                           color: isDark
                               ? Colors.white54
@@ -958,7 +960,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                       ),
                     ),
                     child: DropdownButton<String>(
-                      value: searchByTutor ? 'Tutor' : 'Materia',
+                      value: searchByTutor ? l10n.tutor : l10n.subject,
                       dropdownColor: AppColors.primaryGreen,
                       underline: SizedBox.shrink(),
                       iconEnabledColor: Colors.white,
@@ -969,7 +971,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
-                      items: ['Materia', 'Tutor']
+                      items: [l10n.subject, l10n.tutor]
                           .map((e) => DropdownMenuItem<String>(
                                 value: e,
                                 child: Text(
@@ -984,7 +986,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                           .toList(),
                       onChanged: (val) {
                         if (val == null) return;
-                        final wantTutor = val == 'Tutor';
+                        final wantTutor = val == l10n.tutor;
                         setState(() {
                           searchByTutor = wantTutor;
                           // limpiar el campo opuesto
@@ -1022,7 +1024,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                               color: Colors.white, size: 16),
                           SizedBox(width: 6),
                           Text(
-                            _selectedSortOption ?? 'Ordenar',
+                            _selectedSortOption ?? l10n.sort,
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 13,
@@ -1058,11 +1060,11 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                       padding: EdgeInsets.symmetric(horizontal: 20),
                       child: Row(
                         children: [
-                          _buildFilterChip('Todos', _selectedFilterChip == 'Todos'),
+                          _buildFilterChip(l10n.all, _selectedFilterChip == 'Todos'),
                           SizedBox(width: 20),
-                          _buildFilterChip('Mejor Valorado', _selectedFilterChip == 'Mejor Valorado'),
+                          _buildFilterChip(l10n.topRated, _selectedFilterChip == 'Mejor Valorado'),
                           SizedBox(width: 8),
-                          _buildFilterChip('Precio', _selectedFilterChip == 'Precio'),
+                          _buildFilterChip(l10n.price, _selectedFilterChip == 'Precio'),
                         ],
                       ),
                     ),
@@ -1195,7 +1197,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
     );
   }
 
-  Widget _buildTutoresList() {
+  Widget _buildTutoresList(AppLocalizations l10n) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -1221,9 +1223,10 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
         ),
       );
     } else if (tutors.isEmpty) {
+      final l10n = AppLocalizations.of(context)!;
       return Center(
         child: Text(
-          "No hay tutores disponibles",
+          l10n.noTutorsAvailable,
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w500,
@@ -1332,6 +1335,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                           );
                         },
                         child: TutorCard(
+                          l10n: l10n,
                           name: profile['full_name'] ?? 'No name available',
                           rating: tutor['avg_rating'] != null
                               ? (tutor['avg_rating'] is String
@@ -1439,10 +1443,11 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                 },
                           tutorProfession: validSubjectNames.isNotEmpty
                               ? validSubjectNames.first
-                              : 'Profesión no disponible',
-                          sessionDuration: 'Clases de 20 minutos',
+                              : l10n.professionNotAvailable,
+                          sessionDuration: l10n.classes20Min,
                           isFavoriteInitial: tutor['is_favorite'] ?? false,
                           onFavoritePressed: (isFavorite) async {
+                            final l10n = AppLocalizations.of(context)!;
                             try {
                               final authProvider = Provider.of<AuthProvider>(
                                   context,
@@ -1481,9 +1486,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                 });
 
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content:
-                                        Text('Tutor eliminado de favoritos'),
+                                  SnackBar(
+                                    content: Text(l10n.tutorRemovedFromFavorites),
                                   ),
                                 );
                               } else if (isFavorite && mounted) {
@@ -1498,8 +1502,8 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                                 });
 
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Tutor agregado a favoritos'),
+                                  SnackBar(
+                                    content: Text(l10n.tutorAddedToFavorites),
                                   ),
                                 );
                               }
@@ -1509,8 +1513,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
 
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text(
-                                      'No se pudo eliminar/adicionar de favoritos'),
+                                  content: Text(l10n.favoriteError),
                                 ),
                               );
                             }
@@ -1567,19 +1570,14 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
   Widget build(BuildContext context) {
     screenWidth = MediaQuery.of(context).size.width;
     screenHeight = MediaQuery.of(context).size.height;
+    final l10n = AppLocalizations.of(context)!;
     // final authProvider = Provider.of<AuthProvider>(context);
     // final token = authProvider.token; // unused
 
     // buildProfileIcon() eliminado por no ser usado
 
-    return WillPopScope(
-      onWillPop: () async {
-        if (isLoading) {
-          return false;
-        } else {
-          return true;
-        }
-      },
+    return PopScope(
+      canPop: Navigator.canPop(context) && !isLoading,
       child: Scaffold(
         resizeToAvoidBottomInset:
             false, // Evita que la barra suba con el teclado
@@ -1614,7 +1612,7 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
                         children: [
                           _buildFiltrosYBuscador(),
                           Expanded(
-                            child: _buildTutoresList(),
+                            child: _buildTutoresList(l10n),
                           ),
                         ],
                       ),
@@ -1637,18 +1635,20 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
 class _ModernNavBar extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
+  final AppLocalizations l10n;
 
   const _ModernNavBar({
     required this.currentIndex,
     required this.onTap,
+    required this.l10n,
   });
   @override
   Widget build(BuildContext context) {
     final navItems = [
-      {'icon': Icons.search_outlined, 'label': 'Buscar'},
-      {'icon': Icons.calendar_today_outlined, 'label': 'Reservas'},
-      {'icon': Icons.history_edu_outlined, 'label': 'Historial'},
-      {'icon': Icons.person_outline, 'label': 'Perfil'},
+      {'icon': Icons.search_outlined, 'label': l10n.search},
+      {'icon': Icons.calendar_today_outlined, 'label': l10n.bookings},
+      {'icon': Icons.history_edu_outlined, 'label': l10n.history},
+      {'icon': Icons.person_outline, 'label': l10n.profile},
     ];
 
     return Container(

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/api_structure/config/app_config.dart';
 import 'package:flutter_projects/base_components/custom_snack_bar.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
@@ -90,7 +91,7 @@ class _QrPaymentScreenState extends State<QrPaymentScreen> {
         final userId = authProvider.userId;
 
         if (token == null || userId == null) {
-          CustomToast.show(context, 'Error: No hay sesión activa', isSuccess: false);
+          CustomToast.show(context, AppLocalizations.of(context)!.noActiveSession, isSuccess: false);
           return;
         }
 
@@ -105,7 +106,7 @@ class _QrPaymentScreenState extends State<QrPaymentScreen> {
         if (response['status'] == 200 ||
             response['status'] == 201 ||
             response['success'] == true) {
-          CustomToast.show(context, '¡QR subido exitosamente!', isSuccess: true);
+          CustomToast.show(context, AppLocalizations.of(context)!.qrUploadedSuccessfully, isSuccess: true);
 
           if (response['data'] != null) {
             final rawUrl = response['data']['img_qr_url'] ??
@@ -122,7 +123,7 @@ class _QrPaymentScreenState extends State<QrPaymentScreen> {
         }
       }
     } catch (e) {
-      CustomToast.show(context, 'Error al seleccionar imagen', isSuccess: false);
+      CustomToast.show(context, AppLocalizations.of(context)!.errorSelectingImage, isSuccess: false);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -144,9 +145,9 @@ class _QrPaymentScreenState extends State<QrPaymentScreen> {
         _selectedImage = null;
         _currentQrUrl = null;
       });
-      CustomToast.show(context, 'QR eliminado correctamente', isSuccess: true);
+      CustomToast.show(context, AppLocalizations.of(context)!.qrDeletedSuccessfully, isSuccess: true);
     } catch (e) {
-      CustomToast.show(context, 'Error al eliminar el QR', isSuccess: false);
+      CustomToast.show(context, AppLocalizations.of(context)!.deleteQRCode, isSuccess: false);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -163,7 +164,7 @@ class _QrPaymentScreenState extends State<QrPaymentScreen> {
     showGeneralDialog(
       context: context,
       barrierDismissible: true,
-      barrierLabel: 'Cerrar QR',
+      barrierLabel: AppLocalizations.of(context)!.closeQRViewer,
       barrierColor: Colors.black.withOpacity(0.85),
       transitionDuration: const Duration(milliseconds: 300),
       pageBuilder: (context, animation, secondaryAnimation) {
@@ -221,9 +222,9 @@ class _QrPaymentScreenState extends State<QrPaymentScreen> {
         elevation: 0,
         centerTitle: true,
         iconTheme: const IconThemeData(color: AppColors.brandBlue),
-        title: const Text(
-          'Configurar Código QR',
-          style: TextStyle(
+        title: Text(
+          AppLocalizations.of(context)!.configureQR,
+          style: const TextStyle(
             fontFamily: _kTitleFont,
             color: AppColors.brandBlue,
             fontWeight: FontWeight.bold,
@@ -236,9 +237,9 @@ class _QrPaymentScreenState extends State<QrPaymentScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const Text(
-              'Agiliza tus pagos',
-              style: TextStyle(
+            Text(
+              AppLocalizations.of(context)!.speedUpPayments,
+              style: const TextStyle(
                 fontFamily: _kTitleFont,
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -246,10 +247,10 @@ class _QrPaymentScreenState extends State<QrPaymentScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            const Text(
-              'Sube tu código QR bancario recibir tus pagos de forma rápida y segura.',
+            Text(
+              AppLocalizations.of(context)!.qrDescription,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontFamily: _kBodyFont,
                 fontSize: 15,
                 height: 1.5,
@@ -286,14 +287,14 @@ class _QrPaymentScreenState extends State<QrPaymentScreen> {
             const SizedBox(height: 40),
             if (hasQr) ...[
               _buildActionButton(
-                title: 'Cambiar Código QR',
+                title: AppLocalizations.of(context)!.changeQRCode,
                 icon: Icons.sync_rounded,
                 color: AppColors.primaryGreen,
                 onTap: _isLoading ? () {} : _pickImage,
               ),
               const SizedBox(height: 16),
               _buildActionButton(
-                title: 'Eliminar Código QR',
+                title: AppLocalizations.of(context)!.deleteQRCode,
                 icon: Icons.delete_outline_rounded,
                 color: Colors.redAccent,
                 isOutlined: true,
@@ -303,7 +304,7 @@ class _QrPaymentScreenState extends State<QrPaymentScreen> {
               ),
             ] else ...[
               _buildActionButton(
-                title: 'Subir Código QR',
+                title: AppLocalizations.of(context)!.uploadQRCode,
                 icon: Icons.upload_rounded,
                 color: AppColors.brandBlue,
                 onTap: _isLoading ? () {} : _pickImage,
@@ -330,7 +331,7 @@ class _QrPaymentScreenState extends State<QrPaymentScreen> {
               size: 80, color: AppColors.brandBlue.withOpacity(0.3)),
           const SizedBox(height: 12),
           Text(
-            'Sin código QR',
+            AppLocalizations.of(context)!.noQRCode,
             style: TextStyle(
               fontFamily: _kBodyFont,
               color: AppColors.brandBlue.withOpacity(0.5),
@@ -358,11 +359,11 @@ class _QrPaymentScreenState extends State<QrPaymentScreen> {
           errorWidget: (context, url, error) {
             return Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Icon(Icons.broken_image, color: Colors.grey, size: 40),
-                SizedBox(height: 8),
-                Text('Error al cargar',
-                    style: TextStyle(color: Colors.grey, fontSize: 12)),
+              children: [
+                const Icon(Icons.broken_image, color: Colors.grey, size: 40),
+                const SizedBox(height: 8),
+                Text(AppLocalizations.of(context)!.errorLoadingQR,
+                    style: const TextStyle(color: Colors.grey, fontSize: 12)),
               ],
             );
           }),
@@ -422,17 +423,17 @@ class _QrPaymentScreenState extends State<QrPaymentScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('¿Eliminar QR?',
-            style: TextStyle(
+        title: Text(AppLocalizations.of(ctx)!.deleteQRConfirmTitle,
+            style: const TextStyle(
                 fontFamily: _kTitleFont, fontWeight: FontWeight.bold)),
-        content: const Text(
-            'Si eliminas tu QR, los estudiantes no podrán realizarte pagos directos hasta que subas uno nuevo.',
-            style: TextStyle(fontFamily: _kBodyFont)),
+        content: Text(
+            AppLocalizations.of(ctx)!.deleteQRConfirmMessage,
+            style: const TextStyle(fontFamily: _kBodyFont)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+            child: Text(AppLocalizations.of(ctx)!.cancelButton, style: const TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -441,7 +442,7 @@ class _QrPaymentScreenState extends State<QrPaymentScreen> {
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
             child:
-                const Text('Eliminar', style: TextStyle(color: Colors.white)),
+                Text(AppLocalizations.of(ctx)!.deleteButton, style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),

@@ -17,6 +17,7 @@ import 'package:flutter_projects/view/tutor/experience/experience_detail.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_projects/l10n/app_localizations.dart';
 
 import '../../provider/auth_provider.dart';
 import 'package:flutter_projects/provider/booking_provider.dart';
@@ -249,11 +250,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return WillPopScope(
       onWillPop: () async {
-        if (isLoading) {
-          return false;
-        } else {
-          return true;
-        }
+        return false;
       },
       child: Stack(
         children: [
@@ -900,6 +897,8 @@ class _ProfileStat extends StatelessWidget {
 class _GuestProfile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    debugPrint('GuestProfile: l10n locale: ${l10n.localeName}');
     return Scaffold(
       backgroundColor: AppColors.primaryGreen,
       body: SafeArea(
@@ -920,7 +919,7 @@ class _GuestProfile extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'Inicia sesión para acceder a tu perfil',
+                    l10n.loginToAccessProfile,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.white,
@@ -930,7 +929,7 @@ class _GuestProfile extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Revisa tu historial, estadísticas, pagos y configuración personal.',
+                    l10n.loginToAccessProfileDesc,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.8),
@@ -955,8 +954,8 @@ class _GuestProfile extends StatelessWidget {
                         borderRadius: BorderRadius.circular(14),
                       ),
                     ),
-                    child: const Text(
-                      'Iniciar sesión',
+                    child: Text(
+                      l10n.login,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,

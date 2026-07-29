@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
+import 'package:flutter_projects/base_components/confirm_dialog.dart';
 import 'package:flutter_projects/provider/onboarding_provider.dart';
 import 'package:flutter_projects/view/tutor/onboarding/onboarding_screen.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
@@ -127,68 +128,15 @@ class BannerVerification {
       height: 48,
       child: ElevatedButton.icon(
         onPressed: () async {
-          final confirmed = await showDialog<bool>(
+          final confirmed = await ConfirmDialog.show(
             context: context,
-            builder: (ctx) => AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              title: const Row(
-                children: [
-                  Icon(Icons.warning_amber_rounded,
-                      color: AppColors.brandOrange, size: 28),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'Cancelar verificación',
-                      style: TextStyle(
-                        fontFamily: 'outfit',
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.brandBlue,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              content: const Text(
-                'Si cancelas, tu solicitud de verificación será eliminada y deberás volver a enviar tus documentos desde cero.',
-                style: TextStyle(
-                  fontFamily: 'manrope',
-                  fontSize: 14,
-                  color: AppColors.textLightSecondary,
-                  height: 1.4,
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(ctx).pop(false),
-                  child: const Text(
-                    'MANTENER',
-                    style: TextStyle(
-                        fontFamily: 'outfit', fontWeight: FontWeight.w600),
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: () => Navigator.of(ctx).pop(true),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.brandOrange,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'CANCELAR & REENVIAR',
-                    style: TextStyle(
-                      fontFamily: 'outfit',
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            icon: Icons.warning_amber_rounded,
+            iconColor: AppColors.brandOrange,
+            title: 'Cancelar verificación',
+            message: 'Si cancelas, tu solicitud de verificación será eliminada y deberás volver a enviar tus documentos desde cero.',
+            cancelLabel: 'MANTENER',
+            confirmLabel: 'CANCELAR &\nREENVIAR',
+            confirmColor: AppColors.brandOrange,
           );
           if (confirmed != true) return;
 

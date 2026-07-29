@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_projects/models/booking_status.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
@@ -17,12 +18,7 @@ class ReservationDetailsDialog extends StatelessWidget {
   }) : super(key: key);
 
   Color _getStatusColor(String status) {
-    final s = status.toLowerCase();
-    if (s.contains('pendiente')) return AppColors.brandOrange;
-    if (s.contains('aceptad')) return AppColors.neonGreen;
-    if (s.contains('cursando')) return AppColors.brandCyan;
-    if (s.contains('completad')) return Colors.grey;
-    return AppColors.brandCyan;
+    return BookingStatus.fromString(status).statusColor;
   }
 
   Future<void> _openMeetLink(BuildContext context, String link) async {

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_projects/models/booking_status.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/view/tutor/features/agenda/providers/tutor_agenda_provider.dart';
 import 'package:flutter_projects/view/tutor/features/home/widgets/reservation_details_dialog.dart';
@@ -92,7 +94,7 @@ class _AgendaBookingViewState extends State<AgendaBookingView> {
             ),
             const SizedBox(height: 20),
             Text(
-              "DÍA LIBRE",
+              AppLocalizations.of(context)!.freeDay,
               style: TextStyle(
                 fontFamily: 'outfit',
                 fontWeight: FontWeight.w900,
@@ -102,7 +104,7 @@ class _AgendaBookingViewState extends State<AgendaBookingView> {
             ),
             const SizedBox(height: 8),
             Text(
-              "No tienes clases programadas para hoy.\n¡Aprovecha para descansar!",
+              AppLocalizations.of(context)!.noClassesTodayMessage,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: 'manrope',
@@ -133,7 +135,7 @@ class _BookingSummaryCard extends StatelessWidget {
     final startTime = reservation.start != null ? DateFormat('HH:mm').format(reservation.start!) : '--:--';
     final endTime = reservation.end != null ? DateFormat('HH:mm').format(reservation.end!) : '--:--';
     
-    final isPending = reservation.status.toLowerCase().contains('pendiente');
+    final isPending = BookingStatus.fromString(reservation.status).isPending;
     final accentColor = isPending ? AppColors.brandOrange : AppColors.brandCyan;
 
     return GestureDetector(

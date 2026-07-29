@@ -1,0 +1,669 @@
+{
+  "@@locale": "es",
+  "appName": "ClassGo",
+  "language": "Idioma",
+  "spanish": "Español",
+  "english": "English",
+  "selectLanguage": "Seleccionar idioma",
+  "welcome": "¡Bienvenido!",
+  "login": "Iniciar sesión",
+  "register": "Registrarse",
+  "settings": "Configuración",
+  "findTutors": "Encuentra tutores\npara tus materias",
+  "searchSubjectHint": "¿En qué materia necesitas ayuda?",
+  "instantTutor": "Tutor al\nInstante",
+  "scheduleTutoring": "Agendar\nTutoría",
+  "exploreTutors": "Explorar\nTutores",
+  "weAreWithYou": "¡Te acompañamos!",
+  "findIdealTutor": "Encuentra al tutor ideal para ti y alcanza tus metas hoy mismo.",
+  "ourAlliances": "Nuestras\nAlianzas",
+  "institutions": "Instituciones",
+  "needHelp": "¿Necesitas\nAyuda?",
+  "support247": "Soporte 24/7",
+  "exploreSubjects": "Explorar Materias",
+  "instantTutorDrawer": "Tutor al instante",
+  "searchTutorsDrawer": "Buscar Tutores",
+  "aboutUs": "Sobre Nosotros",
+  "questions": "Preguntas",
+  "logIn": "Iniciar Sesión",
+  "accessToInstantTutorTitle": "Acceso a Tutor al Instante",
+  "accessToInstantTutorMessage": "Para acceder a tutorías instantáneas, necesitas iniciar sesión en tu cuenta.",
+  "scheduleTutoringTitle": "Agendar Tutoría",
+  "scheduleTutoringMessage": "Para agendar una clase con un tutor, necesitas iniciar sesión.",
+  "categoryAccounting": "Contabilidad",
+  "categoryChemistry": "Química",
+  "categoryProgramming": "Programación",
+  "categoryEnglish": "Inglés",
+  "categoryExactSciences": "Ciencias Exactas",
+  "categoryMusic": "Música",
+  "calendarTitle": "Mi Calendario",
+  "historyTitle": "Historial de Tutorías",
+  "addSubject": "AÑADIR MATERIA",
+  "subjectLabel": "MATERIA",
+  "addSubjectHint": "Agrega tu próxima materia...",
+  "noTutoringsDay": "No hay tutorías para este día",
+  "noTutoringsDisplay": "No hay tutorías para mostrar",
+  "tutoringLabel": "Tutoría",
+  "statusLabel": "Estado:",
+  "dateRange": "Del {start} al {end}",
+  "tutoringsOnDate": "Tutorías del {date}",
+  "@tutoringsOnDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "@dateRange": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "quickActions": "Acciones Rápidas",
+  "searchTutors": "Buscar Tutores",
+  "findExperts": "Encuentra expertos",
+  "myBookings": "Mis Reservas",
+  "viewSessions": "Ver sesiones",
+  "favorites": "Favoritos",
+  "favoriteTutors": "Tutores favoritos",
+  "profile": "Perfil",
+  "profileSettings": "Ajustes del perfil",
+  "noRecentBookings": "No tienes reservas recientes",
+  "recentBookings": "Reservas Recientes",
+  "myProfile": "Mi Perfil",
+  "student": "Estudiante",
+  "edit": "Editar",
+  "pricePerTutoring": "PRECIO POR TUTORÍA",
+  "pricePerTutoringDetails": "{_price} Bs / 20min.",
+  "@pricePerTutoringDetails": {
+    "placeholders": {
+      "_price": {
+        "type": "String",
+        "example": "100"
+      }
+    }
+  },
+  "definePrice": "Definir Precio",
+  "enterTutoringAmount": "Ingresa el monto que cobrarás por 20 minutos de tutoría.",
+  "priceSuffix": "Bs / 20min",
+  "savePrice": "GUARDAR PRECIO",
+  "rateUpdatedSuccessfully": "Tarifa actualizada correctamente",
+  "editProfileSubtitle": "Modificar información personal",
+  "updateYourData": "Actualiza tus datos",
+  "saveChanges": "Guardar cambios",
+  "firstName": "Nombre",
+  "yourFirstName": "Tu nombre",
+  "lastName": "Apellido",
+  "yourLastName": "Tu apellido",
+  "cellphone": "Celular",
+  "enterYourCellphone": "Ingresa tu número de celular",
+  "description": "Descripción",
+  "tellUsAboutYou": "Cuéntanos algo sobre ti ...",
+  "verifiedTutor": "Tutor verificado",
+  "pendingVerification": "Pendiente de verificación",
+  "presentationVideoOptional": "Video de presentación (Opcional)",
+  "uploading": "Subiendo",
+  "processing": "Procesando...",
+  "updating": "Actualizando...",
+  "changeVideo": "Cambiar Video",
+  "saving": "Guardando...",
+  "requiredField": "Requerido",
+  "accountSettings": "Configuración de Cuenta",
+  "accountSettingsSubtitle": "Cambiar contraseña y configuración",
+  "help": "Ayuda",
+  "helpSubtitle": "Centro de ayuda y soporte",
+  "logout": "Cerrar Sesión",
+  "logoutSubtitle": "Salir de la aplicación",
+  "logoutConfirm": "¿Estás seguro de que quieres cerrar sesión?",
+  "cancel": "Cancelar",
+  "logoutError": "Error al cerrar sesión",
+  "loginToAccessProfile": "Inicia sesión para acceder a tu perfil",
+  "loginToAccessProfileDesc": "Revisa tu historial, estadísticas, pagos y configuración personal.",
+  "login": "Iniciar sesión",
+  "noSort": "Sin ordenar",
+  "nameAZ": "Nombre (A-Z)",
+  "nameZA": "Nombre (Z-A)",
+  "subjectAZ": "Materia (A-Z)",
+  "subjectZA": "Materia (Z-A)",
+  "tutorsFor": "tutores para",
+  "tutorsFound": "tutores encontrados",
+  "subject": "Materia",
+  "tutor": "Tutor",
+  "sort": "Ordenar",
+  "noTutorsAvailable": "No hay tutores disponibles",
+  "tutorRemovedFromFavorites": "Tutor eliminado de favoritos",
+  "tutorAddedToFavorites": "Tutor agregado a favoritos",
+  "favoriteError": "No se pudo eliminar/añadir de favoritos",
+  "loginRequired": "¡Inicio de sesión requerido!",
+  "loginRequiredMessage": "Necesitas estar logeado para ingresar",
+  "goToLogin": "Ir al Login",
+  "favoriteTutors": "Tutores Favoritos",
+  "noFavoriteTutors": "Aún no tienes tutores favoritos",
+  "noFavoriteTutorsDesc": "Guarda tutores que te gusten para encontrarlos rápidamente.",
+  "noDescriptionAvailable": "No hay descripción disponible.",
+  "teachingPhilosophy": "Filosofía de enseñanza",
+  "qrPaymentMethod": "Método de Pago QR",
+  "legal": "Legal",
+  "noNameAvailable": "No hay nombre disponible",
+  "notSpecified": "No especificada",
+  "classes20Min": "Clases de 20 minutos",
+  "noName": "Sin nombre",
+  "reservations": "Reservaciones",
+  "newReservation": "Nueva reserva",
+  "createNewReservation": "Crear nueva reserva para",
+  "selected": "Seleccionado",
+  "noReservationsForDate": "No hay reservas para esta fecha",
+  "reservation": "Reserva",
+  "passwordSettings": "Configuración de Contraseña",
+  "changePassword": "Cambiar contraseña",
+  "newPassword": "Nueva contraseña",
+  "confirmPassword": "Confirmar contraseña",
+  "update": "Actualizar",
+  "passwordRequired": "El campo de contraseña es requerido.",
+  "passwordLengthError": "El campo de contraseña debe tener al menos 8 caracteres.",
+  "confirmPasswordRequired": "El campo de confirmación es requerido.",
+  "passwordMismatch": "El campo de confirmación debe coincidir con la contraseña.",
+  "passwordUpdateError": "La contraseña no se actualizó, por favor inténtalo de nuevo: {error}",
+  "helpCenter": "Centro de Ayuda",
+  "tugoHelpMessage": "¡Hola! Soy Tugo. Estoy aquí para resolver todas tus dudas sobre ClassGo. ¿Cómo puedo ayudarte?",
+  "users": "Usuarios",
+  "students": "Estudiantes",
+  "tutors": "Tutores",
+  "directContact": "Contacto Directo",
+  "email": "Correo",
+  "whatsapp": "WhatsApp",
+  "faqStudentQ1": "¿Cómo encontrar un tutor?",
+  "faqStudentA1": "Utilice la barra de búsqueda para encontrar tutores disponibles según la materia o tema que necesites.",
+  "faqStudentQ2": "¿Cómo reservo una sesión?",
+  "faqStudentA2": "Una vez que encuentres un tutor, consulta su perfil y selecciona un horario disponible que te convenga. Haz clic en \"Reservar” y sigue las instrucciones para confirmar tu sesión.",
+  "faqStudentQ3": "¿Qué pasa si necesito cancelar o reprogramar?",
+  "faqStudentA3": "Las tutorías no pueden cancelarse una vez reservadas. Si ocurrió algún inconveniente, contáctanos y con gusto te ayudaremos.",
+  "faqStudentQ4": "¿Cómo pago las sesiones?",
+  "faqStudentA4": "Los pagos se realizan a través del QR proporcionado en tu reserva o también por transferencia bancaria con los datos que se muestran en pantalla.",
+  "faqStudentQ5": "¿Qué debo hacer si mi tutor no se presenta?",
+  "faqStudentA5": "Si tu tutor no se presenta a una sesión programada, comunícate con soporte de inmediato para obtener ayuda y agendar una reprogramación o un reembolso.",
+  "faqStudentQ6": "¿Cómo puedo dejar comentarios?",
+  "faqStudentA6": "Entra al perfil del tutor, desliza hacia abajo y dirígete a la sección de reseñas, donde podrás ver las calificaciones y comentarios de los estudiantes.",
+  "faqTutorQ1": "¿Cómo puedo ser tutor?",
+  "faqTutorA1": "Crea una cuenta, rellena el formulario y al final selecciona \"Tutor\". Crea tu perfil y envía la documentación necesaria para su aprobación.",
+  "faqTutorQ2": "¿Qué cualificaciones necesito para ser tutor?",
+  "faqTutorA2": "No es requisito tener titulación académica. Si quieres enseñar \"algo\" puedes hacerlo.",
+  "faqTutorQ3": "¿Cómo configuro mi disponibilidad?",
+  "faqTutorA3": "Inicia sesión en tu cuenta, accede a la sección “Administrar tiempo disponible” y actualiza tu calendario con tus franjas horarias disponibles.",
+  "faqTutorQ4": "¿Qué debo hacer si un estudiante cancela?",
+  "faqTutorA4": "Los estudiantes no tienen la opción de cancelar una sesión después de reservarla. Si el alumno te informa de algún problema, recomiéndale escribir a nuestro contacto para recibir ayuda.",
+  "tutorsFoundForTutor": "{count, plural, =0{No se encontraron tutores para {tutorName}} one{{count} tutor encontrado para {tutorName}} other{{count} tutores encontrados para {tutorName}}}",
+  "@tutorsFoundForTutor": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "tutorName": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorsFound": "{total} tutores encontrados",
+  "@tutorsFound": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "tutorsFoundForKeyword": "{count, plural, =0{No se encontraron tutores para {keyword}} one{{count} tutor encontrado para {keyword}} other{{count} tutores encontrados para {keyword}}}",
+  "@tutorsFoundForKeyword": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "keyword": {
+        "type": "String"
+      }
+    }
+  },
+  "searchByTutorHint": "Busca por tutor...",
+  "searchBySubjectHint": "Busca por materia...",
+  "all": "Todos",
+  "available": "Disponible",
+  "topRated": "Mejor Valorado",
+  "price": "Precio",
+  "reviewsCount": "{count,plural, =0{0 reseñas} =1{1 reseña} other{{count} reseñas}}",
+  "@reviewsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "viewProfile": "Ver Perfil",
+  "start": "Empezar",
+  "schedule": "Agendar",
+  "professionNotAvailable": "Profesión no disponible",
+  "search": "Buscar",
+  "bookings": "Reservas",
+  "history": "Historial",
+  "profile": "Perfil",
+  "studentReviewsTitle": "Reseñas de Estudiantes",
+  "resultsFound": "{count, plural, =0{No se encontraron resultados} one{{count} resultado encontrado} other{{count} resultados encontrados}}",
+  "@resultsFound": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noReviewsAvailable": "No hay reseñas disponibles",
+  "defaultStudentName": "Estudiante",
+  "defaultGuestEmail": "email@ejemplo.com",
+  "pressBackAgainToExit": "Presiona el botón de retroceso de nuevo para salir",
+  "subjectsTabTitle": "Materias",
+  "subjectsTabSubtitle": "Aquí verás todas las materias que estás estudiando",
+  "emailCannotBeEmpty": "El correo no puede estar vacío",
+  "enterValidEmail": "Ingresa un correo válido",
+  "passwordCannotBeEmpty": "La contraseña no puede estar vacía",
+  "passwordMinLength": "La contraseña debe tener al menos 6 caracteres",
+  "loginSuccessful": "Inicio de sesión exitoso",
+  "emailNotVerified": "Tu correo no está verificado. Revisa tu bandeja y confirma tu cuenta.",
+  "serverNotAvailable": "El servidor no está disponible. Intenta nuevamente más tarde.",
+  "serverDownTitle": "Servidor temporalmente fuera de servicio",
+  "serverDownMessage": "El servidor no está disponible en este momento. Por favor intenta de nuevo más tarde.",
+  "ok": "OK",
+  "loginFailed": "No se pudo iniciar sesión. Revisa tus datos e inténtalo de nuevo.",
+  "resendEmailSuccess": "Hemos reenviado el correo. Revisa tu bandeja de entrada para verificar tu cuenta.",
+  "resendEmailFailed": "No se pudo reenviar el correo. Intenta de nuevo más tarde.",
+  "noActiveSession": "No se encontró sesión activa. Por favor vuelve a iniciar sesión.",
+  "emailVerificationTitle": "Verificación de correo",
+  "resendEmailButton": "Volver a enviar correo",
+  "googleTokenError": "No se pudo obtener el token de Google",
+  "googleLoginError": "Error al iniciar sesión con Google",
+  "homeButton": "INICIO",
+  "loginScreenTitle": "Inicia sesión en tu cuenta",
+  "loginScreenSubtitle": "Accede a cursos, administra tu agenda,\ny mantente conectado.",
+  "emailHint": "Correo electrónico",
+  "passwordHint": "Contraseña",
+  "rememberAccount": "Recordar cuenta en dispositivo",
+  "loginButton": "Ingresar",
+  "loginWithGoogle": "Iniciar sesión con Google",
+  "forgotPassword": "¿Olvidaste tu contraseña?",
+  "noAccountRegister": "¿No tienes una cuenta?, Regístrate",
+  "video": "Video",
+  "termsAndConditions": "Términos y condiciones",
+  "pendingTermsAndConditions": "Términos y condiciones pendientes",
+  "defaultTutorName": "Tutor",
+  "defaultSubjectName": "Tutoría",
+  "defaultPendingStatus": "pendiente",
+  "onboardingBannerTitle": "¡Estás a un paso de enseñar!",
+  "onboardingBannerSubtitle": "Tu perfil está incompleto. Configúralo ahora para empezar a recibir estudiantes.",
+  "onboardingBannerButton": "Completar mi perfil ahora",
+  "quickAccessTitle": "Accesos Rápidos",
+  "mySchedule": "Mi Agenda",
+  "mySubjects": "Mis Materias",
+  "viewProfile": "Ver Perfil",
+  "todaysClasses": "Clases de hoy",
+  "viewSchedule": "Ver Agenda",
+  "noDate": "Sin fecha",
+  "statusPending": "pendiente",
+  "statusAccepted": "aceptad",
+  "statusInProgress": "cursando",
+  "statusCompleted": "completad",
+  "meetLinkNotAvailable": "El enlace de Meet aún no está disponible.",
+  "meetingStartedWaitingLink": "Reunión iniciada, esperando enlace...",
+  "enterSession": "Entrar",
+  "startSession": "Iniciar",
+  "details": "Detalles",
+  "allClear": "¡Todo despejado!",
+  "offlineMode": "Modo offline",
+  "noClassesToday": "No tienes clases programadas para hoy.",
+  "activateAvailability": "Activa tu disponibilidad para que los alumnos te vean.",
+  "termsAcceptedSuccessfully": "¡Términos aceptados correctamente!",
+  "errorAcceptingTerms": "Error al aceptar los términos. Intenta nuevamente.",
+  "couldNotOpenLink": "No se pudo abrir el enlace",
+  "tutoriaReady": "¡TUTORÍA LISTA!",
+  "tutoriaReadySubtitle": "El pago fue confirmado. ¡Entra a la clase ahora!",
+  "fuisteElegido": "¡FUISTE ELEGIDO!",
+  "fuisteElegidoSubtitle": "El estudiante está pagando. Toca para ver detalles.",
+  "solicitudTomada": "SOLICITUD YA TOMADA",
+  "solicitudTomadaSubtitle": "Esta tutoría ya ha sido asignada a otro profesor",
+  "solicitudExpirada": "SOLICITUD EXPIRADA",
+  "solicitudExpiradaSubtitle": "Esta invitación ya no está disponible",
+  "nuevaSolicitud": "¡NUEVA SOLICITUD!",
+  "nuevaSolicitudSubtitle": "Un estudiante necesita tu ayuda ahora",
+  "unirseAlasClase": "Unirse a la Clase",
+  "verEstadoPago": "Ver Estado de Pago",
+  "revisarSolicitud": "Revisar Solicitud",
+  "greeting": "Hola, {name}",
+  "@greeting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "verified": "VERIFICADO",
+  "unverified": "SIN VERIFICAR",
+  "agendaTitle": "AGENDA",
+  "myClasses": "MIS CLASES",
+  "availability": "DISPONIBILIDAD",
+  "myNextClasses": "MIS PRÓXIMAS CLASES",
+  "configureSchedule": "CONFIGURAR HORARIOS",
+  "selectedDays": "{count, plural, =1{{count} día seleccionado} other{{count} días seleccionados}}",
+  "@selectedDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scheduleAddedSuccessfully": "Horario agregado exitosamente",
+  "errorSavingSchedule": "Error al guardar el horario",
+  "freeDay": "DÍA LIBRE",
+  "noClassesTodayMessage": "No tienes clases programadas para hoy.\n¡Aprovecha para descansar!",
+  "daysSelected": "{count} Días seleccionados",
+  "subjectsTitle": "Materias",
+  "subjectsManagement": "GESTIÓN DE MATERIAS",
+  "youHaveSubjects": "Tienes {count, plural, =1{{count} materia} other{{count} materias}}",
+  "@youHaveSubjects": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "addSubjectHint": "Agrega tu próxima materia...",
+  "addSubject": "AÑADIR MATERIA",
+  "noSubjectsYet": "No tienes materias agregadas aún.",
+  "noSearchResults": "No se encontraron resultados.",
+  "subjectAlreadyAdded": "Ya tienes esta materia",
+  "subjectAddedSuccess": "La materia \"{name}\" fue añadida correctamente.",
+  "@subjectAddedSuccess": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "subjectAddedError": "No se pudo añadir \"{name}\". Intenta de nuevo.",
+  "@subjectAddedError": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "subjectDeletedSuccess": "Materia '{name}' eliminada correctamente.",
+  "@subjectDeletedSuccess": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "subjectDeleteError": "Error al eliminar '{name}'. Intenta de nuevo.",
+  "@subjectDeleteError": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "profileTitle": "MI PERFIL",
+  "editProfile": "EDITAR",
+  "videoProfile": "VIDEO",
+  "legalSection": "LEGAL",
+  "mustAcceptTerms": "Debes aceptar los términos y condiciones",
+  "youMustAcceptTerms": "Debes aceptar los términos y condiciones para continuar",
+  "logoutTitle": "CERRAR SESIÓN",
+  "logoutConfirmMessage": "¿Estás seguro de que deseas salir de tu cuenta de Tutor?",
+  "logoutButton": "Salir",
+  "cancelButton": "Cancelar",
+  "logoutSuccess": "Sesión cerrada correctamente.",
+  "configureQR": "Configurar Código QR",
+  "speedUpPayments": "Agiliza tus pagos",
+  "qrDescription": "Sube tu código QR bancario recibir tus pagos de forma rápida y segura.",
+  "noQRCode": "Sin código QR",
+  "changeQRCode": "Cambiar Código QR",
+  "deleteQRCode": "Eliminar Código QR",
+  "uploadQRCode": "Subir Código QR",
+  "deleteQRConfirmTitle": "¿Eliminar QR?",
+  "deleteQRConfirmMessage": "Si eliminas tu QR, los estudiantes no podrán realizarte pagos directos hasta que subas uno nuevo.",
+  "deleteButton": "Eliminar",
+  "qrUploadedSuccessfully": "¡QR subido exitosamente!",
+  "qrDeletedSuccessfully": "QR eliminado correctamente",
+  "errorUploadingQR": "Error al seleccionar imagen",
+  "errorSelectingImage": "Error al seleccionar imagen",
+  "noActiveSession": "Error: No hay sesión activa",
+  "errorLoadingQR": "Error al cargar",
+  "closeQRViewer": "Cerrar QR",
+  "searchByTutorHint": "Busca por tutor...",
+  "searchBySubjectHint": "Busca por materia...",
+  "all": "Todos",
+  "available": "Disponible",
+  "topRated": "Mejor Valorado",
+  "price": "Precio",
+  "reviewsCount": "{count,plural, =0{0 reseñas} =1{1 reseña} other{{count} reseñas}}",
+  "@reviewsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "viewProfile": "Ver Perfil",
+  "start": "Empezar",
+  "schedule": "Agendar",
+  "pressBackAgainToExit": "Presiona el botón de retroceso de nuevo para salir",
+  "subjectsTabTitle": "Materias",
+  "subjectsTabSubtitle": "Aquí verás todas las materias que estás estudiando",
+  "homeNavigation": "INICIO",
+  "scheduleNavigation": "AGENDA",
+  "subjectsNavigation": "MATERIAS",
+  "profileNavigation": "PERFIL",
+  "dayLabel": "DÍA",
+  "monthLabel": "MES",
+  "withoutScheduleToday": "SIN HORARIOS HOY",
+  "withoutScheduleThisMonth": "SIN HORARIOS ESTE MES",
+  "workingHours": "Horario de Trabajo",
+  "defineRangeSelectedDays": "Define el rango para los días seleccionados",
+  "startTime": "INICIA",
+  "endTime": "FINALIZA",
+  "confirmSchedule": "CONFIRMAR HORARIO",
+  "scheduleConfiguredSuccessfully": "Horario de trabajo configurado correctamente",
+  "couldNotSaveSchedule": "No se pudo guardar el horario. Inténtalo de nuevo.",
+  "scheduleDeletedSuccessfully": "Horario eliminado correctamente",
+  "errorDeletingSchedule": "Error al eliminar el horario. Verifica tu conexión.",
+  "endTimeGreaterThanStart": "La hora de fin debe ser mayor a la de inicio",
+  "noDate": "SIN FECHA",
+  "addSchedule": "AÑADIR",
+  "hourlySchedule": "HORARIO",
+  "calendarLabel": "CALENDARIO",
+  "rangeMode": "MODO RANGO",
+  "rangeActive": "RANGO ACTIVO",
+  "multipleSelection": "SELECCIÓN MÚLTIPLE",
+  "dayActive": "DÍA ACTIVO",
+  "acceptButton": "ACEPTAR",
+  "configureSchedulesButton": "CONFIGURAR HORARIOS",
+  "cancelModal": "CANCELAR",
+  "selectRange": "SELECCIONA UN RANGO",
+  "selectedDaysLabel": "DÍAS SELECCIONADOS",
+  "dayBlocksLabel": "BLOQUES DEL DÍA",
+  "clearSelection": "LIMPIAR",
+  "noBlocksRegistered": "SIN BLOQUES REGISTRADOS",
+  "readyToConfigureSchedules": "LISTO PARA CONFIGURAR HORARIOS",
+  "deleteScheduleTitle": "Eliminar horario",
+  "deleteScheduleConfirm": "¿Estás seguro de que quieres eliminar este horario?",
+  "cancelDialogButton": "Cancelar",
+  "deleteButton2": "Eliminar",
+  "scheduleDeletedSuccessfully2": "Horario eliminado exitosamente",
+  "errorDeletingScheduleMsg": "Error al eliminar el horario",
+  "sessionDuration": "SESIÓN DE 20 MIN",
+  "configureSchedulesCount": "CONFIGURAR HORARIOS",
+  "daysSelected": "{count, plural, =1{1 día seleccionado} other{{count} días seleccionados}}",
+  "previousDay": "Día anterior",
+  "nextDay": "Próximo día",
+  "instantTutoring": "Tutorías al instante,",
+  "multiplyYourClasses": "multiplica tus clases",
+  "receiveTutoringRequests": "Recibe solicitudes de estudiantes en tiempo real. Acepta los términos regulatorios para habilitar tus alertas push y empezar a enseñar al instante.",
+  "iHaveReadAndAccept": "He leído y acepto los ",
+  "termsAndConditions": "términos y condiciones",
+  "acceptAndContinue": "ACEPTAR Y CONTINUAR",
+  "withStudent": "con",
+  "deleteSubject": "Eliminar materia",
+  "deleteSubjectConfirm": "¿Estás seguro de que quieres eliminar esta materia?",
+  "subjectDeletedSuccessfully": "Materia eliminada exitosamente",
+  "errorDeletingSubject": "Error al eliminar la materia",
+  "enterEmail": "Ingresa tu correo",
+  "invalidEmail": "Ingresa un correo válido",
+  "sendResetLink": "Enviar enlace de restablecimiento",
+  "resetPassword": "Restablecer contraseña",
+  "enterEmailToReset": "Ingresa tu correo para restablecer la contraseña de tu cuenta.",
+  "verifyEmail": "¡Verifica tu correo!",
+  "verificationEmailSent": "Te hemos enviado un correo de verificación a:",
+  "resendVerificationEmail": "Reenviar correo de verificación",
+  "checkInboxAndClick": "Revisa tu bandeja de entrada y haz clic en el enlace para activar tu cuenta.",
+  "backToRegistration": "Volver al registro",
+  "enterFirstName": "Ingresa tu nombre",
+  "enterLastName": "Ingresa tus apellidos",
+  "enterPhoneNumber": "Ingresa tu número de celular",
+  "invalidPhoneNumber": "Ingresa un número válido",
+  "enterPassword": "Ingresa una contraseña",
+  "passwordMinChars": "Usa al menos 8 caracteres",
+  "passwordsDontMatch": "Las contraseñas deben coincidir",
+  "acceptTermsAndPrivacy": "Acepta términos y privacidad para continuar",
+  "successfulRegistration": "Registro exitoso, verifica tu correo",
+  "failedToRegister": "No se pudo registrar",
+  "secureConnectionError": "Error de conexión segura. Verifica tu conexión a internet.",
+  "serverConnectionError": "No se pudo conectar al servidor. Verifica tu conexión a internet.",
+  "home_nav": "INICIO",
+  "schedule_nav": "AGENDA",
+  "favorites_nav": "FAVORITO",
+  "profile_nav": "PERFIL",
+  "loadingVideo": "Cargando video...",
+  "thisMayTakeFewSeconds": "Esto puede tomar unos segundos",
+  "clearCache": "Limpiar Caché",
+  "profileUpdatedSuccessfully": "Perfil actualizado exitosamente",
+  "errorUpdatingProfile": "Error al actualizar el perfil",
+  "invoices": "Facturas",
+  "noInvoices": "Sin facturas",
+  "couldNotGetUserToken": "No se pudo obtener el token de usuario.",
+  "errorResendingEmail": "Error al reenviar el correo",
+  "time": "Tiempo",
+  "viewFullDetails": "Ver detalles completos",
+  "joinSession": "Unirse a la sesión",
+  "confirmPasswordPrompt": "Confirmar contraseña",
+  "registerWithGoogle": "Registrarse con Google",
+  "createYourAccount": "Crea tu cuenta",
+  "registerAsStudentOrTutor": "Regístrate como estudiante o tutor y comienza tu viaje educativo con nosotros.",
+  "signUpWithGoogle": "Registrarse con Google",
+  "authGoogleSelectRole": "Selecciona cómo deseas registrarte en ClassGo",
+  "iHaveReadAndAgreeToAll": "He leído y estoy de acuerdo con todos los ",
+  "andWord": "y ",
+  "privacyPolicy": "Políticas de Privacidad",
+  "alreadyHaveAnAccount": "¿Ya tienes una cuenta? ",
+  "signIn": "Iniciar sesión",
+  "successfulUserRegistration": "Registro de usuarios exitoso",
+  "couldNotObtainGoogleToken": "No se pudo obtener el token de Google",
+  "errorRegisteringWithGoogle": "Error al registrarse con Google",
+  "registrationSuccess": "Registro exitoso, verifica tu correo",
+  "home": "Inicio",
+  "phoneNumber": "Número de celular",
+  "nombres": "Nombres",
+  "apellidos": "Apellidos",
+  "calendar": "CALENDARIO",
+  "filterSubjects": "Filtrar materias...",
+  "selectInstitutionType": "Selecciona tipo de institución",
+  "selectSubject": "Selecciona una materia",
+  "selectedDate": "Fecha Seleccionada: {date}",
+  "@selectedDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "noSubjects": "No hay materias",
+  "createNewReservationModal": "Crear nueva reserva",
+  "selectInstitutionTypeHint": "Selecciona tipo de institución",
+  "selectMatterHint": "Selecciona una materia",
+  "withoutTime": "Sin hora",
+  "reservationDetails": "Detalle de la reserva",
+  "id": "ID",
+  "tutor": "Tutor",
+  "subject": "Materia",
+  "start": "Inicio",
+  "end": "Fin",
+  "status": "Estado",
+  "meet": "Meet",
+  "close": "Cerrar",
+  "couldNotOpenLink": "No se pudo abrir el enlace",
+  "loadingReservations": "Cargando reservas...",
+  "reservationCount": "{count, plural, =1{1 reserva} other{{count} reservas}}",
+  "@reservationCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noReservationsForThisDay": "No hay reservas para este día",
+  "instantTutor": "Tutor Instantáneo",
+  "whatSubjectNeedHelp": "¿En qué te\nacompañamos hoy?",
+  "searchSubjectPlaceholder": "Ej. Matemáticas, Inglés...",
+  "exploreCategoriesTitle": "Explorar Categorías",
+  "confirmSearch": "Confirmar Búsqueda",
+  "confirmSearchMessage": "¿Deseas buscar un tutor disponible ahora mismo para la materia de {subject}?",
+  "@confirmSearchMessage": {
+    "placeholders": {
+      "subject": {
+        "type": "String"
+      }
+    }
+  },
+  "cancel": "Cancelar",
+  "yesSearchTutor": "Sí, Buscar Tutor",
+  "searchResults": "Resultados ({count})",
+  "@searchResults": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noSubjectsFound": "No se encontraron materias.",
+  "connectionError": "Error de conexión.",
+  "activeTutoring": "Tutoría Activa",
+  "primary": "Primaria",
+  "secondary": "Secundaria",
+  "exactSciences": "Ciencias Exactas",
+  "advancedEngineering": "Ingeniería Avanzada",
+  "socialAndEconomicSciences": "Ciencias Sociales y Económicas",
+  "languages": "Idiomas",
+  "marketingAndDigitalCommunication": "Marketing y Comunicación Digital",
+  "artAndDesign": "Arte y Diseño",
+  "gastronomyAndPastry": "Gastronomía y Repostería",
+  "engineeringAndTechnology": "Ingeniería y Tecnología",
+  "psychologyAndPersonalDevelopment": "Psicología y Desarrollo Personal",
+  "sportsAndWellness": "Deporte y Bienestar",
+  "searchingForTutors": "Buscando tutores...",
+  "timeoutMessage": "El tiempo terminó. Ningún tutor disponible.",
+  "resumingActiveTutoring": "Retomando tu tutoría activa",
+  "tutorsReady": "Tutores Listos",
+  "tutorsResponded": "Han respondido a tu solicitud de {subject}.",
+  "@tutorsResponded": {
+    "placeholders": {
+      "subject": {
+        "type": "String"
+      }
+    }
+  },
+  "confirmingTutor": "Confirmando tutor...",
+  "newRequest": "Nueva solicitud",
+  "myVideo": "Mi Video",
+  "closeButton": "Cerrar",
+  "videoLoadError": "No se pudo cargar el video"
+}

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/models/booking_status.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/provider/booking_provider.dart';
 import 'package:flutter_projects/provider/tutorias_provider.dart';
 import 'package:flutter_projects/view/home/home_screen.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 
 class StudentCalendarScreen extends StatefulWidget {
   const StudentCalendarScreen({Key? key}) : super(key: key);
@@ -27,22 +29,18 @@ class _StudentCalendarScreenState extends State<StudentCalendarScreen> {
   }
 
   Color _statusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'completed':
-      case 'completada':
+    final bStatus = BookingStatus.fromString(status);
+    switch (bStatus) {
+      case BookingStatus.completado:
         return AppColors.primaryGreen;
-      case 'pending':
-      case 'pendiente':
+      case BookingStatus.pendiente:
         return AppColors.orangeprimary.withOpacity(0.85);
-      case 'accepted':
-      case 'aceptada':
+      case BookingStatus.aceptado:
         return AppColors.lightBlueColor;
-      case 'observed':
-      case 'observada':
-        return AppColors.darkBlue.withOpacity(0.85);
-      case 'rejected':
-      case 'rechazada':
+      case BookingStatus.rechazado:
         return Colors.redAccent.withOpacity(0.85);
+      case BookingStatus.noCompletado:
+        return AppColors.darkBlue.withOpacity(0.85);
       default:
         return Colors.grey;
     }
@@ -62,6 +60,7 @@ class _StudentCalendarScreenState extends State<StudentCalendarScreen> {
       ),
       isScrollControlled: true,
       builder: (context) {
+        final l10n = AppLocalizations.of(context)!;
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
           child: Column(
@@ -80,7 +79,7 @@ class _StudentCalendarScreenState extends State<StudentCalendarScreen> {
                 ),
               ),
               Text(
-                'Tutorías del ${day.day}/${day.month}/${day.year}',
+                l10n.tutoringsOnDate('${day.day}/${day.month}/${day.year}'),
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -111,7 +110,7 @@ class _StudentCalendarScreenState extends State<StudentCalendarScreen> {
                                     fontWeight: FontWeight.bold),
                               ),
                               subtitle: Text(
-                                '${t['hour']} - Estado: ${t['status'][0].toUpperCase()}${t['status'].substring(1)}',
+                                '${t['hour']} - ${l10n.statusLabel} ${t['status'][0].toUpperCase()}${t['status'].substring(1)}',
                                 style: TextStyle(
                                     color: _statusColor(t['status']),
                                     fontWeight: FontWeight.w600),
@@ -130,6 +129,7 @@ class _StudentCalendarScreenState extends State<StudentCalendarScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Consumer<BookingProvider>(
       builder: (context, bookingProvider, _) {
         final tutorias = bookingProvider.bookings;
@@ -137,7 +137,9 @@ class _StudentCalendarScreenState extends State<StudentCalendarScreen> {
             .map(
                 (t) => DateTime(t['date'].year, t['date'].month, t['date'].day))
             .toSet();
-        return Scaffold(
+        return PopScope(
+          canPop: Navigator.canPop(context),
+          child: Scaffold(
           backgroundColor: const Color(0xFF181F2A),
           appBar: AppBar(
             backgroundColor: const Color(0xFF181F2A),
@@ -151,7 +153,7 @@ class _StudentCalendarScreenState extends State<StudentCalendarScreen> {
                 );
               },
             ),
-            title: const Text('Mi Calendario',
+            title: Text(l10n.calendarTitle,
                 style: TextStyle(
                     color: Colors.white, fontWeight: FontWeight.bold)),
             actions: [
@@ -201,6 +203,7 @@ class _StudentCalendarScreenState extends State<StudentCalendarScreen> {
                   padding: const EdgeInsets.all(16.0),
                   child: _buildCalendar(tutorias, diasConTutoria),
                 ),
+          ),
         );
       },
     );
@@ -433,6 +436,7 @@ class _StudentCalendarScreenState extends State<StudentCalendarScreen> {
   }
 
   Widget _buildDayView(List<Map<String, dynamic>> tutorias) {
+    final l10n = AppLocalizations.of(context)!;
     final tutoriasDelDia = tutorias
         .where((t) => DateUtils.isSameDay(t['date'], _focusedDay))
         .toList();
@@ -472,7 +476,7 @@ class _StudentCalendarScreenState extends State<StudentCalendarScreen> {
           child: tutoriasDelDia.isEmpty
               ? Center(
                   child: Text(
-                    'No hay tutorías para este día',
+                    l10n.noTutoringsDay,
                     style: const TextStyle(color: Colors.white54, fontSize: 16),
                   ),
                 )
@@ -496,7 +500,7 @@ class _StudentCalendarScreenState extends State<StudentCalendarScreen> {
                                     fontWeight: FontWeight.bold),
                               ),
                               subtitle: Text(
-                                '${t['hour']} - Estado: ${t['status'][0].toUpperCase()}${t['status'].substring(1)}',
+                                '${t['hour']} - ${l10n.statusLabel} ${t['status'][0].toUpperCase()}${t['status'].substring(1)}',
                                 style: TextStyle(
                                     color: _statusColor(t['status']),
                                     fontWeight: FontWeight.w600),
@@ -523,6 +527,7 @@ class _StudentCalendarScreenState extends State<StudentCalendarScreen> {
       ),
       isScrollControlled: true,
       builder: (context) {
+        final l10n = AppLocalizations.of(context)!;
         return DraggableScrollableSheet(
           expand: false,
           initialChildSize: 0.5,
@@ -547,7 +552,7 @@ class _StudentCalendarScreenState extends State<StudentCalendarScreen> {
                     ),
                   ),
                   Text(
-                    'Tutorías del ${day.day}/${day.month}/${day.year}',
+                    l10n.tutoringsOnDate('${day.day}/${day.month}/${day.year}'),
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,

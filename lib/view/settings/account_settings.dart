@@ -4,6 +4,7 @@ import 'package:flutter_projects/base_components/custom_snack_bar.dart';
 import 'package:flutter_projects/base_components/textfield.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 
 import '../../provider/auth_provider.dart';
 
@@ -29,6 +30,22 @@ class _AccountSettingsState extends State<AccountSettings> {
   late double screenHeight;
   bool _isLoading = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _passwordController.addListener(_validatePassword);
+    _confirmPasswordController.addListener(_validateConfirmPassword);
+  }
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    _passwordFocusNode.dispose();
+    _confirmPasswordFocusNode.dispose();
+    super.dispose();
+  }
+
   void showCustomToast(BuildContext context, String message, bool isSuccess) {
     final overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
@@ -48,34 +65,42 @@ class _AccountSettingsState extends State<AccountSettings> {
     });
   }
 
-  void _updatePassword() async {
-    String password = _passwordController.text;
-    String confirmPassword = _confirmPasswordController.text;
-
+  void _validatePassword() {
+    final l10n = AppLocalizations.of(context)!;
     setState(() {
-      if (password.isEmpty) {
-        _passwordErrorMessage = "The password field is required.";
+      if (_passwordController.text.isEmpty) {
+        _passwordErrorMessage = l10n.passwordRequired;
         _isPasswordValid = false;
-      } else if (password.length < 8) {
-        _passwordErrorMessage =
-            'The password field must be at least 8 characters';
+      } else if (_passwordController.text.length < 8) {
+        _passwordErrorMessage = l10n.passwordLengthError;
         _isPasswordValid = false;
       } else {
         _passwordErrorMessage = '';
         _isPasswordValid = true;
       }
+    });
+  }
 
-      if (confirmPassword.isEmpty) {
-        _confirmPasswordErrorMessage = "The confirm field is required.";
+  void _validateConfirmPassword() {
+    final l10n = AppLocalizations.of(context)!;
+    setState(() {
+      if (_confirmPasswordController.text.isEmpty) {
+        _confirmPasswordErrorMessage = l10n.confirmPasswordRequired;
         _isConfirmPasswordValid = false;
-      } else if (password != confirmPassword) {
-        _confirmPasswordErrorMessage = 'The confirm field must match password.';
+      } else if (_passwordController.text != _confirmPasswordController.text) {
+        _confirmPasswordErrorMessage = l10n.passwordMismatch;
         _isConfirmPasswordValid = false;
       } else {
         _confirmPasswordErrorMessage = '';
         _isConfirmPasswordValid = true;
       }
     });
+  }
+
+  void _updatePassword() async {
+    final l10n = AppLocalizations.of(context)!;
+    _validatePassword();
+    _validateConfirmPassword();
 
     if (_isPasswordValid && _isConfirmPasswordValid) {
       setState(() {
@@ -83,8 +108,8 @@ class _AccountSettingsState extends State<AccountSettings> {
       });
 
       Map<String, dynamic> userData = {
-        "password": password,
-        "confirm": confirmPassword,
+        "password": _passwordController.text,
+        "confirm": _confirmPasswordController.text,
       };
 
       try {
@@ -108,7 +133,7 @@ class _AccountSettingsState extends State<AccountSettings> {
         }
       } catch (error) {
         showCustomToast(
-            context, 'Password not updated, please try again: $error', false);
+            context, l10n.passwordUpdateError(error.toString()), false);
       } finally {
         setState(() {
           _isLoading = false;
@@ -119,6 +144,7 @@ class _AccountSettingsState extends State<AccountSettings> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     screenWidth = MediaQuery.of(context).size.width;
     screenHeight = MediaQuery.of(context).size.height;
 
@@ -136,7 +162,7 @@ class _AccountSettingsState extends State<AccountSettings> {
               elevation: 0,
               titleSpacing: 0,
               title: Text(
-                'Configuración de Contraseña',
+                l10n.passwordSettings,
                 textAlign: TextAlign.start,
                 style: TextStyle(
                   color: AppColors.whiteColor,
@@ -175,7 +201,7 @@ class _AccountSettingsState extends State<AccountSettings> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Cambiar contraseña',
+                      l10n.changePassword,
                       style: TextStyle(
                         color: AppColors.whiteColor,
                         fontSize: FontSize.scale(context, 16),
@@ -186,7 +212,7 @@ class _AccountSettingsState extends State<AccountSettings> {
                     ),
                     SizedBox(height: 15),
                     CustomTextField(
-                      hint: 'Nueva contraseña',
+                      hint: l10n.newPassword,
                       obscureText: true,
                       controller: _passwordController,
                       focusNode: _passwordFocusNode,
@@ -202,7 +228,7 @@ class _AccountSettingsState extends State<AccountSettings> {
                       ),
                     SizedBox(height: 15),
                     CustomTextField(
-                      hint: 'Confirmar contraseña',
+                      hint: l10n.confirmPassword,
                       obscureText: true,
                       controller: _confirmPasswordController,
                       focusNode: _confirmPasswordFocusNode,
@@ -230,7 +256,7 @@ class _AccountSettingsState extends State<AccountSettings> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'Actualizar',
+                            l10n.update,
                             textScaler: TextScaler.noScaling,
                             style: TextStyle(
                               fontSize: FontSize.scale(context, 16),

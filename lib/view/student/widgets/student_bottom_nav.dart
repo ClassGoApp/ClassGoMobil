@@ -9,12 +9,20 @@ class StudentBottomNav extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
   final VoidCallback? onCenterTap;
+  final String homeLabel;
+  final String scheduleLabel;
+  final String favoritesLabel;
+  final String profileLabel;
 
   const StudentBottomNav({
     Key? key,
     required this.currentIndex,
     required this.onTap,
     this.onCenterTap,
+    this.homeLabel = "HOME",
+    this.scheduleLabel = "SCHEDULE",
+    this.favoritesLabel = "FAVORITES",
+    this.profileLabel = "PROFILE",
   }) : super(key: key);
 
   @override
@@ -55,7 +63,7 @@ class StudentBottomNav extends StatelessWidget {
               child: Center(
                 child: _AnimatedNavItem(
                   icon: Icons.home_rounded,
-                  label: "INICIO",
+                  label: homeLabel,
                   isSelected: currentIndex == 0,
                   onTap: () => onTap(0),
                 ),
@@ -65,14 +73,14 @@ class StudentBottomNav extends StatelessWidget {
               child: Center(
                 child: _AnimatedNavItem(
                   icon: Icons.calendar_today_rounded,
-                  label: "AGENDA",
+                  label: scheduleLabel,
                   isSelected: currentIndex == 1,
                   onTap: () => onTap(1),
                 ),
               ),
             ),
 
-            // Botón central grande
+            // Large center button
             Expanded(
               child: Center(
                 child: _CenterNavButton(
@@ -98,7 +106,7 @@ class StudentBottomNav extends StatelessWidget {
               child: Center(
                 child: _AnimatedNavItem(
                   icon: Icons.favorite,
-                  label: "FAVORITO",
+                  label: favoritesLabel,
                   isSelected: currentIndex == 3,
                   onTap: () => onTap(3),
                 ),
@@ -108,7 +116,7 @@ class StudentBottomNav extends StatelessWidget {
               child: Center(
                 child: _AnimatedNavItem(
                   icon: Icons.person_rounded,
-                  label: "PERFIL",
+                  label: profileLabel,
                   isSelected: currentIndex == 4,
                   onTap: () => onTap(4),
                 ),
@@ -255,7 +263,7 @@ class _AnimatedNavItem extends StatelessWidget {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            // ÍCONO QUE "SALTA"
+            // Icon that "jumps"
             AnimatedPositioned(
               duration: const Duration(milliseconds: 400),
               curve: Curves.fastOutSlowIn,
@@ -280,7 +288,7 @@ class _AnimatedNavItem extends StatelessWidget {
               ),
             ),
 
-            // TEXTO DEL LABEL
+            // Label text
             AnimatedPositioned(
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeOut,
@@ -301,7 +309,7 @@ class _AnimatedNavItem extends StatelessWidget {
               ),
             ),
 
-            // PUNTO INDICADOR CYAN
+            // Cyan indicator dot
             AnimatedPositioned(
               duration: const Duration(milliseconds: 400),
               curve: Curves.bounceInOut,

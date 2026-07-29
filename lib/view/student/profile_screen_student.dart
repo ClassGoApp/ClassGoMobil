@@ -7,9 +7,11 @@ import 'package:flutter_projects/view/profile/edit_profile_screen.dart';
 import 'package:flutter_projects/view/profile/skeleton/profile_image_skeleton.dart';
 import 'package:flutter_projects/view/settings/account_settings.dart';
 import 'package:flutter_projects/base_components/custom_snack_bar.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../../provider/auth_provider.dart';
+import '../../provider/locale_provider.dart';
 import 'services/profile_service.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -62,15 +64,52 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
+  void _showLanguageSelectionDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        final localeProvider = Provider.of<LocaleProvider>(dialogContext, listen: false);
+        final currentLocale = localeProvider.locale?.languageCode ?? Localizations.localeOf(dialogContext).languageCode;
+
+        return AlertDialog(
+          title: Text(AppLocalizations.of(dialogContext)!.selectLanguage),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              ListTile(
+                title: Text(AppLocalizations.of(dialogContext)!.spanish),
+                trailing: currentLocale == 'es' ? const Icon(Icons.check) : null,
+                onTap: () {
+                  localeProvider.setLocale(const Locale('es'));
+                  Navigator.of(dialogContext).pop();
+                },
+              ),
+              ListTile(
+                title: Text(AppLocalizations.of(dialogContext)!.english),
+                trailing: currentLocale == 'en' ? const Icon(Icons.check) : null,
+                onTap: () {
+                  localeProvider.setLocale(const Locale('en'));
+                  Navigator.of(dialogContext).pop();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
 
-    // 🔒 MODO INVITADO (NO LOGUEADO)
+    // GUEST MODE (NOT LOGGED IN)
     if (!authProvider.isLoggedIn) {
-      return _GuestProfile();
+      debugPrint('ProfileScreen: Entering Guest Mode');
+      return _GuestProfile(l10n: l10n);
     }
 
     if (widget.showAppBar) {
@@ -84,7 +123,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             onPressed: () => Navigator.pop(context),
           ),
           title: Text(
-            'Mi Perfil',
+            l10n.myProfile,
             style: TextStyle(
               color: theme.colorScheme.onSurface,
               fontSize: 20,
@@ -93,14 +132,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
         ),
-        body: _buildProfileContent(context),
+        body: _buildProfileContent(context, l10n),
       );
     } else {
-      return _buildProfileContent(context);
+      return _buildProfileContent(context, l10n);
     }
   }
 
-  Widget _buildProfileContent(BuildContext context) {
+  Widget _buildProfileContent(BuildContext context, AppLocalizations l10n) {
     final authProvider = Provider.of<AuthProvider>(context);
     final userData = authProvider.userData;
     final String? fullName = userData != null &&
@@ -199,7 +238,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 SizedBox(height: 16),
                 Text(
-                  fullName ?? 'Estudiante',
+                  fullName ?? l10n.defaultStudentName,
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -209,7 +248,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  email ?? 'email@ejemplo.com',
+                  email ?? l10n.defaultGuestEmail,
                   style: TextStyle(
                     color: isDark ? Colors.white54 : AppColors.greyColor,
                     fontSize: 16,
@@ -223,7 +262,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    'Estudiante',
+                    l10n.student,
                     style: TextStyle(
                       color: AppColors.lightBlueColor,
                       fontWeight: FontWeight.w600,
@@ -238,8 +277,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // Opciones del perfil
           _buildProfileOption(
             icon: Icons.edit,
-            title: 'Editar Perfil',
-            subtitle: 'Modificar información personal',
+            title: l10n.edit,
+            subtitle: l10n.editProfileSubtitle,
             onTap: () {
               Navigator.push(
                 context,
@@ -252,8 +291,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           SizedBox(height: 12),
           _buildProfileOption(
             icon: Icons.security,
-            title: 'Configuración de Cuenta',
-            subtitle: 'Cambiar contraseña y configuración',
+            title: l10n.accountSettings,
+            subtitle: l10n.accountSettingsSubtitle,
             onTap: () {
               Navigator.push(
                 context,
@@ -266,8 +305,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           SizedBox(height: 12),
           _buildProfileOption(
             icon: Icons.help_outline,
-            title: 'Ayuda',
-            subtitle: 'Centro de ayuda y soporte',
+            title: l10n.help,
+            subtitle: l10n.helpSubtitle,
             onTap: () {
               Navigator.push(
                 context,
@@ -279,12 +318,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           SizedBox(height: 12),
           _buildProfileOption(
+            icon: Icons.language,
+            title: l10n.language,
+            subtitle: l10n.selectLanguage,
+            onTap: () => _showLanguageSelectionDialog(context),
+          ),
+          SizedBox(height: 12),
+          _buildProfileOption(
             icon: Icons.logout,
-            title: 'Cerrar Sesión',
-            subtitle: 'Salir de la aplicación',
+            title: l10n.logout,
+            subtitle: l10n.logoutSubtitle,
             color: Colors.red,
             onTap: () {
-              _showLogoutDialog();
+              _showLogoutDialog(l10n);
             },
           ),
         ],
@@ -355,7 +401,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _showLogoutDialog() {
+  void _showLogoutDialog(AppLocalizations l10n) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -364,14 +410,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             borderRadius: BorderRadius.circular(12),
           ),
           title: Text(
-            'Cerrar Sesión',
+            l10n.logout,
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: AppColors.blackColor,
             ),
           ),
           content: Text(
-            '¿Estás seguro de que quieres cerrar sesión?',
+            l10n.logoutConfirm,
             style: TextStyle(
               color: AppColors.greyColor,
             ),
@@ -382,7 +428,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Navigator.of(context).pop();
               },
               child: Text(
-                'Cancelar',
+                l10n.cancel,
                 style: TextStyle(
                   color: AppColors.greyColor,
                 ),
@@ -391,10 +437,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                _logout();
+                _logout(l10n);
               },
               child: Text(
-                'Cerrar Sesión',
+                l10n.logout,
                 style: TextStyle(
                   color: Colors.red,
                   fontWeight: FontWeight.w600,
@@ -407,7 +453,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Future<void> _logout() async {
+  Future<void> _logout(AppLocalizations l10n) async {
     setState(() {
       isLoading = true;
     });
@@ -422,7 +468,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
-        showCustomToast(context, 'Error al cerrar sesión', false);
+        showCustomToast(context, l10n.logoutError, false);
       }
     } finally {
       if (mounted) {
@@ -435,8 +481,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 }
 
 class _GuestProfile extends StatelessWidget {
+  final AppLocalizations l10n;
+  
+  const _GuestProfile({Key? key, required this.l10n}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
+    debugPrint('GuestProfile: build method executed');
     return Scaffold(
       backgroundColor: AppColors.primaryGreen,
       body: SafeArea(
@@ -452,7 +503,7 @@ class _GuestProfile extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               Text(
-                'Inicia sesión para acceder a tu perfil',
+                l10n.loginToAccessProfile,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white,
@@ -462,7 +513,7 @@ class _GuestProfile extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'Revisa tu historial, estadísticas, pagos y configuración personal.',
+                l10n.loginToAccessProfileDesc,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white.withOpacity(0.8),
@@ -487,8 +538,8 @@ class _GuestProfile extends StatelessWidget {
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                child: const Text(
-                  'Iniciar sesión',
+                child: Text(
+                  l10n.login,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,

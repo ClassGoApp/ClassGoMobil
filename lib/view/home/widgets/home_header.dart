@@ -5,6 +5,9 @@ import 'package:flutter_projects/api_structure/api_service.dart';
 import 'package:flutter_projects/styles/app_design.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/student/serch_Tutor/search_tutors_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_projects/provider/locale_provider.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 
 class HomeHeader extends StatefulWidget {
   final VoidCallback onMenuTap;
@@ -87,6 +90,44 @@ class _HomeHeaderState extends State<HomeHeader> {
     );
   }
 
+    void _showLanguageSelectionDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        final localeProvider = Provider.of<LocaleProvider>(dialogContext, listen: false);
+        final currentLocale = localeProvider.locale?.languageCode ?? Localizations.localeOf(dialogContext).languageCode;
+
+        return AlertDialog(
+          title: Text(AppLocalizations.of(dialogContext)!.selectLanguage),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              ListTile(
+                leading: const Text('🇪🇸', style: TextStyle(fontSize: 24)),
+                title: Text(AppLocalizations.of(dialogContext)!.spanish),
+                trailing: currentLocale == 'es' ? const Icon(Icons.check) : null,
+                onTap: () {
+                  localeProvider.setLocale(const Locale('es'));
+                  Navigator.of(dialogContext).pop();
+                },
+              ),
+              ListTile(
+                leading: const Text('🇬🇧', style: TextStyle(fontSize: 24)),
+                title: Text(AppLocalizations.of(dialogContext)!.english),
+                trailing: currentLocale == 'en' ? const Icon(Icons.check) : null,
+                onTap: () {
+                  localeProvider.setLocale(const Locale('en'));
+                  Navigator.of(dialogContext).pop();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return SliverAppBar(
@@ -134,12 +175,12 @@ class _HomeHeaderState extends State<HomeHeader> {
                       const SizedBox(height: 5),
                       SizedBox(
                         width: MediaQuery.of(context).size.width * 0.65,
-                        child: const FittedBox(
+                        child: FittedBox(
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            'Encuentra tutores\npara tus materias',
-                            style: TextStyle(
+                            AppLocalizations.of(context)!.findTutors,
+                            style: const TextStyle(
                               fontFamily: AppFonts.heading,
                               color: Colors.white,
                               fontSize: 28,
@@ -172,7 +213,7 @@ class _HomeHeaderState extends State<HomeHeader> {
                               fontFamily: AppFonts.body,
                               color: AppColors.textLightPrimary),
                           decoration: InputDecoration(
-                            hintText: '¿En qué materia necesitas ayuda?',
+                            hintText: AppLocalizations.of(context)!.searchSubjectHint,
                             hintStyle: const TextStyle(
                                 fontFamily: AppFonts.body,
                                 color: AppColors.lightGreyColor,
@@ -264,17 +305,46 @@ class _HomeHeaderState extends State<HomeHeader> {
             ),
           ),
           Image.asset('assets/images/logo_classgo.png', height: 36),
-          InkWell(
-            onTap: widget.onProfileTap,
-            borderRadius: BorderRadius.circular(10),
-            child: Container(
-              decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(10)),
-              padding: const EdgeInsets.all(8),
-              child: const Icon(Icons.person_outline,
-                  color: Colors.white, size: 24),
-            ),
+
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Botón de idioma con bandera
+              Consumer<LocaleProvider>(
+                builder: (context, localeProvider, _) {
+                  final isSpanish = localeProvider.locale?.languageCode == 'es' || 
+                                   (localeProvider.locale == null && Localizations.localeOf(context).languageCode == 'es');
+                  return InkWell(
+                    onTap: () => _showLanguageSelectionDialog(context),
+                    borderRadius: BorderRadius.circular(50),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                      padding: const EdgeInsets.all(8),
+                      child: Text(
+                        isSpanish ? '🇪🇸' : '🇬🇧',
+                        style: const TextStyle(fontSize: 20),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(width: 10),
+              InkWell(
+                onTap: widget.onProfileTap,
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.all(8),
+                  child: const Icon(Icons.person_outline,
+                      color: Colors.white, size: 24),
+                ),
+              ),
+            ],
           ),
         ],
       ),

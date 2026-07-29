@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'dart:ui';
 
@@ -40,9 +41,9 @@ class AddSubjectButton extends StatelessWidget {
                 child: const Icon(Icons.add_rounded, color: AppColors.brandCyan, size: 24),
               ),
               const SizedBox(height: 12),
-              const Text(
-                "AÑADIR MATERIA",
-                style: TextStyle(
+              Text(
+                AppLocalizations.of(context)!.addSubject,
+                style: const TextStyle(
                   color: AppColors.brandCyan,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,

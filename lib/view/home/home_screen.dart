@@ -11,6 +11,7 @@ import 'package:flutter_projects/view/profile/profile_screen.dart';
 import 'package:flutter_projects/view/student/serch_Tutor/search_tutors_screen.dart'; 
 import 'package:flutter_projects/view/home/widgets/stats_bar.dart';
 import 'package:flutter_projects/view/home/widgets/whatsapp_button.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -30,12 +31,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: AppColors.backgroundLight,
-      drawer: const HomeDrawer(),
-      floatingActionButton: const WhatsAppButton(),
-      body: CustomScrollView(
+    final l10n = AppLocalizations.of(context)!;
+    return PopScope(
+      canPop: Navigator.canPop(context),
+      child: Scaffold(
+        key: _scaffoldKey,
+        backgroundColor: AppColors.backgroundLight,
+        drawer: const HomeDrawer(),
+        floatingActionButton: const WhatsAppButton(),
+        body: CustomScrollView(
         physics: const ClampingScrollPhysics(),
         slivers: [
           HomeHeader(
@@ -58,17 +62,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 QuickActionsRow(
                   onInstantTutorTap: () {
                     if (!AuthHelper.requireAuth(context,
-                        customTitle: 'Acceso a Tutor al Instante',
-                        customMessage:
-                            'Para acceder a tutorías instantáneas, necesitas iniciar sesión en tu cuenta.')) {
+                        customTitle: l10n.accessToInstantTutorTitle,
+                        customMessage: l10n.accessToInstantTutorMessage)) {
                       return;
                     }
                   },
                   onScheduleTap: () {
                     if (!AuthHelper.requireAuth(context,
-                        customTitle: 'Agendar Tutoría',
-                        customMessage:
-                            'Para agendar una clase con un tutor, necesitas iniciar sesión.')) {
+                        customTitle: l10n.scheduleTutoringTitle,
+                        customMessage: l10n.scheduleTutoringMessage)) {
                       return;
                     }
 
@@ -101,6 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

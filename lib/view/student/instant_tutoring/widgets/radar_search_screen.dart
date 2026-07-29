@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_projects/base_components/confirm_dialog.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/student/instant_tutoring/logic/radar_controller.dart';
 import 'package:flutter_projects/view/student/instant_tutoring/widgets/tutor_card.dart';
 import 'package:flutter_projects/view/student/instant_tutoring/widgets/student_payment_screen.dart';
 import 'package:flutter_projects/view/student/reservations/request_schedule_screen.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'dart:math';
 
 import 'radar_painter.dart';
@@ -43,10 +45,11 @@ class _RadarSearchScreenState extends State<RadarSearchScreen>
     if (widget.isRecovered) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
+          final l10n = AppLocalizations.of(context)!;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Retomando tu tutoría activa'),
-              backgroundColor: AppColors.brandBlue,
+              content: Text(l10n.resumingActiveTutoring),
+              backgroundColor: AppColors.brandBlue, 
               duration: const Duration(seconds: 4),
               behavior: SnackBarBehavior.floating,
             ),
@@ -95,6 +98,7 @@ class _RadarSearchScreenState extends State<RadarSearchScreen>
   }
 
   Widget _buildRadarView() {
+    final l10n = AppLocalizations.of(context)!;
     final isTimeout = _logicController.isTimeout;
 
     return Column(
@@ -114,9 +118,7 @@ class _RadarSearchScreenState extends State<RadarSearchScreen>
         ),
         const SizedBox(height: 4),
         Text(
-          isTimeout
-              ? "El tiempo terminó. Ningún tutor disponible."
-              : "Buscando tutores...",
+          isTimeout ? l10n.timeoutMessage : l10n.searchingForTutors,
           style: TextStyle(
               fontFamily: _kFontFamily,
               color: isTimeout ? AppColors.redColor : AppColors.greyColor,
@@ -238,8 +240,8 @@ class _RadarSearchScreenState extends State<RadarSearchScreen>
                       elevation: 0,
                     ),
                     onPressed: () => Navigator.pop(context),
-                    child: const Text(
-                      "Nueva solicitud",
+                    child: Text(
+                      l10n.newRequest,
                       style: TextStyle(fontFamily: _kFontFamily, fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                     ),
                   ),
@@ -284,35 +286,15 @@ class _RadarSearchScreenState extends State<RadarSearchScreen>
   }
 
   Future<void> _confirmCancel(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await ConfirmDialog.show(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          "Cancelar búsqueda",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: const Text(
-          "¿Seguro que deseas cancelar esta solicitud de tutoría? Podrás volver a elegir otra materia e intentarlo de nuevo.",
-          style: TextStyle(fontSize: 14),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text(
-              "No, volver",
-              style: TextStyle(color: Colors.grey),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text(
-              "Sí, cancelar",
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
+      icon: Icons.close_rounded,
+      iconColor: Colors.redAccent,
+      title: "Cancelar búsqueda",
+      message: "¿Seguro que deseas cancelar esta solicitud de tutoría? Podrás volver a elegir otra materia e intentarlo de nuevo.",
+      cancelLabel: "No, volver",
+      confirmLabel: "Sí, cancelar",
+      confirmColor: Colors.redAccent,
     );
 
     if (confirmed == true && mounted) {
@@ -331,6 +313,8 @@ class _RadarSearchScreenState extends State<RadarSearchScreen>
   }
 
   Widget _buildFoundTutorsView() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Column(
       key: const ValueKey('list'),
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -343,12 +327,7 @@ class _RadarSearchScreenState extends State<RadarSearchScreen>
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text("Tutores Listos",
-                      style: TextStyle(
-                          fontFamily: _kTitleFont,
-                          fontSize: 26,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.blackColor)),
+                  Text(l10n.tutorsReady, style: const TextStyle(fontFamily: _kTitleFont, fontSize: 26, fontWeight: FontWeight.w800, color: AppColors.blackColor)),
                   Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -368,11 +347,17 @@ class _RadarSearchScreenState extends State<RadarSearchScreen>
                 ],
               ),
               const SizedBox(height: 8),
-              Text("Han respondido a tu solicitud de ${widget.subjectName}.",
-                  style: const TextStyle(
-                      fontFamily: _kFontFamily,
-                      color: AppColors.greyColor,
-                      fontSize: 14)),
+              
+              Text.rich(
+                TextSpan(
+                  style: const TextStyle(fontFamily: _kFontFamily, color: AppColors.greyColor, fontSize: 14),
+                  children: [
+                    TextSpan(text: 'Han respondido a tu solicitud de '),
+                    TextSpan(text: widget.subjectName, style: const TextStyle(fontWeight: FontWeight.w800)),
+                    TextSpan(text: '.'),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -387,16 +372,13 @@ class _RadarSearchScreenState extends State<RadarSearchScreen>
               return TutorCard(
                 tutor: tutor,
                 subjectName: widget.subjectName,
-                onReject: () => _logicController.removeTutor(index),
                 onAccept: () async {
                   if (_logicController.isProcessing) return;
 
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text('Confirmando tutor...'),
-                      duration: Duration(seconds: 1)));
-
-                  final resultado =
-                      await _logicController.confirmTutor(tutor.id);
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(l10n.confirmingTutor), duration: const Duration(seconds: 1)));
+                  
+                  final resultado = await _logicController.confirmTutor(tutor.id);
 
                   if (context.mounted) {
                     if (resultado['success'] == true) {

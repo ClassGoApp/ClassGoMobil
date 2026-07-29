@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_projects/view/auth/tutor_subject_selection_screen.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:flutter_projects/view/student/reservations/services/reservations_service.dart';
 import 'package:flutter_projects/view/tutor/features/home/providers/tutor_home_provider.dart';
 import 'package:flutter_projects/view/tutor/features/home/widgets/banner_terms_section.dart';
@@ -14,6 +14,7 @@ import 'package:flutter_projects/view/tutor/dashboard/widgets/quick_access_secti
 import 'package:flutter_projects/view/tutor/dashboard/widgets/dashboard_top_section.dart';
 import 'package:flutter_projects/view/tutor/dashboard/widgets/next_appointment_section.dart';
 import 'package:flutter_projects/view/tutor/features/home/widgets/solicitud_tutoria_card.dart';
+import 'package:flutter_projects/view/tutor/features/home/widgets/solicitud_flexible_card.dart';
 
 class TutorHomeScreen extends StatefulWidget {
   final Function(int) onNavigate;
@@ -24,15 +25,38 @@ class TutorHomeScreen extends StatefulWidget {
   State<TutorHomeScreen> createState() => _TutorHomeScreenState();
 }
 
-class _TutorHomeScreenState extends State<TutorHomeScreen> {
+class _TutorHomeScreenState extends State<TutorHomeScreen>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<TutorHomeProvider>(context, listen: false)
           .loadHomeData(context);
       _loadIdentityStatus();
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      print(
+          '📱 [TutorHomeScreen] App reanudada desde segundo plano. Cargando solicitudes flexibles...');
+      try {
+        final homeProvider =
+            Provider.of<TutorHomeProvider>(context, listen: false);
+        homeProvider.loadPendingFlexibleRequestsFromStorage();
+      } catch (e) {
+        print('Error reanudando solicitudes flexibles: $e');
+      }
+    }
   }
 
   Future<void> _loadIdentityStatus() async {
@@ -45,7 +69,8 @@ class _TutorHomeScreenState extends State<TutorHomeScreen> {
       if (!mounted) return;
       if (response['success'] == true && response['data'] != null) {
         final status = response['data']['status'];
-        if (status != null && authProvider.identityVerificationStatus != 'accepted') {
+        if (status != null &&
+            authProvider.identityVerificationStatus != 'accepted') {
           await authProvider.setIdentityStatus(status.toString());
         }
       }
@@ -67,7 +92,21 @@ class _TutorHomeScreenState extends State<TutorHomeScreen> {
       alerts.add(
         Align(
           alignment: Alignment.topCenter,
-          child: SolicitudTutoriaCard(data: homeProvider.pendingTutoringRequest!),
+          child:
+              SolicitudTutoriaCard(data: homeProvider.pendingTutoringRequest!),
+        ),
+      );
+    }
+
+    for (int i = 0; i < homeProvider.pendingFlexibleRequests.length; i++) {
+      final reqData = homeProvider.pendingFlexibleRequests[i];
+      alerts.add(
+        Align(
+          alignment: Alignment.topCenter,
+          child: SolicitudFlexibleCard(
+            key: ValueKey('flexible_req_${i}_${reqData['token'] ?? reqData.hashCode}'),
+            data: reqData,
+          ),
         ),
       );
     }
@@ -125,10 +164,9 @@ class _TutorHomeScreenState extends State<TutorHomeScreen> {
 
     final user = authProvider.userData?['user'];
     final profile = user?['profile'] ?? {};
-    final String userName = user != null ? (user['name'] ?? 'Tutor') : 'Tutor';
+    final String userName = user != null ? (user['name'] ?? AppLocalizations.of(context)!.defaultTutorName) : AppLocalizations.of(context)!.defaultTutorName;
 
-    String? imageUrl =
-        profile['image'] ?? profile['profile_image'];
+    String? imageUrl = profile['image'] ?? profile['profile_image'];
 
     final bool isVerified = profile['verified'] == true;
     final bool hasAcceptedTerms = user?['terms_accepted'] == true;
@@ -194,7 +232,8 @@ class _TutorHomeScreenState extends State<TutorHomeScreen> {
                     },
                     child: activeAlerts.isNotEmpty
                         ? Column(
-                            key: const ValueKey('alerts'),
+                            key: ValueKey(
+                                'alerts_${activeAlerts.length}_${homeProvider.pendingFlexibleRequest != null}'),
                             children: [
                               const SizedBox(height: 5),
                               _ActionCarouselSection(alerts: activeAlerts),
@@ -202,9 +241,7 @@ class _TutorHomeScreenState extends State<TutorHomeScreen> {
                           )
                         : const SizedBox(key: ValueKey('no_alerts')),
                   ),
-
                   QuickAccessSection(onNavigate: widget.onNavigate),
-
                   NextAppointmentSection(
                     isAvailable: homeProvider.isAvailable,
                     onNavigate: widget.onNavigate,
@@ -215,15 +252,15 @@ class _TutorHomeScreenState extends State<TutorHomeScreen> {
                       final end =
                           DateTime.tryParse(booking['end_time'] ?? '') ??
                               start.add(const Duration(minutes: 20));
-                              
+
                       return ReservationItem(
                           id: booking['id'] ?? 0,
-                          subjectName: booking['subject_name'] ?? 'Tutoría',
-                          tutorName: booking['tutor_name'] ?? 'Tutor',
-                          studentName: booking['student_name'] ?? 'Estudiante',
+                          subjectName: booking['subject_name'] ?? AppLocalizations.of(context)!.defaultSubjectName,
+                          tutorName: booking['tutor_name'] ?? AppLocalizations.of(context)!.defaultTutorName,
+                          studentName: booking['student_name'] ?? AppLocalizations.of(context)!.defaultStudentName,
                           start: start,
                           end: end,
-                          status: booking['status'] ?? 'pendiente',
+                          status: booking['status'] ?? AppLocalizations.of(context)!.defaultPendingStatus,
                           meetingLink: booking['meeting_link'] ?? '');
                     }).toList(),
                   ),
@@ -235,13 +272,13 @@ class _TutorHomeScreenState extends State<TutorHomeScreen> {
       ],
     );
   }
-
 }
 
 class _ActionCarouselSection extends StatefulWidget {
   final List<Widget> alerts;
 
-  const _ActionCarouselSection({Key? key, required this.alerts}) : super(key: key);
+  const _ActionCarouselSection({Key? key, required this.alerts})
+      : super(key: key);
 
   @override
   State<_ActionCarouselSection> createState() => _ActionCarouselSectionState();
@@ -255,6 +292,23 @@ class _ActionCarouselSectionState extends State<_ActionCarouselSection> {
   void initState() {
     super.initState();
     _pageController = PageController(viewportFraction: 0.95);
+  }
+
+  @override
+  void didUpdateWidget(covariant _ActionCarouselSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.alerts.length > oldWidget.alerts.length) {
+      if (_pageController.hasClients) {
+        _pageController.animateToPage(
+          0,
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeOutCubic,
+        );
+      }
+      setState(() {
+        _currentPage = 0;
+      });
+    }
   }
 
   @override
@@ -298,8 +352,8 @@ class _ActionCarouselSectionState extends State<_ActionCarouselSection> {
                   height: 4.0,
                   width: _currentPage == index ? 24.0 : 12.0,
                   decoration: BoxDecoration(
-                    color: _currentPage == index 
-                        ? AppColors.brandCyan 
+                    color: _currentPage == index
+                        ? AppColors.brandCyan
                         : Colors.grey.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(2.0),
                   ),
@@ -308,6 +362,78 @@ class _ActionCarouselSectionState extends State<_ActionCarouselSection> {
             ),
           ),
       ],
+      // TODO: mover las traducciones al onboarding
+      //   ],
+      // ),
+      // child: Column(
+      //   crossAxisAlignment: CrossAxisAlignment.start,
+      //   children: [
+      //     Row(
+      //       children: [
+      //         Container(
+      //           padding: const EdgeInsets.all(8),
+      //           decoration: BoxDecoration(
+      //             color: Colors.white.withOpacity(0.2),
+      //             shape: BoxShape.circle,
+      //           ),
+      //           child: const Icon(Icons.rocket_launch_rounded,
+      //               color: Colors.white, size: 24),
+      //         ),
+      //         const SizedBox(width: 12),
+      //         Expanded(
+      //           child: Text(
+      //             AppLocalizations.of(context)!.onboardingBannerTitle,
+      //             style: TextStyle(
+      //               fontFamily: 'outfit',
+      //               fontSize: 18,
+      //               fontWeight: FontWeight.bold,
+      //               color: Colors.white,
+      //             ),
+      //           ),
+      //         ),
+      //       ],
+      //     ),
+      //     const SizedBox(height: 12),
+      //     Text(
+      //       AppLocalizations.of(context)!.onboardingBannerSubtitle,
+      //       style: TextStyle(
+      //         fontFamily: 'manrope',
+      //         fontSize: 14,
+      //         color: Colors.white.withOpacity(0.9),
+      //         height: 1.4,
+      //       ),
+      //     ),
+      //     const SizedBox(height: 16),
+      //     SizedBox(
+      //       width: double.infinity,
+      //       height: 48,
+      //       child: ElevatedButton(
+      //         onPressed: () {
+      //           Navigator.push(
+      //             context,
+      //             MaterialPageRoute(
+      //                 builder: (context) => const TutorOnboardingScreen()),
+      //           );
+      //         },
+      //         style: ElevatedButton.styleFrom(
+      //           backgroundColor: Colors.white,
+      //           foregroundColor: const Color(0xFFF76B1C),
+      //           elevation: 0,
+      //           shape: RoundedRectangleBorder(
+      //               borderRadius: BorderRadius.circular(12)),
+      //         ),
+      //         child: Text(
+      //           AppLocalizations.of(context)!.onboardingBannerButton,
+      //           style: TextStyle(
+      //             fontFamily: 'outfit',
+      //             fontSize: 16,
+      //             fontWeight: FontWeight.bold,
+      //           ),
+      //         ),
+      //       ),
+      //     ),
+      //   ],
+      // ),
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/base_components/custom_snack_bar.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/view/tutor/dashboard/sheets/add_schedule_sheet.dart';
 import 'package:flutter_projects/view/tutor/features/agenda/providers/tutor_agenda_provider.dart';
@@ -57,10 +58,10 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
         child: Column(
           children: [
             TutorHeader(
-              title: "AGENDA",
+              title: AppLocalizations.of(context)!.agendaTitle,
               subtitle: _currentMode == AgendaMode.classes 
-                  ? "MIS PRÓXIMAS CLASES" 
-                  : "CONFIGURAR HORARIOS",
+                  ? AppLocalizations.of(context)!.myNextClasses
+                  : AppLocalizations.of(context)!.configureSchedule,
               actionIcon: Icons.today_rounded,
               onActionTap: () {
                 final now = DateTime.now();
@@ -148,13 +149,13 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
           if (success) {
             CustomToast.show(
               context,
-              "Horario agregado exitosamente",
+              AppLocalizations.of(context)!.scheduleAddedSuccessfully,
               isSuccess: true,
             );
           } else {
             CustomToast.show(
               context,
-              "Error al guardar el horario",
+              AppLocalizations.of(context)!.errorSavingSchedule,
               isSuccess: false,
             );
           }
@@ -165,10 +166,10 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
 
   Widget _buildDateSelector(bool isDark) {
     String buttonText = _currentMode == AgendaMode.classes 
-        ? DateFormat("dd 'de' MMMM, yyyy", 'es').format(_selectedDate)
+        ? DateFormat("dd MMM, yyyy").format(_selectedDate)
         : (_selectedAvailabilityDates.length == 1 
-            ? DateFormat("dd 'de' MMMM, yyyy", 'es').format(_selectedAvailabilityDates.first)
-            : "${_selectedAvailabilityDates.length} Días seleccionados");
+            ? DateFormat("dd MMM, yyyy").format(_selectedAvailabilityDates.first)
+            : AppLocalizations.of(context)!.daysSelected(_selectedAvailabilityDates.length));
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -254,8 +255,8 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
       ),
       child: Row(
         children: [
-          _buildToggleOption("MIS CLASES", AgendaMode.classes, isDark),
-          _buildToggleOption("DISPONIBILIDAD", AgendaMode.availability, isDark),
+          _buildToggleOption(AppLocalizations.of(context)!.myClasses, AgendaMode.classes, isDark),
+          _buildToggleOption(AppLocalizations.of(context)!.availability, AgendaMode.availability, isDark),
         ],
       ),
     );
@@ -314,10 +315,15 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
           )
         ],
       ),
-      child: IconButton(
-        onPressed: onTap,
-        icon: Icon(icon, color: isDark ? Colors.white70 : AppColors.brandBlue, size: 22),
-        splashRadius: 24,
+      child: Tooltip(
+        message: icon == Icons.chevron_left_rounded 
+            ? AppLocalizations.of(context)!.previousDay
+            : AppLocalizations.of(context)!.nextDay,
+        child: IconButton(
+          onPressed: onTap,
+          icon: Icon(icon, color: isDark ? Colors.white70 : AppColors.brandBlue, size: 22),
+          splashRadius: 24,
+        ),
       ),
     );
   }

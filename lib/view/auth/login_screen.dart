@@ -13,8 +13,10 @@ import 'package:flutter_projects/base_components/textfield.dart';
 import 'package:flutter_projects/view/auth/register_screen.dart';
 import 'package:flutter_projects/view/auth/reset_password_screen.dart';
 import 'package:flutter_projects/helpers/back_button_handler.dart';
+import 'package:flutter_projects/view/auth/widgets/google_role_modal.dart';
 import 'package:flutter_projects/view/components/role_based_navigation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 
 class LoginScreen extends StatefulWidget {
   final Map<String, dynamic>? registrationResponse;
@@ -55,26 +57,26 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   void _validateEmailAndSubmit() async {
+    final l10n = AppLocalizations.of(context)!;
     String email = _emailController.text;
     String password = _passwordController.text;
 
     setState(() {
       if (email.isEmpty) {
-        _errorMessage = 'El correo no puede estar vacío';
+        _errorMessage = l10n.emailCannotBeEmpty;
         _isEmailValid = false;
       } else if (isValidEmail(email)) {
         _errorMessage = '';
         _isEmailValid = true;
       } else {
-        _errorMessage = 'Ingresa un correo válido';
+        _errorMessage = l10n.enterValidEmail;
         _isEmailValid = false;
       }
       if (password.isEmpty) {
-        _passwordErrorMessage = 'La contraseña no puede estar vacía';
+        _passwordErrorMessage = l10n.passwordCannotBeEmpty;
         _isPasswordValid = false;
       } else if (password.length < 6) {
-        _passwordErrorMessage =
-            'La contraseña debe tener al menos 6 caracteres';
+        _passwordErrorMessage = l10n.passwordMinLength;
         _isPasswordValid = false;
       } else {
         _passwordErrorMessage = '';
@@ -130,7 +132,7 @@ class _LoginScreenState extends State<LoginScreen>
         _passwordController.clear();
         showCustomToast(
           context,
-          'Inicio de sesión exitoso',
+          l10n.loginSuccessful,
           true,
         );
       } catch (error) {
@@ -140,20 +142,20 @@ class _LoginScreenState extends State<LoginScreen>
           _openBottomSheet(context);
           showCustomToast(
             context,
-            'Tu correo no está verificado. Revisa tu bandeja y confirma tu cuenta.',
+            l10n.emailNotVerified,
             false,
           );
         } else if (errorMessage.contains("CSRF token mismatch.")) {
           showCustomToast(
             context,
-            'El servidor no está disponible. Intenta nuevamente más tarde.',
+            l10n.serverNotAvailable,
             false,
           );
           showDialog(
             context: context,
             builder: (BuildContext context) => AlertDialog(
               title: Text(
-                'Servidor temporalmente fuera de servicio',
+                l10n.serverDownTitle,
                 textScaler: TextScaler.noScaling,
                 style: TextStyle(
                   fontSize: FontSize.scale(context, 18),
@@ -164,7 +166,7 @@ class _LoginScreenState extends State<LoginScreen>
                 ),
               ),
               content: Text(
-                'El servidor no está disponible en este momento. Por favor intenta de nuevo más tarde.',
+                l10n.serverDownMessage,
                 textScaler: TextScaler.noScaling,
                 style: TextStyle(
                   fontSize: FontSize.scale(context, 14),
@@ -180,7 +182,7 @@ class _LoginScreenState extends State<LoginScreen>
                     Navigator.of(context).pop();
                   },
                   child: Text(
-                    'OK',
+                    l10n.ok,
                     textScaler: TextScaler.noScaling,
                     style: TextStyle(
                       fontSize: FontSize.scale(context, 14),
@@ -197,7 +199,7 @@ class _LoginScreenState extends State<LoginScreen>
         } else {
           showCustomToast(
             context,
-            'No se pudo iniciar sesión. Revisa tus datos e inténtalo de nuevo.',
+            l10n.loginFailed,
             false,
           );
         }
@@ -234,6 +236,7 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   void handleResendEmail() async {
+    final l10n = AppLocalizations.of(context)!;
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final String? _token = authProvider.token;
 
@@ -243,26 +246,27 @@ class _LoginScreenState extends State<LoginScreen>
         Navigator.pop(context);
         showCustomToast(
           context,
-          'Hemos reenviado el correo. Revisa tu bandeja de entrada para verificar tu cuenta.',
+          l10n.resendEmailSuccess,
           true,
         );
       } catch (error) {
         showCustomToast(
           context,
-          'No se pudo reenviar el correo. Intenta de nuevo más tarde.',
+          l10n.resendEmailFailed,
           false,
         );
       }
     } else {
       showCustomToast(
         context,
-        'No se encontró sesión activa. Por favor vuelve a iniciar sesión.',
+        l10n.noActiveSession,
         false,
       );
     }
   }
 
   void _openBottomSheet(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     showModalBottomSheet(
       backgroundColor: AppColors.backgroundColor,
       context: context,
@@ -294,7 +298,7 @@ class _LoginScreenState extends State<LoginScreen>
               Padding(
                 padding: const EdgeInsets.all(10.0),
                 child: Text(
-                  'Verificación de correo',
+                  l10n.emailVerificationTitle,
                   style: TextStyle(
                     fontSize: FontSize.scale(context, 18),
                     color: AppColors.blackColor,
@@ -328,7 +332,7 @@ class _LoginScreenState extends State<LoginScreen>
                     ),
                   ),
                   child: Text(
-                    'Volver a enviar correo',
+                    l10n.resendEmailButton,
                     style: TextStyle(
                       fontSize: FontSize.scale(context, 16),
                       color: AppColors.whiteColor,
@@ -353,7 +357,26 @@ class _LoginScreenState extends State<LoginScreen>
     authProvider.setAuthToken(token);
     print('_saveTokenToProvider completado');
   }
+
+  Future<Map<String, dynamic>?> _googleSignInRetry(
+      String idToken, BuildContext context) async {
+    final selectedRole = await showGoogleRoleSelectionDialog(context);
+    if (selectedRole == null) return null;
+
+    final retryResponse = await http.post(
+      Uri.parse('$baseUrl/auth/google'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'id_token': idToken, 'role': selectedRole}),
+    );
+    if (retryResponse.statusCode != 200) {
+      throw Exception(retryResponse.body);
+    }
+    final responseData = jsonDecode(retryResponse.body);
+    return responseData['data'];
+  }
+
   Future<void> signInWithGoogle(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
     setState(() {
       _isLoading = true;
     });
@@ -379,7 +402,7 @@ class _LoginScreenState extends State<LoginScreen>
       final String? idToken = googleAuth.idToken;
       print('🟢 GOOGLE ID TOKEN => $idToken');
       if (idToken == null) {
-        throw Exception('No se pudo obtener el token de Google');
+        throw Exception(l10n.googleTokenError);
       }
 
       final response = await http.post(
@@ -388,16 +411,38 @@ class _LoginScreenState extends State<LoginScreen>
         body: jsonEncode({'id_token': idToken}),
       );
 
-      if (response.statusCode != 200) {
+      Map<String, dynamic> loginData;
+
+      if (response.statusCode == 403) {
+        final errorBody = jsonDecode(response.body);
+        final errorMsg = (errorBody['message'] as String?) ?? '';
+        if (errorMsg.contains('no encontrado') || errorMsg.contains('not found')) {
+          if (!mounted) return;
+          final retryData = await _googleSignInRetry(idToken, context);
+          if (retryData == null) {
+            setState(() { _isLoading = false; });
+            return;
+          }
+          loginData = retryData;
+        } else {
+          throw Exception(response.body);
+        }
+      } else if (response.statusCode != 200) {
         throw Exception(response.body);
-      }
+      } else {
+        final responseData = jsonDecode(response.body);
+        loginData = responseData['data'];
 
-      final responseData = jsonDecode(response.body);
-      final Map<String, dynamic> loginData = responseData['data'];
-
-      final Map<String, dynamic>? userMap = loginData['user'];
-      if (userMap == null || userMap['role'] == null || userMap['profile'] == null) {
-        throw Exception('El usuario no tiene un rol asignado o no tiene un perfil asignado.');
+        final userMap = loginData['user'];
+        if (userMap == null || userMap['role'] == null || userMap['profile'] == null) {
+          if (!mounted) return;
+          final retryData = await _googleSignInRetry(idToken, context);
+          if (retryData == null) {
+            setState(() { _isLoading = false; });
+            return;
+          }
+          loginData = retryData;
+        }
       }
 
       final String token = loginData['token'];
@@ -413,7 +458,7 @@ class _LoginScreenState extends State<LoginScreen>
 
       showCustomToast(
         context,
-        'Inicio de sesión exitoso',
+        l10n.loginSuccessful,
         true,
       );
 
@@ -430,7 +475,7 @@ class _LoginScreenState extends State<LoginScreen>
       } catch (signoutError) {
         print('Error al cerrar sesión de Google tras fallo: $signoutError');
       }
-      String displayMessage = 'Error al iniciar sesión con Google';
+      String displayMessage = l10n.googleLoginError;
       try {
         // Limpiamos el texto de la excepción e intentamos decodificar el JSON
         final errorString = e.toString().replaceFirst('Exception: ', '').trim();
@@ -660,6 +705,7 @@ class _LoginScreenState extends State<LoginScreen>
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
     final height = MediaQuery.of(context).size.height;
+    final l10n = AppLocalizations.of(context)!;
 
     return WillPopScope(
       onWillPop: () => BackButtonHandler.handleBackButton(
@@ -698,7 +744,7 @@ class _LoginScreenState extends State<LoginScreen>
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
-                                      'INICIO',
+                                      l10n.homeButton,
                                       style: TextStyle(
                                         color: AppColors.whiteColor,
                                         fontSize: FontSize.scale(context, 15),
@@ -741,7 +787,7 @@ class _LoginScreenState extends State<LoginScreen>
                                       Column(
                                         children: [
                                           Text(
-                                            'Inicia sesión en tu cuenta',
+                                            l10n.loginScreenTitle,
                                             style: TextStyle(
                                               fontFamily: 'SF-Pro-Text',
                                               fontWeight: FontWeight.w700,
@@ -753,7 +799,7 @@ class _LoginScreenState extends State<LoginScreen>
                                           ),
                                           SizedBox(height: height * 0.01),
                                           Text(
-                                            'Accede a cursos, administra tu agenda,\ny mantente conectado.',
+                                            l10n.loginScreenSubtitle,
                                             textAlign: TextAlign.center,
                                             style: TextStyle(
                                               fontFamily: 'SF-Pro-Text',
@@ -770,7 +816,7 @@ class _LoginScreenState extends State<LoginScreen>
                                         link: _emailLayerLink,
                                         key: _emailKey,
                                         child: CustomTextField(
-                                          hint: 'Correo electrónico',
+                                          hint: l10n.emailHint,
                                           obscureText: false,
                                           controller: _emailController,
                                           focusNode: _emailFocusNode,
@@ -789,7 +835,7 @@ class _LoginScreenState extends State<LoginScreen>
                                         ),
                                       SizedBox(height: height * 0.02),
                                       CustomTextField(
-                                        hint: 'Contraseña',
+                                        hint: l10n.passwordHint,
                                         obscureText: true,
                                         controller: _passwordController,
                                         focusNode: _passwordFocusNode,
@@ -849,7 +895,7 @@ class _LoginScreenState extends State<LoginScreen>
                                           Transform.translate(
                                             offset: Offset(-12, 0),
                                             child: Text(
-                                              'Recordar cuenta en dispositivo',
+                                              l10n.rememberAccount,
                                               style: TextStyle(
                                                 fontSize:
                                                     FontSize.scale(context, 16),
@@ -875,7 +921,7 @@ class _LoginScreenState extends State<LoginScreen>
                                           ),
                                         ),
                                         child: Text(
-                                          'Ingresar',
+                                          l10n.loginButton,
                                           style: TextStyle(
                                             color: AppColors.whiteColor,
                                             fontSize:
@@ -892,8 +938,7 @@ class _LoginScreenState extends State<LoginScreen>
                                           width: 24,
                                           height: 24,
                                         ),
-                                        label:
-                                            Text('Iniciar sesión con Google'),
+                                        label: Text(l10n.loginWithGoogle),
                                         onPressed: () =>
                                             signInWithGoogle(context),
                                         style: ElevatedButton.styleFrom(
@@ -919,7 +964,7 @@ class _LoginScreenState extends State<LoginScreen>
                                           );
                                         },
                                         child: Text(
-                                          '¿Olvidaste tu contraseña?',
+                                            l10n.forgotPassword,
                                           style: TextStyle(
                                             fontSize:
                                                 FontSize.scale(context, 16),
@@ -958,7 +1003,7 @@ class _LoginScreenState extends State<LoginScreen>
                                                 AppColors.primaryGreen,
                                           ),
                                           child: Text(
-                                            '¿No tienes una cuenta?, Regístrate',
+                                            l10n.noAccountRegister,
                                             style: TextStyle(
                                               color: AppColors.whiteColor,
                                               fontSize:

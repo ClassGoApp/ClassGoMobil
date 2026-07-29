@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-
+import 'package:flutter_projects/models/booking_status.dart';
 class TutoringStatusCards {
   // Función principal para construir la tarjeta según el estado
   static Widget buildStatusCard(
@@ -24,22 +24,21 @@ class TutoringStatusCards {
     print('🎨 Subject recibido: $subject');
     print('🎨 Booking ID: ${booking['id']}');
 
-    switch (status) {
-      case 'pendiente':
+    final bStatus = BookingStatus.fromString(status);
+    switch (bStatus) {
+      case BookingStatus.pendiente:
         print('✅ CASO PENDIENTE EJECUTADO');
         return _buildPendingCard(
             booking, start, subject, tutorName, tutorImage);
-      case 'aceptada':
-      case 'aceptado':
+      case BookingStatus.aceptado:
         print('✅ CASO ACEPTADA EJECUTADO');
         return _buildAcceptedCard(
             booking, start, subject, tutorName, tutorImage);
-      case 'rechazada':
-      case 'rechazado':
+      case BookingStatus.rechazado:
         print('✅ CASO RECHAZADA EJECUTADO');
         return _buildRejectedCard(
             booking, start, subject, tutorName, tutorImage);
-      case 'cursando':
+      case BookingStatus.cursando:
         print('✅ CASO CURSANDO EJECUTADO');
         return _buildLiveCard(booking, start, subject, tutorName, tutorImage,
             onOpenTutoringLink, onShowBookingDetail);

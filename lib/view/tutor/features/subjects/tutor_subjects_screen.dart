@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:flutter_projects/base_components/custom_snack_bar.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:flutter_projects/view/tutor/features/widgets/tutor_header.dart';
 import 'package:provider/provider.dart';
 
@@ -150,7 +151,7 @@ class _TutorSubjectsScreenState extends State<TutorSubjectsScreen> {
               onTap: () async {
                 final int subjId = item['id'];
                 if (isAdded) {
-                  CustomToast.show(context, 'Ya tienes esta materia', isSuccess: false);
+                  CustomToast.show(context, AppLocalizations.of(context)!.subjectAlreadyAdded, isSuccess: false);
                   return;
                 }
                 if (_addingIds.contains(subjId)) return;
@@ -167,7 +168,7 @@ class _TutorSubjectsScreenState extends State<TutorSubjectsScreen> {
                   _searchResults.sort((a, b) => (a['isAdded'] ? 1 : 0) - (b['isAdded'] ? 1 : 0));
                 });
 
-                CustomToast.show(context, added ? 'La materia "${item['name']}" fue añadida correctamente.' : 'No se pudo añadir "${item['name']}". Intenta de nuevo.', isSuccess: added);
+                CustomToast.show(context, added ? AppLocalizations.of(context)!.subjectAddedSuccess(item['name']) : AppLocalizations.of(context)!.subjectAddedError(item['name']), isSuccess: added);
               },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
@@ -226,9 +227,9 @@ class _TutorSubjectsScreenState extends State<TutorSubjectsScreen> {
                   final success = await provider.deleteTutorSubjectFromApi(auth, item.id);
                   if (success && mounted) {
                     setState(() => _selectedSubjectId = null);
-                    CustomToast.show(context, "Materia '$nombreMateria' eliminada correctamente.", isSuccess: true);
+                    CustomToast.show(context, AppLocalizations.of(context)!.subjectDeletedSuccess(nombreMateria), isSuccess: true);
                   } else if (mounted) {
-                    CustomToast.show(context, "Error al eliminar '$nombreMateria'. Intenta de nuevo.", isSuccess: false);
+                    CustomToast.show(context, AppLocalizations.of(context)!.subjectDeleteError(nombreMateria), isSuccess: false);
                   }
                 },
               );
@@ -250,8 +251,8 @@ class _TutorSubjectsScreenState extends State<TutorSubjectsScreen> {
         child: Column(
           children: [
             TutorHeader(
-              title: "Materias",
-              subtitle: "GESTIÓN DE MATERIAS",
+              title: AppLocalizations.of(context)!.subjectsTitle,
+              subtitle: AppLocalizations.of(context)!.subjectsManagement,
             ),
 
             const SizedBox(height: 8),
@@ -262,7 +263,7 @@ class _TutorSubjectsScreenState extends State<TutorSubjectsScreen> {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  "Tienes ${provider.subjects.length} materia${provider.subjects.length == 1 ? '' : 's'}",
+                  AppLocalizations.of(context)!.youHaveSubjects(provider.subjects.length),
                   style: TextStyle(color: isDark ? Colors.white54 : Colors.grey[700], fontSize: 13, fontFamily: 'outfit'),
                 ),
               ),
@@ -300,7 +301,7 @@ class _TutorSubjectsScreenState extends State<TutorSubjectsScreen> {
             Icon(Icons.menu_book_rounded, size: 60, color: isDark ? Colors.white24 : Colors.grey[300]),
             const SizedBox(height: 16),
             Text(
-              _searchController.text.isEmpty ? "No tienes materias agregadas aún." : "No se encontraron resultados.",
+              _searchController.text.isEmpty ? AppLocalizations.of(context)!.noSubjectsYet : AppLocalizations.of(context)!.noSearchResults,
               style: TextStyle(color: isDark ? Colors.white70 : Colors.grey[600], fontSize: 14, fontFamily: 'outfit'),
             ),
           ],

@@ -229,6 +229,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final provider = Provider.of<OnboardingProvider>(context);
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: AppColors.backgroundLight,
       appBar: AppBar(
         backgroundColor: Colors.white,

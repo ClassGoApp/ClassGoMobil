@@ -3,7 +3,8 @@ import 'package:flutter_projects/view/layout/main_shell.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/booking_provider.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
-import 'package:flutter_projects/view/home/home_screen.dart';
+import 'package:flutter_projects/models/booking_status.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 
 class StudentHistoryScreen extends StatefulWidget {
   const StudentHistoryScreen({Key? key}) : super(key: key);
@@ -27,20 +28,8 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> {
   ];
 
   Color _statusColor(String status) {
-    switch (status) {
-      case 'completado':
-        return AppColors.primaryGreen;
-      case 'pendiente':
-        return AppColors.orangeprimary;
-      case 'aceptado':
-        return AppColors.lightBlueColor;
-      case 'observada':
-        return AppColors.yellowColor;
-      case 'rechazado':
-        return AppColors.redColor;
-      default:
-        return Colors.white24;
-    }
+    if (status == 'observada') return AppColors.yellowColor;
+    return BookingStatus.fromString(status).statusColor;
   }
 
   List<Map<String, dynamic>> _applyFilters(
@@ -97,11 +86,14 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Consumer<BookingProvider>(
       builder: (context, bookingProvider, _) {
         final tutorias = bookingProvider.bookings;
         final filteredTutorias = _applyFilters(tutorias);
-        return Scaffold(
+        return PopScope(
+          canPop: Navigator.canPop(context),
+          child: Scaffold(
           backgroundColor: AppColors.darkBlue,
           appBar: AppBar(
             backgroundColor: AppColors.darkBlue,
@@ -115,7 +107,7 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> {
                 );
               },
             ),
-            title: const Text('Historial de Tutorías',
+            title: Text(l10n.historyTitle,
                 style: TextStyle(
                     color: Colors.white, fontWeight: FontWeight.bold)),
             actions: [
@@ -210,7 +202,7 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Text(
-                    'Del ${_selectedRange!.start.day.toString().padLeft(2, '0')}/${_selectedRange!.start.month.toString().padLeft(2, '0')}/${_selectedRange!.start.year} al ${_selectedRange!.end.day.toString().padLeft(2, '0')}/${_selectedRange!.end.month.toString().padLeft(2, '0')}/${_selectedRange!.end.year}',
+                    l10n.dateRange('${_selectedRange!.start.day.toString().padLeft(2, '0')}/${_selectedRange!.start.month.toString().padLeft(2, '0')}/${_selectedRange!.start.year}', '${_selectedRange!.end.day.toString().padLeft(2, '0')}/${_selectedRange!.end.month.toString().padLeft(2, '0')}/${_selectedRange!.end.year}'),
                     style: TextStyle(
                         color: AppColors.primaryGreen,
                         fontWeight: FontWeight.w600),
@@ -228,7 +220,7 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> {
                       )
                     : filteredTutorias.isEmpty
                         ? Center(
-                            child: Text('No hay tutorías para mostrar',
+                            child: Text(l10n.noTutoringsDisplay,
                                 style:
                                     TextStyle(color: AppColors.lightGreyColor)),
                           )
@@ -279,7 +271,7 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> {
                                               children: [
                                                 Expanded(
                                                   child: Text(
-                                                    t['title'] ?? 'Tutoría',
+                                                    t['title'] ?? l10n.tutoringLabel,
                                                     style: TextStyle(
                                                       color: Colors.white,
                                                       fontWeight:
@@ -376,6 +368,7 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> {
                           ),
               ),
             ],
+          ),
           ),
         );
       },

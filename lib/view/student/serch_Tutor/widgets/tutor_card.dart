@@ -4,6 +4,8 @@ import 'dart:math';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/student/services/text_normalization.dart';
 
+import 'package:flutter_projects/l10n/app_localizations.dart';
+
 class TutorCard extends StatefulWidget {
   final String name;
   final double rating;
@@ -24,6 +26,7 @@ class TutorCard extends StatefulWidget {
   final bool showStartButton; // Nuevo parámetro
   final List<String>? matchedSubjects; // Materias coincidentes con la búsqueda
   final String? searchKeyword; // Keyword de búsqueda para priorizar materias
+  final AppLocalizations l10n;
 
   const TutorCard({
     Key? key,
@@ -44,6 +47,7 @@ class TutorCard extends StatefulWidget {
     this.tutorId,
     this.tutorVideo,
     this.showStartButton = false, // Valor por defecto
+    required this.l10n,
     this.matchedSubjects,
     this.searchKeyword,
   }) : super(key: key);
@@ -235,7 +239,7 @@ class _TutorCardState extends State<TutorCard> {
                           const SizedBox(width: 8),
                           Flexible(
                             child: Text(
-                              '(${widget.reviews} reseñas)',
+                              widget.l10n.reviewsCount(widget.reviews),
                               style: TextStyle(
                                 fontSize: 13,
                                 color: AppColors.greyColor,
@@ -286,7 +290,7 @@ class _TutorCardState extends State<TutorCard> {
                       padding: const EdgeInsets.symmetric(vertical: 12.0),
                     ),
                     child: Text(
-                      'Ver Perfil',
+                      widget.l10n.viewProfile,
                       style: TextStyle(
                         color: theme.textTheme.bodyLarge?.color ??
                             AppColors.blackColor,
@@ -321,7 +325,9 @@ class _TutorCardState extends State<TutorCard> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          widget.showStartButton ? 'Empezar' : 'Agendar',
+                          widget.showStartButton
+                              ? widget.l10n.start
+                              : widget.l10n.schedule,
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,

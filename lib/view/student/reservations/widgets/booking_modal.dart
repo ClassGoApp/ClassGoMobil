@@ -355,7 +355,7 @@ class BookingModalState extends State<BookingModal> {
         Expanded(
             child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
+                mainAxisSize: MainAxisSize.max,
                 children: [
               Text(widget.tutorName,
                   style: TextStyle(
@@ -1033,7 +1033,7 @@ class BookingModalState extends State<BookingModal> {
                       : Colors.white54,
                 ),
                 label: Text(
-                  'Confirmar Reserva',
+                  'Agendar',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: (selectedSubject != null &&

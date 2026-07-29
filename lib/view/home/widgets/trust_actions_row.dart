@@ -2,20 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/home/widgets/alliance_card.dart';
 import 'package:flutter_projects/view/home/widgets/suport_screen.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 
 class TrustActionsRow extends StatelessWidget {
   const TrustActionsRow({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0),
       child: Row(
         children: [
           Expanded(
             child: _SmallActionCard(
-              title: 'Nuestras\nAlianzas',
-              subtitle: 'Instituciones',
+              title: l10n.ourAlliances,
+              subtitle: l10n.institutions,
               icon: Icons.handshake_rounded,
               iconColor: AppColors.brandCyan,
               onTap: () {
@@ -33,8 +35,8 @@ class TrustActionsRow extends StatelessWidget {
 
           Expanded(
             child: _SmallActionCard(
-              title: '¿Necesitas\nAyuda?',
-              subtitle: 'Soporte 24/7',
+              title: l10n.needHelp,
+              subtitle: l10n.support247,
               icon: Icons.support_agent_rounded,
               iconColor: AppColors.brandOrange,
               onTap: () {

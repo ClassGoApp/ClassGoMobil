@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/detailPage/component/skeleton/detail_page_skeleton.dart';
 import '../components/student_card.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 
 class StudentReviewsScreen extends StatefulWidget {
   final int initialPage;
@@ -106,6 +107,7 @@ class _StudentReviewsScreenState extends State<StudentReviewsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.primaryGreen,
       appBar: PreferredSize(
@@ -125,7 +127,7 @@ class _StudentReviewsScreenState extends State<StudentReviewsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Student Reviews',
+                    l10n.studentReviewsTitle,
                     style: TextStyle(
                       color: AppColors.whiteColor,
                       fontSize: FontSize.scale(context, 20),
@@ -147,7 +149,7 @@ class _StudentReviewsScreenState extends State<StudentReviewsScreen> {
                       ),
                       children: <TextSpan>[
                         TextSpan(
-                          text: 'result(s) found',
+                          text: l10n.resultsFound(studentReviews.length),
                           style: TextStyle(
                             fontFamily: 'SF-Pro-Text',
                             fontWeight: FontWeight.w400,
@@ -181,7 +183,7 @@ class _StudentReviewsScreenState extends State<StudentReviewsScreen> {
           : widget.fetchReviews == null
               ? Center(
                   child: Text(
-                    "No reviews available",
+                    l10n.noReviewsAvailable,
                     style: TextStyle(
                       color: AppColors.greyColor,
                       fontSize: FontSize.scale(context, 16),

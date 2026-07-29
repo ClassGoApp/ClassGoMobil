@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/models/booking_status.dart';
 import 'package:flutter_projects/view/student/reservations/services/reservations_service.dart';
 import 'package:flutter_projects/view/tutor/features/agenda/tutor_agenda_screen.dart';
 import 'package:flutter_projects/view/tutor/features/home/widgets/reservation_details_dialog.dart';
 import 'package:flutter_projects/view/tutor/features/home/providers/tutor_home_provider.dart';
 import 'package:flutter_projects/view/tutor/features/home/widgets/start_session_dialog.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 const String _kTitleFont = 'outfit';
@@ -45,82 +47,93 @@ class _NextAppointmentSectionState extends State<NextAppointmentSection> {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                "Clases de hoy",
-                style: TextStyle(
-                  color: isDark ? Colors.white : AppColors.brandBlue,
-                  fontSize: 20,
-                  fontFamily: _kTitleFont,
-                  fontWeight: FontWeight.w900,
-                  height: 1.4,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    child: Text(
+                      AppLocalizations.of(context)!.todaysClasses,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : AppColors.brandBlue,
+                        fontSize: 20,
+                        fontFamily: _kTitleFont,
+                        fontWeight: FontWeight.w900,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      if (widget.onNavigate != null) {
+                        widget.onNavigate!(1);
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: isDark 
+                              ? [const Color(0xFF2A2F3A), const Color(0xFF1E222A)]
+                              : [Colors.white, const Color(0xFFF8FAFC)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isDark ? Colors.white10 : AppColors.brandBlue.withOpacity(0.08),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(isDark ? 0.3 : 0.02),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          )
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            AppLocalizations.of(context)!.viewSchedule,
+                            style: TextStyle(
+                              fontFamily: _kTitleFont,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                              color: isDark ? Colors.white : AppColors.brandBlue,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: AppColors.brandCyan.withOpacity(0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(Icons.arrow_forward_ios_rounded, 
+                                size: 8, color: AppColors.brandCyan),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                ],
               ),
               if (todaysAppointments.length > 1)
-                Row(
-                  children: List.generate(
-                    todaysAppointments.length,
-                    (index) => _buildDot(index),
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(
+                      todaysAppointments.length,
+                      (index) => _buildDot(index),
+                    ),
                   ),
                 ),
-              if (todaysAppointments.length > 1)
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: () {
-                    if (widget.onNavigate != null) {
-                      widget.onNavigate!(1);
-                    }
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: isDark 
-                            ? [const Color(0xFF2A2F3A), const Color(0xFF1E222A)]
-                            : [Colors.white, const Color(0xFFF8FAFC)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: isDark ? Colors.white10 : AppColors.brandBlue.withOpacity(0.08),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(isDark ? 0.3 : 0.02),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        )
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Text(
-                          "Ver Agenda",
-                          style: TextStyle(
-                            fontFamily: _kTitleFont,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                            color: isDark ? Colors.white : AppColors.brandBlue,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: AppColors.brandCyan.withOpacity(0.15),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(Icons.arrow_forward_ios_rounded, 
-                              size: 8, color: AppColors.brandCyan),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              ],
+            ],
           ),
         ),
 
@@ -171,35 +184,50 @@ class _AppointmentCard extends StatelessWidget {
 
   const _AppointmentCard({Key? key, required this.data}) : super(key: key);
 
-  Color _getStatusColor(String status) {
-    final s = status.toLowerCase();
-    if (s.contains('pendiente')) return AppColors.brandOrange;
-    if (s.contains('aceptad')) return AppColors.neonGreen;
-    if (s.contains('cursando')) return AppColors.brandBlue;
-    if (s.contains('completad')) return Colors.grey;
-    return AppColors.brandCyan;
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final statusColor = _getStatusColor(data.status);
+    final bookingStatus = BookingStatus.fromString(data.status);
+    final statusColor = bookingStatus.statusColor;
 
     final String dateStr = data.start != null 
         ? DateFormat('dd MMM yyyy', 'es').format(data.start!) 
-        : 'Sin fecha';
+        : AppLocalizations.of(context)!.noDate;
     final String timeStr = data.start != null 
         ? DateFormat('HH:mm').format(data.start!) 
         : '--:--';
     final String endTimeStr = data.end != null 
         ? DateFormat('HH:mm').format(data.end!) 
         : '--:--';
+
+    final minutesUntilStart = data.start != null
+        ? data.start!.difference(DateTime.now()).inMinutes
+        : 999;
+
+    String statusInfoText = '';
+    if (bookingStatus.isInProgress) {
+      statusInfoText = 'Tutoría en curso';
+    } else if (bookingStatus.canStart && minutesUntilStart > 5) {
+      final hhmm = DateFormat('HH:mm').format(data.start!);
+      statusInfoText = 'Disponible 5 min antes';
+    } else if (bookingStatus.canStart) {
+      statusInfoText = 'Lista para iniciar';
+    } else if (bookingStatus.isPending) {
+      statusInfoText = 'Esperando confirmación';
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF151A24) : Colors.white,
         borderRadius: BorderRadius.circular(32),
+        border: Border(
+          left: BorderSide(
+            color: statusColor.withOpacity(0.5),
+            width: 4,
+          ),
+        ),
         boxShadow: !isDark
             ? [
                 BoxShadow(
@@ -254,15 +282,13 @@ class _AppointmentCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      data.status.toLowerCase().contains('cursando')
-                          ? Icons.play_circle_fill
-                          : Icons.access_time_rounded,
+                      bookingStatus.statusIcon,
                       size: 12,
                       color: statusColor,
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      data.status.toUpperCase(),
+                      bookingStatus.displayLabel.toUpperCase(),
                       style: TextStyle(
                         color: statusColor,
                         fontSize: 10,
@@ -290,7 +316,7 @@ class _AppointmentCard extends StatelessWidget {
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
-                  "con ${data.studentName}",
+                  AppLocalizations.of(context)!.withStudent + " ${data.studentName}",
                   style: TextStyle(
                     color: isDark ? Colors.grey : Colors.grey[700],
                     fontSize: 16,
@@ -303,6 +329,26 @@ class _AppointmentCard extends StatelessWidget {
               ),
             ],
           ),
+
+          if (statusInfoText.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Text(
+                    statusInfoText,
+                    style: TextStyle(
+                      color: statusColor,
+                      fontSize: 12,
+                      fontFamily: _kBodyFont,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
 
           const SizedBox(height: 12),
 
@@ -375,8 +421,106 @@ class _AppointmentCard extends StatelessWidget {
           Builder(builder: (context) {
             final provider =
                 Provider.of<TutorHomeProvider>(context, listen: false);
-            final s = data.status.toLowerCase();
-            final isCursando = s.contains('cursando');
+            final bookingStatus = BookingStatus.fromString(data.status);
+            final isCursando = bookingStatus.isInProgress;
+
+            final minutesUntilStart = data.start != null
+                ? data.start!.difference(DateTime.now()).inMinutes
+                : 999;
+
+            String actionLabel;
+            IconData actionIcon;
+            Color actionColor;
+            VoidCallback? actionOnPressed;
+            bool isActionDisabled = false;
+
+            if (isCursando) {
+              actionLabel = AppLocalizations.of(context)!.enterSession;
+              actionIcon = Icons.video_call_rounded;
+              actionColor = Colors.redAccent;
+              actionOnPressed = () {
+                if (data.meetingLink.isNotEmpty) {
+                  provider.openMeetLink(context, data.meetingLink);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                          AppLocalizations.of(context)!.meetLinkNotAvailable,
+                          style: const TextStyle(fontFamily: _kBodyFont)),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                }
+              };
+            } else if (bookingStatus.canStart) {
+              if (minutesUntilStart > 5) {
+                final timeStr = DateFormat('HH:mm').format(data.start!);
+                actionLabel = timeStr;
+                actionIcon = Icons.schedule_rounded;
+                actionColor = AppColors.brandOrange.withOpacity(0.35);
+                actionOnPressed = () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'La reunión inicia a las $timeStr',
+                        style: const TextStyle(fontFamily: _kBodyFont)),
+                      backgroundColor: AppColors.brandOrange.withOpacity(0.8),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                };
+                isActionDisabled = true;
+              } else {
+                actionLabel = AppLocalizations.of(context)!.startSession;
+                actionIcon = Icons.play_arrow_rounded;
+                actionColor = AppColors.brandOrange;
+                actionOnPressed = () {
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => StartSessionDialog(
+                      studentName: data.studentName,
+                      onConfirm: () async {
+                        bool success =
+                            await provider.changeBookingStatusToCursando(
+                                context, data.id);
+                        if (success) {
+                          if (data.meetingLink.isNotEmpty) {
+                            provider.openMeetLink(context, data.meetingLink);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    AppLocalizations.of(context)!.meetingStartedWaitingLink,
+                                    style: TextStyle(
+                                        fontFamily: _kBodyFont)),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                    ),
+                  );
+                };
+              }
+            } else {
+              final timeStr = DateFormat('HH:mm').format(data.start!);
+              actionLabel = timeStr;
+              actionIcon = Icons.schedule_rounded;
+              actionColor = AppColors.brandOrange.withOpacity(0.35);
+              actionOnPressed = () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'La reunión inicia a las $timeStr',
+                      style: const TextStyle(fontFamily: _kBodyFont)),
+                    backgroundColor: AppColors.brandOrange.withOpacity(0.8),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              };
+              isActionDisabled = true;
+            }
 
             return Row(
               children: [
@@ -395,7 +539,7 @@ class _AppointmentCard extends StatelessWidget {
                         size: 16,
                         color: isDark ? Colors.white : AppColors.brandBlue),
                     label: Text(
-                      "Detalles",
+                      AppLocalizations.of(context)!.details,
                       style: TextStyle(
                         color: isDark ? Colors.white : AppColors.brandBlue,
                         fontWeight: FontWeight.bold,
@@ -418,70 +562,24 @@ class _AppointmentCard extends StatelessWidget {
 
                 const SizedBox(width: 12),
 
-                // 2. BOTÓN DE ACCIÓN ("INICIAR" O "ENTRAR")
+                // 2. BOTÓN DE ACCIÓN (DESHABILITADO / "INICIAR" / "ENTRAR")
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () async {
-                      if (isCursando) {
-                        if (data.meetingLink.isNotEmpty) {
-                          provider.openMeetLink(context, data.meetingLink);
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                  'El enlace de Meet aún no está disponible.',
-                                  style: TextStyle(fontFamily: _kBodyFont)),
-                              backgroundColor: Colors.orange,
-                            ),
-                          );
-                        }
-                      } else {
-                        showDialog(
-                          context: context,
-                          builder: (ctx) => StartSessionDialog(
-                            studentName: data.studentName,
-                            onConfirm: () async {
-                              bool success =
-                                  await provider.changeBookingStatusToCursando(
-                                      context, data.id);
-                              if (success) {
-                                if (data.meetingLink.isNotEmpty) {
-                                  provider.openMeetLink(context, data.meetingLink);
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                          'Reunión iniciada, esperando enlace...',
-                                          style: TextStyle(
-                                              fontFamily: _kBodyFont)),
-                                      backgroundColor: Colors.green,
-                                    ),
-                                  );
-                                }
-                              }
-                            },
-                          ),
-                        );
-                      }
-                    },
-                    icon: Icon(
-                      isCursando
-                          ? Icons.video_call_rounded
-                          : Icons.play_arrow_rounded,
-                      size: 20,
-                      color: Colors.white,
-                    ),
+                    onPressed: actionOnPressed,
+                    icon: Icon(actionIcon, size: 20, color: Colors.white),
                     label: Text(
-                      isCursando ? "Entrar" : "Iniciar",
-                      style: const TextStyle(
+                      actionLabel,
+                      style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontFamily: _kBodyFont,
+                        fontSize: isActionDisabled ? 13 : null,
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          isCursando ? Colors.redAccent : AppColors.brandOrange,
+                      backgroundColor: actionColor,
+                      foregroundColor: Colors.white,
+                      disabledForegroundColor: Colors.white.withOpacity(0.5),
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
@@ -533,7 +631,7 @@ class _EmptyStateCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              isAvailable ? "¡Todo despejado!" : "Modo offline",
+              isAvailable ? AppLocalizations.of(context)!.allClear : AppLocalizations.of(context)!.offlineMode,
               style: TextStyle(
                 color: isDark ? Colors.white : AppColors.brandBlue,
                 fontSize: 18,
@@ -544,8 +642,8 @@ class _EmptyStateCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               isAvailable
-                  ? "No tienes clases programadas para hoy."
-                  : "Activa tu disponibilidad para que los alumnos te vean.",
+                  ? AppLocalizations.of(context)!.noClassesToday
+                  : AppLocalizations.of(context)!.activateAvailability,
               style: TextStyle(
                 color: isDark ? Colors.grey : Colors.grey[500],
                 fontSize: 14,

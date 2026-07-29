@@ -5,14 +5,12 @@ import 'package:flutter_projects/styles/app_styles.dart';
 class TutorCard extends StatelessWidget {
   final dynamic tutor; 
   final String subjectName;
-  final VoidCallback onReject;
   final VoidCallback onAccept;
 
   const TutorCard({
     super.key,
     required this.tutor,
     required this.subjectName,
-    required this.onReject,
     required this.onAccept,
   });
 
@@ -78,22 +76,6 @@ class TutorCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(tutor.pricePerHour,
-                      style: const TextStyle(
-                          fontFamily: 'outfit',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.brandBlue)),
-                  const Text("Total aprox.",
-                      style: TextStyle(
-                          fontFamily: 'manrope',
-                          fontSize: 11,
-                          color: AppColors.greyColor)),
-                ],
-              )
             ],
           ),
           const Padding(
@@ -102,22 +84,19 @@ class TutorCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: TextButton(
-                  onPressed: onReject,
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                  ),
-                  child: const Text("Rechazar",
-                      style: TextStyle(
-                          fontFamily: 'manrope',
-                          color: AppColors.greyColor,
-                          fontWeight: FontWeight.w700)),
+                flex: 3,
+                child: Text(
+                  tutor.pricePerHour,
+                  style: const TextStyle(
+                      fontFamily: 'outfit',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.brandBlue),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
+                flex: 7,
                 child: ElevatedButton(
                   onPressed: onAccept, 
                   style: ElevatedButton.styleFrom(
