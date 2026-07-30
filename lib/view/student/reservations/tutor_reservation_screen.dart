@@ -4,13 +4,12 @@ import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/student/reservations/services/TutorReviewDto.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:ui';
-import 'package:flutter_projects/view/student/reservations/instant-reservation/instant_tutoring_screen.dart';
+import 'package:flutter_projects/view/student/reservations/request_schedule_screen.dart';
 import 'package:flutter_projects/view/student/reservations/widgets/confirm_booking_modal.dart';
-import 'package:flutter_projects/view/student/reservations/services/reservations_service.dart';
+import 'package:flutter_projects/view/student/reservations/services/tutor_reviews_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
-import 'package:flutter_projects/view/student/reservations/services/tutor_reviews_service.dart';
 import 'package:flutter_projects/view/student/reservations/widgets/tutor_reviews_section.dart';
 
 class ReservationTutorProfileScreen extends StatefulWidget {
@@ -60,8 +59,6 @@ class _ReservationTutorProfileScreenState
   bool _areAllSubjectsShown = false;
   static const int _initialSubjectCount = 6;
   static final _cacheManager = DefaultCacheManager();
-  bool _instantAvailable = false;
-  bool _checkingInstantAvailability = true;
   int _selectedTabIndex = 0;
   List<TutorReviewDto> reviewList =
       new List<TutorReviewDto>.empty(growable: true);
@@ -99,9 +96,6 @@ class _ReservationTutorProfileScreenState
     _initializeVideo();
     listReviews();
     _fetchReviews();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkInstantAvailability();
-    });
   }
 
   void _initializeVideo() async {
@@ -126,38 +120,6 @@ class _ReservationTutorProfileScreenState
       }
     } catch (e) {
       print('Error al inicializar el video: $e');
-    }
-  }
-
-  Future<void> _checkInstantAvailability() async {
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final token = authProvider.token;
-      if (token == null) {
-        if (mounted) {
-          setState(() {
-            _instantAvailable = false;
-            _checkingInstantAvailability = false;
-          });
-        }
-        return;
-      }
-
-      final available = await ReservationsService.isTutorInstantAvailable(
-          token, widget.tutorId);
-      if (mounted) {
-        setState(() {
-          _instantAvailable = available;
-          _checkingInstantAvailability = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _instantAvailable = false;
-          _checkingInstantAvailability = false;
-        });
-      }
     }
   }
 
@@ -545,7 +507,7 @@ class _ReservationTutorProfileScreenState
           Expanded(
             child: _buildStatCard(
               Icons.school,
-              '89',
+              '${widget.completedCourses}',
               'Clases',
               AppColors.orangeprimary,
             ),
@@ -1016,7 +978,7 @@ class _ReservationTutorProfileScreenState
                               Text(
                                 (widget.price != null)
                                     ? '\Bs ${widget.price!.toStringAsFixed(2)}'
-                                    : '20',
+                                    : '15',
                                 style: TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
@@ -1081,37 +1043,21 @@ class _ReservationTutorProfileScreenState
                           ],
                         ),
                         child: ElevatedButton(
-                          onPressed: (_instantAvailable &&
-                                  !_checkingInstantAvailability)
-                              ? () {
-                                  showModalBottomSheet(
-                                    context: context,
-                                    isScrollControlled: true,
-                                    backgroundColor: Colors.transparent,
-                                    builder: (context) => Container(
-                                      margin: EdgeInsets.only(top: 60),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.darkBlue,
-                                        borderRadius: BorderRadius.vertical(
-                                            top: Radius.circular(24)),
-                                      ),
-                                      child: InstantTutoringScreen(
-                                        tutorName: widget.tutorName,
-                                        tutorImage: widget.tutorImage,
-                                        subjects: widget.subjects,
-                                        tutorId:
-                                            int.tryParse(widget.tutorId) ?? 1,
-                                        subjectId: 1,
-                                        price: widget.price,
-                                      ),
-                                    ),
-                                  );
-                                }
-                              : null,
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => RequestScheduleScreen(
+                                  tutorId: int.tryParse(widget.tutorId),
+                                  tutorName: widget.tutorName,
+                                  tutorImage: widget.tutorImage,
+                                  subjects: widget.subjects,
+                                ),
+                              ),
+                            );
+                          },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.orangeprimary,
-                            disabledBackgroundColor:
-                                AppColors.orangeprimary.withOpacity(0.4),
                             padding: EdgeInsets.symmetric(vertical: 12),
                             elevation: 0,
                             shape: RoundedRectangleBorder(
@@ -1121,15 +1067,11 @@ class _ReservationTutorProfileScreenState
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.play_circle_outline,
+                              Icon(Icons.schedule,
                                   color: Colors.white, size: 20),
                               SizedBox(width: 8),
                               Text(
-                                _checkingInstantAvailability
-                                    ? 'Comprobando...'
-                                    : _instantAvailable
-                                        ? 'Tutoría ahora'
-                                        : 'No disponible',
+                                'Solicitar horario',
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.bold,

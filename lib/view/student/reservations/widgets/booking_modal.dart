@@ -315,7 +315,7 @@ class BookingModalState extends State<BookingModal> {
         DateTime(currentMonth.year, currentMonth.month, 1).weekday;
     final weekDays = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
     return DraggableScrollableSheet(
-      initialChildSize: 0.7,
+      initialChildSize: 0.8,
       minChildSize: 0.5,
       maxChildSize: 0.95,
       expand: false,
@@ -344,7 +344,7 @@ class BookingModalState extends State<BookingModal> {
 
   Widget _buildHeader() {
     return Container(
-      padding: EdgeInsets.only(left: 18, right: 8, top: 18, bottom: 12),
+      padding: EdgeInsets.only(left: 18, right: 8, top: 18, bottom: 6),
       decoration: BoxDecoration(
           color: AppColors.darkBlue,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
@@ -355,13 +355,15 @@ class BookingModalState extends State<BookingModal> {
         Expanded(
             child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.max,
+                mainAxisSize: MainAxisSize.min,
                 children: [
               Text(widget.tutorName,
                   style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
-                      fontSize: 17)),
+                      fontSize: 16),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis),
               if (widget.tagline != null && widget.tagline!.isNotEmpty) ...[
                 SizedBox(height: 4),
                 Text(widget.tagline!,

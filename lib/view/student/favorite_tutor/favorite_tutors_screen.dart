@@ -212,6 +212,13 @@ class _FavoriteTutorsContentState extends State<FavoriteTutorsContent> {
           rating: _toDouble(tutor['avg_rating']),
           subjects: validSubjects,
           completedCourses: _toInt(tutor['completed_courses_count']),
+          price: profile['price'] != null
+              ? (profile['price'] is String
+                  ? double.tryParse(profile['price']) ?? 0.0
+                  : (profile['price'] is num
+                      ? profile['price'].toDouble()
+                      : 0.0))
+              : 0.0,
         ),
       ),
     ).then((_) {
