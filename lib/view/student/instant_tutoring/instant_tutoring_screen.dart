@@ -205,23 +205,25 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
       _gridCategories = categoriasApi.map((cat) {
         final apiName = cat['categoria'] ?? '';
 
-        String matchedKey = apiName;
+        // Encontrar la clave UI que corresponde a este nombre API
+        String matchedKey = '';
         _categoryKeyToApiName.forEach((key, val) {
           if (val == apiName) {
             matchedKey = key;
           }
         });
 
-        final matchedUi = _uiCategories.cast<Map<String, dynamic>?>().firstWhere(
-              (u) => u?['key'] == matchedKey,
-              orElse: () => null,
-            );
+        // Encontrar los datos UI (icon y color) usando la clave
+        final matchedUi = _uiCategories.firstWhere(
+          (u) => u['key'] == matchedKey,
+          orElse: () => <String, dynamic>{},
+        );
 
         return {
           'apiName': apiName,
           'key': matchedKey,
-          'icon': matchedUi?['icon'] ?? Icons.category_rounded,
-          'color': matchedUi?['color'] ?? 0xFF6366F1,
+          'icon': matchedUi['icon'] ?? Icons.category_rounded,
+          'color': matchedUi['color'] ?? 0xFF6366F1,
         };
       }).toList();
 
