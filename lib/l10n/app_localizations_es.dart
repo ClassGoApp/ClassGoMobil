@@ -1502,7 +1502,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get noReservationsForThisDay => 'No hay reservas para este día';
 
   @override
-  String get whatSubjectNeedHelp => '¿En qué te\nacompañamos hoy?';
+  String get whatSubjectNeedHelp => '¿En qué materia\nte ayudamos hoy?';
 
   @override
   String get searchSubjectPlaceholder => 'Ej. Matemáticas, Inglés...';
