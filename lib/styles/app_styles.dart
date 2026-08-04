@@ -106,6 +106,23 @@ class AppColors {
   static const Color greyText = Color(0xFF9E9E9E); // Para IDs e iconos inactivos
   static const Color dividerLight = Color(0xFFEEEEEE); // Divisor muy sutil en light
   static const Color dividerDark = Color(0xFF2C2C2C); // Divisor muy sutil en dark
+  static const Color cardDarkQuickAccess = Color(0xFF1E222A); // Fondo oscuro para tarjetas de acceso rápido
+  static const Color favoriteRed = Color(0xFFFF6458); // Color para iconos de favoritos (similar al que encontré)
+  static const Color profilePurple = Color(0xFF8A2BE2); // Color para iconos de perfil (similar a Colors.purple)
+  static const Color ratingVerifiedCardDarkBg = Color(0xFF1B3B48); // Fondo oscuro para tarjetas de rating/verificado
+  static const Color destructiveActionColor = Color(0xFFFF453A); // Color para acciones destructivas (rojo)
+  static const Color appointmentCardDarkBg = Color(0xFF151A24); // Fondo oscuro para tarjetas de citas
+  static const Color viewScheduleDarkGradientStart = Color(0xFF2A2F3A); // Inicio de gradiente oscuro para botón "Ver Agenda"
+  static const Color viewScheduleDarkGradientEnd = Color(0xFF1E222A); // Fin de gradiente oscuro para botón "Ver Agenda"
+  static const Color viewScheduleLightGradientEnd = Color(0xFFF8FAFC); // Fin de gradiente claro para botón "Ver Agenda"
+  static const Color redAccentColor = Colors.redAccent; // RedAccent color
+
+  // ========================================================================
+  // COLORES PARA INTERFAZ ESTUDIANTE - OPCIÓN 1: Fondo Azul Claro
+  // ========================================================================
+  static const Color studentBackgroundLight = Color(0xFFE8F4F8); // Fondo azul muy claro
+  static const Color studentCardWhite = Color(0xFFFFFFFF);      // Tarjetas blancas brillantes
+  static const Color studentHeaderBlue = Color(0xFF023047);     // Azul marino (mismo que tutor)
 }
 
 class AppTheme {
@@ -123,10 +140,10 @@ class AppTheme {
     ),
 
     textTheme: const TextTheme(
-      bodyLarge: TextStyle(color: AppColors.textLightPrimary),
-      bodyMedium: TextStyle(color: AppColors.textLightSecondary),
+      bodyLarge: TextStyle(color: AppColors.textLightPrimary, fontFamily: AppFonts.body),
+      bodyMedium: TextStyle(color: AppColors.textLightSecondary, fontFamily: AppFonts.body),
       titleLarge: TextStyle(
-          color: AppColors.textLightPrimary, fontWeight: FontWeight.bold),
+          color: AppColors.textLightPrimary, fontWeight: FontWeight.bold, fontFamily: AppFonts.heading),
     ),
 
     appBarTheme: const AppBarTheme(
@@ -153,10 +170,10 @@ class AppTheme {
 
     // Textos por defecto para Modo Oscuro
     textTheme: const TextTheme(
-      bodyLarge: TextStyle(color: AppColors.textDarkPrimary),
-      bodyMedium: TextStyle(color: AppColors.textDarkSecondary),
+      bodyLarge: TextStyle(color: AppColors.textDarkPrimary, fontFamily: AppFonts.body),
+      bodyMedium: TextStyle(color: AppColors.textDarkSecondary, fontFamily: AppFonts.body),
       titleLarge: TextStyle(
-          color: AppColors.textDarkPrimary, fontWeight: FontWeight.bold),
+          color: AppColors.textDarkPrimary, fontWeight: FontWeight.bold, fontFamily: AppFonts.heading),
     ),
 
     // Barra de estado (Iconos claros para fondo oscuro)
@@ -165,6 +182,36 @@ class AppTheme {
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
         statusBarBrightness: Brightness.dark,
+      ),
+    ),
+  );
+
+  // TEMA PARA INTERFAZ ESTUDIANTE - Opción 1: Fondo Azul Claro
+  static final ThemeData studentLightTheme = ThemeData(
+    brightness: Brightness.light,
+    scaffoldBackgroundColor: AppColors.studentBackgroundLight, // Fondo azul claro
+    primaryColor: AppColors.brandBlue,
+    secondaryHeaderColor: AppColors.brandCyan,
+
+    cardTheme: CardThemeData(
+      color: AppColors.studentCardWhite,
+      shadowColor: Colors.black.withOpacity(0.08),
+      elevation: 2,
+      surfaceTintColor: Colors.white,
+    ),
+
+    textTheme: const TextTheme(
+      bodyLarge: TextStyle(color: AppColors.textLightPrimary, fontFamily: AppFonts.body),
+      bodyMedium: TextStyle(color: AppColors.textLightSecondary, fontFamily: AppFonts.body),
+      titleLarge: TextStyle(
+          color: AppColors.textLightPrimary, fontWeight: FontWeight.bold, fontFamily: AppFonts.heading),
+    ),
+
+    appBarTheme: const AppBarTheme(
+      systemOverlayStyle: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
       ),
     ),
   );

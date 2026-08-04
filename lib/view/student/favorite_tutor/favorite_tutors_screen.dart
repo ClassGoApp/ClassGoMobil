@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/components/skeleton/tutor_card_skeleton.dart';
@@ -33,28 +34,77 @@ class _FavoriteTutorsScreenState extends State<FavoriteTutorsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
+    final double statusBarHeight = MediaQuery.of(context).padding.top;
+
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: theme.scaffoldBackgroundColor,
-        elevation: 0,
-        centerTitle: true,
-        automaticallyImplyLeading: false,
-        title: Text(
-          l10n.favoriteTutors,
-          style: TextStyle(
-            color: theme.colorScheme.onSurface,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'outfit',
-          ),
-        ),
-      ),
       backgroundColor: theme.scaffoldBackgroundColor,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: FavoriteTutorsContent(isSelected: widget.isSelected),
-        ),
+      body: Column(
+        children: [
+          // Header azul marino
+          AnnotatedRegion<SystemUiOverlayStyle>(
+            value: SystemUiOverlayStyle(
+              statusBarColor: Colors.transparent,
+              statusBarIconBrightness: Brightness.light,
+              statusBarBrightness: Brightness.dark,
+            ),
+            child: Container(
+              width: double.infinity,
+              padding: EdgeInsets.only(
+                top: statusBarHeight + 15,
+                left: 20,
+                right: 20,
+                bottom: 25,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.headerLight,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(32),
+                  bottomRight: Radius.circular(32),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.headerLight.withOpacity(0.4),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  )
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    l10n.favoriteTutors,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'outfit',
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (context) => RoleBasedNavigation()),
+                        (route) => false,
+                      );
+                    },
+                    child: Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: FavoriteTutorsContent(isSelected: widget.isSelected),
+            ),
+          ),
+        ],
       ),
       bottomNavigationBar: widget.showBottomNav
           ? StudentBottomNav(
