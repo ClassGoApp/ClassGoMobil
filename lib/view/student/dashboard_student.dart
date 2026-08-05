@@ -448,7 +448,7 @@ class _DashboardStudentState extends State<DashboardStudent>
           crossAxisCount: 2,
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
-          childAspectRatio: 1.2, // Ajustado para un mejor ajuste visual con el nuevo card
+          childAspectRatio: 1.1,
           children: [
             AnimatedActionCard(
               icon: Icons.search,
