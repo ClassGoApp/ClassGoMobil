@@ -121,6 +121,9 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
             currentPage = 1;
             tutors.clear();
             isInitialLoading = true;
+            totalTutors = 0;
+            totalPages = 1;
+            originalTutors.clear();
           });
           fetchInitialTutors();
         }
@@ -131,6 +134,9 @@ class _SearchTutorsScreenState extends State<SearchTutorsScreen> {
             currentPage = 1;
             tutors.clear();
             isInitialLoading = true;
+            totalTutors = 0;
+            totalPages = 1;
+            originalTutors.clear();
           });
           fetchInitialTutors();
         }
