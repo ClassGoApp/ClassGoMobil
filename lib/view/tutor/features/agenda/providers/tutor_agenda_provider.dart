@@ -162,19 +162,22 @@ Future<void> loadAvailableSlots(
     notifyListeners();
   }
 }
-  Future<bool> saveSlotsForDays({
+  Future<Map<String, dynamic>> saveSlotsForDays({
     required String token,
     required String userId,
     required List<DateTime> days,
     required List<Map<String, String>> newSlots,
   }) async {
-    if (days.isEmpty || newSlots.isEmpty) return false;
+    if (days.isEmpty || newSlots.isEmpty) {
+      return {'success': false, 'savedCount': 0, 'totalCount': 0, 'errors': []};
+    }
 
     _isMutating = true;
     notifyListeners();
 
-    bool allSuccess = true;
-    bool atLeastOneSaved = false;
+    int savedCount = 0;
+    int totalCount = days.length;
+    List<String> errors = [];
 
     try {
       List<Future<void>> tareasParalelas = [];
@@ -204,33 +207,40 @@ Future<void> loadAvailableSlots(
           tareasParalelas
               .add(createUserSubjectSlot(token, slotData).then((response) {
             if (response['success'] == true || response['success'] == 'true' || response['status'] == 'success' || response.containsKey('id')) {
-              atLeastOneSaved = true;
+              savedCount++;
             } else {
-              print("❌ El servidor rechazó el bloque de $dateString: ${response['message']}");
-              allSuccess = false;
+              final errorMsg = response['message']?.toString() ?? 'Error desconocido';
+              print("❌ El servidor rechazó el bloque de $dateString: $errorMsg");
+              errors.add("$dateString: $errorMsg");
             }
           }).catchError((error) {
-            print('❌ Error de red guardando slot: $error');
-            allSuccess = false;
+            print('❌ Error de red guardando slot en $dateString: $error');
+            errors.add("$dateString: Error de conexión");
           }));
         }
       }
 
       await Future.wait(tareasParalelas);
 
-      if (atLeastOneSaved) {
+      if (savedCount > 0) {
         await loadAvailableSlots(token, userId, forceRefresh: true);
       }
 
     } catch (e) {
       print('❌ Error crítico en el guardado masivo: $e');
-      allSuccess = false;
+      errors.add('Error crítico: $e');
     } finally {
       _isMutating = false;
       notifyListeners();
     }
 
-    return allSuccess;
+    return {
+      'success': savedCount == totalCount,
+      'savedCount': savedCount,
+      'totalCount': totalCount,
+      'errors': errors,
+      'partialSuccess': savedCount > 0 && savedCount < totalCount,
+    };
   }
   Future<bool> deleteSlot(
       String token, String slotId, String userId, DateTime day) async {

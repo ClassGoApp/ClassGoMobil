@@ -238,8 +238,8 @@ class _DashboardStudentState extends State<DashboardStudent>
         child: AnnotatedRegion<SystemUiOverlayStyle>(
           value: SystemUiOverlayStyle(
             statusBarColor: Colors.transparent,
-            statusBarIconBrightness: Brightness.dark,
-            statusBarBrightness: Brightness.light
+            statusBarIconBrightness: Brightness.light,
+            statusBarBrightness: Brightness.dark
           ),
           child: Scaffold(
           backgroundColor: AppColors.studentBackgroundLight,
@@ -443,6 +443,7 @@ class _DashboardStudentState extends State<DashboardStudent>
           ),
         ),
         GridView.count(
+          padding: const EdgeInsets.only(top: 16),
           shrinkWrap: true,
           physics: NeverScrollableScrollPhysics(),
           crossAxisCount: 2,
@@ -496,8 +497,6 @@ class _DashboardStudentState extends State<DashboardStudent>
       ],
     );
   }
-
-
 
   Widget _buildRecentBookings(AppLocalizations l10n, ThemeData theme) {
     final isDark = theme.brightness == Brightness.dark;
@@ -672,56 +671,26 @@ class _DashboardStudentState extends State<DashboardStudent>
   }
 
   Widget _buildBookingsTab() {
-    // Usar el contenido reutilizable de Reservas (sin Scaffold ni bottom nav)
-    final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    final double statusBarHeight = MediaQuery.of(context).padding.top;
-    
-    return Column(
-      children: [
-        // Header azul marino
-        Container(
-          width: double.infinity,
-          padding: EdgeInsets.only(
-            top: statusBarHeight + 15,
-            left: 20,
-            right: 20,
-            bottom: 25,
-          ),
-          decoration: BoxDecoration(
-            color: AppColors.headerLight,
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(32),
-              bottomRight: Radius.circular(32),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.headerLight.withOpacity(0.4),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              )
-            ],
-          ),
-          child: Text(
-            l10n.reservations,
-            style: theme.textTheme.titleLarge?.copyWith(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'outfit',
-            ),
-          ),
-        ),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 20, left: 16.0, right: 16.0),
-            child: ReservationsContent(initialDate: _targetBookingDate),
-          ),
-        ),
-      ],
-    );
-  }
+  final double statusBarHeight = MediaQuery.of(context).padding.top;
 
+  return AnnotatedRegion<SystemUiOverlayStyle>(
+    value: const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      statusBarBrightness: Brightness.light,
+    ),
+    child: Padding(
+      padding: EdgeInsets.only(
+        top: statusBarHeight + 15,
+        left: 16,
+        right: 16,
+      ),
+      child: ReservationsContent(
+        initialDate: _targetBookingDate,
+      ),
+    ),
+  );
+}
   Widget _buildSubjectsTab(AppLocalizations l10n) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;

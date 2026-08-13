@@ -120,9 +120,15 @@ class AppColors {
   // ========================================================================
   // COLORES PARA INTERFAZ ESTUDIANTE - OPCIÓN 1: Fondo Azul Claro
   // ========================================================================
-  static const Color studentBackgroundLight = Color(0xFFE8F4F8); // Fondo azul muy claro
+  static const Color studentBackgroundLight = Color(0xFFFAFAFA); // Fondo azul muy claro
   static const Color studentCardWhite = Color(0xFFFFFFFF);      // Tarjetas blancas brillantes
   static const Color studentHeaderBlue = Color(0xFF023047);     // Azul marino (mismo que tutor)
+
+  static const Color cardAccentPurple = Color(0xFF5146A5);   // Púrpura índigo (acento)
+  static const Color timePillBackground = Color(0xFFEFF6FF); // Fondo pill horario
+  static const Color timePillText = Color(0xFF2563EB);       // Texto pill horario
+  static const Color chevronGrey = Color(0xFF9CA3AF);        // Chevron de la tarjeta
+  static const Color dashedDivider = Color(0xFFE5E7EB);      // Divisor punteado
 }
 
 class AppTheme {

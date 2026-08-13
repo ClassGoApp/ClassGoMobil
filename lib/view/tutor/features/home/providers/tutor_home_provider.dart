@@ -344,7 +344,7 @@ class TutorHomeProvider extends ChangeNotifier {
           authProvider.token, authProvider.userId!);
 
       if (response['success'] == true) {
-        isAvailable = response['available_for_tutoring'] ?? false;
+        isAvailable = true;
         notifyListeners();
       }
     } catch (e) {
@@ -403,7 +403,7 @@ class TutorHomeProvider extends ChangeNotifier {
 
   Future<void> handleAvailabilityToggle(
       BuildContext context, bool newState) async {
-    isAvailable = newState;
+    isAvailable = true;
     notifyListeners();
 
     if (newState) {
@@ -426,7 +426,7 @@ class TutorHomeProvider extends ChangeNotifier {
         behavior: SnackBarBehavior.floating,
       ));
     } catch (e) {
-      isAvailable = !newState;
+      isAvailable = true;
       notifyListeners();
     }
   }

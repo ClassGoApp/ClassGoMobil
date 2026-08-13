@@ -393,253 +393,260 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen> {
     final l10n = AppLocalizations.of(context)!;
     final bool isSearching = _searchController.text.trim().isNotEmpty;
 
-    return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
-      body: SafeArea(
-        child: _isLoadingData
-            ? const Center(
-                child: CircularProgressIndicator(color: Color(0xFF1E40AF)))
-            : Stack(children: [
-                CustomScrollView(
-                  physics: const ClampingScrollPhysics(),
-                  slivers: [
-                    SliverAppBar(
-                      backgroundColor: const Color(0xFFF4F4FB),
-                      pinned: true,
-                      floating: false,
-                      elevation: 1,
-                      automaticallyImplyLeading: false,
-                      title: Text(
-                        l10n.instantTutor,
-                        style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF0F172A)),
-                      ),
-                    ),
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l10n.whatSubjectNeedHelp,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineMedium!
-                                  .copyWith(
-                                    fontWeight: FontWeight.w800,
-                                    fontFamily: 'outfit',
-                                    color: const Color(0xFF0F172A),
-                                    height: 1.1,
-                                  ),
-                            ),
-                            const SizedBox(height: 20),
-                            Container(
-                              height: 56,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(
-                                      color: Colors.black.withOpacity(0.04),
-                                      blurRadius: 15,
-                                      offset: const Offset(0, 5)),
-                                ],
-                              ),
-                              child: TextField(
-                                controller: _searchController,
-                                onChanged: _onSearchChanged,
-                                autofocus: false,
-                                decoration: InputDecoration(
-                                  hintText: l10n.searchSubjectPlaceholder,
-                                  hintStyle:
-                                      TextStyle(color: Colors.grey.shade400),
-                                  prefixIcon: const Icon(Icons.search_rounded,
-                                      color: Color(0xFF1E40AF)),
-                                  suffixIcon: isSearching
-                                      ? IconButton(
-                                          icon: const Icon(Icons.clear,
-                                              color: Colors.grey, size: 20),
-                                          onPressed: () {
-                                            _searchController.clear();
-                                            _onSearchChanged('');
-                                            FocusScope.of(context).unfocus();
-                                          },
-                                        )
-                                      : null,
-                                  border: InputBorder.none,
-                                  contentPadding:
-                                      const EdgeInsets.symmetric(vertical: 18),
-                                ),
-                              ),
-                            ),
-                          ],
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: AppColors.backgroundLight,
+        body: SafeArea(
+          child: _isLoadingData
+              ? const Center(
+                  child: CircularProgressIndicator(color: Color(0xFF1E40AF)))
+              : Stack(children: [
+                  CustomScrollView(
+                    physics: const ClampingScrollPhysics(),
+                    slivers: [
+                      SliverAppBar(
+                        backgroundColor: const Color(0xFFF4F4FB),
+                        pinned: true,
+                        floating: false,
+                        elevation: 1,
+                        automaticallyImplyLeading: false,
+                        title: Text(
+                          l10n.instantTutor,
+                          style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF0F172A)),
                         ),
                       ),
-                    ),
-
-                    if (isSearching) ...[
                       SliverToBoxAdapter(
                         child: Padding(
-                          padding: const EdgeInsets.only(
-                              left: 24, bottom: 10, top: 10),
-                          child: Text(
-                            l10n.searchResults(_searchResults.length),
-                            style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey),
-                          ),
-                        ),
-                      ),
-                      _searchResults.isEmpty
-                          ? SliverToBoxAdapter(
-                              child: Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(40.0),
-                                  child: Text(l10n.noSubjectsFound,
-                                      style: const TextStyle(color: Colors.grey)),
+                          padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l10n.whatSubjectNeedHelp,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineMedium!
+                                    .copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      fontFamily: 'outfit',
+                                      color: const Color(0xFF0F172A),
+                                      height: 1.1,
+                                    ),
+                              ),
+                              const SizedBox(height: 20),
+                              Container(
+                                height: 56,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                        color: Colors.black.withOpacity(0.04),
+                                        blurRadius: 15,
+                                        offset: const Offset(0, 5)),
+                                  ],
+                                ),
+                                child: TextField(
+                                  controller: _searchController,
+                                  onChanged: _onSearchChanged,
+                                  autofocus: false,
+                                  decoration: InputDecoration(
+                                    hintText: l10n.searchSubjectPlaceholder,
+                                    hintStyle:
+                                        TextStyle(color: Colors.grey.shade400),
+                                    prefixIcon: const Icon(Icons.search_rounded,
+                                        color: Color(0xFF1E40AF)),
+                                    suffixIcon: isSearching
+                                        ? IconButton(
+                                            icon: const Icon(Icons.clear,
+                                                color: Colors.grey, size: 20),
+                                            onPressed: () {
+                                              _searchController.clear();
+                                              _onSearchChanged('');
+                                              FocusScope.of(context).unfocus();
+                                            },
+                                          )
+                                        : null,
+                                    border: InputBorder.none,
+                                    contentPadding:
+                                        const EdgeInsets.symmetric(vertical: 18),
+                                  ),
                                 ),
                               ),
-                            )
-                          : SliverList(
-                              delegate: SliverChildBuilderDelegate(
-                                (context, index) {
-                                  final subject = _searchResults[index];
-                                  return ListTile(
-                                    contentPadding: const EdgeInsets.symmetric(
-                                        horizontal: 24, vertical: 2),
-                                    title: Text(subject['Materia'],
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            color: Color(0xFF334155))),
-                                    subtitle: Text(subject['Subcategoría'],
-                                        style: TextStyle(
-                                            color: Colors.grey.shade500,
-                                            fontSize: 12)),
-                                    trailing: const Icon(
-                                        Icons.arrow_forward_ios_rounded,
-                                        size: 16,
-                                        color: Colors.grey),
-                                    onTap: () {
-                                      FocusScope.of(context).unfocus();
-                                      _procesarToqueMateria(subject['Materia'],
-                                          subject['id_materia'].toString());
-                                    },
-                                  );
-                                },
-                                childCount: _searchResults.length,
-                              ),
-                            ),
-                    ] else ...[
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 10),
-                          child: Text(
-                            l10n.exploreCategoriesTitle,
-                            style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF0F172A)),
+                            ],
                           ),
                         ),
                       ),
-                      SliverPadding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        sliver: SliverGrid(
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            mainAxisSpacing: 15,
-                            crossAxisSpacing: 15,
-                            childAspectRatio: 1.15,
+      
+                      if (isSearching) ...[
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.only(
+                                left: 24, bottom: 10, top: 10),
+                            child: Text(
+                              l10n.searchResults(_searchResults.length),
+                              style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey),
+                            ),
                           ),
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) {
-                              final cat = _gridCategories[index];
-
-                              final catKey = cat['key'] as String;
-                              final apiName = cat['apiName'] as String;
-                              final color = cat['color'] as int;
-                              final icon = cat['icon'] as IconData;
-
-                              final translatedName = _getCategoryName(context, catKey);
-
-                              return GestureDetector(
-                                onTap: () {
-                                  HapticFeedback.lightImpact();
-                                  _openCategoryBottomSheet(
-                                      context, apiName, translatedName, color);
-                                },
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(24),
-                                    boxShadow: [
-                                      BoxShadow(
-                                          color: Colors.black.withOpacity(0.03),
-                                          blurRadius: 10,
-                                          offset: const Offset(0, 4)),
-                                    ],
-                                  ),
+                        ),
+                        _searchResults.isEmpty
+                            ? SliverToBoxAdapter(
+                                child: Center(
                                   child: Padding(
-                                    padding: const EdgeInsets.all(16.0),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(10),
-                                          decoration: BoxDecoration(
-                                            color: Color(color)
-                                                .withOpacity(0.1),
-                                            borderRadius:
-                                                BorderRadius.circular(14),
-                                          ),
-                                          child: Icon(icon,
-                                              color: Color(color),
-                                              size: 26),
-                                        ),
-                                        Text(
-                                          translatedName,
+                                    padding: const EdgeInsets.all(40.0),
+                                    child: Text(l10n.noSubjectsFound,
+                                        style: const TextStyle(color: Colors.grey)),
+                                  ),
+                                ),
+                              )
+                            : SliverList(
+                                delegate: SliverChildBuilderDelegate(
+                                  (context, index) {
+                                    final subject = _searchResults[index];
+                                    return ListTile(
+                                      contentPadding: const EdgeInsets.symmetric(
+                                          horizontal: 24, vertical: 2),
+                                      title: Text(subject['Materia'],
                                           style: const TextStyle(
-                                              fontWeight: FontWeight.w700,
-                                              fontFamily: 'manrope',
-                                              fontSize: 14,
-                                              color: Color(0xFF0F172A),
-                                              height: 1.2),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
+                                              fontWeight: FontWeight.w600,
+                                              color: Color(0xFF334155))),
+                                      subtitle: Text(subject['Subcategoría'],
+                                          style: TextStyle(
+                                              color: Colors.grey.shade500,
+                                              fontSize: 12)),
+                                      trailing: const Icon(
+                                          Icons.arrow_forward_ios_rounded,
+                                          size: 16,
+                                          color: Colors.grey),
+                                      onTap: () {
+                                        FocusScope.of(context).unfocus();
+                                        _procesarToqueMateria(subject['Materia'],
+                                            subject['id_materia'].toString());
+                                      },
+                                    );
+                                  },
+                                  childCount: _searchResults.length,
+                                ),
+                              ),
+                      ] else ...[
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
+                            child: Text(
+                              l10n.exploreCategoriesTitle,
+                              style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF0F172A)),
+                            ),
+                          ),
+                        ),
+                        SliverPadding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          sliver: SliverGrid(
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              mainAxisSpacing: 15,
+                              crossAxisSpacing: 15,
+                              childAspectRatio: 1.15,
+                            ),
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                final cat = _gridCategories[index];
+      
+                                final catKey = cat['key'] as String;
+                                final apiName = cat['apiName'] as String;
+                                final color = cat['color'] as int;
+                                final icon = cat['icon'] as IconData;
+      
+                                final translatedName = _getCategoryName(context, catKey);
+      
+                                return GestureDetector(
+                                  onTap: () {
+                                    HapticFeedback.lightImpact();
+                                    _openCategoryBottomSheet(
+                                        context, apiName, translatedName, color);
+                                  },
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(24),
+                                      boxShadow: [
+                                        BoxShadow(
+                                            color: Colors.black.withOpacity(0.03),
+                                            blurRadius: 10,
+                                            offset: const Offset(0, 4)),
                                       ],
                                     ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16.0),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(10),
+                                            decoration: BoxDecoration(
+                                              color: Color(color)
+                                                  .withOpacity(0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
+                                            ),
+                                            child: Icon(icon,
+                                                color: Color(color),
+                                                size: 26),
+                                          ),
+                                          Text(
+                                            translatedName,
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.w700,
+                                                fontFamily: 'manrope',
+                                                fontSize: 14,
+                                                color: Color(0xFF0F172A),
+                                                height: 1.2),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              );
-                            },
-                            childCount: _gridCategories.length,
+                                );
+                              },
+                              childCount: _gridCategories.length,
+                            ),
                           ),
                         ),
-                      ),
+                      ],
+                      const SliverToBoxAdapter(
+                          child: SizedBox(height: 100)),
                     ],
-                    const SliverToBoxAdapter(
-                        child: SizedBox(height: 100)),
-                  ],
-                ),
-                if (_isCheckingActive)
-                  const Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: LinearProgressIndicator(
-                        color: Color(0xFF1E40AF), minHeight: 3),
                   ),
-              ]),
+                  if (_isCheckingActive)
+                    const Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: LinearProgressIndicator(
+                          color: Color(0xFF1E40AF), minHeight: 3),
+                    ),
+                ]),
+        ),
       ),
     );
   }

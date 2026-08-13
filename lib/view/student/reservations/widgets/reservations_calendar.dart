@@ -63,8 +63,13 @@ class _ReservationsCalendarState extends State<ReservationsCalendar> {
         _selectedDate = widget.initialDate!;
         _focusedDay = widget.initialDate!;
       });
-      _updateSelectedEvents();
-      _loadBookingsForMonth(_focusedDay);
+      // Diferir los callbacks que disparan setState del padre: ejecutarlos
+      // aquí (durante el update/rebuild) provoca el crash '!_dirty'.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _updateSelectedEvents();
+        _loadBookingsForMonth(_focusedDay);
+      });
     }
   }
 
@@ -167,23 +172,23 @@ class _ReservationsCalendarState extends State<ReservationsCalendar> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final l10n = AppLocalizations.of(context)!;
-    
+
     // Obtener el locale actual de la app
     final currentLocale = Localizations.localeOf(context);
     final localeString = currentLocale.languageCode == 'en' ? 'en_US' : 'es_ES';
-    
+
     final monthLabel =
         "${toBeginningOfSentenceCase(DateFormat('MMMM', localeString).format(_focusedDay))} ${DateFormat('yyyy').format(_focusedDay)}";
 
     return Card(
       color: Theme.of(context).cardTheme.color,
+      shadowColor: Colors.black.withOpacity(0.12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: isDark
-            ? const BorderSide(color: Colors.white10)
-            : BorderSide.none,
+        side:
+            isDark ? const BorderSide(color: Colors.white10) : BorderSide.none,
       ),
-      elevation: isDark ? 0 : 2,
+      elevation: isDark ? 0 : 4,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Column(
@@ -429,7 +434,8 @@ class _ReservationsCalendarState extends State<ReservationsCalendar> {
             ),
             const SizedBox(height: 8),
             Text(
-              l10n.selectedDate(_selectedDate.toLocal().toString().split(' ')[0]),
+              l10n.selectedDate(
+                  _selectedDate.toLocal().toString().split(' ')[0]),
               style: TextStyle(
                   color: isDark ? Colors.white54 : AppColors.greyColor,
                   fontSize: 13),

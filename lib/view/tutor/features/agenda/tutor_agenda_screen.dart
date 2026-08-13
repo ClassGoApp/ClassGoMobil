@@ -11,12 +11,16 @@ import 'package:flutter_projects/view/tutor/features/widgets/tutor_header.dart';
 import 'package:flutter_projects/view/tutor/features/agenda/agenda_availability_view.dart';
 import 'package:flutter_projects/view/tutor/features/agenda/agenda_booking_view.dart';
 import 'package:flutter_projects/view/tutor/features/agenda/widgets/agenda_calendar_modal.dart';
+import 'package:flutter_projects/view/student/reservations/services/reservations_service.dart';
+import 'package:flutter_projects/view/student/reservations/materials/tutoring_details_sheet.dart';
 import 'package:provider/provider.dart';
 
 enum AgendaMode { classes, availability }
 
 class TutorAgendaScreen extends StatefulWidget {
-  const TutorAgendaScreen({Key? key}) : super(key: key);
+  final ValueNotifier<(DateTime, int)?>? focusTarget;
+
+  const TutorAgendaScreen({Key? key, this.focusTarget}) : super(key: key);
 
   @override
   State<TutorAgendaScreen> createState() => _TutorAgendaScreenState();
@@ -24,11 +28,13 @@ class TutorAgendaScreen extends StatefulWidget {
 
 class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
   AgendaMode _currentMode = AgendaMode.classes;
-  DateTime _selectedDate = DateTime.now(); 
+  DateTime _selectedDate = DateTime.now();
   List<DateTime> _selectedAvailabilityDates = [DateTime.now()];
-@override
+
+  @override
   void initState() {
     super.initState();
+    widget.focusTarget?.addListener(_onFocusTarget);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final agendaProvider = Provider.of<TutorAgendaProvider>(context, listen: false);
@@ -43,6 +49,70 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
         agendaProvider.loadReservations(token, userId);
       }
     });
+  }
+
+  @override
+  void dispose() {
+    widget.focusTarget?.removeListener(_onFocusTarget);
+    super.dispose();
+  }
+
+  void _onFocusTarget() {
+    final target = widget.focusTarget?.value;
+    if (target == null) return;
+
+    setState(() {
+      _selectedDate = target.$1;
+      _currentMode = AgendaMode.classes;
+    });
+
+    _openBookingDetails(target.$2);
+  }
+
+  Future<void> _openBookingDetails(int bookingId) async {
+    final agendaProvider =
+        Provider.of<TutorAgendaProvider>(context, listen: false);
+
+    ReservationItem? reservation;
+    for (int attempt = 0; attempt < 8; attempt++) {
+      for (final res in agendaProvider.reservations) {
+        if (res.id == bookingId) {
+          reservation = res;
+          break;
+        }
+      }
+      if (reservation != null || !mounted) break;
+      await Future.delayed(const Duration(milliseconds: 600));
+    }
+
+    if (!mounted || reservation == null) return;
+
+    final meeting = reservation;
+    final l10n = AppLocalizations.of(context)!;
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => TutoringDetailsSheet(
+        bookingId: meeting.id,
+        title: meeting.subjectName.isNotEmpty
+            ? meeting.subjectName
+            : l10n.reservation,
+        subtitle: meeting.studentName,
+        canUpload: false,
+        canEdit: false,
+        date: meeting.start,
+        startTime: meeting.start != null
+            ? DateFormat('HH:mm').format(meeting.start!)
+            : '',
+        endTime: meeting.end != null
+            ? DateFormat('HH:mm').format(meeting.end!)
+            : '',
+        status: meeting.status,
+        meetingLink: meeting.meetingLink,
+      ),
+    );
   }
 
   @override
@@ -140,17 +210,23 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
         selectedDays: targetDays,
         onSave: (startTime, endTime) async {
           final List<Map<String, String>> newSlots = [{'start': startTime, 'end': endTime}];
-          final success = await agendaProvider.saveSlotsForDays(
+          final result = await agendaProvider.saveSlotsForDays(
             token: token, userId: userId, days: targetDays, newSlots: newSlots,
           );
 
           if (!mounted) return;
 
-          if (success) {
+          if (result['success'] == true) {
             CustomToast.show(
               context,
               AppLocalizations.of(context)!.scheduleAddedSuccessfully,
               isSuccess: true,
+            );
+          } else if (result['partialSuccess'] == true) {
+            CustomToast.show(
+              context,
+              "Guardado parcial: ${result['savedCount']} de ${result['totalCount']} días. Algunos horarios chocan con existentes",
+              isWarning: true,
             );
           } else {
             CustomToast.show(

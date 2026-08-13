@@ -667,18 +667,32 @@ bool _isPastDay(DateTime day) {
                       builder: (dialogContext) => AddScheduleSheet(
                         selectedDays: days,
                         onSave: (sTime, eTime) async {
-                          final success = await provider.saveSlotsForDays(
+                          final result = await provider.saveSlotsForDays(
                               token: auth.token ?? '',
                               userId: auth.userId?.toString() ?? '',
                               days: days,
                               newSlots: [
                                 {'start': sTime, 'end': eTime}
                               ]);
-                          if (success && mounted) {
-                            _clearSelection();
+                          if (!mounted) return;
+                          
+                          _clearSelection();
+                          
+                          if (result['success'] == true) {
                             CustomToast.show(
-                                context, "Horario guardado correctamente",
+                                context,
+                                "Horarios guardados en ${result['savedCount']} días",
                                 isSuccess: true);
+                          } else if (result['partialSuccess'] == true) {
+                            CustomToast.show(
+                                context,
+                                "Guardado parcial: ${result['savedCount']} de ${result['totalCount']} días guardados",
+                                isWarning: true);
+                          } else {
+                            CustomToast.show(
+                                context,
+                                "Error: No se pudo guardar ningún horario",
+                                isSuccess: false);
                           }
                         },
                       ),

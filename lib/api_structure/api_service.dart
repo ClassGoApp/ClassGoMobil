@@ -6,8 +6,9 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
 
-final String baseUrl = 'https://classgoapp.com/api';
+final String baseUrl = 'http://192.168.0.145:8000/api';
 
 class TokenExpiredException implements Exception {
   final String message =
@@ -4039,6 +4040,228 @@ Future<Map<String, dynamic>> counterNegotiation(
       return {
         'success': false,
         'message': decoded['message'] ?? 'Error al enviar la contraoferta.',
+      };
+    }
+  } catch (e) {
+    return {
+      'success': false,
+      'message': 'Error de conexión: $e',
+    };
+  }
+}
+
+// ===== MATERIALES DE APOYO (attachments) =====
+
+Future<Map<String, dynamic>> getBookingAttachments(
+    String token, int bookingId) async {
+  final Uri uri = Uri.parse('$baseUrl/bookings/$bookingId/attachments');
+  final headers = {
+    'Authorization': 'Bearer $token',
+    'Accept': 'application/json',
+  };
+
+  try {
+    final response = await http.get(uri, headers: headers);
+    final decoded = response.body.isNotEmpty
+        ? jsonDecode(response.body)
+        : <String, dynamic>{};
+
+    if (response.statusCode == 200) {
+      return {
+        'success': true,
+        'data': decoded['data'] ?? [],
+      };
+    } else {
+      return {
+        'success': false,
+        'message': decoded['message'] ?? 'Error al obtener los materiales.',
+      };
+    }
+  } catch (e) {
+    return {
+      'success': false,
+      'message': 'Error de conexión: $e',
+    };
+  }
+}
+
+Future<Map<String, dynamic>> uploadBookingAttachment(
+    String token, int bookingId, File file, String description) async {
+  final Uri uri = Uri.parse('$baseUrl/bookings/$bookingId/attachments');
+
+  try {
+    final request = http.MultipartRequest('POST', uri);
+    request.headers.addAll({
+      'Authorization': 'Bearer $token',
+      'Accept': 'application/json',
+    });
+
+    final mimeType = lookupMimeType(file.path);
+    final mimeParts = mimeType?.split('/');
+
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'file',
+        file.path,
+        contentType: mimeParts != null && mimeParts.length == 2
+            ? MediaType(mimeParts[0], mimeParts[1])
+            : null,
+      ),
+    );
+    request.fields['description'] = description;
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+    final decoded = response.body.isNotEmpty
+        ? jsonDecode(response.body)
+        : <String, dynamic>{};
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return {
+        'success': true,
+        'message': decoded['message'] ?? 'Material adjuntado correctamente.',
+      };
+    } else {
+      return {
+        'success': false,
+        'message': decoded['message'] ?? 'Error al adjuntar el material.',
+        'errors': decoded['errors'],
+      };
+    }
+  } catch (e) {
+    return {
+      'success': false,
+      'message': 'Error de conexión: $e',
+    };
+  }
+}
+
+Future<Map<String, dynamic>> updateAttachment(
+  String token,
+  int attachmentId, {
+  File? file,
+  String? description,
+}) async {
+  final Uri uri = Uri.parse('$baseUrl/attachments/$attachmentId');
+
+  try {
+    final hasFile = file != null;
+    late final http.Response response;
+
+    if (hasFile) {
+      final request = http.MultipartRequest('PUT', uri);
+      request.headers.addAll({
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      });
+
+      final mimeType = lookupMimeType(file.path);
+      final mimeParts = mimeType?.split('/');
+
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'file',
+          file.path,
+          contentType: mimeParts != null && mimeParts.length == 2
+              ? MediaType(mimeParts[0], mimeParts[1])
+              : null,
+        ),
+      );
+      if (description != null) request.fields['description'] = description;
+
+      final streamedResponse = await request.send();
+      response = await http.Response.fromStream(streamedResponse);
+    } else {
+      final headers = {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      };
+      response = await http.put(
+        uri,
+        headers: headers,
+        body: jsonEncode({'description': description}),
+      );
+    }
+
+    final decoded = response.body.isNotEmpty
+        ? jsonDecode(response.body)
+        : <String, dynamic>{};
+
+    if (response.statusCode == 200) {
+      return {
+        'success': true,
+        'message': decoded['message'] ?? 'Material actualizado correctamente.',
+      };
+    } else {
+      return {
+        'success': false,
+        'message': decoded['message'] ?? 'Error al actualizar el material.',
+        'errors': decoded['errors'],
+      };
+    }
+  } catch (e) {
+    return {
+      'success': false,
+      'message': 'Error de conexión: $e',
+    };
+  }
+}
+
+Future<Map<String, dynamic>> deleteAttachment(
+    String token, int attachmentId) async {
+  final Uri uri = Uri.parse('$baseUrl/attachments/$attachmentId');
+  final headers = {
+    'Authorization': 'Bearer $token',
+    'Accept': 'application/json',
+  };
+
+  try {
+    final response = await http.delete(uri, headers: headers);
+    final decoded = response.body.isNotEmpty
+        ? jsonDecode(response.body)
+        : <String, dynamic>{};
+
+    if (response.statusCode == 200) {
+      return {
+        'success': true,
+        'message': decoded['message'] ?? 'Material eliminado correctamente.',
+      };
+    } else {
+      return {
+        'success': false,
+        'message': decoded['message'] ?? 'Error al eliminar el material.',
+      };
+    }
+  } catch (e) {
+    return {
+      'success': false,
+      'message': 'Error de conexión: $e',
+    };
+  }
+}
+
+Future<Map<String, dynamic>> downloadAttachment(
+    String token, int attachmentId, String fileName) async {
+  final Uri uri = Uri.parse('$baseUrl/attachments/$attachmentId/download');
+  final headers = {
+    'Authorization': 'Bearer $token',
+    'Accept': 'application/octet-stream',
+  };
+
+  try {
+    final response = await http.get(uri, headers: headers);
+
+    if (response.statusCode == 200) {
+      return {
+        'success': true,
+        'bytes': response.bodyBytes,
+        'fileName': path.basename(fileName),
+      };
+    } else {
+      return {
+        'success': false,
+        'message': 'Error al descargar el archivo (${response.statusCode}).',
       };
     }
   } catch (e) {

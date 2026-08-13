@@ -750,19 +750,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noDate => 'NO DATE';
 
   @override
-  String get statusPending => 'pending';
+  String get statusPending => 'Pending';
 
   @override
-  String get statusAccepted => 'accepted';
+  String get statusAccepted => 'Accepted';
 
   @override
-  String get statusInProgress => 'in progress';
+  String get statusInProgress => 'In progress';
 
   @override
-  String get statusCompleted => 'completed';
+  String get statusCompleted => 'Completed';
 
   @override
   String get meetLinkNotAvailable => 'Meet link is not yet available.';
+
+  @override
+  String get meetingLinkLabel => 'Meeting link';
+
+  @override
+  String get meetButton => 'Meet';
+
+  @override
+  String get linkCopied => 'Link copied';
 
   @override
   String get meetingStartedWaitingLink =>
@@ -785,6 +794,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noClassesToday => 'You have no classes scheduled for today.';
+
+  @override
+  String get noUpcomingClasses => 'You have no upcoming classes right now.';
 
   @override
   String get activateAvailability =>
@@ -863,7 +875,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get availability => 'AVAILABILITY';
 
   @override
-  String get myNextClasses => 'MY NEXT CLASSES';
+  String get myNextClasses => 'Upcoming Bookings';
 
   @override
   String get configureSchedule => 'CONFIGURE SCHEDULES';
@@ -1596,4 +1608,142 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get videoLoadError => 'Could not load video';
+
+  @override
+  String get agendaSegment => 'Agenda';
+
+  @override
+  String get materialSupport => 'Material de apoyo';
+
+  @override
+  String get attachMaterial => 'Attach material';
+
+  @override
+  String get downloadOrShare => 'Download';
+
+  @override
+  String get deleteMaterial => 'Delete';
+
+  @override
+  String get editMaterial => 'Edit';
+
+  @override
+  String get noAttachedMaterial => 'No material attached.';
+
+  @override
+  String get noTutoringMaterial =>
+      'Select a tutoring session to see its materials.';
+
+  @override
+  String get attachFile => 'Attach file';
+
+  @override
+  String get selectFile => 'Select file';
+
+  @override
+  String get materialDescriptionLabel => 'What is this material about?';
+
+  @override
+  String get materialDescriptionPlaceholder =>
+      'Example: practice exercises I have trouble solving...';
+
+  @override
+  String get attachmentsForSession => 'Files attached for this session';
+
+  @override
+  String get tutoringDetails => 'Tutoring details';
+
+  @override
+  String get timeConnector => 'to';
+
+  @override
+  String get materialOptionalNote => 'Attaching support material is optional.';
+
+  @override
+  String get savedStatus => 'Saved';
+
+  @override
+  String get statusNotCompleted => 'Not completed';
+
+  @override
+  String get statusRejected => 'Rejected';
+
+  @override
+  String get statusCancelled => 'Cancelled';
+
+  @override
+  String get noMaterialsAttached => 'No materials attached';
+
+  @override
+  String materialsAttached(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count materials attached',
+      one: '$count material attached',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tapCardToSeeDetails =>
+      'Tap the card to see details or attach files.';
+
+  @override
+  String get tutorLabel => 'Tutor: ';
+
+  @override
+  String get studentLabel => 'Student: ';
+
+  @override
+  String get maxSize5Mb => 'PDF, DOCX, XLSX, JPG, PNG (Max 5 MB)';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get fileNotAllowed => 'This file type is not allowed.';
+
+  @override
+  String get fileTooLarge => 'The file exceeds the 5 MB limit.';
+
+  @override
+  String get descriptionRequired => 'Please write a short description.';
+
+  @override
+  String get deleteMaterialConfirm => 'Delete this material?';
+
+  @override
+  String get deleteMaterialDescription => 'This action cannot be undone.';
+
+  @override
+  String get editMaterialDescription =>
+      'Update the description or replace the file.';
+
+  @override
+  String get materialDeleted => 'Material deleted.';
+
+  @override
+  String get materialSaved => 'Material saved.';
+
+  @override
+  String get loadingMaterials => 'Loading materials...';
+
+  @override
+  String get sharingFile => 'Downloading file...';
+
+  @override
+  String get downloadedFile => 'File downloaded';
+
+  @override
+  String get alreadyDownloaded => 'File already downloaded';
+
+  @override
+  String get downloadingFile => 'Downloading file...';
+
+  @override
+  String get noAppToOpenFile => 'There is no app to open this file';
+
+  @override
+  String get noMaterialSelected => 'Drag a file or click here to select it';
 }

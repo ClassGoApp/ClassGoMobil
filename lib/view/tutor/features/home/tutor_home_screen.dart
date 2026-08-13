@@ -18,8 +18,11 @@ import 'package:flutter_projects/view/tutor/features/home/widgets/solicitud_flex
 
 class TutorHomeScreen extends StatefulWidget {
   final Function(int) onNavigate;
+  final ValueChanged<ReservationItem>? onOpenClass;
 
-  const TutorHomeScreen({Key? key, required this.onNavigate}) : super(key: key);
+  const TutorHomeScreen(
+      {Key? key, required this.onNavigate, this.onOpenClass})
+      : super(key: key);
 
   @override
   State<TutorHomeScreen> createState() => _TutorHomeScreenState();
@@ -245,6 +248,7 @@ class _TutorHomeScreenState extends State<TutorHomeScreen>
                   NextAppointmentSection(
                     isAvailable: homeProvider.isAvailable,
                     onNavigate: widget.onNavigate,
+                    onOpenClass: widget.onOpenClass,
                     appointments: homeProvider.nextBooking!.map((booking) {
                       final start =
                           DateTime.tryParse(booking['start_time'] ?? '') ??

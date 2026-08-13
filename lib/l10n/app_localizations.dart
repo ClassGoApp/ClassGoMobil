@@ -1457,25 +1457,25 @@ abstract class AppLocalizations {
   /// No description provided for @statusPending.
   ///
   /// In en, this message translates to:
-  /// **'pending'**
+  /// **'Pending'**
   String get statusPending;
 
   /// No description provided for @statusAccepted.
   ///
   /// In en, this message translates to:
-  /// **'accepted'**
+  /// **'Accepted'**
   String get statusAccepted;
 
   /// No description provided for @statusInProgress.
   ///
   /// In en, this message translates to:
-  /// **'in progress'**
+  /// **'In progress'**
   String get statusInProgress;
 
   /// No description provided for @statusCompleted.
   ///
   /// In en, this message translates to:
-  /// **'completed'**
+  /// **'Completed'**
   String get statusCompleted;
 
   /// No description provided for @meetLinkNotAvailable.
@@ -1483,6 +1483,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Meet link is not yet available.'**
   String get meetLinkNotAvailable;
+
+  /// No description provided for @meetingLinkLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting link'**
+  String get meetingLinkLabel;
+
+  /// No description provided for @meetButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Meet'**
+  String get meetButton;
+
+  /// No description provided for @linkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied'**
+  String get linkCopied;
 
   /// No description provided for @meetingStartedWaitingLink.
   ///
@@ -1525,6 +1543,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You have no classes scheduled for today.'**
   String get noClassesToday;
+
+  /// No description provided for @noUpcomingClasses.
+  ///
+  /// In en, this message translates to:
+  /// **'You have no upcoming classes right now.'**
+  String get noUpcomingClasses;
 
   /// No description provided for @activateAvailability.
   ///
@@ -1667,7 +1691,7 @@ abstract class AppLocalizations {
   /// No description provided for @myNextClasses.
   ///
   /// In en, this message translates to:
-  /// **'MY NEXT CLASSES'**
+  /// **'Upcoming Bookings'**
   String get myNextClasses;
 
   /// No description provided for @configureSchedule.
@@ -2971,6 +2995,258 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not load video'**
   String get videoLoadError;
+
+  /// No description provided for @agendaSegment.
+  ///
+  /// In en, this message translates to:
+  /// **'Agenda'**
+  String get agendaSegment;
+
+  /// No description provided for @materialSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Material de apoyo'**
+  String get materialSupport;
+
+  /// No description provided for @attachMaterial.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach material'**
+  String get attachMaterial;
+
+  /// No description provided for @downloadOrShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get downloadOrShare;
+
+  /// No description provided for @deleteMaterial.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get deleteMaterial;
+
+  /// No description provided for @editMaterial.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get editMaterial;
+
+  /// No description provided for @noAttachedMaterial.
+  ///
+  /// In en, this message translates to:
+  /// **'No material attached.'**
+  String get noAttachedMaterial;
+
+  /// No description provided for @noTutoringMaterial.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a tutoring session to see its materials.'**
+  String get noTutoringMaterial;
+
+  /// No description provided for @attachFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach file'**
+  String get attachFile;
+
+  /// No description provided for @selectFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Select file'**
+  String get selectFile;
+
+  /// No description provided for @materialDescriptionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'What is this material about?'**
+  String get materialDescriptionLabel;
+
+  /// No description provided for @materialDescriptionPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Example: practice exercises I have trouble solving...'**
+  String get materialDescriptionPlaceholder;
+
+  /// No description provided for @attachmentsForSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Files attached for this session'**
+  String get attachmentsForSession;
+
+  /// No description provided for @tutoringDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Tutoring details'**
+  String get tutoringDetails;
+
+  /// No description provided for @timeConnector.
+  ///
+  /// In en, this message translates to:
+  /// **'to'**
+  String get timeConnector;
+
+  /// No description provided for @materialOptionalNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Attaching support material is optional.'**
+  String get materialOptionalNote;
+
+  /// No description provided for @savedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get savedStatus;
+
+  /// No description provided for @statusNotCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Not completed'**
+  String get statusNotCompleted;
+
+  /// No description provided for @statusRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get statusRejected;
+
+  /// No description provided for @statusCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get statusCancelled;
+
+  /// No description provided for @noMaterialsAttached.
+  ///
+  /// In en, this message translates to:
+  /// **'No materials attached'**
+  String get noMaterialsAttached;
+
+  /// No description provided for @materialsAttached.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{{count} material attached} other{{count} materials attached}}'**
+  String materialsAttached(int count);
+
+  /// No description provided for @tapCardToSeeDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the card to see details or attach files.'**
+  String get tapCardToSeeDetails;
+
+  /// No description provided for @tutorLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Tutor: '**
+  String get tutorLabel;
+
+  /// No description provided for @studentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Student: '**
+  String get studentLabel;
+
+  /// No description provided for @maxSize5Mb.
+  ///
+  /// In en, this message translates to:
+  /// **'PDF, DOCX, XLSX, JPG, PNG (Max 5 MB)'**
+  String get maxSize5Mb;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// No description provided for @fileNotAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'This file type is not allowed.'**
+  String get fileNotAllowed;
+
+  /// No description provided for @fileTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'The file exceeds the 5 MB limit.'**
+  String get fileTooLarge;
+
+  /// No description provided for @descriptionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please write a short description.'**
+  String get descriptionRequired;
+
+  /// No description provided for @deleteMaterialConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this material?'**
+  String get deleteMaterialConfirm;
+
+  /// No description provided for @deleteMaterialDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'This action cannot be undone.'**
+  String get deleteMaterialDescription;
+
+  /// No description provided for @editMaterialDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Update the description or replace the file.'**
+  String get editMaterialDescription;
+
+  /// No description provided for @materialDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Material deleted.'**
+  String get materialDeleted;
+
+  /// No description provided for @materialSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Material saved.'**
+  String get materialSaved;
+
+  /// No description provided for @loadingMaterials.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading materials...'**
+  String get loadingMaterials;
+
+  /// No description provided for @sharingFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading file...'**
+  String get sharingFile;
+
+  /// No description provided for @downloadedFile.
+  ///
+  /// In en, this message translates to:
+  /// **'File downloaded'**
+  String get downloadedFile;
+
+  /// No description provided for @alreadyDownloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'File already downloaded'**
+  String get alreadyDownloaded;
+
+  /// No description provided for @downloadingFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading file...'**
+  String get downloadingFile;
+
+  /// No description provided for @noAppToOpenFile.
+  ///
+  /// In en, this message translates to:
+  /// **'There is no app to open this file'**
+  String get noAppToOpenFile;
+
+  /// No description provided for @noMaterialSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag a file or click here to select it'**
+  String get noMaterialSelected;
 }
 
 class _AppLocalizationsDelegate

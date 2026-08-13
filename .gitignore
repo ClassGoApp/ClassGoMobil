@@ -129,3 +129,8 @@ target/
 # Unit test reports
 TEST*.xml
 classgofirebase.json
+# Release/work notes
+ARREGLO_DISPONIBILIDAD_TUTOR.md
+CAMBIOS_SISTEMA_DESCARGA.md
+MEJORAS_RECIENTES.md
+RESTAURACION_CARDS_RESERVATIONS.md
