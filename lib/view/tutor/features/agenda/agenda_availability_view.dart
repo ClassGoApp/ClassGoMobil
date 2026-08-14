@@ -91,15 +91,23 @@ class _AgendaAvailabilityViewState extends State<AgendaAvailabilityView> {
             isSuccess: true,
           );
         } else if (result['partialSuccess'] == true) {
+          final errors = (result['errors'] as List?)?.cast<String>() ?? [];
+          final details = errors.isEmpty
+              ? ''
+              : ' Conflicto: ${errors.take(3).join(' | ')}';
           CustomToast.show(
             context,
-            "Guardado parcial: ${result['savedCount']} de ${result['totalCount']} días guardados",
+            "Guardado parcial: ${result['savedCount']} de ${result['totalCount']} días.$details",
             isWarning: true,
           );
         } else {
+          final errors = (result['errors'] as List?)?.cast<String>() ?? [];
+          final details = errors.isEmpty
+              ? ''
+              : ' ${errors.take(3).join(' | ')}';
           CustomToast.show(
             context,
-            AppLocalizations.of(context)!.couldNotSaveSchedule,
+            "No se pudo guardar ningún horario.$details",
             isSuccess: false,
           );
         } 

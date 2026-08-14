@@ -30,6 +30,11 @@ Future<void> loadAvailableSlots(
   final targetMonth = month ?? DateTime.now().month;
   final monthKey = "$targetYear-$targetMonth";
 
+  if (forceRefresh) {
+    _freeTimesByDay.removeWhere(
+        (date, _) => date.year == targetYear && date.month == targetMonth);
+  }
+
   if (!forceRefresh && _loadedMonths.contains(monthKey)) {
     return;
   }
@@ -223,7 +228,23 @@ Future<void> loadAvailableSlots(
       await Future.wait(tareasParalelas);
 
       if (savedCount > 0) {
-        await loadAvailableSlots(token, userId, forceRefresh: true);
+        final affectedMonths = <String>{};
+        for (final day in days) {
+          affectedMonths.add('${day.year}-${day.month}');
+        }
+
+        _loadedMonths.removeAll(affectedMonths);
+
+        for (final monthKey in affectedMonths) {
+          final parts = monthKey.split('-');
+          await loadAvailableSlots(
+            token,
+            userId,
+            year: int.parse(parts[0]),
+            month: int.parse(parts[1]),
+            forceRefresh: true,
+          );
+        }
       }
 
     } catch (e) {

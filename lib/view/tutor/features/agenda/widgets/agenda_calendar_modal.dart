@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_projects/base_components/custom_snack_bar.dart';
 import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
-import 'package:flutter_projects/view/tutor/dashboard/sheets/add_schedule_sheet.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:provider/provider.dart';
@@ -644,70 +643,6 @@ bool _isPastDay(DateTime day) {
           });
           _fetchAgendaData();
         });
-  }
-
-  Widget _buildConfigureButton(bool isDark, bool isActivelySelecting,
-      List<DateTime> days, AuthProvider auth, TutorAgendaProvider provider) {
-    return SizedBox(
-      width: double.infinity,
-      height: 54,
-      child: ElevatedButton.icon(
-        icon: const Icon(Icons.add, color: Colors.white, size: 18),
-        label: Text("CONFIGURAR HORARIOS (${days.length})",
-            style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.5)),
-        onPressed:
-            (isActivelySelecting && days.isNotEmpty && !provider.isMutating)
-                ? () {
-                    showDialog(
-                      context: context,
-                      barrierColor: Colors.black.withOpacity(0.6),
-                      builder: (dialogContext) => AddScheduleSheet(
-                        selectedDays: days,
-                        onSave: (sTime, eTime) async {
-                          final result = await provider.saveSlotsForDays(
-                              token: auth.token ?? '',
-                              userId: auth.userId?.toString() ?? '',
-                              days: days,
-                              newSlots: [
-                                {'start': sTime, 'end': eTime}
-                              ]);
-                          if (!mounted) return;
-                          
-                          _clearSelection();
-                          
-                          if (result['success'] == true) {
-                            CustomToast.show(
-                                context,
-                                "Horarios guardados en ${result['savedCount']} días",
-                                isSuccess: true);
-                          } else if (result['partialSuccess'] == true) {
-                            CustomToast.show(
-                                context,
-                                "Guardado parcial: ${result['savedCount']} de ${result['totalCount']} días guardados",
-                                isWarning: true);
-                          } else {
-                            CustomToast.show(
-                                context,
-                                "Error: No se pudo guardar ningún horario",
-                                isSuccess: false);
-                          }
-                        },
-                      ),
-                    );
-                  }
-                : null,
-        style: ElevatedButton.styleFrom(
-            backgroundColor:
-                isActivelySelecting ? AppColors.brandBlue : Colors.grey[300],
-            disabledBackgroundColor: isDark ? Colors.white10 : Colors.grey[300],
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20))),
-      ),
-    );
   }
 
   Widget _buildSectionTitleRow(

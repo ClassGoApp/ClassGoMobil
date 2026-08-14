@@ -223,17 +223,29 @@ class _TutorAgendaScreenState extends State<TutorAgendaScreen> {
               isSuccess: true,
             );
           } else if (result['partialSuccess'] == true) {
+            final errors = (result['errors'] as List?)?.cast<String>() ?? [];
+            final details = errors.isEmpty
+                ? ''
+                : ' Conflicto: ${errors.take(3).join(' | ')}';
             CustomToast.show(
               context,
-              "Guardado parcial: ${result['savedCount']} de ${result['totalCount']} días. Algunos horarios chocan con existentes",
+              "Guardado parcial: ${result['savedCount']} de ${result['totalCount']} días.$details",
               isWarning: true,
             );
           } else {
+            final errors = (result['errors'] as List?)?.cast<String>() ?? [];
+            final details = errors.isEmpty
+                ? ''
+                : ' ${errors.take(3).join(' | ')}';
             CustomToast.show(
               context,
-              AppLocalizations.of(context)!.errorSavingSchedule,
+              "No se pudo guardar ningún horario.$details",
               isSuccess: false,
             );
+          }
+
+          if (mounted && targetDays.isNotEmpty) {
+            setState(() => _selectedAvailabilityDates = [targetDays.first]);
           }
         }
       )
