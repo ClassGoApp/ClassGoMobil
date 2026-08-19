@@ -355,7 +355,12 @@ class BookingModalState extends State<BookingModal> {
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       child: Row(children: [
         CircleAvatar(
-            backgroundImage: NetworkImage(widget.tutorImage), radius: 26),
+            backgroundImage: widget.tutorImage.isNotEmpty &&
+                    widget.tutorImage.startsWith('http')
+                ? NetworkImage(widget.tutorImage)
+                : Image.asset(AppImages.placeHolderImage, fit: BoxFit.cover)
+                    .image,
+            radius: 26),
         SizedBox(width: 14),
         Expanded(
             child: Column(

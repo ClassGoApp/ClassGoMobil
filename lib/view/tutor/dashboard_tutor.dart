@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/base_components/custom_snack_bar.dart';
 import 'package:flutter_projects/models/booking_status.dart';
 import 'package:flutter_projects/view/tutor/dashboard/widgets/tutor_bottom_nav.dart';
 import 'package:flutter_projects/view/tutor/features/agenda/tutor_agenda_screen.dart';
@@ -750,11 +751,10 @@ class _DashboardTutorState extends State<DashboardTutor>
           _lastBackPressedTime = now;
           
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Presiona el botón de retroceso de nuevo para salir'),
-                duration: Duration(seconds: 2),
-              ),
+            CustomToast.show(
+              context,
+              AppLocalizations.of(context)!.pressBackAgainToExit,
+              showIcon: false,
             );
           }
           return;

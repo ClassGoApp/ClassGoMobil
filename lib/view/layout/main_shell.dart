@@ -6,6 +6,8 @@ import 'package:flutter_projects/view/student/serch_Tutor/search_tutors_screen.d
 import 'package:flutter_projects/view/tutor/student_calendar_screen.dart';
 import 'package:flutter_projects/view/tutor/student_history_screen.dart';
 import 'package:flutter_projects/view/profile/profile_screen.dart';
+import 'package:flutter_projects/base_components/custom_snack_bar.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({Key? key}) : super(key: key);
@@ -66,11 +68,10 @@ class _MainShellState extends State<MainShell> {
           _lastBackPressedTime = now;
           
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Presiona el botón de retroceso de nuevo para salir'),
-                duration: Duration(seconds: 2),
-              ),
+            CustomToast.show(
+              context,
+              AppLocalizations.of(context)!.pressBackAgainToExit,
+              showIcon: false,
             );
           }
           return;

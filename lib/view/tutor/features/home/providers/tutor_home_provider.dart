@@ -224,6 +224,20 @@ class TutorHomeProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void removePendingFlexibleRequestByToken(String? token) {
+    if (token == null || token.isEmpty) return;
+    final int before = pendingFlexibleRequests.length;
+    pendingFlexibleRequests
+        .removeWhere((req) => _extractTokenFromData(req) == token);
+    if (pendingFlexibleRequests.length != before) {
+      savePendingFlexibleRequestsToStorage();
+      print(
+          '🗑️ [TutorHomeProvider] Removida solicitud flexible por token. '
+          'Restantes: ${pendingFlexibleRequests.length}');
+      notifyListeners();
+    }
+  }
+
   void setRequestRejected(bool rejected) {
     isRequestRejected = rejected;
     notifyListeners();

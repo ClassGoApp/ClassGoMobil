@@ -1711,6 +1711,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get descriptionRequired => 'Please write a short description.';
 
   @override
+  String get descriptionMinLength =>
+      'The description must be at least 2 characters.';
+
+  @override
+  String get descriptionMaxLength =>
+      'The description must not exceed 500 characters.';
+
+  @override
   String get deleteMaterialConfirm => 'Delete this material?';
 
   @override

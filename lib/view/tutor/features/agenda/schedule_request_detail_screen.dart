@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
 import 'package:flutter_projects/view/components/success_animation_dialog.dart';
-import 'package:flutter_projects/view/student/reservations/paymentQR/payment_qr_screen.dart';
+import 'package:flutter_projects/view/student/reservations/instant-reservation/instant_tutoring_screen.dart';
+import 'package:flutter_projects/view/tutor/features/home/providers/tutor_home_provider.dart';
 
 class ScheduleRequestDetailScreen extends StatefulWidget {
   final String token;
@@ -57,6 +59,19 @@ class _ScheduleRequestDetailScreenState
     }
   }
 
+  /// Quita el banner/card de solicitud flexible del home del tutor al
+  /// procesar la propuesta (aceptar, rechazar, contraofertar o proceder al
+  /// pago), para que no quede persistido en SharedPreferences.
+  void _removeFlexibleBanner() {
+    try {
+      final homeProvider =
+          Provider.of<TutorHomeProvider>(context, listen: false);
+      homeProvider.removePendingFlexibleRequestByToken(widget.token);
+    } catch (e) {
+      print('Error limpiando banner flexible: $e');
+    }
+  }
+
   void _acceptProposal() async {
     setState(() {
       _isLoading = true;
@@ -65,6 +80,7 @@ class _ScheduleRequestDetailScreenState
     try {
       final result = await acceptNegotiation(widget.token);
       if (result['success'] == true) {
+        _removeFlexibleBanner();
         showSuccessDialog(
           context: context,
           title: '¡Propuesta Aceptada!',
@@ -134,6 +150,7 @@ class _ScheduleRequestDetailScreenState
     try {
       final result = await rejectNegotiation(widget.token);
       if (result['success'] == true) {
+        _removeFlexibleBanner();
         showSuccessDialog(
           context: context,
           title: 'Solicitud Rechazada',
@@ -179,6 +196,7 @@ class _ScheduleRequestDetailScreenState
         currentDuration:
             _negotiationData?['request']?['current_duration']?.toString(),
         onSuccess: () {
+          _removeFlexibleBanner();
           Navigator.pop(context); // Close bottom sheet
           Navigator.pop(this.context); // Close details page
         },
@@ -232,8 +250,6 @@ class _ScheduleRequestDetailScreenState
           _negotiationData?['tutor']?['name'] ??
           'Tutor';
       final tutorImage = _negotiationData?['tutor']?['profile_image_url'] ?? '';
-      final selectedSubject =
-          _negotiationData?['subject']?['name'] ?? 'Materia';
       final tutorId =
           int.tryParse(_negotiationData?['tutor']?['id']?.toString() ?? '') ??
               0;
@@ -241,33 +257,43 @@ class _ScheduleRequestDetailScreenState
           int.tryParse(_negotiationData?['subject']?['id']?.toString() ?? '') ??
               0;
 
-      Navigator.of(context).push(
-        PageRouteBuilder(
-          opaque: false,
-          barrierColor: Colors.black.withOpacity(0.6),
-          barrierDismissible: true,
-          pageBuilder: (context, animation, secondaryAnimation) {
-            return PaymentQRScreen(
-              tutorName: tutorName,
-              tutorImage: tutorImage,
-              selectedSubject: selectedSubject,
-              amount: amountStr,
-              sessionDuration: "$mins min",
-              tutorId: tutorId,
-              subjectId: subjectId,
-              scheduledDate: scheduledDate,
-              scheduledTime:
-                  _negotiationData?['request']?['current_time']?.toString() ?? '',
-              isScheduledBooking: true,
-              isScheduleRequest: true,
-              slotId: null, // Custom negotiated slot
-              onCancel: () {
-                Navigator.of(context).pop();
-              },
-            );
-          },
-          transitionDuration: const Duration(milliseconds: 300),
-          reverseTransitionDuration: const Duration(milliseconds: 300),
+      // ✅ Reutiliza el mismo flujo de reserva por horario (InstantTutoringScreen),
+      // que ya incluye la sección de material de apoyo (foto + descripción).
+      _removeFlexibleBanner();
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => Container(
+          margin: const EdgeInsets.only(top: 60),
+          decoration: BoxDecoration(
+            color: AppColors.darkBlue,
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: InstantTutoringScreen(
+            tutorName: tutorName,
+            tutorImage: tutorImage,
+            subjects: [
+              Map<String, dynamic>.from(_negotiationData?['subject'] ?? {})
+            ],
+            selectedSubject:
+                Map<String, dynamic>.from(_negotiationData?['subject'] ?? {}),
+            tutorId: tutorId,
+            subjectId: subjectId,
+            scheduledDate: scheduledDate,
+            scheduledTime:
+                _negotiationData?['request']?['current_time']?.toString() ?? '',
+            isScheduledBooking: true,
+            isScheduleRequest: true,
+            slotId: null, // Custom negotiated slot
+            price: basePrice20Min,
+            amount: amountStr,
+            sessionDuration: "$mins min",
+            onCancel: () {
+              Navigator.of(context).pop();
+            },
+          ),
         ),
       );
     } catch (e) {

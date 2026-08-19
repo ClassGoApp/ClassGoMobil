@@ -1719,6 +1719,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String get descriptionRequired => 'Por favor escribe una breve descripción.';
 
   @override
+  String get descriptionMinLength =>
+      'La descripción debe tener al menos 2 caracteres.';
+
+  @override
+  String get descriptionMaxLength =>
+      'La descripción no debe superar los 500 caracteres.';
+
+  @override
   String get deleteMaterialConfirm => '¿Eliminar este material?';
 
   @override
@@ -1747,7 +1755,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get alreadyDownloaded => 'Archivo ya descargado';
 
   @override
-  String get downloadingFile => 'Downloading file...';
+  String get downloadingFile => 'Descargando archivo...';
 
   @override
   String get noAppToOpenFile => 'No hay una aplicación para abrir este archivo';

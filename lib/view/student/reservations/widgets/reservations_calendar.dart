@@ -106,7 +106,9 @@ class _ReservationsCalendarState extends State<ReservationsCalendar> {
             }
             if (dateStr == null) return false;
             final dt = DateTime.parse(dateStr);
-            return !dt.isBefore(first) && !dt.isAfter(last);
+            return !dt.isBefore(first) &&
+                dt.isBefore(
+                    DateTime(visibleMonth.year, visibleMonth.month + 1, 1));
           } catch (e) {
             return false;
           }

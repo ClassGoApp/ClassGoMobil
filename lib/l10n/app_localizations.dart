@@ -3176,6 +3176,18 @@ abstract class AppLocalizations {
   /// **'Please write a short description.'**
   String get descriptionRequired;
 
+  /// No description provided for @descriptionMinLength.
+  ///
+  /// In en, this message translates to:
+  /// **'The description must be at least 2 characters.'**
+  String get descriptionMinLength;
+
+  /// No description provided for @descriptionMaxLength.
+  ///
+  /// In en, this message translates to:
+  /// **'The description must not exceed 500 characters.'**
+  String get descriptionMaxLength;
+
   /// No description provided for @deleteMaterialConfirm.
   ///
   /// In en, this message translates to:

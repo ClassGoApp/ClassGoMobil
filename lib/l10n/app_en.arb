@@ -694,6 +694,8 @@
   "fileNotAllowed": "This file type is not allowed.",
   "fileTooLarge": "The file exceeds the 5 MB limit.",
   "descriptionRequired": "Please write a short description.",
+  "descriptionMinLength": "The description must be at least 2 characters.",
+  "descriptionMaxLength": "The description must not exceed 500 characters.",
   "deleteMaterialConfirm": "Delete this material?",
   "deleteMaterialDescription": "This action cannot be undone.",
   "editMaterialDescription": "Update the description or replace the file.",

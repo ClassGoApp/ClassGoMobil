@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:image_picker/image_picker.dart';
 import '../paymentQR/payment_qr_screen.dart';
@@ -17,6 +18,10 @@ class InstantTutoringScreen extends StatefulWidget {
   final String? scheduledTime;
   final bool isScheduledBooking;
   final String? slotId;
+  final bool isScheduleRequest;
+  final VoidCallback? onCancel;
+  final String? sessionDuration;
+  final String? amount;
 
   const InstantTutoringScreen({
     Key? key,
@@ -32,6 +37,10 @@ class InstantTutoringScreen extends StatefulWidget {
     this.isScheduledBooking = false,
     this.slotId,
     this.price,
+    this.isScheduleRequest = false,
+    this.onCancel,
+    this.sessionDuration,
+    this.amount,
   }) : super(key: key);
 
   @override
@@ -464,7 +473,14 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                           children: [
                             CircleAvatar(
                               radius: 32,
-                              backgroundImage: NetworkImage(widget.tutorImage),
+                              backgroundImage:
+                                  widget.tutorImage.isNotEmpty &&
+                                          widget.tutorImage.startsWith('http')
+                                      ? NetworkImage(widget.tutorImage)
+                                      : Image.asset(
+                                              AppImages.placeHolderImage,
+                                              fit: BoxFit.cover)
+                                          .image,
                             ),
                             SizedBox(width: 16),
                             Expanded(
@@ -966,6 +982,63 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                             ? () {
                                 // Reemplaza el modal actual con la pantalla de pago
 
+                                // Validar el material de apoyo (si se adjuntó) ANTES
+                                // de navegar al pago, con las mismas reglas del
+                                // backend y de payment_qr_screen.
+                                final File? supportFile = _selectedImage;
+                                if (supportFile != null) {
+                                  final l10n =
+                                      AppLocalizations.of(context)!;
+                                  final int fileSize =
+                                      supportFile.lengthSync();
+                                  final String filePath =
+                                      supportFile.path.toLowerCase();
+                                  final String extension = filePath
+                                          .contains('.')
+                                      ? filePath.split('.').last
+                                      : '';
+                                  const allowedExtensions = [
+                                    'jpg',
+                                    'jpeg',
+                                    'png'
+                                  ];
+                                  final String description =
+                                      _notesController.text.trim();
+
+                                  if (description.length < 2) {
+                                    showCustomToast(
+                                        context,
+                                        description.isEmpty
+                                            ? l10n.descriptionRequired
+                                            : l10n
+                                                .descriptionMinLength,
+                                        false);
+                                    return;
+                                  }
+                                  if (description.length > 500) {
+                                    showCustomToast(
+                                        context,
+                                        l10n.descriptionMaxLength,
+                                        false);
+                                    return;
+                                  }
+                                  if (fileSize > 5 * 1024 * 1024) {
+                                    showCustomToast(
+                                        context,
+                                        l10n.fileTooLarge,
+                                        false);
+                                    return;
+                                  }
+                                  if (!allowedExtensions
+                                      .contains(extension)) {
+                                    showCustomToast(
+                                        context,
+                                        l10n.fileNotAllowed,
+                                        false);
+                                    return;
+                                  }
+                                }
+
                                 Navigator.of(context).pushReplacement(
                                   PageRouteBuilder(
                                     opaque: false,
@@ -977,10 +1050,12 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                         tutorImage: widget.tutorImage,
                                         selectedSubject: _displaySubjectName(
                                             _selectedSubject),
-                                        amount: widget.price != null
-                                            ? "${widget.price!.toInt()} Bs"
-                                            : "20 Bs",
-                                        sessionDuration: "20 min",
+                                        amount: widget.amount ??
+                                            (widget.price != null
+                                                ? "${widget.price!.toInt()} Bs"
+                                                : "20 Bs"),
+                                        sessionDuration: widget.sessionDuration ??
+                                            "20 min",
                                         tutorId: widget.tutorId,
                                         subjectId: _selectedSubjectId ??
                                             widget.subjectId,
@@ -989,7 +1064,10 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                         scheduledTime: widget.scheduledTime,
                                         isScheduledBooking:
                                             widget.isScheduledBooking,
+                                        isScheduleRequest:
+                                            widget.isScheduleRequest,
                                         slotId: widget.slotId,
+                                        onCancel: widget.onCancel,
                                         supportFile: _selectedImage,
                                         supportDescription:
                                             _notesController.text.trim(),

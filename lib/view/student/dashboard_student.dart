@@ -5,6 +5,7 @@ import 'package:flutter_projects/view/tutor/features/home/widgets/solicitud_flex
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/base_components/custom_snack_bar.dart';
 import 'package:flutter_projects/view/student/instant_tutoring/instant_tutoring_screen.dart';
 import 'package:flutter_projects/view/student/serch_Tutor/search_tutors_screen.dart';
 import 'package:flutter_projects/view/student/reservations/reservations_screen.dart';
@@ -218,11 +219,10 @@ class _DashboardStudentState extends State<DashboardStudent>
             _lastBackPressedTime = now;
             
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(l10n.pressBackAgainToExit),
-                  duration: Duration(seconds: 2),
-                ),
+              CustomToast.show(
+                context,
+                l10n.pressBackAgainToExit,
+                showIcon: false,
               );
             }
             return;

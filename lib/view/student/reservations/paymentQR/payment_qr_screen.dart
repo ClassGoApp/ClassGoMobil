@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
 import 'package:flutter_projects/base_components/custom_snack_bar.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:path_provider/path_provider.dart';
@@ -280,7 +281,28 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
     }
   }
 
+  (int, int) _parseTime(String timeStr) {
+    final trimmed = timeStr.trim();
+    final match = RegExp(
+      r'^(\d{1,2}):(\d{2})\s*(AM|PM)?$',
+      caseSensitive: false,
+    ).firstMatch(trimmed);
+    if (match == null) {
+      throw const FormatException('Hora inválida');
+    }
+    int hour = int.parse(match.group(1)!);
+    final minute = int.parse(match.group(2)!);
+    final period = match.group(3)?.toUpperCase();
+    if (period == 'PM' && hour != 12) hour += 12;
+    if (period == 'AM' && hour == 12) hour = 0;
+    if (hour > 23 || minute > 59) {
+      throw const FormatException('Hora inválida');
+    }
+    return (hour, minute);
+  }
+
   void _submitPayment() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_receiptImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -448,11 +470,14 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
           print('[PaymentQRScreen] 🔍 DEBUG - End time string: $endTimeStr');
 
           try {
-            // Parsear las horas (formato: "14:00", "15:30", etc.)
-            final startHour = int.parse(startTimeStr.split(':')[0]);
-            final startMinute = int.parse(startTimeStr.split(':')[1]);
-            final endHour = int.parse(endTimeStr.split(':')[0]);
-            final endMinute = int.parse(endTimeStr.split(':')[1]);
+            // Parsear las horas aceptando formato 24h ("14:00") o 12h
+            // con AM/PM ("7:30 PM")
+            final startTimeParsed = _parseTime(startTimeStr);
+            final endTimeParsed = _parseTime(endTimeStr);
+            final startHour = startTimeParsed.$1;
+            final startMinute = startTimeParsed.$2;
+            final endHour = endTimeParsed.$1;
+            final endMinute = endTimeParsed.$2;
 
             print(
                 '[PaymentQRScreen] 🔍 DEBUG - Parsed hours: $startHour:$startMinute - $endHour:$endMinute');
@@ -580,10 +605,12 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
         return;
       }
 
-      // ✅ NUEVO: Adjuntar el material de apoyo (foto + descripción) con las
-      // mismas validaciones del AttachFileSheet (extensión, 5MB, descripción
-      // min 2 / max 500). El material es opcional: si falla, la reserva ya
-      // quedó creada y se podrá adjuntar después desde los detalles.
+      // Adjuntar el material de apoyo (foto + descripción) con las mismas
+      // validaciones del AttachFileSheet (extensión, 5MB, descripción min 2 /
+      // max 500). La descripción se valida ANTES de enviar: nunca se rellena
+      // ni se modifica por nosotros, solo se informa al usuario con un toast.
+      // El material es opcional: si falla, la reserva ya quedó creada y se
+      // podrá adjuntar después desde los detalles.
       final File? supportFile = widget.supportFile;
       if (supportFile != null) {
         final int fileSize = supportFile.lengthSync();
@@ -592,18 +619,22 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
             filePath.contains('.') ? filePath.split('.').last : '';
         const allowedExtensions = ['jpg', 'jpeg', 'png'];
 
-        var description = widget.supportDescription?.trim() ?? '';
+        final String description = widget.supportDescription?.trim() ?? '';
+
         if (description.length < 2) {
-          description = 'Material de apoyo';
-        }
-        if (description.length > 500) {
-          description = description.substring(0, 500);
-        }
-
-        final bool validSize = fileSize <= 5 * 1024 * 1024;
-        final bool validExtension = allowedExtensions.contains(extension);
-
-        if (validSize && validExtension) {
+          showCustomToast(
+              context,
+              description.isEmpty
+                  ? l10n.descriptionRequired
+                  : l10n.descriptionMinLength,
+              false);
+        } else if (description.length > 500) {
+          showCustomToast(context, l10n.descriptionMaxLength, false);
+        } else if (fileSize > 5 * 1024 * 1024) {
+          showCustomToast(context, l10n.fileTooLarge, false);
+        } else if (!allowedExtensions.contains(extension)) {
+          showCustomToast(context, l10n.fileNotAllowed, false);
+        } else {
           final attachmentResponse = await uploadBookingAttachment(
             token,
             slotBookingId,
@@ -614,10 +645,6 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
             print('[PaymentQRScreen] ⚠️ No se pudo adjuntar el material: '
                 '${attachmentResponse['message']}');
           }
-        } else {
-          print(
-              '[PaymentQRScreen] ⚠️ Material no adjuntado (formato o tamaño no permitido): '
-              '$extension / ${fileSize}B');
         }
       }
 
@@ -739,7 +766,16 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
                                     CircleAvatar(
                                       radius: 28,
                                       backgroundImage:
-                                          NetworkImage(widget.tutorImage),
+                                          widget.tutorImage.isNotEmpty &&
+                                                  widget.tutorImage
+                                                      .startsWith('http')
+                                              ? NetworkImage(
+                                                  widget.tutorImage)
+                                              : Image.asset(
+                                                      AppImages
+                                                          .placeHolderImage,
+                                                      fit: BoxFit.cover)
+                                                  .image,
                                     ),
                                     SizedBox(width: 16),
                                     Expanded(
