@@ -665,5 +665,19 @@
   "newRequest": "Nueva solicitud",
   "myVideo": "Mi Video",
   "closeButton": "Cerrar",
-  "videoLoadError": "No se pudo cargar el video"
+  "videoLoadError": "No se pudo cargar el video",
+  "learnInFiveSteps": "Aprende a usar Tutoría al Instante en 5 pasos 🚀",
+  "discoverHowToConnect": "Descubre cómo conectarte con tutores en minutos",
+  "step1TapInstant": "1. Toca en 'Tutoría al Instante'",
+  "findInstantTutoringButton": "Inicia tu búsqueda rápida presionando botón de tutoría al instante",
+  "step2ChooseSubject": "2. Elige tu materia",
+  "selectYourFavoriteSubject": "Selecciona la materia en la que necesitas ayuda",
+  "step3ConnectTutor": "3. Elige a tu tutor",
+  "browseTutorsAndConnect": "Revisa los tutores disponibles y elige el que más te guste",
+  "step4ResolveDougbts": "4. Sube tu comprobante",
+  "getInstantAnswers": "Adjunta la captura de tu pago y confirma la transacción",
+  "step5Confirmation": "5. ¡Resuelve tus dudas!",
+  "receiveConfirmation": "Recibe tu confirmación y presiona 'Ir a la clase' para empezar en unos minutos",
+  "startNow": "¡Comenzar Ahora!",
+  "signInToBegin": "Inicia sesión para comenzar tu experiencia de aprendizaje"
 }

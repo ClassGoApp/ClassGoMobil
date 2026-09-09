@@ -1604,4 +1604,54 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get videoLoadError => 'No se pudo cargar el video';
+
+  @override
+  String get learnInFiveSteps =>
+      'Aprende a usar Tutoría al Instante en 5 pasos 🚀';
+
+  @override
+  String get discoverHowToConnect =>
+      'Descubre cómo conectarte con tutores en minutos';
+
+  @override
+  String get step1TapInstant => '1. Toca en \'Tutoría al Instante\'';
+
+  @override
+  String get findInstantTutoringButton =>
+      'Inicia tu búsqueda rápida presionando botón de tutoría al instante';
+
+  @override
+  String get step2ChooseSubject => '2. Elige tu materia';
+
+  @override
+  String get selectYourFavoriteSubject =>
+      'Selecciona la materia en la que necesitas ayuda';
+
+  @override
+  String get step3ConnectTutor => '3. Elige a tu tutor';
+
+  @override
+  String get browseTutorsAndConnect =>
+      'Revisa los tutores disponibles y elige el que más te guste';
+
+  @override
+  String get step4ResolveDougbts => '4. Sube tu comprobante';
+
+  @override
+  String get getInstantAnswers =>
+      'Adjunta la captura de tu pago y confirma la transacción';
+
+  @override
+  String get step5Confirmation => '5. ¡Resuelve tus dudas!';
+
+  @override
+  String get receiveConfirmation =>
+      'Recibe tu confirmación y presiona \'Ir a la clase\' para empezar en unos minutos';
+
+  @override
+  String get startNow => '¡Comenzar Ahora!';
+
+  @override
+  String get signInToBegin =>
+      'Inicia sesión para comenzar tu experiencia de aprendizaje';
 }

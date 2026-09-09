@@ -1596,4 +1596,52 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get videoLoadError => 'Could not load video';
+
+  @override
+  String get learnInFiveSteps => 'Learn to use Instant Tutoring in 5 steps 🚀';
+
+  @override
+  String get discoverHowToConnect =>
+      'Discover how to connect with tutors in minutes';
+
+  @override
+  String get step1TapInstant => '1. Tap \'Instant Tutoring\'';
+
+  @override
+  String get findInstantTutoringButton =>
+      'Start your quick search by pressing the instant tutoring button';
+
+  @override
+  String get step2ChooseSubject => '2. Choose your subject';
+
+  @override
+  String get selectYourFavoriteSubject =>
+      'Select the subject where you need help';
+
+  @override
+  String get step3ConnectTutor => '3. Choose your tutor';
+
+  @override
+  String get browseTutorsAndConnect =>
+      'Review available tutors and choose the one you like best';
+
+  @override
+  String get step4ResolveDougbts => '4. Upload your receipt';
+
+  @override
+  String get getInstantAnswers =>
+      'Attach your payment screenshot and confirm the transaction';
+
+  @override
+  String get step5Confirmation => '5. Resolve your doubts!';
+
+  @override
+  String get receiveConfirmation =>
+      'Receive your confirmation and click \'Go to class\' to start in a few minutes';
+
+  @override
+  String get startNow => 'Start Now!';
+
+  @override
+  String get signInToBegin => 'Sign in to begin your learning experience';
 }

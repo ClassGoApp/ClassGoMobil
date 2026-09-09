@@ -647,5 +647,19 @@
   "newRequest": "New Request",
   "myVideo": "My Video",
   "closeButton": "Close",
-  "videoLoadError": "Could not load video"
+  "videoLoadError": "Could not load video",
+  "learnInFiveSteps": "Learn to use Instant Tutoring in 5 steps 🚀",
+  "discoverHowToConnect": "Discover how to connect with tutors in minutes",
+  "step1TapInstant": "1. Tap 'Instant Tutoring'",
+  "findInstantTutoringButton": "Start your quick search by pressing the instant tutoring button",
+  "step2ChooseSubject": "2. Choose your subject",
+  "selectYourFavoriteSubject": "Select the subject where you need help",
+  "step3ConnectTutor": "3. Choose your tutor",
+  "browseTutorsAndConnect": "Review available tutors and choose the one you like best",
+  "step4ResolveDougbts": "4. Upload your receipt",
+  "getInstantAnswers": "Attach your payment screenshot and confirm the transaction",
+  "step5Confirmation": "5. Resolve your doubts!",
+  "receiveConfirmation": "Receive your confirmation and click 'Go to class' to start in a few minutes",
+  "startNow": "Start Now!",
+  "signInToBegin": "Sign in to begin your learning experience"
 }

@@ -2971,6 +2971,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not load video'**
   String get videoLoadError;
+
+  /// No description provided for @learnInFiveSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn to use Instant Tutoring in 5 steps 🚀'**
+  String get learnInFiveSteps;
+
+  /// No description provided for @discoverHowToConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Discover how to connect with tutors in minutes'**
+  String get discoverHowToConnect;
+
+  /// No description provided for @step1TapInstant.
+  ///
+  /// In en, this message translates to:
+  /// **'1. Tap \'Instant Tutoring\''**
+  String get step1TapInstant;
+
+  /// No description provided for @findInstantTutoringButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Start your quick search by pressing the instant tutoring button'**
+  String get findInstantTutoringButton;
+
+  /// No description provided for @step2ChooseSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'2. Choose your subject'**
+  String get step2ChooseSubject;
+
+  /// No description provided for @selectYourFavoriteSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'Select the subject where you need help'**
+  String get selectYourFavoriteSubject;
+
+  /// No description provided for @step3ConnectTutor.
+  ///
+  /// In en, this message translates to:
+  /// **'3. Choose your tutor'**
+  String get step3ConnectTutor;
+
+  /// No description provided for @browseTutorsAndConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Review available tutors and choose the one you like best'**
+  String get browseTutorsAndConnect;
+
+  /// No description provided for @step4ResolveDougbts.
+  ///
+  /// In en, this message translates to:
+  /// **'4. Upload your receipt'**
+  String get step4ResolveDougbts;
+
+  /// No description provided for @getInstantAnswers.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach your payment screenshot and confirm the transaction'**
+  String get getInstantAnswers;
+
+  /// No description provided for @step5Confirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'5. Resolve your doubts!'**
+  String get step5Confirmation;
+
+  /// No description provided for @receiveConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Receive your confirmation and click \'Go to class\' to start in a few minutes'**
+  String get receiveConfirmation;
+
+  /// No description provided for @startNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Now!'**
+  String get startNow;
+
+  /// No description provided for @signInToBegin.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to begin your learning experience'**
+  String get signInToBegin;
 }
 
 class _AppLocalizationsDelegate
