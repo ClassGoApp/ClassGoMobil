@@ -70,7 +70,7 @@ class _StepTwoPersonalState extends State<StepTwoPersonal> {
   void _syncWithProvider() {
     context.read<OnboardingProvider>().updatePersonalData(
       dob: _selectedDob ?? DateTime(2000),
-      countryId: _selectedCountryId ?? 0,
+      countryId: _selectedCountryId,
       stateId: _selectedStateId,
       userCity: _cityController.text,
       userAddress: _addressController.text,

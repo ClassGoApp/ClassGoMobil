@@ -9,7 +9,6 @@ import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
 final String baseUrl = 'https://classgoapp.com/api';
-
 class TokenExpiredException implements Exception {
   final String message =
       "Tu sesión ha expirado. Por favor, inicia sesión de nuevo.";
@@ -1249,14 +1248,15 @@ Future<Map<String, dynamic>> updateProfile(
 
 Future<Map<String, dynamic>> submitIdentityVerification({
   required String token,
-  required String documentKey,
+  required String role,
   required String name,
   required String dateOfBirth,
   required int countryId,
   required int stateId,
   required String address,
   required File image,
-  required File document,
+  required File documentFront,
+  File? documentBack,
 }) async {
   try {
     var request = http.MultipartRequest(
@@ -1278,8 +1278,21 @@ Future<Map<String, dynamic>> submitIdentityVerification({
 
     request.files.add(await http.MultipartFile.fromPath('image', image.path));
 
-    request.files
-        .add(await http.MultipartFile.fromPath(documentKey, document.path));
+    // Para tutores: enviar ambas caras del carnet con nombres fijos
+    // Para estudiantes: enviar transcript
+    if (role == 'tutor') {
+      request.files.add(await http.MultipartFile.fromPath(
+          'identificationCardFront', documentFront.path));
+      
+      if (documentBack != null) {
+        request.files.add(await http.MultipartFile.fromPath(
+            'identificationCardBack', documentBack.path));
+      }
+    } else {
+      // Para estudiantes: usar transcript
+      request.files.add(await http.MultipartFile.fromPath(
+          'transcript', documentFront.path));
+    }
 
     final response = await http.Response.fromStream(await request.send());
     final decoded = jsonDecode(response.body);

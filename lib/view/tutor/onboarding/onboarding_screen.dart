@@ -99,7 +99,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         CustomToast.show(context, "Ingresa tu fecha de nacimiento", isSuccess: false);
         return;
       }
-      if (freshProvider.selectedCountryId == null) {
+      if (freshProvider.selectedCountryId == null || freshProvider.selectedCountryId == 0) {
         CustomToast.show(context, "Selecciona tu país", isSuccess: false);
         return;
       }
