@@ -24,6 +24,7 @@ import 'package:intl/intl.dart';
 
 import 'package:flutter_projects/view/components/animated_action_card.dart';
 import 'package:flutter_projects/view/components/pulsing_book_icon.dart';
+import 'package:flutter_projects/view/home/widgets/tutorial_carousel.dart';
 
 class DashboardStudent extends StatefulWidget {
   @override
@@ -494,6 +495,8 @@ class _DashboardStudentState extends State<DashboardStudent>
             ),
           ],
         ),
+        const SizedBox(height: 24),
+        const TutorialCarousel(),
       ],
     );
   }

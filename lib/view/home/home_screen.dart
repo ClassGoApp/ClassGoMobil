@@ -4,7 +4,7 @@ import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/home/widgets/categories_carousel.dart';
 import 'package:flutter_projects/view/home/widgets/home_drawer.dart';
 import 'package:flutter_projects/view/home/widgets/home_header.dart';
-import 'package:flutter_projects/view/home/widgets/pet_banner.dart';
+
 import 'package:flutter_projects/view/home/widgets/quick_actions_section.dart';
 import 'package:flutter_projects/view/home/widgets/trust_actions_row.dart';
 import 'package:flutter_projects/view/profile/profile_screen.dart';
@@ -87,8 +87,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   },
                 ),
-                const SizedBox(height: 25),
-                const MascotBanner(),
                 const SizedBox(height: 25),
                 const StatsBar(),
 
