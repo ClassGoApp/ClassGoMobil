@@ -145,12 +145,14 @@ class _AnimatedActionCardState extends State<AnimatedActionCard>
                       Text(
                         widget.subtitle,
                         textAlign: TextAlign.center,
+                        textScaleFactor: 0.85,
                         style: const TextStyle(
                           fontFamily: AppFonts.body,
                           fontSize: 12,
                           color: AppColors.textLightSecondary,
+                          height: 1.2,
                         ),
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],

@@ -122,6 +122,20 @@ dist/
 *.flv
 *.mov
 *.wmv
+flutter_*.png
+
+# Android signing keys (root level)
+android/key.json
+
+# Ruby/vendor
+vendor/
+.bundle/
+
+# Android build outputs
+android/build/
+
+# Certificate
+upload_certificate.pem
 
 # Maven
 target/

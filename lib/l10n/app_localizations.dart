@@ -3263,7 +3263,7 @@ abstract class AppLocalizations {
   /// No description provided for @learnInFiveSteps.
   ///
   /// In en, this message translates to:
-  /// **'Learn to use Instant Tutoring in 5 steps 🚀'**
+  /// **'Learn to use Instant Tutoring in 5 steps'**
   String get learnInFiveSteps;
 
   /// No description provided for @discoverHowToConnect.

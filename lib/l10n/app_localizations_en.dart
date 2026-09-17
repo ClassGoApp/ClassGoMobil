@@ -1756,7 +1756,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noMaterialSelected => 'Drag a file or click here to select it';
 
   @override
-  String get learnInFiveSteps => 'Learn to use Instant Tutoring in 5 steps 🚀';
+  String get learnInFiveSteps => 'Learn to use Instant Tutoring in 5 steps';
 
   @override
   String get discoverHowToConnect =>

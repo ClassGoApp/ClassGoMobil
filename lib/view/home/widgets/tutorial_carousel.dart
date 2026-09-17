@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'package:flutter/material.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/l10n/app_localizations.dart';
-import 'package:flutter_projects/view/auth/login_screen.dart';
 
 class TutorialCarousel extends StatefulWidget {
   const TutorialCarousel({super.key});
@@ -32,24 +30,18 @@ class _TutorialCarouselState extends State<TutorialCarousel>
       duration: const Duration(milliseconds: 500),
       vsync: this,
     );
-    // Inicializar fade controller en estado "forward" para que sea visible desde el inicio
     _fadeController.forward();
     _scaleController.forward();
     _startAutoScroll();
   }
 
   void _startAutoScroll() {
-    _autoScrollTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
-      if (mounted) {
-        if (_currentPage < 5) {
-          _pageController.nextPage(
-            duration: const Duration(milliseconds: 800),
-            curve: Curves.easeInOutCubic,
-          );
-        } else {
-          // Reiniciar al primer card
-          _pageController.jumpToPage(0);
-        }
+    _autoScrollTimer = Timer.periodic(const Duration(seconds: 8), (timer) {
+      if (mounted && _pageController.hasClients) {
+        _pageController.nextPage(
+          duration: const Duration(milliseconds: 800),
+          curve: Curves.easeInOutCubic,
+        );
       }
     });
   }
@@ -67,116 +59,152 @@ class _TutorialCarouselState extends State<TutorialCarousel>
     setState(() => _currentPage = page);
     _fadeController.forward(from: 0.0);
     _scaleController.forward(from: 0.0);
-  }
-
-  void _navigateToLogin() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => LoginScreen()),
-    );
+    
+    // Si llegamos al último item duplicado (index 6), volver al primero sin animación
+    if (page == 6) {
+      Future.delayed(const Duration(milliseconds: 800), () {
+        if (mounted && _pageController.hasClients) {
+          _pageController.jumpToPage(0);
+        }
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Column(
-        children: [
-          // --- PAGEVIEW ---
-          SizedBox(
-            height: 170,
-            child: PageView(
-              controller: _pageController,
-              onPageChanged: _onPageChanged,
-              children: [
-                _buildTutorialCard(
-                  icon: '🚀',
-                  title: l10n.learnInFiveSteps,
-                  subtitle: l10n.discoverHowToConnect,
-                  bgColor: AppColors.brandBlue.withOpacity(0.12),
-                  borderColor: AppColors.brandBlue.withOpacity(0.3),
-                  isIntro: true,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // --- TÍTULO Y DESCRIPCIÓN SUPERIOR ---
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.learnInFiveSteps,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : AppColors.brandBlue,
+                  fontSize: 16,
                 ),
-                _buildTutorialCard(
-                  flutterIcon: Icons.flash_on_rounded,
-                  title: l10n.step1TapInstant,
-                  subtitle: l10n.findInstantTutoringButton,
-                  bgColor: AppColors.brandCyan.withOpacity(0.12),
-                  borderColor: AppColors.brandCyan.withOpacity(0.3),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                l10n.discoverHowToConnect,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: isDark ? Colors.white70 : AppColors.textLightSecondary,
+                  fontSize: 12,
+                  height: 1.4,
                 ),
-                _buildTutorialCard(
-                  icon: '📚',
-                  title: l10n.step2ChooseSubject,
-                  subtitle: l10n.selectYourFavoriteSubject,
-                  bgColor: Color(0xFFFFA500).withOpacity(0.12),
-                  borderColor: Color(0xFFFFA500).withOpacity(0.3),
-                ),
-                _buildTutorialCard(
-                  icon: '👨‍🏫',
-                  title: l10n.step3ConnectTutor,
-                  subtitle: l10n.browseTutorsAndConnect,
-                  bgColor: AppColors.brandOrange.withOpacity(0.12),
-                  borderColor: AppColors.brandOrange.withOpacity(0.3),
-                ),
-                _buildTutorialCard(
-                  icon: '📸',
-                  title: l10n.step4ResolveDougbts,
-                  subtitle: l10n.getInstantAnswers,
-                  bgColor: Color(0xFFFF6B6B).withOpacity(0.12),
-                  borderColor: Color(0xFFFF6B6B).withOpacity(0.3),
-                ),
-                _buildTutorialCard(
-                  icon: '✨',
-                  title: l10n.step5Confirmation,
-                  subtitle: l10n.receiveConfirmation,
-                  bgColor: AppColors.brandBlue.withOpacity(0.15),
-                  borderColor: AppColors.brandBlue.withOpacity(0.3),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
+        ),
+        const SizedBox(height: 16),
 
-          const SizedBox(height: 24),
+        // --- CARRUSEL DE IMÁGENES/ICONOS ---
+        SizedBox(
+          height: 200,
+          child: PageView(
+            controller: _pageController,
+            onPageChanged: _onPageChanged,
+            children: [
+              _buildTutorialImage(
+                icon: '🚀',
+                title: l10n.learnInFiveSteps,
+                subtitle: l10n.discoverHowToConnect,
+                bgColor: AppColors.brandBlue.withOpacity(0.08),
+                borderColor: AppColors.brandBlue.withOpacity(0.2),
+              ),
+              _buildTutorialImage(
+                icon: '⚡',
+                title: l10n.step1TapInstant,
+                subtitle: l10n.findInstantTutoringButton,
+                bgColor: AppColors.brandCyan.withOpacity(0.08),
+                borderColor: AppColors.brandCyan.withOpacity(0.2),
+              ),
+              _buildTutorialImage(
+                icon: '📚',
+                title: l10n.step2ChooseSubject,
+                subtitle: l10n.selectYourFavoriteSubject,
+                bgColor: const Color(0xFFFFA500).withOpacity(0.08),
+                borderColor: const Color(0xFFFFA500).withOpacity(0.2),
+              ),
+              _buildTutorialImage(
+                icon: '👨‍🏫',
+                title: l10n.step3ConnectTutor,
+                subtitle: l10n.browseTutorsAndConnect,
+                bgColor: AppColors.brandOrange.withOpacity(0.08),
+                borderColor: AppColors.brandOrange.withOpacity(0.2),
+              ),
+              _buildTutorialImage(
+                icon: '📸',
+                title: l10n.step4ResolveDougbts,
+                subtitle: l10n.getInstantAnswers,
+                bgColor: const Color(0xFFFF6B6B).withOpacity(0.08),
+                borderColor: const Color(0xFFFF6B6B).withOpacity(0.2),
+              ),
+              _buildTutorialImage(
+                icon: '✨',
+                title: l10n.step5Confirmation,
+                subtitle: l10n.receiveConfirmation,
+                bgColor: AppColors.brandBlue.withOpacity(0.08),
+                borderColor: AppColors.brandBlue.withOpacity(0.2),
+              ),
+              // Repetir el primer item para crear efecto de loop infinito
+              _buildTutorialImage(
+                icon: '🚀',
+                title: l10n.learnInFiveSteps,
+                subtitle: l10n.discoverHowToConnect,
+                bgColor: AppColors.brandBlue.withOpacity(0.08),
+                borderColor: AppColors.brandBlue.withOpacity(0.2),
+              ),
+            ],
+          ),
+        ),
 
-          // --- DOTS INDICATORS ---
-          Row(
+        const SizedBox(height: 14),
+
+        // --- DOTS INDICATORS ---
+        Center(
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(
               6,
               (index) => AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
-                margin: const EdgeInsets.symmetric(horizontal: 6),
-                width: _currentPage == index ? 28 : 8,
-                height: 8,
+                margin: const EdgeInsets.symmetric(horizontal: 5),
+                width: (_currentPage % 6) == index ? 24 : 6,
+                height: 6,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(4),
-                  color: _currentPage == index
+                  borderRadius: BorderRadius.circular(3),
+                  color: (_currentPage % 6) == index
                       ? AppColors.brandBlue
-                      : AppColors.brandBlue.withOpacity(0.3),
+                      : AppColors.brandBlue.withOpacity(0.25),
                 ),
               ),
             ),
           ),
-
-
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  Widget _buildTutorialCard({
-    String? icon,
-    IconData? flutterIcon,
+  Widget _buildTutorialImage({
+    required String icon,
     required String title,
     required String subtitle,
     required Color bgColor,
     required Color borderColor,
-    bool isIntro = false,
-    bool showSignInButton = false,
-    VoidCallback? onSignInTap,
   }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return FadeTransition(
       opacity: _fadeController,
       child: ScaleTransition(
@@ -184,72 +212,49 @@ class _TutorialCarouselState extends State<TutorialCarousel>
           CurvedAnimation(parent: _scaleController, curve: Curves.easeOut),
         ),
         child: Container(
-          padding: const EdgeInsets.all(12.0),
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             color: bgColor,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: borderColor, width: 2),
-            boxShadow: [
-              BoxShadow(
-                color: borderColor.withOpacity(0.3),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              ),
-            ],
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: borderColor, width: 1.5),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // --- ICON/EMOJI ---
-              if (icon != null)
-                Text(
-                  icon,
-                  style: const TextStyle(fontSize: 40),
-                )
-              else if (flutterIcon != null)
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: AppColors.brandOrange,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Icon(
-                      flutterIcon,
-                      size: 28,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              const SizedBox(height: 6),
-
-              // --- TITLE ---
               Text(
-                title,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.brandBlue,
-                  fontFamily: AppFonts.heading,
+                icon,
+                style: const TextStyle(fontSize: 40),
+              ),
+              const SizedBox(height: 12),
+
+              Flexible(
+                child: Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : AppColors.brandBlue,
+                    fontSize: 14,
+                  ),
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
 
-              // --- SUBTITLE ---
-              Text(
-                subtitle,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: AppColors.textLightSecondary,
-                  height: 1.2,
-                  fontFamily: AppFonts.body,
+              // --- SUBTÍTULO ---
+              Flexible(
+                child: Text(
+                  subtitle,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: isDark ? Colors.white70 : AppColors.textLightSecondary,
+                    fontSize: 11,
+                    height: 1.3,
+                  ),
                 ),
               ),
             ],

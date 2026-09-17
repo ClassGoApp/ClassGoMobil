@@ -1766,7 +1766,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get learnInFiveSteps =>
-      'Aprende a usar Tutoría al Instante en 5 pasos 🚀';
+      'Aprende a usar Tutoría al Instante en 5 pasos';
 
   @override
   String get discoverHowToConnect =>
