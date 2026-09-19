@@ -871,24 +871,69 @@ class _RegistrationScreenState extends State<RegistrationScreen>
         throw Exception('No se pudo obtener el token de Google');
       }
 
+      // Función helper para separar nombre completo en nombre y apellido
+      Map<String, String> _splitDisplayName(String? displayName) {
+        if (displayName == null || displayName.trim().isEmpty) {
+          return {'firstName': '', 'lastName': ''};
+        }
+
+        final parts = displayName.trim().split(' ');
+        if (parts.length == 1) {
+          return {'firstName': parts[0], 'lastName': ''};
+        } else if (parts.length >= 2) {
+          return {
+            'firstName': parts[0],
+            'lastName': parts.sublist(1).join(' ')
+          };
+        }
+        return {'firstName': '', 'lastName': ''};
+      }
+
       String roleToUse = this.role;
+      String firstNameToUse = '';
+      String lastNameToUse = '';
+      String phoneNumberToUse = '';
+
       if (roleToUse.isEmpty || _isChecked != 'accepted') {
         if (!mounted) return;
-        final selectedRole = await showGoogleRoleSelectionDialog(context);
-        if (selectedRole == null) {
+        
+        final nameParts = _splitDisplayName(googleUser.displayName);
+        
+        final selectedData = await showGoogleRoleSelectionDialog(
+          context,
+          initialFirstName: nameParts['firstName'],
+          initialLastName: nameParts['lastName'],
+        );
+        
+        if (selectedData == null) {
           setState(() { _isLoading = false; });
           return;
         }
-        roleToUse = selectedRole;
+        roleToUse = selectedData['role'];
+        firstNameToUse = selectedData['first_name'];
+        lastNameToUse = selectedData['last_name'];
+        phoneNumberToUse = selectedData['phone_number'];
+      }
+
+      final requestBody = {
+        'id_token': idToken,
+        'role': roleToUse,
+      };
+
+      if (firstNameToUse.isNotEmpty) {
+        requestBody['first_name'] = firstNameToUse;
+      }
+      if (lastNameToUse.isNotEmpty) {
+        requestBody['last_name'] = lastNameToUse;
+      }
+      if (phoneNumberToUse.isNotEmpty) {
+        requestBody['phone_number'] = phoneNumberToUse;
       }
 
       final response = await http.post(
         Uri.parse('$baseUrl/auth/google'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'id_token': idToken,
-          'role': roleToUse,
-        }),
+        body: jsonEncode(requestBody),
       );
 
       if (response.statusCode != 200) {

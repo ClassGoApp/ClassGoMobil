@@ -2,18 +2,32 @@ import 'package:flutter/material.dart';
 import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 
-Future<String?> showGoogleRoleSelectionDialog(BuildContext context) {
-  return showDialog<String>(
+Future<Map<String, dynamic>?> showGoogleRoleSelectionDialog(
+  BuildContext context, {
+  String? initialFirstName,
+  String? initialLastName,
+}) {
+  return showDialog<Map<String, dynamic>>(
     context: context,
     barrierDismissible: false,
     builder: (BuildContext context) {
-      return const _GoogleRoleDialogContent();
+      return _GoogleRoleDialogContent(
+        initialFirstName: initialFirstName,
+        initialLastName: initialLastName,
+      );
     },
   );
 }
 
 class _GoogleRoleDialogContent extends StatefulWidget {
-  const _GoogleRoleDialogContent({Key? key}) : super(key: key);
+  final String? initialFirstName;
+  final String? initialLastName;
+
+  const _GoogleRoleDialogContent({
+    Key? key,
+    this.initialFirstName,
+    this.initialLastName,
+  }) : super(key: key);
 
   @override
   State<_GoogleRoleDialogContent> createState() => _GoogleRoleDialogContentState();
@@ -22,8 +36,35 @@ class _GoogleRoleDialogContent extends StatefulWidget {
 class _GoogleRoleDialogContentState extends State<_GoogleRoleDialogContent> {
   String _role = '';
   String _isChecked = '';
+  late TextEditingController _firstNameController;
+  late TextEditingController _lastNameController;
+  TextEditingController _phoneController = TextEditingController();
 
-  bool get _isValid => _role.isNotEmpty && _isChecked == 'accepted';
+  @override
+  void initState() {
+    super.initState();
+    _firstNameController = TextEditingController(text: widget.initialFirstName ?? '');
+    _lastNameController = TextEditingController(text: widget.initialLastName ?? '');
+  }
+
+  bool _isValidPhoneNumber(String phone) {
+    return RegExp(r'^[0-9+\-\s()]{8,15}$').hasMatch(phone);
+  }
+
+  bool get _isValid => _role.isNotEmpty &&
+                      _isChecked == 'accepted' &&
+                      _firstNameController.text.trim().isNotEmpty &&
+                      _lastNameController.text.trim().isNotEmpty &&
+                      _phoneController.text.trim().isNotEmpty &&
+                      _isValidPhoneNumber(_phoneController.text.trim());
+
+  @override
+  void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +121,80 @@ class _GoogleRoleDialogContentState extends State<_GoogleRoleDialogContent> {
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
+
+              // Campo de nombre
+              TextField(
+                controller: _firstNameController,
+                style: TextStyle(
+                  color: AppColors.whiteColor,
+                  fontFamily: 'SF-Pro-Text',
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Nombre',
+                  hintStyle: TextStyle(
+                    color: AppColors.whiteColor.withValues(alpha: 0.5),
+                    fontFamily: 'SF-Pro-Text',
+                  ),
+                  filled: true,
+                  fillColor: AppColors.whiteColor.withValues(alpha: 0.1),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Campo de apellido
+              TextField(
+                controller: _lastNameController,
+                style: TextStyle(
+                  color: AppColors.whiteColor,
+                  fontFamily: 'SF-Pro-Text',
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Apellido',
+                  hintStyle: TextStyle(
+                    color: AppColors.whiteColor.withValues(alpha: 0.5),
+                    fontFamily: 'SF-Pro-Text',
+                  ),
+                  filled: true,
+                  fillColor: AppColors.whiteColor.withValues(alpha: 0.1),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Campo de teléfono
+              TextField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                style: TextStyle(
+                  color: AppColors.whiteColor,
+                  fontFamily: 'SF-Pro-Text',
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Número de teléfono',
+                  hintStyle: TextStyle(
+                    color: AppColors.whiteColor.withValues(alpha: 0.5),
+                    fontFamily: 'SF-Pro-Text',
+                  ),
+                  filled: true,
+                  fillColor: AppColors.whiteColor.withValues(alpha: 0.1),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                ),
+              ),
+              const SizedBox(height: 24),
 
               Row(
                 children: [
@@ -103,7 +217,7 @@ class _GoogleRoleDialogContentState extends State<_GoogleRoleDialogContent> {
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
 
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -172,27 +286,32 @@ class _GoogleRoleDialogContentState extends State<_GoogleRoleDialogContent> {
               const SizedBox(height: 24),
 
               ElevatedButton(
-                onPressed: _isValid ? () => Navigator.pop(context, _role) : () {},
+                onPressed: _isValid ? () => Navigator.pop(context, {
+                  'role': _role,
+                  'first_name': _firstNameController.text.trim(),
+                  'last_name': _lastNameController.text.trim(),
+                  'phone_number': _phoneController.text.trim(),
+                }) : () {},
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _isValid ? AppColors.whiteColor : AppColors.whiteColor.withValues(alpha: 0.3),
                   disabledBackgroundColor: AppColors.whiteColor.withValues(alpha: 0.3),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   elevation: 0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30), 
+                    borderRadius: BorderRadius.circular(30),
                   ),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Image.asset(
-                      'assets/images/google_logo.png', 
+                      'assets/images/google_logo.png',
                       height: 24,
                       width: 24,
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      "Continue with Google", 
+                      "Continue with Google",
                       style: TextStyle(
                         color: _isValid ? AppColors.primaryGreen : AppColors.primaryGreen.withOpacity(0.5),
                         fontSize: FontSize.scale(context, 16),

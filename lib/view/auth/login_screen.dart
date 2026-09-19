@@ -358,15 +358,46 @@ class _LoginScreenState extends State<LoginScreen>
     print('_saveTokenToProvider completado');
   }
 
+  // Función helper para separar nombre completo en nombre y apellido
+  Map<String, String> _splitDisplayName(String? displayName) {
+    if (displayName == null || displayName.trim().isEmpty) {
+      return {'firstName': '', 'lastName': ''};
+    }
+
+    final parts = displayName.trim().split(' ');
+    if (parts.length == 1) {
+      return {'firstName': parts[0], 'lastName': ''};
+    } else if (parts.length >= 2) {
+      return {
+        'firstName': parts[0],
+        'lastName': parts.sublist(1).join(' ')
+      };
+    }
+    return {'firstName': '', 'lastName': ''};
+  }
+
   Future<Map<String, dynamic>?> _googleSignInRetry(
-      String idToken, BuildContext context) async {
-    final selectedRole = await showGoogleRoleSelectionDialog(context);
-    if (selectedRole == null) return null;
+      String idToken, BuildContext context, String? displayName) async {
+    final nameParts = _splitDisplayName(displayName);
+    
+    final selectedData = await showGoogleRoleSelectionDialog(
+      context,
+      initialFirstName: nameParts['firstName'],
+      initialLastName: nameParts['lastName'],
+    );
+    
+    if (selectedData == null) return null;
 
     final retryResponse = await http.post(
       Uri.parse('$baseUrl/auth/google'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'id_token': idToken, 'role': selectedRole}),
+      body: jsonEncode({
+        'id_token': idToken,
+        'role': selectedData['role'],
+        'first_name': selectedData['first_name'],
+        'last_name': selectedData['last_name'],
+        'phone_number': selectedData['phone_number'],
+      }),
     );
     if (retryResponse.statusCode != 200) {
       throw Exception(retryResponse.body);
@@ -418,7 +449,7 @@ class _LoginScreenState extends State<LoginScreen>
         final errorMsg = (errorBody['message'] as String?) ?? '';
         if (errorMsg.contains('no encontrado') || errorMsg.contains('not found')) {
           if (!mounted) return;
-          final retryData = await _googleSignInRetry(idToken, context);
+          final retryData = await _googleSignInRetry(idToken, context, googleUser.displayName);
           if (retryData == null) {
             setState(() { _isLoading = false; });
             return;
@@ -436,7 +467,7 @@ class _LoginScreenState extends State<LoginScreen>
         final userMap = loginData['user'];
         if (userMap == null || userMap['role'] == null || userMap['profile'] == null) {
           if (!mounted) return;
-          final retryData = await _googleSignInRetry(idToken, context);
+          final retryData = await _googleSignInRetry(idToken, context, googleUser.displayName);
           if (retryData == null) {
             setState(() { _isLoading = false; });
             return;
