@@ -97,7 +97,6 @@ lib/generated_plugin_registrant.dart
 # Firebase
 google-services.json
 GoogleService-Info.plist
-lib/config/firebase_options.dart
 
 # API Keys and sensitive data
 **/lib/api_structure/config/api_keys.dart
