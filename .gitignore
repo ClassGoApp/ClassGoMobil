@@ -96,7 +96,7 @@ lib/generated_plugin_registrant.dart
 
 # Firebase
 google-services.json
-GoogleService-Info.plist
+# GoogleService-Info.plist - NECESARIO para iOS Firebase, se incluye en el repo
 
 # API Keys and sensitive data
 **/lib/api_structure/config/api_keys.dart
