@@ -320,6 +320,36 @@ abstract class AppLocalizations {
   /// **'My Calendar'**
   String get calendarTitle;
 
+  /// No description provided for @googleCalendarTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Calendar'**
+  String get googleCalendarTitle;
+
+  /// No description provided for @googleCalendarConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect your calendar to sync tutoring sessions'**
+  String get googleCalendarConnect;
+
+  /// No description provided for @googleCalendarConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected'**
+  String get googleCalendarConnected;
+
+  /// No description provided for @googleCalendarConnectButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get googleCalendarConnectButton;
+
+  /// No description provided for @googleCalendarError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not connect to Google Calendar'**
+  String get googleCalendarError;
+
   /// No description provided for @historyTitle.
   ///
   /// In en, this message translates to:

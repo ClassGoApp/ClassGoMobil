@@ -123,6 +123,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendarTitle => 'My Calendar';
 
   @override
+  String get googleCalendarTitle => 'Google Calendar';
+
+  @override
+  String get googleCalendarConnect =>
+      'Connect your calendar to sync tutoring sessions';
+
+  @override
+  String get googleCalendarConnected => 'Connected';
+
+  @override
+  String get googleCalendarConnectButton => 'Connect';
+
+  @override
+  String get googleCalendarError => 'Could not connect to Google Calendar';
+
+  @override
   String get historyTitle => 'Tutoring History';
 
   @override

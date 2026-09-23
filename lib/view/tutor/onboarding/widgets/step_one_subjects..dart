@@ -80,6 +80,7 @@ class _StepOneSubjectsState extends State<StepOneSubjects> {
         children: [
           _buildHeader(),
           const SizedBox(height: 24),
+          
           _buildSearchBar(subjectsProvider, auth),
           const SizedBox(height: 30),
           

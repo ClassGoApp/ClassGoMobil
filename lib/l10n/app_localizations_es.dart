@@ -123,6 +123,22 @@ class AppLocalizationsEs extends AppLocalizations {
   String get calendarTitle => 'Mi Calendario';
 
   @override
+  String get googleCalendarTitle => 'Google Calendar';
+
+  @override
+  String get googleCalendarConnect =>
+      'Conecta tu calendario para sincronizar tutorías';
+
+  @override
+  String get googleCalendarConnected => 'Conectado';
+
+  @override
+  String get googleCalendarConnectButton => 'Conectar';
+
+  @override
+  String get googleCalendarError => 'No se pudo conectar con Google Calendar';
+
+  @override
   String get historyTitle => 'Historial de Tutorías';
 
   @override

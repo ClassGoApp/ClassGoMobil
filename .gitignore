@@ -128,3 +128,42 @@ target/
 # Unit test reports
 TEST*.xml
 classgofirebase.json
+
+# Build and IDE artifacts to ignore
+.gradle/
+build/
+*.apk
+*.aab
+*.dill
+.flutter-plugins-dependencies
+
+# Android build artifacts
+android/.gradle
+android/app/build/
+android/build/
+android/.cxx/
+android/.kotlin/
+local.properties
+
+# iOS build artifacts
+ios/Pods/
+ios/Podfile.lock
+ios/Runner.xcworkspace/
+ios/.symlinks/
+ios/Flutter/Flutter.podspec
+
+# Generated files (Flutter)
+lib/generated_plugin_registrant.dart
+lib/l10n/app_localizations*.dart
+
+# Local environment and keys
+*.keystore
+debug.keystore
+
+# VS Code workspace settings (optional per-user)
+.vscode/settings.json
+.vscode/launch.json
+
+# macOS
+.DS_Store
+**/.DS_Store

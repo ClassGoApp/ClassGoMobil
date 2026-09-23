@@ -5,6 +5,7 @@ import 'package:flutter_projects/view/home/widgets/suport_screen.dart';
 import 'package:flutter_projects/view/tutor/features/profile/widgets/logout_section.dart';
 import 'package:flutter_projects/view/tutor/features/profile/widgets/price_section.dart';
 import 'package:flutter_projects/view/tutor/features/profile/widgets/qr_payment_screen.dart';
+import 'package:flutter_projects/view/tutor/onboarding/widgets/google_calendar_button.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_projects/l10n/app_localizations.dart';
@@ -534,6 +535,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
         ]),
         const SizedBox(height: 12),
         const TutorPriceSection(),
+        const SizedBox(height: 12),
+        const GoogleCalendarButton(),
         const SizedBox(height: 12),
         _buildListTile(AppLocalizations.of(context)!.qrPaymentMethod, Icons.qr_code_scanner_rounded,
             mainTextColor, innerBgColor, onTap: () {

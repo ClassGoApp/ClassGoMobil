@@ -377,7 +377,49 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> setUserData(Map<String, dynamic> userData) async {
-    print('setUserData llamado con datos: $userData');
+    // Preservar datos de Google Calendar si existen en userData actual
+    // PERO RESPETAR si el usuario los desconectó explícitamente hace poco
+    if (_userData != null && _userData!['user'] != null) {
+      final currentUser = _userData!['user'];
+      final newUser = userData['user'] ?? userData;
+      
+      // Verificar si el usuario desconectó recientemente
+      final disconnectTime = currentUser['calendar_disconnected_at'];
+      bool userDisconnectedRecently = false;
+      
+      if (disconnectTime != null && currentUser['calendar_connected'] == false) {
+        try {
+          final disconnectDateTime = DateTime.parse(disconnectTime.toString());
+          final secondsAgo = DateTime.now().difference(disconnectDateTime).inSeconds;
+          // Respetar desconexión durante 2 minutos
+          userDisconnectedRecently = secondsAgo < 120;
+        } catch (e) {
+          // Error parsing timestamp
+        }
+      }
+      
+      // Si el backend retorna calendar_connected: true pero el usuario desconectó hace poco, ignorarlo
+      if (userDisconnectedRecently && newUser['calendar_connected'] == true) {
+        newUser['calendar_connected'] = false;
+        newUser['calendar_info'] = null;
+      }
+      
+      // Si los nuevos datos no tienen calendar_connected pero los actuales sí, preservar
+      // PERO NO si calendar_connected es explícitamente false (desconexión) y fue reciente
+      if (newUser['calendar_connected'] == null && currentUser['calendar_connected'] != null && !userDisconnectedRecently) {
+        newUser['calendar_connected'] = currentUser['calendar_connected'];
+      }
+      
+      if (newUser['calendar_info'] == null && currentUser['calendar_info'] != null && !userDisconnectedRecently) {
+        newUser['calendar_info'] = currentUser['calendar_info'];
+      }
+      
+      // Si pasó el tiempo de desconexión reciente, limpiar el timestamp
+      if (disconnectTime != null && !userDisconnectedRecently) {
+        print('🧹 [AuthProvider] Limpiando timestamp de desconexión (pasó el tiempo)');
+        newUser.remove('calendar_disconnected_at');
+      }
+    }
 
     _userData = userData;
 
@@ -385,6 +427,10 @@ class AuthProvider with ChangeNotifier {
     await prefs.setString('userData', jsonEncode(userData));
 
     print('Datos de usuario guardados en memoria');
+    if (_userData!['user'] != null) {
+      print('📊 [AuthProvider] calendar_connected: ${_userData!['user']!['calendar_connected']}');
+      print('📊 [AuthProvider] calendar_info: ${_userData!['user']!['calendar_info']}');
+    }
 
     // 🔥 NUEVO: Configurar topics según rol
     String? role = userRole;

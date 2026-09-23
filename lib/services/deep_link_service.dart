@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:app_links/app_links.dart';
 import 'package:flutter_projects/helpers/simple_deep_link_handler.dart';
+import 'package:provider/provider.dart';
 
 class DeepLinkService {
   static final DeepLinkService _instance = DeepLinkService._internal();
@@ -21,30 +22,36 @@ class DeepLinkService {
       // Manejo en frío (app cerrada)
       final initialUri = await _appLinks!.getInitialAppLink();
       if (initialUri != null) {
-        print('DeepLinkService: initialUri detectado: $initialUri');
-        await SimpleDeepLinkHandler.handleVerificationLink(
-            context, initialUri.toString());
+        await _handleDeepLink(context, initialUri.toString());
       }
       // Manejo en caliente (app abierta)
       _linkSub = _appLinks!.uriLinkStream.listen((Uri? uri) async {
         if (uri != null) {
-          print('DeepLinkService: uriLinkStream detectado: $uri');
-          await SimpleDeepLinkHandler.handleVerificationLink(
-              context, uri.toString());
+          await _handleDeepLink(context, uri.toString());
         }
       }, onError: (err) {
-        print('DeepLinkService: error en uriLinkStream: $err');
+        // Error in deep link stream
       });
-      print('Deep link service inicializado y escuchando links (app_links)');
+      print('Deep link service inicializado');
     } catch (e) {
       print('Error al inicializar deep link service: $e');
+    }
+  }
+
+  /// Maneja un deep link - solo para verificación de email
+  Future<void> _handleDeepLink(BuildContext context, String link) async {
+    try {
+      // Manejo de verificación de email
+      await SimpleDeepLinkHandler.handleVerificationLink(context, link);
+    } catch (e) {
+      print('Error al manejar deep link: $e');
     }
   }
 
   /// Maneja un deep link manualmente
   Future<void> handleDeepLink(BuildContext context, String link) async {
     try {
-      await SimpleDeepLinkHandler.handleVerificationLink(context, link);
+      await _handleDeepLink(context, link);
     } catch (e) {
       print('Error al manejar deep link: $e');
     }
@@ -56,3 +63,4 @@ class DeepLinkService {
     _linkSub?.cancel();
   }
 }
+

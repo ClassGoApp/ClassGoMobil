@@ -143,6 +143,22 @@ class _DashboardTutorState extends State<DashboardTutor>
 
         if (response['status'] == 200 && response['data'] != null) {
           final List<dynamic> slotsData = response['data'] as List<dynamic>;
+          
+          // Extraer calendar_connected y calendar_info si vienen en la respuesta
+          if (response.containsKey('calendar_connected') || response.containsKey('calendar_info')) {
+            final userDataToMerge = {
+              'calendar_connected': response['calendar_connected'],
+              'calendar_info': response['calendar_info'],
+            };
+            
+            // Obtener userData actual y mezclarlo con los nuevos datos
+            if (authProvider.userData != null && authProvider.userData!['user'] != null) {
+              final currentUserData = authProvider.userData!;
+              currentUserData['user'].addAll(userDataToMerge);
+              await authProvider.setUserData(currentUserData);
+            }
+          }
+          
           if (mounted) {
             setState(() {
               _availableSlots = slotsData.cast<Map<String, dynamic>>();
@@ -326,6 +342,15 @@ class _DashboardTutorState extends State<DashboardTutor>
 
             // Actualizar también en el AuthProvider para mantener sincronización
             authProvider.updateProfileImage(cleanUrl);
+          }
+
+          // Extraer calendar_connected y calendar_info de la respuesta
+          if (profileData.containsKey('calendar_connected') || profileData.containsKey('calendar_info')) {
+            if (authProvider.userData != null && authProvider.userData!['user'] != null) {
+              authProvider.userData!['user']['calendar_connected'] = profileData['calendar_connected'];
+              authProvider.userData!['user']['calendar_info'] = profileData['calendar_info'];
+              await authProvider.setUserData(authProvider.userData!);
+            }
           }
         }
       }
