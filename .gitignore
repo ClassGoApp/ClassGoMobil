@@ -133,9 +133,18 @@ vendor/
 
 # Android build outputs
 android/build/
+android/app/.cxx/
 
 # Certificate
 upload_certificate.pem
+
+# Ruby/Fastlane
+Gemfile
+Gemfile.lock
+android/fastlane/
+
+# Local test scripts
+test_*.sh
 
 # Maven
 target/
