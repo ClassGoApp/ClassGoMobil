@@ -11,29 +11,9 @@ workflows:
           flutter clean
           rm -rf ~/Library/Caches/org.swift.swiftpm/
           rm -rf ~/Library/Developer/Xcode/DerivedData/
-      - name: Disable SPM and use CocoaPods
-        script: |
-          cd ios
-          # Crear/actualizar Podfile para forzar CocoaPods
-          cat > Podfile.local <<'EOF'
-platform :ios, '15.0'
-
-post_install do |installer|
-  installer.pods_project.targets.each do |target|
-    flutter_additional_ios_build_settings(target)
-    target.build_configurations.each do |config|
-      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= [
-        '$(inherited)',
-        'FIREBASE_ANALYTICS_DISABLED=1',
-      ]
-    end
-  end
-end
-EOF
-          cd ..
       - name: Get Flutter dependencies
         script: flutter pub get
-      - name: Build iOS app
+      - name: Build iOS app (without SPM)
         script: flutter build ios --debug --simulator --no-swift-package-manager
     artifacts:
       - build/ios/iphonesimulator/*.app
