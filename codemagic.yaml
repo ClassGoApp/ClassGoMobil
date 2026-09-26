@@ -16,7 +16,7 @@ workflows:
       - name: Build iOS app
         script: flutter build ios --debug --simulator
     artifacts:
-      - build/ios/iphoneos/*.app
+      - build/ios/iphonesimulator/*.app
   
   android_build:
     name: ClassGo Android Build
