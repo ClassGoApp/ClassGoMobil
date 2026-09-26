@@ -56,31 +56,24 @@ void main() async {
 
   bool firebaseInitialized = false;
   try {
-    // Detectar si está en simulator
-    bool isSimulator = false;
-    try {
-      isSimulator = (Platform.isIOS && Platform.operatingSystemVersion.majorVersion == 0) || 
-                    (Platform.isAndroid); // Simplificado para detectar ambiente de prueba
-    } catch (_) {}
-    
-    // En simulator, saltar Firebase
-    if (!isSimulator) {
-      if (Firebase.apps.isEmpty) {
-        try {
-          await Firebase.initializeApp(
-            options: DefaultFirebaseOptions.currentPlatform,
-          );
-        } on FirebaseException catch (e) {
-          if (e.code != 'duplicate-app') {
-            rethrow;
-          }
+    // Intentar inicializar Firebase
+    if (Firebase.apps.isEmpty) {
+      try {
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
+        firebaseInitialized = true;
+        print("¡Firebase inicializado correctamente!");
+      } on FirebaseException catch (e) {
+        if (e.code != 'duplicate-app') {
+          print("⚠️ Error de Firebase: ${e.code} - ${e.message}");
+          firebaseInitialized = false;
+        } else {
+          firebaseInitialized = true;
         }
       }
-      firebaseInitialized = true;
-      print("¡Firebase inicializado correctamente!");
     } else {
-      print("⚠️ Simulator detectado - Firebase deshabilitado");
-      firebaseInitialized = false;
+      firebaseInitialized = true;
     }
   } catch (e, stacktrace) {
     print("⚠️ Error al inicializar Firebase (continúa la app): $e");
