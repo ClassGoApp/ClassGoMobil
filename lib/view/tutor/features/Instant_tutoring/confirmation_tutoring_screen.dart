@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/view/tutor/features/Instant_tutoring/expiret_tutoring_screen.dart';
 import 'package:flutter_projects/view/tutor/features/Instant_tutoring/reject_tutoting_screen.dart';
@@ -16,7 +15,8 @@ class VistaConfirmacion extends StatefulWidget {
 }
 
 class _VistaConfirmacionState extends State<VistaConfirmacion> {
-  StreamSubscription<RemoteMessage>? _messageSub;
+  // StreamSubscription<RemoteMessage>? _messageSub; // Firebase disabled
+  StreamSubscription<dynamic>? _messageSub;
   bool _yaRedirigio = false;
 
   @override

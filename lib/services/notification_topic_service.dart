@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_projects/main.dart';
@@ -14,7 +13,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_projects/view/tutor/features/agenda/schedule_request_detail_screen.dart';
 
 @pragma('vm:entry-point')
-Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+// COMMENTED: Firebase disabled for simulator compatibility
+// Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+Future<void> firebaseMessagingBackgroundHandler(dynamic message) async {
+  return; // Firebase disabled for simulator
+  /*
   print('🔔 [FCM Background] Notificación recibida en segundo plano: ${message.data}');
 
   final data = message.data;
@@ -87,10 +90,13 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       print('❌ [FCM Background] Error al guardar notificación flexible: $e');
     }
   }
+  */
 }
 
 class NotificationTopicService {
-  static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  // COMMENTED: Firebase disabled for simulator compatibility
+  // static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  static dynamic _messaging; // Placeholder to avoid compile errors
   static const String _tutorTopic = 'tutor';
   static const String _tutorLegacyTopic = 'tutores';
   static const String _studentTopic = 'estudiantes';
@@ -107,46 +113,9 @@ class NotificationTopicService {
 
   /// Suscribe al usuario según su rol
   static Future<void> configureTopics(String rol) async {
-    try {
-      await _setupNativeNotificationClickBridge();
-
-      final normalizedRole = rol.trim().toLowerCase();
-
-      // Siempre limpiamos primero para evitar suscripciones obsoletas en paralelo
-      await Future.wait([
-        _messaging.unsubscribeFromTopic(_tutorTopic),
-        _messaging.unsubscribeFromTopic(_tutorLegacyTopic),
-        _messaging.unsubscribeFromTopic(_studentTopic),
-      ]).timeout(const Duration(seconds: 3), onTimeout: () {
-        print('Timeout al desuscribirse de topics antiguos.');
-        return [];
-      });
-
-      if (normalizedRole == 'tutor') {
-        await Future.wait([
-          _messaging.subscribeToTopic(_tutorTopic),
-          _messaging.subscribeToTopic(_tutorLegacyTopic),
-        ]).timeout(const Duration(seconds: 3), onTimeout: () {
-          print('Timeout al suscribirse a topics de tutor.');
-          return [];
-        });
-        await _persistCurrentRole('tutor');
-        print(
-            'Suscrito a topics: $_tutorTopic, $_tutorLegacyTopic (rol tutor)');
-      } else if (normalizedRole == 'student' ||
-          normalizedRole == 'estudiante') {
-        await _messaging.subscribeToTopic(_studentTopic).timeout(const Duration(seconds: 3), onTimeout: () {
-          print('Timeout al suscribirse a topic de estudiante.');
-        });
-        await _persistCurrentRole('student');
-        print('Suscrito a topic: $_studentTopic (rol student)');
-      } else {
-        await _persistCurrentRole('unknown');
-        print(
-            'Rol no reconocido para topics: $rol. Se dejaron todos los topics desuscritos.');
-      }
-
-      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    // Firebase disabled for simulator - skipping configuration
+    print('⚠️ Firebase disabled - configureTopics skipped');
+    return;
         print('🔔 Notificación en primer plano recibida: ${message.data}');
 
         final data = message.data;
@@ -355,73 +324,32 @@ class NotificationTopicService {
 
   /// Desuscribir de todos (por ejemplo al hacer logout)
   static Future<void> unsubscribeAll() async {
-    try {
-      // Ejecutar desuscripciones en paralelo para no bloquear el flujo
-      await Future.wait([
-        _messaging.unsubscribeFromTopic(_tutorTopic),
-        _messaging.unsubscribeFromTopic(_tutorLegacyTopic),
-        _messaging.unsubscribeFromTopic(_studentTopic),
-      ]).timeout(const Duration(seconds: 2), onTimeout: () => []);
-
-      await _persistCurrentRole('none');
-      print('Desuscrito de todos los topics (paralelo)');
-    } catch (e) {
-      print('Error al desuscribirse: $e');
-    }
+    print('⚠️ Firebase disabled - unsubscribeAll skipped');
+    return;
   }
 
   /// Suscribirse manualmente a un topic (por si luego agregas más)
   static Future<void> subscribe(String topic) async {
-    try {
-      await _messaging.subscribeToTopic(topic);
-      print('Suscrito a: $topic');
-    } catch (e) {
-      print('Error al suscribirse: $e');
-    }
+    print('⚠️ Firebase disabled - subscribe skipped');
+    return;
   }
 
   /// Desuscribirse manualmente
   static Future<void> unsubscribe(String topic) async {
-    try {
-      await _messaging.unsubscribeFromTopic(topic);
-      print('Desuscrito de: $topic');
-    } catch (e) {
-      print('Error al desuscribirse: $e');
-    }
+    print('⚠️ Firebase disabled - unsubscribe skipped');
+    return;
   }
 
   /// Suscribirse al topic global mass_notification
   static Future<void> subscribeToMassNotification() async {
-    try {
-      await _messaging.subscribeToTopic('mass_notification').timeout(const Duration(seconds: 3), onTimeout: () {
-        print('Timeout al suscribirse a mass_notification.');
-      });
-      print('Suscrito al topic global: mass_notification');
-    } catch (e) {
-      print('Error al suscribirse a mass_notification: $e');
-    }
+    print('⚠️ Firebase disabled - subscribeToMassNotification skipped');
+    return;
   }
 
   // Pedir Permisos para android
   static Future<void> requestPermissionOnFirstLaunch() async {
-    final prefs = await SharedPreferences.getInstance();
-    final alreadyAsked = prefs.getBool(_permissionAskedKey) ?? false;
-
-    if (alreadyAsked) {
-      print('Permiso de notificaciones ya fue solicitado anteriormente');
-      return;
-    }
-
-    final settings = await _messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-      provisional: false,
-    );
-
-    print('Permiso de notificaciones FCM: ${settings.authorizationStatus}');
-    await prefs.setBool(_permissionAskedKey, true);
-  }
+    print('⚠️ Firebase disabled - requestPermissionOnFirstLaunch skipped');
+    return;
 
   static void _handleNavigation(
     RemoteMessage message,

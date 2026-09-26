@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/view/tutor/features/Instant_tutoring/ready_tutoring_screen.dart';
 
@@ -12,7 +11,8 @@ class VistaFuisteElegido extends StatefulWidget {
 }
 
 class _VistaFuisteElegidoState extends State<VistaFuisteElegido> {
-  StreamSubscription<RemoteMessage>? _messageSub;
+  // StreamSubscription<RemoteMessage>? _messageSub; // Firebase disabled
+  StreamSubscription<dynamic>? _messageSub;
   bool _yaRedirigio = false;
 
   @override

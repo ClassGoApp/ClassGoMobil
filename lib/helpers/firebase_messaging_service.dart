@@ -1,4 +1,5 @@
-import 'package:firebase_messaging/firebase_messaging.dart';
+// FIREBASE MESSAGING SERVICE DISABLED - USE notification_topic_service.dart INSTEAD
+// import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/view/student/favorite_tutor/favorite_tutors_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -7,7 +8,8 @@ import 'package:flutter_projects/view/detailPage/detail_screen.dart';
 // ESTE SERVICIO NO SE USA EN NINGUN LADO, VERIFICAR Y ELIMINAR
 
 class FirebaseMessagingService {
-  static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  // Firebase disabled for simulator compatibility
+  static final dynamic _messaging = null;
   static const String _tutorTopic = 'tutor';
   static const String _tutorLegacyTopic = 'tutores';
   static const String _permissionAskedKey = 'notification_permission_asked';

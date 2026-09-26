@@ -8,7 +8,6 @@ import 'package:flutter_projects/view/tutor/certificate/certificate_detail.dart'
 import 'package:flutter_projects/view/tutor/experience/experience_detail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_projects/view/tutor/education/education_details.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_projects/services/notification_topic_service.dart';
 
@@ -345,6 +344,8 @@ class AuthProvider with ChangeNotifier {
     print('Listeners notificados en setAuthToken');
 
     // Enviar el token FCM al backend
+    // COMENTADO: Firebase disabled for simulator compatibility
+    /*
     try {
       print('Obteniendo token FCM...');
       String? fcmToken = await FirebaseMessaging.instance.getToken();
@@ -374,6 +375,7 @@ class AuthProvider with ChangeNotifier {
       }
     });
     print('Listener de token FCM configurado');
+    */
   }
 
   Future<void> setUserData(Map<String, dynamic> userData) async {
@@ -898,10 +900,11 @@ class AuthProvider with ChangeNotifier {
 
         try {
           print('Desvinculando FCM Token en backend...');
-          String? currentFcm = await FirebaseMessaging.instance.getToken();
-          if (currentFcm != null) {
-            await api_service.detachFcmToken(currentFcm, token);
-          }
+          // COMENTADO: Firebase disabled for simulator compatibility
+          // String? currentFcm = await FirebaseMessaging.instance.getToken();
+          // if (currentFcm != null) {
+          //   await api_service.detachFcmToken(currentFcm, token);
+          // }
         } catch (e) {
           print('Error al desvincular FCM token: $e');
         }
