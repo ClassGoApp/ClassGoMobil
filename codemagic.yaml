@@ -1,0 +1,35 @@
+workflows:
+  classgorun:
+    name: ClassGo iOS & Android Build
+    instance_type: mac_mini_m1
+    max_build_duration: 120
+    environment:
+      ios_signing:
+        provisioning_profiles:
+          - classgo_production_profile
+        certificates:
+          - classgo_certificate
+      vars:
+        BUNDLE_ID: "com.neurasoft.classgo"
+      flutter: stable
+    scripts:
+      - name: Clean Flutter & SPM cache
+        script: |
+          flutter clean
+          rm -rf ~/Library/Caches/org.swift.swiftpm/
+          rm -rf ~/Library/Developer/Xcode/DerivedData/
+      - name: Get Flutter dependencies
+        script: flutter pub get
+      - name: Build iOS app
+        script: flutter build ios --debug --simulator
+      - name: Build Android app
+        script: flutter build apk --debug
+    artifacts:
+      - build/ios/iphoneos/*.app
+      - build/app/outputs/flutter-apk/app-debug.apk
+    publishing:
+      app_store_connect:
+        auth: key
+        key_id: $APP_STORE_KEY_ID
+        issuer_id: $APP_STORE_ISSUER_ID
+        key: $APP_STORE_API_KEY
