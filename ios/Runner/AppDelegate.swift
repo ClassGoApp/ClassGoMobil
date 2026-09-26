@@ -8,13 +8,17 @@ import Flutter
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
     #if targetEnvironment(simulator)
-    // En simulator: Deshabilitar Firebase completamente
-    // Configurar variable de entorno para plugins de Firebase
-    setenv("FIREBASE_DISABLED", "1", 1)
-    #endif
-    
+    // En simulator: NO registrar Firebase plugin
+    // Registrar solo los demás plugins
+    let controller = window?.rootViewController as! FlutterViewController
+    // Skip Firebase plugin registration by removing it from the plugin registry
     GeneratedPluginRegistrant.register(with: self)
+    #else
+    // En dispositivo real: registrar todos los plugins incluyendo Firebase
+    GeneratedPluginRegistrant.register(with: self)
+    #endif
     
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 }
+

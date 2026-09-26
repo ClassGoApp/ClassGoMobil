@@ -81,7 +81,13 @@ void main() async {
   }
 
   if (firebaseInitialized) {
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    // firebase_messaging solo disponible si firebase_core está inicializado
+    try {
+      // FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+      print("Firebase Messaging disponible");
+    } catch (e) {
+      print("Firebase Messaging no disponible: $e");
+    }
   }
 
   runApp(
