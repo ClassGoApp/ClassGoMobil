@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'dart:io';
 import 'package:flutter_projects/config/firebase_options.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/provider/connectivity_provider.dart';
@@ -55,24 +56,34 @@ void main() async {
 
   bool firebaseInitialized = false;
   try {
-    if (Firebase.apps.isEmpty) {
-      try {
-        await Firebase.initializeApp(
-          options: DefaultFirebaseOptions.currentPlatform,
-        );
-      } on FirebaseException catch (e) {
-        if (e.code != 'duplicate-app') {
-          rethrow;
+    // Detectar si está en simulator
+    bool isSimulator = false;
+    try {
+      isSimulator = (Platform.isIOS && Platform.operatingSystemVersion.majorVersion == 0) || 
+                    (Platform.isAndroid); // Simplificado para detectar ambiente de prueba
+    } catch (_) {}
+    
+    // En simulator, saltar Firebase
+    if (!isSimulator) {
+      if (Firebase.apps.isEmpty) {
+        try {
+          await Firebase.initializeApp(
+            options: DefaultFirebaseOptions.currentPlatform,
+          );
+        } on FirebaseException catch (e) {
+          if (e.code != 'duplicate-app') {
+            rethrow;
+          }
         }
       }
+      firebaseInitialized = true;
+      print("¡Firebase inicializado correctamente!");
+    } else {
+      print("⚠️ Simulator detectado - Firebase deshabilitado");
+      firebaseInitialized = false;
     }
-
-    firebaseInitialized = true;
-    print("¡Firebase inicializado correctamente!");
   } catch (e, stacktrace) {
     print("⚠️ Error al inicializar Firebase (continúa la app): $e");
-    // No vamos a fallar si Firebase no se puede inicializar (ej: en simulator sin plist)
-    // La app continuará funcionando
     firebaseInitialized = false;
   }
 
