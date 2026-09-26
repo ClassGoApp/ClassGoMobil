@@ -26,45 +26,13 @@ class _VistaConfirmacionState extends State<VistaConfirmacion> {
   }
 
   void _escucharNotificaciones() {
-    _messageSub = FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      final data = message.data;
-
-      if (!mounted || _yaRedirigio) return;
-
-      if (data['screen'] == 'tutor_rechazado') {
-        _yaRedirigio = true;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                const VistaOtroTutor(), // Asegúrate de tener este import
-          ),
-        );
-      } else if (data['screen'] == 'tutor_expirado') {
-        _yaRedirigio = true;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                const VistaSolicitudExpirada(), // Asegúrate de tener este import
-          ),
-        );
-      } else if (data['screen'] == 'tutor_aceptado') {
-        _yaRedirigio = true;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                VistaFuisteElegido(), // Crea esta pantalla si no existe
-          ),
-        );
-      }
-    });
+    // Firebase disabled for simulator compatibility
+    print('⚠️ Firebase disabled - _escucharNotificaciones skipped');
   }
 
   @override
   void dispose() {
-    _messageSub?.cancel();
+    // Firebase disabled - no subscription to cancel
     super.dispose();
   }
 

@@ -22,46 +22,13 @@ class _VistaFuisteElegidoState extends State<VistaFuisteElegido> {
   }
 
   void _escucharNotificaciones() {
-    _messageSub = FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      final data = message.data;
-      String enlaceFinal = '';
-      if (!mounted || _yaRedirigio) return;
-
-      if (data['screen'] == 'tutoria_lista') {
-        _yaRedirigio = true;
-        try {
-          var decodificado = data['data_tutor'];
-          if (decodificado != null) {
-            // 2. Si viene como texto, lo decodificamos
-            if (decodificado is String) {
-              decodificado = jsonDecode(decodificado);
-
-              if (decodificado is String) {
-                decodificado = jsonDecode(decodificado);
-              }
-            }
-            if (decodificado is Map) {
-              // Buscamos ambos nombres por si acaso
-              enlaceFinal = decodificado['meet_link'] ??
-                  decodificado['meeting_link'] ??
-                  '';
-            }
-          }
-          Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) => VistaTutoriaLista(meetLink: enlaceFinal),
-              ));
-        } catch (e) {
-          print('Error al parsear data_tutor: $e');
-        }
-      }
-    });
+    // Firebase disabled for simulator compatibility
+    print('⚠️ Firebase disabled - _escucharNotificaciones skipped');
   }
 
   @override
   void dispose() {
-    _messageSub?.cancel(); // MUY IMPORTANTE: Detener la escucha al salir
+    // Firebase disabled - no subscription to cancel
     super.dispose();
   }
 
