@@ -69,8 +69,11 @@ void main() async {
 
     firebaseInitialized = true;
     print("¡Firebase inicializado correctamente!");
-  } catch (e) {
-    print("Error al inicializar Firebase: ");
+  } catch (e, stacktrace) {
+    print("⚠️ Error al inicializar Firebase (continúa la app): $e");
+    // No vamos a fallar si Firebase no se puede inicializar (ej: en simulator sin plist)
+    // La app continuará funcionando
+    firebaseInitialized = false;
   }
 
   if (firebaseInitialized) {
