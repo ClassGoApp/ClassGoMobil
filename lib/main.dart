@@ -2,7 +2,6 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'dart:io';
-import 'package:flutter_projects/config/firebase_options.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/provider/connectivity_provider.dart';
 import 'package:flutter_projects/provider/location_provider.dart';
@@ -17,7 +16,6 @@ import 'package:provider/provider.dart';
 import 'package:overlay_support/overlay_support.dart';
 import 'package:flutter_projects/helpers/pusher_service.dart';
 import 'package:flutter_projects/services/deep_link_service.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_projects/provider/booking_provider.dart';
 import 'package:flutter_projects/provider/tutor_subjects_provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -53,41 +51,9 @@ void main() async {
     return true;
   };
 
+  // Firebase disabled for simulator compatibility
   bool firebaseInitialized = false;
-  try {
-    // Intentar inicializar Firebase
-    if (Firebase.apps.isEmpty) {
-      try {
-        await Firebase.initializeApp(
-          options: DefaultFirebaseOptions.currentPlatform,
-        );
-        firebaseInitialized = true;
-        print("¡Firebase inicializado correctamente!");
-      } on FirebaseException catch (e) {
-        if (e.code != 'duplicate-app') {
-          print("⚠️ Error de Firebase: ${e.code} - ${e.message}");
-          firebaseInitialized = false;
-        } else {
-          firebaseInitialized = true;
-        }
-      }
-    } else {
-      firebaseInitialized = true;
-    }
-  } catch (e, stacktrace) {
-    print("⚠️ Error al inicializar Firebase (continúa la app): $e");
-    firebaseInitialized = false;
-  }
-
-  if (firebaseInitialized) {
-    // firebase_messaging solo disponible si firebase_core está inicializado
-    try {
-      // FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-      print("Firebase Messaging disponible");
-    } catch (e) {
-      print("Firebase Messaging no disponible: $e");
-    }
-  }
+  print("⚠️ Firebase initialization disabled for simulator compatibility");
 
   runApp(
     MultiProvider(
