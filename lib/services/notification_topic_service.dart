@@ -12,6 +12,86 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_projects/view/tutor/features/agenda/schedule_request_detail_screen.dart';
 
+// Firebase disabled for simulator compatibility
+// firebaseMessagingBackgroundHandler removed - Firebase messaging disabled
+
+class NotificationTopicService {
+  // Firebase disabled for simulator compatibility
+  static dynamic _messaging = null;
+  static const String _tutorTopic = 'tutor';
+  static const String _tutorLegacyTopic = 'tutores';
+  static const String _studentTopic = 'estudiantes';
+  static const String _fcmRoleKey = 'fcm_user_role';
+  static const MethodChannel _notificationClickChannel =
+      MethodChannel('classgo/notification_click');
+  static bool _nativeClickBridgeInitialized = false;
+  static const String _permissionAskedKey = 'notification_permission_asked';
+
+  static Future<void> _persistCurrentRole(String role) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_fcmRoleKey, role);
+  }
+
+  /// Suscribe al usuario según su rol (Firebase disabled - skipped)
+  static Future<void> configureTopics(String rol) async {
+    print('⚠️ Firebase disabled - configureTopics skipped');
+    // Firebase disabled - no topic subscription
+    return;
+  }
+
+  /// Desuscribir de todos (Firebase disabled - skipped)
+  static Future<void> unsubscribeAll() async {
+    print('⚠️ Firebase disabled - unsubscribeAll skipped');
+    return;
+  }
+
+  /// Suscribirse manualmente a un topic (Firebase disabled - skipped)
+  static Future<void> subscribe(String topic) async {
+    print('⚠️ Firebase disabled - subscribe skipped');
+    return;
+  }
+
+  /// Desuscribirse manualmente (Firebase disabled - skipped)
+  static Future<void> unsubscribe(String topic) async {
+    print('⚠️ Firebase disabled - unsubscribe skipped');
+    return;
+  }
+
+  /// Suscribirse al topic global mass_notification (Firebase disabled - skipped)
+  static Future<void> subscribeToMassNotification() async {
+    print('⚠️ Firebase disabled - subscribeToMassNotification skipped');
+    return;
+  }
+
+  // Pedir Permisos para android (Firebase disabled - skipped)
+  static Future<void> requestPermissionOnFirstLaunch() async {
+    print('⚠️ Firebase disabled - requestPermissionOnFirstLaunch skipped');
+    return;
+  }
+
+  static void _handleNavigation(
+    dynamic message,
+    GlobalKey<NavigatorState> navigatorKey,
+  ) {
+    print('⚠️ Firebase disabled - _handleNavigation skipped');
+    return;
+  }
+
+  static Future<void> _setupNativeNotificationClickBridge() async {
+    print('⚠️ Firebase disabled - _setupNativeNotificationClickBridge skipped');
+    return;
+  }
+
+  static void _handleNavigationFromData(
+    Map<String, dynamic> data,
+    GlobalKey<NavigatorState> navigatorKey,
+  ) {
+    print('⚠️ Firebase disabled - _handleNavigationFromData skipped');
+    return;
+  }
+}
+
+
 @pragma('vm:entry-point')
 // COMMENTED: Firebase disabled for simulator compatibility
 // Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {

@@ -11,7 +11,7 @@ class VistaFuisteElegido extends StatefulWidget {
 }
 
 class _VistaFuisteElegidoState extends State<VistaFuisteElegido> {
-  // StreamSubscription<RemoteMessage>? _messageSub; // Firebase disabled
+  // Firebase disabled - no message subscription
   StreamSubscription<dynamic>? _messageSub;
   bool _yaRedirigio = false;
 

@@ -15,7 +15,7 @@ class VistaConfirmacion extends StatefulWidget {
 }
 
 class _VistaConfirmacionState extends State<VistaConfirmacion> {
-  // StreamSubscription<RemoteMessage>? _messageSub; // Firebase disabled
+  // Firebase disabled - no message subscription
   StreamSubscription<dynamic>? _messageSub;
   bool _yaRedirigio = false;
 
