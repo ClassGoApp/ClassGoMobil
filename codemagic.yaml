@@ -23,6 +23,13 @@ workflows:
           flutter build ios --debug --simulator
     artifacts:
       - build/ios/iphonesimulator/*.app
+    publishing:
+      email:
+        recipients:
+          - ${CODEMAGIC_EMAIL}
+        notify:
+          success: false
+          failure: true
   
   android_build:
     name: ClassGo Android Build
