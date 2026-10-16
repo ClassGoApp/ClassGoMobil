@@ -1272,6 +1272,15 @@ class AppLocalizationsEs extends AppLocalizations {
   String get invalidEmail => 'Ingresa un correo válido';
 
   @override
+  String get invalidName => 'Solo se permiten letras, espacios y guiones';
+
+  @override
+  String get invalidCellphone => 'Ingresa un celular válido (solo números, de 7 a 15 dígitos)';
+
+  @override
+  String get invalidPrice => 'Ingresa un monto válido entre 0 y 999999.99';
+
+  @override
   String get sendResetLink => 'Enviar enlace de restablecimiento';
 
   @override

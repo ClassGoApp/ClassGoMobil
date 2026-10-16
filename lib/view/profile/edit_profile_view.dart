@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_projects/helpers/input_validators.dart';
 import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:flutter_projects/view/tutor/features/widgets/tutor_header.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
@@ -224,7 +225,15 @@ class EditProfileView extends StatelessWidget {
                                   icon: Icons.person_outline,
                                   fillColor: cardBgColor,
                                   textColor: mainTextColor,
-                                  validator: (value) => value == null || value.trim().isEmpty ? AppLocalizations.of(context)!.requiredField : null,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.allow(InputValidators.nameAllowedChars),
+                                    LengthLimitingTextInputFormatter(InputValidators.nameMaxLength),
+                                  ],
+                                  validator: (value) => InputValidators.validateName(
+                                    value,
+                                    emptyMessage: AppLocalizations.of(context)!.requiredField,
+                                    invalidMessage: AppLocalizations.of(context)!.invalidName,
+                                  ),
                                 ),
                                 const SizedBox(height: 16),
                                 
@@ -235,7 +244,15 @@ class EditProfileView extends StatelessWidget {
                                   icon: Icons.person_outline,
                                   fillColor: cardBgColor,
                                   textColor: mainTextColor,
-                                  validator: (value) => value == null || value.trim().isEmpty ? AppLocalizations.of(context)!.requiredField : null,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.allow(InputValidators.nameAllowedChars),
+                                    LengthLimitingTextInputFormatter(InputValidators.nameMaxLength),
+                                  ],
+                                  validator: (value) => InputValidators.validateName(
+                                    value,
+                                    emptyMessage: AppLocalizations.of(context)!.requiredField,
+                                    invalidMessage: AppLocalizations.of(context)!.invalidName,
+                                  ),
                                 ),
                                 const SizedBox(height: 16),
                                 
@@ -248,10 +265,15 @@ class EditProfileView extends StatelessWidget {
                                   fillColor: cardBgColor,
                                   textColor: mainTextColor,
                                   onChanged: onPhoneChanged,
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty) return AppLocalizations.of(context)!.requiredField;
-                                    return null; 
-                                  },
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly,
+                                    LengthLimitingTextInputFormatter(InputValidators.phoneMaxLength),
+                                  ],
+                                  validator: (value) => InputValidators.validatePhone(
+                                    value,
+                                    emptyMessage: AppLocalizations.of(context)!.requiredField,
+                                    invalidMessage: AppLocalizations.of(context)!.invalidCellphone,
+                                  ),
                                 ),
                                 const SizedBox(height: 16),
 
@@ -416,6 +438,7 @@ class EditProfileView extends StatelessWidget {
     TextInputType? keyboardType,
     int maxLines = 1,
     Function(String)? onChanged,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -430,6 +453,7 @@ class EditProfileView extends StatelessWidget {
           keyboardType: keyboardType,
           maxLines: maxLines,
           onChanged: onChanged,
+          inputFormatters: inputFormatters,
           style: TextStyle(fontFamily: 'manrope', color: textColor, fontSize: 13, fontWeight: FontWeight.w600),
           decoration: InputDecoration(
             hintText: hint,

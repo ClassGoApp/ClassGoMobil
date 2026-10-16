@@ -1265,6 +1265,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invalidEmail => 'Enter a valid email';
 
   @override
+  String get invalidName => 'Only letters, spaces and hyphens are allowed';
+
+  @override
+  String get invalidCellphone => 'Enter a valid cellphone (digits only, 7 to 15)';
+
+  @override
+  String get invalidPrice => 'Enter a valid amount between 0 and 999999.99';
+
+  @override
   String get sendResetLink => 'Send reset link';
 
   @override

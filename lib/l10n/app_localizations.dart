@@ -2360,6 +2360,24 @@ abstract class AppLocalizations {
   /// **'Enter a valid email'**
   String get invalidEmail;
 
+  /// No description provided for @invalidName.
+  ///
+  /// In en, this message translates to:
+  /// **'Only letters, spaces and hyphens are allowed'**
+  String get invalidName;
+
+  /// No description provided for @invalidCellphone.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid cellphone (digits only, 7 to 15)'**
+  String get invalidCellphone;
+
+  /// No description provided for @invalidPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid amount between 0 and 999999.99'**
+  String get invalidPrice;
+
   /// No description provided for @sendResetLink.
   ///
   /// In en, this message translates to:

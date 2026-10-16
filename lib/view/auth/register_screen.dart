@@ -16,6 +16,7 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_projects/helpers/back_button_handler.dart';
+import 'package:flutter_projects/helpers/input_validators.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_projects/l10n/app_localizations.dart';
 
@@ -201,21 +202,21 @@ class _RegistrationScreenState extends State<RegistrationScreen>
     String confirmPassword = _confirmPasswordController.text;
 
     setState(() {
-      if (firstName.isEmpty) {
-        _firstNameErrorMessage = AppLocalizations.of(context)!.enterFirstName;
-        _isFirstNameValid = false;
-      } else {
-        _firstNameErrorMessage = '';
-        _isFirstNameValid = true;
-      }
+      final firstNameError = InputValidators.validateName(
+        firstName,
+        emptyMessage: AppLocalizations.of(context)!.enterFirstName,
+        invalidMessage: AppLocalizations.of(context)!.invalidName,
+      );
+      _firstNameErrorMessage = firstNameError ?? '';
+      _isFirstNameValid = firstNameError == null;
 
-      if (lastName.isEmpty) {
-        _lastNameErrorMessage = AppLocalizations.of(context)!.enterLastName;
-        _isLastNameValid = false;
-      } else {
-        _lastNameErrorMessage = '';
-        _isLastNameValid = true;
-      }
+      final lastNameError = InputValidators.validateName(
+        lastName,
+        emptyMessage: AppLocalizations.of(context)!.enterLastName,
+        invalidMessage: AppLocalizations.of(context)!.invalidName,
+      );
+      _lastNameErrorMessage = lastNameError ?? '';
+      _isLastNameValid = lastNameError == null;
 
       if (email.isEmpty) {
         _emailErrorMessage = AppLocalizations.of(context)!.enterEmail;
@@ -228,16 +229,13 @@ class _RegistrationScreenState extends State<RegistrationScreen>
         _isEmailValid = true;
       }
 
-      if (phoneNumber.isEmpty) {
-        _phoneNumberErrorMessage = AppLocalizations.of(context)!.enterPhoneNumber;
-        _isPhoneNumberValid = false;
-      } else if (!RegExp(r'^[0-9+\-\s()]{8,15}$').hasMatch(phoneNumber)) {
-        _phoneNumberErrorMessage = AppLocalizations.of(context)!.invalidPhoneNumber;
-        _isPhoneNumberValid = false;
-      } else {
-        _phoneNumberErrorMessage = '';
-        _isPhoneNumberValid = true;
-      }
+      final phoneError = InputValidators.validateRegisterPhone(
+        phoneNumber,
+        emptyMessage: AppLocalizations.of(context)!.enterPhoneNumber,
+        invalidMessage: AppLocalizations.of(context)!.invalidPhoneNumber,
+      );
+      _phoneNumberErrorMessage = phoneError ?? '';
+      _isPhoneNumberValid = phoneError == null;
 
       if (password.isEmpty) {
         _passwordErrorMessage = AppLocalizations.of(context)!.enterPassword;
