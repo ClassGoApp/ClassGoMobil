@@ -1,7 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_projects/config/firebase_options.dart';
+import 'package:flutter_projects/api_structure/config/firebase_options.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/provider/connectivity_provider.dart';
 import 'package:flutter_projects/provider/location_provider.dart';
