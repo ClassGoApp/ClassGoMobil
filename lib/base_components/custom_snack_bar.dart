@@ -5,15 +5,17 @@ class CustomToast extends StatelessWidget {
   final String message;
   final bool isSuccess;
   final bool isWarning;
+  final bool showIcon;
 
   const CustomToast({
     Key? key,
     required this.message,
     this.isSuccess = true,
     this.isWarning = false,
+    this.showIcon = true,
   }) : super(key: key);
 
-  static void show(BuildContext context, String message, {bool isSuccess = true, bool isWarning = false}) {
+  static void show(BuildContext context, String message, {bool isSuccess = true, bool isWarning = false, bool showIcon = true}) {
     final overlayState = Overlay.maybeOf(context);
     if (overlayState == null) return;
 
@@ -26,6 +28,7 @@ class CustomToast extends StatelessWidget {
           message: message,
           isSuccess: isSuccess,
           isWarning: isWarning,
+          showIcon: showIcon,
         ),
       ),
     );
@@ -72,16 +75,20 @@ class CustomToast extends StatelessWidget {
             ],
           ),
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                iconData,
-                color: iconColor,
-                size: 30.0,
-              ),
-              const SizedBox(width: 12.0),
+              if (showIcon) ...[
+                Icon(
+                  iconData,
+                  color: iconColor,
+                  size: 30.0,
+                ),
+                const SizedBox(width: 12.0),
+              ],
               Expanded(
                 child: Text(
                   message,
+                  textAlign: showIcon ? TextAlign.start : TextAlign.center,
                   textScaler: TextScaler.noScaling,
                   style: TextStyle(
                       fontFamily: 'SF-Pro-Text',

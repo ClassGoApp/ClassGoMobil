@@ -292,18 +292,26 @@ class _AnimatedNavItem extends StatelessWidget {
             AnimatedPositioned(
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeOut,
+              left: 0,
+              right: 0,
               bottom: isSelected ? 22 : 10,
               child: AnimatedOpacity(
                 duration: const Duration(milliseconds: 200),
                 opacity: isSelected ? 1.0 : 0.0,
-                child: Text(
-                  label,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontFamily: 'manrope',
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 0.8,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textScaler: TextScaler.noScaling,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontFamily: 'manrope',
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.8,
+                    ),
                   ),
                 ),
               ),

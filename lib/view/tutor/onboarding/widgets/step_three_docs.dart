@@ -18,7 +18,8 @@ class StepThreeDocs extends StatefulWidget {
 
 class _StepThreeDocsState extends State<StepThreeDocs> {
   File? _profilePic;
-  File? _documentFile; // Usamos un nombre genérico para DNI o Transcript
+  File? _documentFile; // Foto frontal del carnet
+  File? _documentFileBack; // Foto trasera del carnet (solo para tutores)
   final ImagePicker _picker = ImagePicker();
 
   @override
@@ -41,12 +42,13 @@ class _StepThreeDocsState extends State<StepThreeDocs> {
     context.read<OnboardingProvider>().updateDocuments(
       personalPic: _profilePic,
       docFile: _documentFile,
+      docFileBack: _documentFileBack,
       role: widget.role,
     );
   }
 
 // 1. EL MENÚ INFERIOR (BottomSheet)
-  void _showPickerOptions(BuildContext context, bool isProfile) {
+  void _showPickerOptions(BuildContext context, bool isProfile, {bool isBack = false}) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -64,7 +66,7 @@ class _StepThreeDocsState extends State<StepThreeDocs> {
                 title: const Text('Tomar una foto', style: TextStyle(fontFamily: 'manrope', fontSize: 16)),
                 onTap: () {
                   Navigator.of(context).pop();
-                  _pickImage(isProfile, ImageSource.camera); // 👈 Llama a la cámara
+                  _pickImage(isProfile, ImageSource.camera, isBack: isBack); // 👈 Llama a la cámara
                 },
               ),
               ListTile(
@@ -72,7 +74,7 @@ class _StepThreeDocsState extends State<StepThreeDocs> {
                 title: const Text('Elegir de la galería', style: TextStyle(fontFamily: 'manrope', fontSize: 16)),
                 onTap: () {
                   Navigator.of(context).pop();
-                  _pickImage(isProfile, ImageSource.gallery); // 👈 Llama a la galería
+                  _pickImage(isProfile, ImageSource.gallery, isBack: isBack); // 👈 Llama a la galería
                 },
               ),
             ],
@@ -83,7 +85,7 @@ class _StepThreeDocsState extends State<StepThreeDocs> {
   }
 
   // 2. TU FUNCIÓN ACTUALIZADA CON VALIDACIONES
-  Future<void> _pickImage(bool isProfile, ImageSource source) async {
+  Future<void> _pickImage(bool isProfile, ImageSource source, {bool isBack = false}) async {
     try {
       final XFile? image = await _picker.pickImage(
         source: source, // <-- Ahora usa la fuente que el usuario eligió
@@ -112,6 +114,8 @@ class _StepThreeDocsState extends State<StepThreeDocs> {
         setState(() {
           if (isProfile) {
             _profilePic = imageFile;
+          } else if (isBack) {
+            _documentFileBack = imageFile;
           } else {
             _documentFile = imageFile;
           }
@@ -126,12 +130,14 @@ class _StepThreeDocsState extends State<StepThreeDocs> {
   @override
   Widget build(BuildContext context) {
     // Textos dinámicos según el rol
-    final String docTitle = widget.role == 'tutor' 
+    final String docTitleFront = widget.role == 'tutor' 
         ? 'Carnet de Identidad (Frente)' 
         : 'Historial Académico / Matrícula';
     
+    final String docTitleBack = 'Carnet de Identidad (Reverso)';
+    
     final String docSubtitle = widget.role == 'tutor'
-        ? 'Sube una foto personal y tu documento de identidad (Carnet) para verificar tu identidad.'
+        ? 'Sube una foto personal y ambas caras de tu documento de identidad (Carnet) para verificar tu identidad.'
         : 'Sube una foto personal y un documento que acredite tu matrícula estudiantil.';
 
     return SingleChildScrollView(
@@ -171,13 +177,49 @@ class _StepThreeDocsState extends State<StepThreeDocs> {
 
           const SizedBox(height: 24),
 
-          _buildUploadBox(
-            title: docTitle,
-            icon: widget.role == 'tutor' ? Icons.badge_rounded : Icons.school_rounded,
-            imageFile: _documentFile,
-            onTap: () => _showPickerOptions(context, false),
-            isCircle: false,
-          ),
+          // Para tutores: mostrar ambas fotos del carnet en GRID (lado a lado)
+          if (widget.role == 'tutor') ...[
+            const Text(
+              'Documento de Identidad',
+              style: TextStyle(
+                fontFamily: 'outfit',
+                fontWeight: FontWeight.bold,
+                color: AppColors.brandBlue,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildCompactUploadBox(
+                    title: 'Frente',
+                    icon: Icons.badge_rounded,
+                    imageFile: _documentFile,
+                    onTap: () => _showPickerOptions(context, false),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildCompactUploadBox(
+                    title: 'Reverso',
+                    icon: Icons.badge_rounded,
+                    imageFile: _documentFileBack,
+                    onTap: () => _showPickerOptions(context, false, isBack: true),
+                  ),
+                ),
+              ],
+            ),
+          ] else ...[
+            // Para estudiantes: mantener el diseño original (un solo cuadro grande)
+            _buildUploadBox(
+              title: docTitleFront,
+              icon: Icons.school_rounded,
+              imageFile: _documentFile,
+              onTap: () => _showPickerOptions(context, false),
+              isCircle: false,
+            ),
+          ],
         ],
       ),
     );
@@ -265,6 +307,79 @@ class _StepThreeDocsState extends State<StepThreeDocs> {
           ),
         ),
       ],
+    );
+  }
+
+  // Versión compacta para el grid de 2 columnas (fotos del carnet)
+  Widget _buildCompactUploadBox({
+    required String title,
+    required IconData icon,
+    required File? imageFile,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        height: 160,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: imageFile != null
+                ? AppColors.primaryGreen
+                : AppColors.brandBlue.withOpacity(0.3),
+            width: 2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            )
+          ],
+        ),
+        child: imageFile != null
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: Image.file(
+                  imageFile,
+                  fit: BoxFit.cover,
+                ),
+              )
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.brandBlue.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(icon, size: 28, color: AppColors.brandBlue),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontFamily: 'outfit',
+                      color: AppColors.brandBlue,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Toca para subir',
+                    style: TextStyle(
+                      fontFamily: 'manrope',
+                      color: Colors.grey.shade500,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+      ),
     );
   }
 }

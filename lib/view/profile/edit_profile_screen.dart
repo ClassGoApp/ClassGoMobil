@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_projects/view/profile/edit_profile_view.dart';
+import 'package:flutter_projects/helpers/input_validators.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -727,8 +728,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   bool _validatePhone(String phone) {
-    // Validación básica para números de teléfono
-    return phone.length >= 8 && phone.length <= 15;
+    // Misma regla que la web: solo dígitos, entre 7 y 15.
+    return InputValidators.phoneRegExp.hasMatch(phone.trim());
   }
 
   Future<void> _updateProfile() async {

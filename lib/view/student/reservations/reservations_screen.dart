@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/view/student/widgets/student_bottom_nav.dart';
+import 'package:flutter_projects/view/components/reservation_card.dart';
 import 'package:flutter_projects/view/components/role_based_navigation.dart';
 import 'package:flutter_projects/view/student/reservations/widgets/reservations_calendar.dart';
 import 'package:flutter_projects/view/student/reservations/widgets/new_reservation_modal.dart';
+import 'package:flutter_projects/view/student/reservations/materials/tutoring_details_sheet.dart';
 import 'package:flutter_projects/l10n/app_localizations.dart';
+import 'package:intl/intl.dart';
 
 class ReservationsScreen extends StatefulWidget {
   const ReservationsScreen({Key? key}) : super(key: key);
@@ -15,100 +17,29 @@ class ReservationsScreen extends StatefulWidget {
 }
 
 class _ReservationsScreenState extends State<ReservationsScreen> {
-  DateTime _selectedDate = DateTime.now();
-
-  void _onNewReservation() {
-    final l10n = AppLocalizations.of(context)!;
-    // Placeholder: abrir flujo de nueva reserva
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-          content: Text(
-              '${l10n.createNewReservation} ${_selectedDate.toLocal().toString().split(' ')[0]}')),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
-    final double statusBarHeight = MediaQuery.of(context).padding.top;
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text(l10n.reservations, style: TextStyle(fontFamily: 'outfit', fontWeight: FontWeight.bold)),
+        backgroundColor: theme.scaffoldBackgroundColor,
+        elevation: 0,
+        centerTitle: true,
+      ),
       backgroundColor: theme.scaffoldBackgroundColor,
-      body: Column(
-        children: [
-          // Header azul marino
-          AnnotatedRegion<SystemUiOverlayStyle>(
-            value: SystemUiOverlayStyle(
-              statusBarColor: Colors.transparent,
-              statusBarIconBrightness: Brightness.light,
-              statusBarBrightness: Brightness.dark,
-            ),
-            child: Container(
-              width: double.infinity,
-              padding: EdgeInsets.only(
-                top: statusBarHeight + 15,
-                left: 20,
-                right: 20,
-                bottom: 25,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.headerLight,
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(32),
-                  bottomRight: Radius.circular(32),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.headerLight.withOpacity(0.4),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  )
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    l10n.reservations,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'outfit',
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (context) => RoleBasedNavigation()),
-                        (route) => false,
-                      );
-                    },
-                    child: Icon(
-                      Icons.close,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: ReservationsContent(),
-            ),
-          ),
-        ],
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: ReservationsContent(),
+        ),
       ),
       bottomNavigationBar: StudentBottomNav(
         currentIndex: 1,
         onTap: (index) {
-          // Si ya estamos en 'AGENDA' no hacemos nada
           if (index == 1) return;
-          // Para otras opciones, volver al flujo principal (RoleBasedNavigation)
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) => RoleBasedNavigation()),
             (route) => false,
@@ -181,9 +112,6 @@ class _ReservationsContentState extends State<ReservationsContent> {
     });
   }
 
-  // La lógica de carga y marcado de eventos ahora vive en
-  // `ReservationsCalendar` (lib/view/student/widgets/reservations_calendar.dart)
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -205,52 +133,194 @@ class _ReservationsContentState extends State<ReservationsContent> {
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
           ),
         ),
-        const SizedBox(height: 12),
-        ReservationsCalendar(
-          initialDate: _selectedDate,
-          onDateChanged: (d) {
-            setState(() => _selectedDate = d);
-          },
-          onSelectedEventsChanged: (events) {
-            setState(() => _selectedEvents = events);
-          },
-          onLoadingChanged: (loading) {
-            setState(() => _loading = loading);
-          },
+        const SizedBox(height: 16),
+
+ReservationsCalendar(
+  initialDate: _selectedDate,
+  onDateChanged: (d) {
+    setState(() => _selectedDate = d);
+  },
+  onSelectedEventsChanged: (events) {
+    setState(() => _selectedEvents = events);
+  },
+  onLoadingChanged: (loading) {
+    setState(() => _loading = loading);
+  },
+),
+
+const SizedBox(height: 16),
+
+_loading
+    ? const Center(
+        child: Padding(
+          padding: EdgeInsets.all(12),
+          child: CircularProgressIndicator(),
         ),
-        const SizedBox(height: 8),
-        _loading
+      )
+    : Expanded(
+        child: _selectedEvents.isEmpty
             ? Center(
-                child: Padding(
-                    padding: EdgeInsets.all(12),
-                    child: CircularProgressIndicator()))
-            : Expanded(
-                child: _selectedEvents.isEmpty
-                    ? Center(
-                        child: Text(l10n.noReservationsForDate,
-                            style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.white54 : AppColors.greyColor)))
-                    : ListView.separated(
-                        itemCount: _selectedEvents.length,
-                        separatorBuilder: (_, __) => Divider(),
-                        itemBuilder: (context, index) {
-                          final ev = _selectedEvents[index];
-                          final title = ev is Map
-                              ? (ev['title'] ?? ev['subject'] ?? l10n.reservation)
-                              : ev.toString();
-                          final time = ev is Map
-                              ? (ev['time'] ??
-                                  ev['start_time'] ??
-                                  ev['start_date'] ??
-                                  '')
-                              : '';
-                          return ListTile(
-                            title: Text(title.toString()),
-                            subtitle: Text(time.toString()),
-                          );
-                        },
+                child: Text(
+                  l10n.noReservationsForDate,
+                  style: TextStyle(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white54
+                        : AppColors.greyColor,
+                  ),
+                ),
+              )
+            : ListView.separated(
+                padding: const EdgeInsets.only(bottom: 16),
+                itemCount: _selectedEvents.length + 1,
+                separatorBuilder: (_, __) =>
+                    const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  // Texto al final de las reservas
+                  if (index == _selectedEvents.length) {
+                    return Padding(
+                      padding: const EdgeInsets.only(
+                        top: 4,
+                        bottom: 16,
                       ),
+                      child: Text(
+                        l10n.tapCardToSeeDetails,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontFamily: AppFonts.body,
+                          fontSize: 12,
+                          color: AppColors.greyColor,
+                        ),
+                      ),
+                    );
+                  }
+
+                  final ev = _selectedEvents[index];
+                  return _buildCard(ev, l10n);
+                },
+              ),
               ),
       ],
+    );
+  }
+
+  Widget _buildCard(dynamic ev, AppLocalizations l10n) {
+    final map =
+        ev is Map ? Map<String, dynamic>.from(ev) : const <String, dynamic>{};
+
+    final timeRaw = map['start_time']?.toString() ??
+        map['start_date']?.toString() ??
+        map['date']?.toString() ??
+        '';
+    final endRaw =
+        map['end_time']?.toString() ?? map['end_date']?.toString() ?? '';
+    final subjectName = (map['subject_name']?.toString() ??
+            map['subject']?.toString() ??
+            l10n.reservation)
+        .toString();
+    final tutorName =
+        (map['tutor_name']?.toString() ?? map['tutor']?.toString() ?? 'Tutor')
+            .toString();
+    final status = (map['status']?.toString() ?? '').toString();
+    final attachmentCount = map['attachments_count'] is num
+        ? (map['attachments_count'] as num).toInt()
+        : int.tryParse(map['attachments_count']?.toString() ?? '') ?? 0;
+    final meetingLink =
+        (map['meeting_link']?.toString() ?? map['meet_link']?.toString() ?? '')
+            .toString();
+
+    String startTime = '';
+    String endTime = '';
+    try {
+      final start = DateTime.parse(timeRaw);
+      startTime = DateFormat('HH:mm').format(start);
+    } catch (_) {
+      startTime = timeRaw;
+    }
+    try {
+      final end = DateTime.parse(endRaw);
+      endTime = DateFormat('HH:mm').format(end);
+    } catch (_) {
+      endTime = endRaw;
+    }
+
+    return ReservationCard(
+      startTime: startTime,
+      endTime: endTime,
+      status: status,
+      subjectName: subjectName,
+      personName: tutorName,
+      personLabel: l10n.tutorLabel,
+      attachmentCount: attachmentCount,
+      meetingLink: meetingLink,
+      onTap: () => _openTutoringDetails(ev),
+    );
+  }
+
+  void _openTutoringDetails(dynamic ev) {
+    final l10n = AppLocalizations.of(context)!;
+    final map =
+        ev is Map ? Map<String, dynamic>.from(ev) : const <String, dynamic>{};
+    int bookingId = 0;
+    if (map['id'] is int) {
+      bookingId = map['id'] as int;
+    } else {
+      bookingId = int.tryParse(map['id']?.toString() ?? '') ?? 0;
+    }
+    if (bookingId == 0) return;
+
+    final title = (map['subject_name']?.toString() ??
+            map['subject']?.toString() ??
+            l10n.reservation)
+        .toString();
+    final subtitle = (map['tutor_name']?.toString() ??
+            map['tutor']?.toString() ??
+            l10n.reservation)
+        .toString();
+
+    DateTime? bookingDate;
+    final timeRaw = map['start_time']?.toString() ??
+        map['start_date']?.toString() ??
+        map['date']?.toString() ??
+        '';
+    try {
+      bookingDate = DateTime.parse(timeRaw);
+    } catch (_) {
+      bookingDate = null;
+    }
+
+    String startTime = '';
+    String endTime = '';
+    try {
+      startTime = DateFormat('HH:mm').format(DateTime.parse(timeRaw));
+    } catch (_) {
+      startTime = timeRaw;
+    }
+    try {
+      endTime = DateFormat('HH:mm').format(DateTime.parse(
+          map['end_time']?.toString() ?? map['end_date']?.toString() ?? ''));
+    } catch (_) {
+      endTime = map['end_time']?.toString() ?? '';
+    }
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => TutoringDetailsSheet(
+        bookingId: bookingId,
+        title: title,
+        subtitle: subtitle,
+        canUpload: true,
+        canEdit: true,
+        date: bookingDate,
+        startTime: startTime,
+        endTime: endTime,
+        status: map['status']?.toString(),
+        meetingLink: map['meeting_link']?.toString() ??
+            map['meet_link']?.toString() ??
+            '',
+      ),
     );
   }
 }

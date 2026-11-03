@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_projects/base_components/custom_snack_bar.dart';
+import 'package:flutter_projects/helpers/input_validators.dart';
 import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
@@ -171,6 +173,13 @@ class _TutorPriceSectionState extends State<TutorPriceSection> {
                 controller: priceController,
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  DecimalTextInputFormatter(
+                    decimalRange: InputValidators.priceMaxDecimals,
+                    maxIntegerDigits: 6,
+                  ),
+                  LengthLimitingTextInputFormatter(9),
+                ],
                 style: TextStyle(
                     fontFamily: _kBodyFont,
                     color: textColor,
@@ -214,7 +223,20 @@ class _TutorPriceSectionState extends State<TutorPriceSection> {
   }
 
   Future<void> _updatePrice(BuildContext context, String newPrice) async {
-    if (newPrice.isEmpty || newPrice == _price) return;
+    // Validación en cliente igual que la web: numérico entre 0 y 999999.99.
+    final error = InputValidators.validatePrice(
+      newPrice,
+      emptyMessage: AppLocalizations.of(context)!.requiredField,
+      invalidMessage: AppLocalizations.of(context)!.invalidPrice,
+    );
+    if (error != null) {
+      CustomToast.show(context, error, isSuccess: false);
+      return;
+    }
+
+    // Normalizar (acepta coma o punto) antes de enviar.
+    final normalizedPrice = newPrice.trim().replaceAll(',', '.');
+    if (normalizedPrice == _price) return;
 
     final auth = Provider.of<AuthProvider>(context, listen: false);
 
@@ -226,26 +248,43 @@ class _TutorPriceSectionState extends State<TutorPriceSection> {
 
     try {
       final response =
-          await updateProfilePrice(auth.token!, auth.userId!, newPrice);
+          await updateProfilePrice(auth.token!, auth.userId!, normalizedPrice);
 
       if (response['success'] == true || response['status'] == 200) {
         if (auth.userData != null) {
           if (auth.userData!['user']?['profile'] != null)
-            auth.userData!['user']['profile']['price'] = newPrice;
+            auth.userData!['user']['profile']['price'] = normalizedPrice;
           if (auth.userData!['profile'] != null)
-            auth.userData!['profile']['price'] = newPrice;
+            auth.userData!['profile']['price'] = normalizedPrice;
         }
 
         if (mounted) {
-          setState(() => _price = newPrice);
+          setState(() => _price = normalizedPrice);
           Navigator.pop(context);
           Navigator.pop(context);
           CustomToast.show(context, AppLocalizations.of(context)!.rateUpdatedSuccessfully, isSuccess: true);
+        }
+      } else {
+        // El servidor rechazó el precio (ej. validación): cerrar el loader y avisar.
+        if (mounted && Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
+        final serverError = response['errors']?['price'];
+        final message = (serverError is List && serverError.isNotEmpty)
+            ? serverError.first.toString()
+            : (response['message']?.toString() ??
+                AppLocalizations.of(context)!.invalidPrice);
+        if (mounted) {
+          CustomToast.show(context, message, isSuccess: false);
         }
       }
     } catch (e) {
       if (mounted && Navigator.canPop(context)) {
         Navigator.pop(context);
+      }
+      if (mounted) {
+        CustomToast.show(context, AppLocalizations.of(context)!.invalidPrice,
+            isSuccess: false);
       }
     }
   }

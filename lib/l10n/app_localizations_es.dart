@@ -769,20 +769,29 @@ class AppLocalizationsEs extends AppLocalizations {
   String get noDate => 'SIN FECHA';
 
   @override
-  String get statusPending => 'pendiente';
+  String get statusPending => 'Pendiente';
 
   @override
-  String get statusAccepted => 'aceptad';
+  String get statusAccepted => 'Aceptado';
 
   @override
-  String get statusInProgress => 'cursando';
+  String get statusInProgress => 'En curso';
 
   @override
-  String get statusCompleted => 'completad';
+  String get statusCompleted => 'Completado';
 
   @override
   String get meetLinkNotAvailable =>
       'El enlace de Meet aún no está disponible.';
+
+  @override
+  String get meetingLinkLabel => 'Enlace de reunión';
+
+  @override
+  String get meetButton => 'Meet';
+
+  @override
+  String get linkCopied => 'Enlace copiado';
 
   @override
   String get meetingStartedWaitingLink =>
@@ -805,6 +814,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get noClassesToday => 'No tienes clases programadas para hoy.';
+
+  @override
+  String get noUpcomingClasses => 'No tienes clases próximas por ahora.';
 
   @override
   String get activateAvailability =>
@@ -884,7 +896,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get availability => 'DISPONIBILIDAD';
 
   @override
-  String get myNextClasses => 'MIS PRÓXIMAS CLASES';
+  String get myNextClasses => 'Próximas Reservas';
 
   @override
   String get configureSchedule => 'CONFIGURAR HORARIOS';
@@ -1276,6 +1288,16 @@ class AppLocalizationsEs extends AppLocalizations {
   String get invalidEmail => 'Ingresa un correo válido';
 
   @override
+  String get invalidName => 'Solo se permiten letras, espacios y guiones';
+
+  @override
+  String get invalidCellphone =>
+      'Ingresa un celular válido (solo números, de 7 a 15 dígitos)';
+
+  @override
+  String get invalidPrice => 'Ingresa un monto válido entre 0 y 999999.99';
+
+  @override
   String get sendResetLink => 'Enviar enlace de restablecimiento';
 
   @override
@@ -1622,8 +1644,155 @@ class AppLocalizationsEs extends AppLocalizations {
   String get videoLoadError => 'No se pudo cargar el video';
 
   @override
+  String get agendaSegment => 'Agenda';
+
+  @override
+  String get materialSupport => 'Material de apoyo';
+
+  @override
+  String get attachMaterial => 'Adjuntar material';
+
+  @override
+  String get downloadOrShare => 'Descargar';
+
+  @override
+  String get deleteMaterial => 'Eliminar';
+
+  @override
+  String get editMaterial => 'Editar';
+
+  @override
+  String get noAttachedMaterial => 'Sin material adjuntado.';
+
+  @override
+  String get noTutoringMaterial =>
+      'Selecciona una tutoría para ver sus materiales.';
+
+  @override
+  String get attachFile => 'Adjuntar archivo';
+
+  @override
+  String get selectFile => 'Seleccionar archivo';
+
+  @override
+  String get materialDescriptionLabel => '¿De qué trata este material?';
+
+  @override
+  String get materialDescriptionPlaceholder =>
+      'Ejemplo: ejercicios de práctica que me cuestan resolver...';
+
+  @override
+  String get attachmentsForSession => 'Archivos adjuntos para esta sesión';
+
+  @override
+  String get tutoringDetails => 'Detalles de la tutoría';
+
+  @override
+  String get timeConnector => 'a';
+
+  @override
+  String get materialOptionalNote => 'Adjuntar material de apoyo es opcional.';
+
+  @override
+  String get savedStatus => 'Guardado';
+
+  @override
+  String get statusNotCompleted => 'No completado';
+
+  @override
+  String get statusRejected => 'Rechazado';
+
+  @override
+  String get statusCancelled => 'Cancelado';
+
+  @override
+  String get noMaterialsAttached => 'Sin materiales adjuntos';
+
+  @override
+  String materialsAttached(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count materiales adjuntos',
+      one: '$count material adjunto',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tapCardToSeeDetails =>
+      'Toca la tarjeta para ver detalles o agregar archivos.';
+
+  @override
+  String get tutorLabel => 'Tutor: ';
+
+  @override
+  String get studentLabel => 'Estudiante: ';
+
+  @override
+  String get maxSize5Mb => 'PDF, DOCX, XLSX, JPG, PNG (Máx. 5 MB)';
+
+  @override
+  String get save => 'Guardar';
+
+  @override
+  String get fileNotAllowed => 'Este tipo de archivo no está permitido.';
+
+  @override
+  String get fileTooLarge => 'El archivo supera el límite de 5 MB.';
+
+  @override
+  String get descriptionRequired => 'Por favor escribe una breve descripción.';
+
+  @override
+  String get descriptionMinLength =>
+      'La descripción debe tener al menos 2 caracteres.';
+
+  @override
+  String get descriptionMaxLength =>
+      'La descripción no debe superar los 500 caracteres.';
+
+  @override
+  String get deleteMaterialConfirm => '¿Eliminar este material?';
+
+  @override
+  String get deleteMaterialDescription => 'Esta acción no se puede deshacer.';
+
+  @override
+  String get editMaterialDescription =>
+      'Actualiza la descripción o reemplaza el archivo.';
+
+  @override
+  String get materialDeleted => 'Material eliminado.';
+
+  @override
+  String get materialSaved => 'Material guardado.';
+
+  @override
+  String get loadingMaterials => 'Cargando materiales...';
+
+  @override
+  String get sharingFile => 'Descargando archivo...';
+
+  @override
+  String get downloadedFile => 'Archivo descargado';
+
+  @override
+  String get alreadyDownloaded => 'Archivo ya descargado';
+
+  @override
+  String get downloadingFile => 'Descargando archivo...';
+
+  @override
+  String get noAppToOpenFile => 'No hay una aplicación para abrir este archivo';
+
+  @override
+  String get noMaterialSelected =>
+      'Arrastra un archivo o haz clic aquí para seleccionarlo';
+
+  @override
   String get learnInFiveSteps =>
-      'Aprende a usar Tutoría al Instante en 5 pasos 🚀';
+      'Aprende a usar Tutoría al Instante en 5 pasos';
 
   @override
   String get discoverHowToConnect =>

@@ -3,7 +3,6 @@ import 'package:flutter_projects/base_components/custom_snack_bar.dart';
 import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:flutter_projects/provider/auth_provider.dart';
 import 'package:flutter_projects/view/tutor/dashboard/sheets/add_schedule_sheet.dart';
-import 'package:flutter_projects/view/tutor/features/agenda/widgets/agenda_schedule_modal.dart';
 import 'package:intl/intl.dart';
 
 import 'package:flutter_projects/styles/app_styles.dart';
@@ -77,7 +76,7 @@ class _AgendaAvailabilityViewState extends State<AgendaAvailabilityView> {
         final List<Map<String, String>> newSlots = [
           {'start': startTime, 'end': endTime}
         ];
-        final success = await provider.saveSlotsForDays(
+        final result = await provider.saveSlotsForDays(
           token: token,
           userId: userId,
           days: targetDays,
@@ -85,19 +84,31 @@ class _AgendaAvailabilityViewState extends State<AgendaAvailabilityView> {
         );
         if (!mounted) return;
 
-        if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(AppLocalizations.of(context)!.scheduleConfiguredSuccessfully),
-              backgroundColor: AppColors.brandCyan,
-            ),
+        if (result['success'] == true) {
+          CustomToast.show(
+            context,
+            AppLocalizations.of(context)!.scheduleConfiguredSuccessfully,
+            isSuccess: true,
+          );
+        } else if (result['partialSuccess'] == true) {
+          final errors = (result['errors'] as List?)?.cast<String>() ?? [];
+          final details = errors.isEmpty
+              ? ''
+              : ' Conflicto: ${errors.take(3).join(' | ')}';
+          CustomToast.show(
+            context,
+            "Guardado parcial: ${result['savedCount']} de ${result['totalCount']} días.$details",
+            isWarning: true,
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(AppLocalizations.of(context)!.couldNotSaveSchedule),
-              backgroundColor: Colors.redAccent,
-            ),
+          final errors = (result['errors'] as List?)?.cast<String>() ?? [];
+          final details = errors.isEmpty
+              ? ''
+              : ' ${errors.take(3).join(' | ')}';
+          CustomToast.show(
+            context,
+            "No se pudo guardar ningún horario.$details",
+            isSuccess: false,
           );
         } 
       },),

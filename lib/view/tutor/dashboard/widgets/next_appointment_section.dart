@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/models/booking_status.dart';
 import 'package:flutter_projects/view/student/reservations/services/reservations_service.dart';
-import 'package:flutter_projects/view/tutor/features/agenda/tutor_agenda_screen.dart';
 import 'package:flutter_projects/view/tutor/features/home/widgets/reservation_details_dialog.dart';
 import 'package:flutter_projects/view/tutor/features/home/providers/tutor_home_provider.dart';
 import 'package:flutter_projects/view/tutor/features/home/widgets/start_session_dialog.dart';
@@ -17,9 +16,14 @@ class NextAppointmentSection extends StatefulWidget {
   final List<ReservationItem> appointments;
   final bool isAvailable;
   final Function(int)? onNavigate;
+  final ValueChanged<ReservationItem>? onOpenClass;
 
   const NextAppointmentSection(
-      {Key? key, required this.appointments, required this.isAvailable, this.onNavigate})
+      {Key? key,
+      required this.appointments,
+      required this.isAvailable,
+      this.onNavigate,
+      this.onOpenClass})
       : super(key: key);
 
   @override
@@ -35,12 +39,10 @@ class _NextAppointmentSectionState extends State<NextAppointmentSection> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final today = DateTime.now();
-    final todaysAppointments = widget.appointments.where((b) {
+    final startOfToday = DateTime(today.year, today.month, today.day);
+    final upcomingAppointments = widget.appointments.where((b) {
       if (b.start == null) return false;
-      return 
-        b.start!.year == today.year &&
-        b.start!.month == today.month &&
-        b.start!.day == today.day;
+      return !b.start!.isBefore(startOfToday);
     }).toList();
 
     return Column(
@@ -55,7 +57,7 @@ class _NextAppointmentSectionState extends State<NextAppointmentSection> {
                 children: [
                   Flexible(
                     child: Text(
-                      AppLocalizations.of(context)!.todaysClasses,
+                      AppLocalizations.of(context)!.myNextClasses,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: isDark ? Colors.white : AppColors.brandBlue,
@@ -122,13 +124,13 @@ class _NextAppointmentSectionState extends State<NextAppointmentSection> {
                   )
                 ],
               ),
-              if (todaysAppointments.length > 1)
+              if (upcomingAppointments.length > 1)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(
-                      todaysAppointments.length,
+                      upcomingAppointments.length,
                       (index) => _buildDot(index),
                     ),
                   ),
@@ -140,11 +142,11 @@ class _NextAppointmentSectionState extends State<NextAppointmentSection> {
         // EMPTY STATE
         SizedBox(
           height: 250,
-          child: todaysAppointments.isEmpty
+          child: upcomingAppointments.isEmpty
               ? _EmptyStateCard(isAvailable: widget.isAvailable)
               : PageView.builder(
                   controller: _pageController,
-                  itemCount: todaysAppointments.length,
+                  itemCount: upcomingAppointments.length,
                   physics: const BouncingScrollPhysics(),
                   onPageChanged: (int index) {
                     setState(() => _currentPage = index);
@@ -153,7 +155,8 @@ class _NextAppointmentSectionState extends State<NextAppointmentSection> {
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: _AppointmentCard(
-                        data: todaysAppointments[index],
+                        data: upcomingAppointments[index],
+                        onOpenClass: widget.onOpenClass,
                       ),
                     );
                   },
@@ -181,8 +184,10 @@ class _NextAppointmentSectionState extends State<NextAppointmentSection> {
 
 class _AppointmentCard extends StatelessWidget {
   final ReservationItem data;
+  final ValueChanged<ReservationItem>? onOpenClass;
 
-  const _AppointmentCard({Key? key, required this.data}) : super(key: key);
+  const _AppointmentCard({Key? key, required this.data, this.onOpenClass})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -217,8 +222,15 @@ class _AppointmentCard extends StatelessWidget {
       statusInfoText = 'Esperando confirmación';
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        if (onOpenClass != null) {
+          onOpenClass!(data);
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF151A24) : Colors.white,
         borderRadius: BorderRadius.circular(32),
@@ -592,6 +604,7 @@ class _AppointmentCard extends StatelessWidget {
           }),
         ],
       ),
+      ),
     );
   }
 }
@@ -642,7 +655,7 @@ class _EmptyStateCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               isAvailable
-                  ? AppLocalizations.of(context)!.noClassesToday
+                  ? AppLocalizations.of(context)!.noUpcomingClasses
                   : AppLocalizations.of(context)!.activateAvailability,
               style: TextStyle(
                 color: isDark ? Colors.grey : Colors.grey[500],

@@ -13,6 +13,7 @@ class OnboardingProvider extends ChangeNotifier {
 
   File? personalPhoto;
   File? documentFile;
+  File? documentFileBack; // Para foto trasera del carnet (solo tutores)
 
   File? profilePhoto;
   String? gender;
@@ -47,11 +48,20 @@ class OnboardingProvider extends ChangeNotifier {
   bool get isStepTwoValid =>
       dateOfBirth != null &&
       selectedCountryId != null &&
+      selectedCountryId != 0 &&
       gender != null &&
       profilePhoto != null &&
       (!countryHasStates || selectedStateId != null);
 
-  bool get isStepThreeValid => personalPhoto != null && documentFile != null;
+  bool get isStepThreeValid {
+    // Para tutores: validar que ambas fotos del carnet estén presentes
+    if (personalPhoto == null || documentFile == null) {
+      return false;
+    }
+    // Solo tutores necesitan la foto trasera del carnet
+    // Los estudiantes solo necesitan el transcript (documentFile)
+    return true;
+  }
 
   Future<Map<String, dynamic>> submitFullOnboarding({
     required String token,
@@ -64,15 +74,21 @@ class OnboardingProvider extends ChangeNotifier {
     isLoading = true;
     notifyListeners();
 
-    if (selectedCountryId == null || gender == null || profilePhoto == null ||
+    if (selectedCountryId == null || selectedCountryId == 0 || gender == null || profilePhoto == null ||
         (countryHasStates && selectedStateId == null) ||
         personalPhoto == null || documentFile == null) {
       isLoading = false;
       notifyListeners();
       return {'success': false, 'message': 'Completa todos los campos requeridos.'};
     }
+    
+    // Validación adicional para tutores: foto trasera del carnet es obligatoria
+    if (role == 'tutor' && documentFileBack == null) {
+      isLoading = false;
+      notifyListeners();
+      return {'success': false, 'message': 'Debes subir ambas caras del carnet de identidad.'};
+    }
 
-    String docKey = role == 'tutor' ? 'identificationCard' : 'transcript';
     String formattedDate =
         "${dateOfBirth!.year}-${dateOfBirth!.month.toString().padLeft(2, '0')}-${dateOfBirth!.day.toString().padLeft(2, '0')}";
 
@@ -110,14 +126,15 @@ class OnboardingProvider extends ChangeNotifier {
       // 3. Enviar verificación de identidad
       final identityResponse = await submitIdentityVerification(
         token: token,
-        documentKey: docKey,
+        role: role,
         name: legalName ?? firstName,
         dateOfBirth: formattedDate,
         countryId: selectedCountryId!,
         stateId: selectedStateId ?? 0,
         address: address ?? '',
         image: personalPhoto!,
-        document: documentFile!,
+        documentFront: documentFile!,
+        documentBack: documentFileBack, // Puede ser null para estudiantes
       );
 
       if (identityResponse['success'] != true) {
@@ -147,7 +164,7 @@ class OnboardingProvider extends ChangeNotifier {
 
   void updatePersonalData({
     required DateTime dob,
-    required int countryId,
+    int? countryId,
     int? stateId,
     required String userCity,
     required String userAddress,
@@ -155,7 +172,9 @@ class OnboardingProvider extends ChangeNotifier {
     String? selectedGender,
   }) {
     dateOfBirth = dob;
-    selectedCountryId = countryId;
+    if (countryId != null && countryId != 0) {
+      selectedCountryId = countryId;
+    }
     selectedStateId = hasStates ? stateId : null;
     city = userCity;
     address = userAddress;
@@ -171,12 +190,15 @@ class OnboardingProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateDocuments({File? personalPic, File? docFile, required String role}) {
+  void updateDocuments({File? personalPic, File? docFile, File? docFileBack, required String role}) {
     if (personalPic != null) {
       personalPhoto = personalPic;
     }
     if (docFile != null) {
       documentFile = docFile;
+    }
+    if (docFileBack != null) {
+      documentFileBack = docFileBack;
     }
     notifyListeners();
   }
@@ -195,6 +217,7 @@ class OnboardingProvider extends ChangeNotifier {
     address = null;
     personalPhoto = null;
     documentFile = null;
+    documentFileBack = null;
     profilePhoto = null;
     gender = null;
     countryHasStates = false;

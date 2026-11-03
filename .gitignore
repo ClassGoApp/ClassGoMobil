@@ -121,6 +121,29 @@ dist/
 *.flv
 *.mov
 *.wmv
+flutter_*.png
+
+# Android signing keys (root level)
+android/key.json
+
+# Ruby/vendor
+vendor/
+.bundle/
+
+# Android build outputs
+android/build/
+android/app/.cxx/
+
+# Certificate
+upload_certificate.pem
+
+# Ruby/Fastlane
+Gemfile
+Gemfile.lock
+android/fastlane/
+
+# Local test scripts
+test_*.sh
 
 # Maven
 target/
@@ -167,3 +190,4 @@ debug.keystore
 # macOS
 .DS_Store
 **/.DS_Store
+PRUEBA_MANUAL_2.0.24.md

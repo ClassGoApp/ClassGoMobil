@@ -329,7 +329,12 @@ class BookingModalState extends State<BookingModal> {
             CustomScrollView(controller: scrollController, slivers: [
               SliverPersistentHeader(
                   pinned: true,
-                  delegate: _BookingHeaderDelegate(child: _buildHeader())),
+                  delegate: _BookingHeaderDelegate(
+                      child: SizedBox(
+                          height: 80,
+                          child: Align(
+                              alignment: Alignment.topLeft,
+                              child: _buildHeader())))),
               SliverToBoxAdapter(
                   child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 18.0),
@@ -350,7 +355,12 @@ class BookingModalState extends State<BookingModal> {
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       child: Row(children: [
         CircleAvatar(
-            backgroundImage: NetworkImage(widget.tutorImage), radius: 26),
+            backgroundImage: widget.tutorImage.isNotEmpty &&
+                    widget.tutorImage.startsWith('http')
+                ? NetworkImage(widget.tutorImage)
+                : Image.asset(AppImages.placeHolderImage, fit: BoxFit.cover)
+                    .image,
+            radius: 26),
         SizedBox(width: 14),
         Expanded(
             child: Column(
@@ -932,7 +942,8 @@ class BookingModalState extends State<BookingModal> {
               ),
             ),
             style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: AppColors.lightBlueColor, width: 1.5),
+              side:
+                  const BorderSide(color: AppColors.lightBlueColor, width: 1.5),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
               ),

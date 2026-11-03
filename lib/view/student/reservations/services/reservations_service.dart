@@ -10,6 +10,7 @@ class ReservationItem {
   final DateTime? end;
   final String status;
   final String meetingLink;
+  final int attachmentCount;
 
   ReservationItem({
     required this.id,
@@ -20,6 +21,7 @@ class ReservationItem {
     required this.end,
     required this.status,
     required this.meetingLink,
+    this.attachmentCount = 0,
   });
 }
 
@@ -34,17 +36,27 @@ class ReservationsService {
     int maxResults = 3,
     Duration lookback = const Duration(days: 30),
   }) {
-    final lowerBound = now.subtract(lookback);
+    // Obtener fecha de hoy sin hora (00:00:00) para comparar solo fechas
+    final today = DateTime(now.year, now.month, now.day);
 
+    // Filtrar solo reservas desde HOY hacia adelante
     final filtered = reservations.where((reservation) {
       if (reservation.start == null) return false;
-      return !reservation.start!.isBefore(lowerBound);
+      // Comparar solo la fecha, sin la hora
+      final reservationDate = DateTime(
+        reservation.start!.year,
+        reservation.start!.month,
+        reservation.start!.day,
+      );
+      // Incluir solo si la fecha es hoy o posterior
+      return !reservationDate.isBefore(today);
     }).toList();
 
+    // Ordenar: las más cercanas primero (ascendente)
     filtered.sort((a, b) {
       final aTime = a.start ?? DateTime.fromMillisecondsSinceEpoch(0);
       final bTime = b.start ?? DateTime.fromMillisecondsSinceEpoch(0);
-      return bTime.compareTo(aTime);
+      return aTime.compareTo(bTime); // Más cercanas primero
     });
 
     return filtered.take(maxResults).toList();
@@ -131,85 +143,41 @@ class ReservationsService {
         final String meeting =
             b['meeting_link']?.toString() ?? b['meet_link']?.toString() ?? '';
 
+        final int attachmentCount = (b['attachments_count'] is num)
+            ? (b['attachments_count'] as num).toInt()
+            : int.tryParse(b['attachments_count']?.toString() ?? '') ?? 0;
+
         // Tutor name: prefer fields in booking, otherwise fetch tutor
         String tutorName =
-            (b['tutor_name']?.toString() ?? b['tutor']?.toString() ?? 'Tutor');
-        final int tId = int.tryParse(b['tutor_id']?.toString() ?? '') ?? 0;
-
-        if (tutorName.isEmpty && tId > 0) {
-          if (tId == userId) {
-            tutorName = "Tutor";
-          } else {
-            try {
-              final tutorResp = await getTutors(token, tId.toString());
-              // posibles shapes
-              if (tutorResp.containsKey('user')) {
-                final u = tutorResp['user'];
-                tutorName =
-                    (u['first_name'] ?? '') + ' ' + (u['last_name'] ?? '');
-              } else if (tutorResp.containsKey('name')) {
-                tutorName = tutorResp['name'].toString();
-              } else if (tutorResp.containsKey('full_name')) {
-                tutorName = tutorResp['full_name'].toString();
-              }
-            } catch (_) {}
-          }
+            (b['tutor_name']?.toString() ?? b['tutor']?.toString() ?? '');
+        if (tutorName.isEmpty || tutorName == 'Tutor') {
+          tutorName = 'Tutor';
         }
 
         // Student name
         String studentName =
             b['student_name']?.toString() ?? b['student']?.toString() ?? '';
-        final int sId = int.tryParse(b['student_id']?.toString() ?? '') ?? 0;
-
-        if (studentName.isEmpty && sId > 0) {
-          if (sId == userId) {
-            studentName = "Estudiante";
-          } else {
-            try {
-              final studentResp = await getProfile(token, sId);
-              if (studentResp.containsKey('user')) {
-                final u = studentResp['user'];
-                studentName =
-                    (u['first_name'] ?? '') + ' ' + (u['last_name'] ?? '');
-              } else if (studentResp.containsKey('first_name')) {
-                studentName = (studentResp['first_name'] ?? '') +
-                    ' ' +
-                    (studentResp['last_name'] ?? '');
-              } else if (studentResp.containsKey('name')) {
-                studentName = studentResp['name'].toString();
-              }
-            } catch (_) {}
-          }
+        if (studentName.isEmpty || studentName == 'Estudiante') {
+          studentName = 'Estudiante';
         }
 
-        // Subject name: prefer booking subject fields, otherwise call API
+        // Subject name: prefer booking subject fields, otherwise fallback
         String subjectName =
             b['subject_name']?.toString() ?? b['subject']?.toString() ?? '';
-        if (subjectName.isEmpty && b['subject_id'] != null) {
-          try {
-            final sid = int.tryParse(b['subject_id'].toString()) ?? 0;
-            if (sid > 0) {
-              final subjResp = await getSubjectNameById(token, sid);
-              if (subjResp.containsKey('name'))
-                subjectName = subjResp['name'].toString();
-              else if (subjResp.containsKey('data') &&
-                  subjResp['data'] is Map &&
-                  subjResp['data'].containsKey('name')) {
-                subjectName = subjResp['data']['name'].toString();
-              }
-            }
-          } catch (_) {}
+        if (subjectName.isEmpty) {
+          subjectName = 'Materia';
         }
 
         out.add(ReservationItem(
           id: id,
-          tutorName: tutorName.isNotEmpty ? tutorName : 'Tutor',
-          studentName: studentName.isNotEmpty ? studentName : 'Estudiante',
-          subjectName: subjectName.isNotEmpty ? subjectName : 'Materia',
+          tutorName: tutorName,
+          studentName: studentName,
+          subjectName: subjectName,
           start: start,
           end: end,
           status: status,
           meetingLink: meeting,
+          attachmentCount: attachmentCount,
         ));
       } catch (_) {
         // skip problematic booking

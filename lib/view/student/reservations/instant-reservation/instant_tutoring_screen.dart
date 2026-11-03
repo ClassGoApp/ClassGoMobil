@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:image_picker/image_picker.dart';
 import '../paymentQR/payment_qr_screen.dart';
@@ -17,6 +18,10 @@ class InstantTutoringScreen extends StatefulWidget {
   final String? scheduledTime;
   final bool isScheduledBooking;
   final String? slotId;
+  final bool isScheduleRequest;
+  final VoidCallback? onCancel;
+  final String? sessionDuration;
+  final String? amount;
 
   const InstantTutoringScreen({
     Key? key,
@@ -32,6 +37,10 @@ class InstantTutoringScreen extends StatefulWidget {
     this.isScheduledBooking = false,
     this.slotId,
     this.price,
+    this.isScheduleRequest = false,
+    this.onCancel,
+    this.sessionDuration,
+    this.amount,
   }) : super(key: key);
 
   @override
@@ -46,6 +55,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
   final DraggableScrollableController _scrollController =
       DraggableScrollableController();
   final ImagePicker _picker = ImagePicker();
+  final TextEditingController _notesController = TextEditingController();
   final PageController _pageController = PageController();
   int _currentPage = 0;
   late AnimationController _animationController;
@@ -187,6 +197,7 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
     _pageController.dispose();
     _animationController.dispose();
     _dropdownAnimController.dispose();
+    _notesController.dispose();
     super.dispose();
   }
 
@@ -462,7 +473,14 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                           children: [
                             CircleAvatar(
                               radius: 32,
-                              backgroundImage: NetworkImage(widget.tutorImage),
+                              backgroundImage:
+                                  widget.tutorImage.isNotEmpty &&
+                                          widget.tutorImage.startsWith('http')
+                                      ? NetworkImage(widget.tutorImage)
+                                      : Image.asset(
+                                              AppImages.placeHolderImage,
+                                              fit: BoxFit.cover)
+                                          .image,
                             ),
                             SizedBox(width: 16),
                             Expanded(
@@ -560,16 +578,21 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  _selectedSubject != null
-                                      ? _displaySubjectName(_selectedSubject)
-                                      : 'Seleccionar materia',
-                                  style: TextStyle(
-                                      color: _selectedSubject != null
-                                          ? Colors.white
-                                          : Colors.white70,
-                                      fontSize: 16),
+                                Expanded(
+                                  child: Text(
+                                    _selectedSubject != null
+                                        ? _displaySubjectName(_selectedSubject)
+                                        : 'Seleccionar materia',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                        color: _selectedSubject != null
+                                            ? Colors.white
+                                            : Colors.white70,
+                                        fontSize: 16),
+                                  ),
                                 ),
+                                SizedBox(width: 8),
                                 AnimatedRotation(
                                   turns: _isDropdownOpen ? 0.5 : 0,
                                   duration: const Duration(milliseconds: 300),
@@ -630,151 +653,161 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                               color: Colors.white
                                                   .withOpacity(0.1)),
                                         ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Icon(Icons.lightbulb_outline,
-                                                    color: AppColors
-                                                        .lightBlueColor,
-                                                    size: 18),
-                                                SizedBox(width: 6),
-                                                Expanded(
-                                                  child: Text(
-                                                    '📸 ¡Acelera tu aprendizaje!',
-                                                    style: AppTextStyles
-                                                        .heading2
-                                                        .copyWith(
-                                                            color: Colors.white,
-                                                            fontSize: 14,
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .bold),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            SizedBox(height: 6),
-                                            Text(
-                                              'Sube una foto de tu ejercicio. Ayuda al tutor a:\n'
-                                              '• Preparar la sesión con anticipación\n'
-                                              '• Entender exactamente qué necesitas',
-                                              style: TextStyle(
-                                                color: Colors.white70,
-                                                fontSize: 12,
-                                                height: 1.2,
-                                              ),
-                                            ),
-                                            SizedBox(height: 12),
-
-                                            // Vista previa de imagen o botón para subir
-                                            if (_selectedImage != null) ...[
-                                              Stack(
+                                        child: SingleChildScrollView(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
                                                 children: [
-                                                  Container(
-                                                    width: double.infinity,
-                                                    height: 120,
-                                                    decoration: BoxDecoration(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              12),
-                                                      image: DecorationImage(
-                                                        image: FileImage(
-                                                            _selectedImage!),
-                                                        fit: BoxFit.cover,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  Positioned(
-                                                    top: 6,
-                                                    right: 6,
-                                                    child: GestureDetector(
-                                                      onTap: () {
-                                                        setState(() {
-                                                          _selectedImage = null;
-                                                        });
-                                                      },
-                                                      child: Container(
-                                                        padding:
-                                                            EdgeInsets.all(4),
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          color: Colors.black
-                                                              .withOpacity(0.7),
-                                                          shape:
-                                                              BoxShape.circle,
-                                                        ),
-                                                        child: Icon(Icons.close,
-                                                            color: Colors.white,
-                                                            size: 14),
-                                                      ),
+                                                  Icon(Icons.lightbulb_outline,
+                                                      color: AppColors
+                                                          .lightBlueColor,
+                                                      size: 18),
+                                                  SizedBox(width: 6),
+                                                  Expanded(
+                                                    child: Text(
+                                                      '📸 ¡Acelera tu aprendizaje!',
+                                                      style: AppTextStyles
+                                                          .heading2
+                                                          .copyWith(
+                                                              color:
+                                                                  Colors.white,
+                                                              fontSize: 14,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold),
                                                     ),
                                                   ),
                                                 ],
                                               ),
                                               SizedBox(height: 6),
                                               Text(
-                                                '✅ Imagen añadida correctamente',
+                                                'Sube una foto de tu ejercicio. Ayuda al tutor a:\n'
+                                                '• Preparar la sesión con anticipación\n'
+                                                '• Entender exactamente qué necesitas',
                                                 style: TextStyle(
-                                                  color:
-                                                      AppColors.lightBlueColor,
+                                                  color: Colors.white70,
                                                   fontSize: 12,
-                                                  fontWeight: FontWeight.w500,
+                                                  height: 1.2,
                                                 ),
                                               ),
-                                            ] else ...[
-                                              GestureDetector(
-                                                onTap: _showImageSourceDialog,
-                                                child: Container(
-                                                  width: double.infinity,
-                                                  height: 80,
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.white
-                                                        .withOpacity(0.1),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            12),
-                                                    border: Border.all(
+                                              SizedBox(height: 12),
+
+                                              // Vista previa de imagen o botón para subir
+                                              if (_selectedImage != null) ...[
+                                                Stack(
+                                                  children: [
+                                                    Container(
+                                                      width: double.infinity,
+                                                      height: 120,
+                                                      decoration: BoxDecoration(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(12),
+                                                        image: DecorationImage(
+                                                          image: FileImage(
+                                                              _selectedImage!),
+                                                          fit: BoxFit.cover,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Positioned(
+                                                      top: 6,
+                                                      right: 6,
+                                                      child: GestureDetector(
+                                                        onTap: () {
+                                                          setState(() {
+                                                            _selectedImage =
+                                                                null;
+                                                          });
+                                                        },
+                                                        child: Container(
+                                                          padding:
+                                                              EdgeInsets.all(4),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            color: Colors.black
+                                                                .withOpacity(
+                                                                    0.7),
+                                                            shape:
+                                                                BoxShape.circle,
+                                                          ),
+                                                          child: Icon(
+                                                              Icons.close,
+                                                              color:
+                                                                  Colors.white,
+                                                              size: 14),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                SizedBox(height: 6),
+                                                Text(
+                                                  '✅ Imagen añadida correctamente',
+                                                  style: TextStyle(
+                                                    color: AppColors
+                                                        .lightBlueColor,
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ] else ...[
+                                                GestureDetector(
+                                                  onTap: _showImageSourceDialog,
+                                                  child: Container(
+                                                    width: double.infinity,
+                                                    height: 80,
+                                                    decoration: BoxDecoration(
                                                       color: Colors.white
-                                                          .withOpacity(0.2),
-                                                      style: BorderStyle.solid,
+                                                          .withOpacity(0.1),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              12),
+                                                      border: Border.all(
+                                                        color: Colors.white
+                                                            .withOpacity(0.2),
+                                                        style:
+                                                            BorderStyle.solid,
+                                                      ),
+                                                    ),
+                                                    child: Column(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        Icon(
+                                                          Icons.add_a_photo,
+                                                          color: AppColors
+                                                              .lightBlueColor,
+                                                          size: 24,
+                                                        ),
+                                                        SizedBox(height: 4),
+                                                        Text(
+                                                          'Toca para añadir foto',
+                                                          style: TextStyle(
+                                                            color:
+                                                                Colors.white70,
+                                                            fontSize: 12,
+                                                          ),
+                                                        ),
+                                                        SizedBox(height: 2),
+                                                        Text(
+                                                          'Cámara o Galería',
+                                                          style: TextStyle(
+                                                            color:
+                                                                Colors.white54,
+                                                            fontSize: 10,
+                                                          ),
+                                                        ),
+                                                      ],
                                                     ),
                                                   ),
-                                                  child: Column(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .center,
-                                                    children: [
-                                                      Icon(
-                                                        Icons.add_a_photo,
-                                                        color: AppColors
-                                                            .lightBlueColor,
-                                                        size: 24,
-                                                      ),
-                                                      SizedBox(height: 4),
-                                                      Text(
-                                                        'Toca para añadir foto',
-                                                        style: TextStyle(
-                                                          color: Colors.white70,
-                                                          fontSize: 12,
-                                                        ),
-                                                      ),
-                                                      SizedBox(height: 2),
-                                                      Text(
-                                                        'Cámara o Galería',
-                                                        style: TextStyle(
-                                                          color: Colors.white54,
-                                                          fontSize: 10,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
                                                 ),
-                                              ),
+                                              ],
                                             ],
-                                          ],
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -809,75 +842,80 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                               color: Colors.white
                                                   .withOpacity(0.1)),
                                         ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Icon(Icons.edit_note,
-                                                    color: AppColors
-                                                        .lightBlueColor,
-                                                    size: 18),
-                                                SizedBox(width: 6),
-                                                Expanded(
-                                                  child: Text(
-                                                    '✍️ Cuéntale al tutor',
-                                                    style: AppTextStyles
-                                                        .heading2
-                                                        .copyWith(
-                                                            color: Colors.white,
-                                                            fontSize: 14,
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .bold),
+                                        child: SingleChildScrollView(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Icon(Icons.edit_note,
+                                                      color: AppColors
+                                                          .lightBlueColor,
+                                                      size: 18),
+                                                  SizedBox(width: 6),
+                                                  Expanded(
+                                                    child: Text(
+                                                      '✍️ Cuéntale al tutor',
+                                                      style: AppTextStyles
+                                                          .heading2
+                                                          .copyWith(
+                                                              color:
+                                                                  Colors.white,
+                                                              fontSize: 14,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold),
+                                                    ),
                                                   ),
-                                                ),
-                                              ],
-                                            ),
-                                            SizedBox(height: 6),
-                                            Text(
-                                              'Describe qué necesitas ayuda:\n'
-                                              '• ¿Qué tema quieres repasar?\n'
-                                              '• ¿Qué esperas de esta sesión?',
-                                              style: TextStyle(
-                                                color: Colors.white70,
-                                                fontSize: 12,
-                                                height: 1.2,
+                                                ],
                                               ),
-                                            ),
-                                            SizedBox(height: 12),
-
-                                            // Campo de texto para notas
-                                            TextField(
-                                              maxLines: 4,
-                                              style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 12),
-                                              decoration: InputDecoration(
-                                                hintText:
-                                                    'Ej: "Necesito repasar las leyes de Newton, especialmente la tercera ley..."',
-                                                hintStyle: TextStyle(
-                                                  color: Colors.white
-                                                      .withOpacity(0.5),
+                                              SizedBox(height: 6),
+                                              Text(
+                                                'Describe qué necesitas ayuda:\n'
+                                                '• ¿Qué tema quieres repasar?\n'
+                                                '• ¿Qué esperas de esta sesión?',
+                                                style: TextStyle(
+                                                  color: Colors.white70,
                                                   fontSize: 12,
                                                   height: 1.2,
                                                 ),
-                                                filled: true,
-                                                fillColor: Colors.white
-                                                    .withOpacity(0.1),
-                                                border: OutlineInputBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                  borderSide: BorderSide.none,
-                                                ),
-                                                contentPadding:
-                                                    EdgeInsets.symmetric(
-                                                        horizontal: 12,
-                                                        vertical: 8),
                                               ),
-                                            ),
-                                          ],
+                                              SizedBox(height: 12),
+
+                                              // Campo de texto para notas
+                                              TextField(
+                                                controller: _notesController,
+                                                maxLines: 4,
+                                                style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 12),
+                                                decoration: InputDecoration(
+                                                  hintText:
+                                                      'Ej: "Necesito repasar las leyes de Newton, especialmente la tercera ley..."',
+                                                  hintStyle: TextStyle(
+                                                    color: Colors.white
+                                                        .withOpacity(0.5),
+                                                    fontSize: 12,
+                                                    height: 1.2,
+                                                  ),
+                                                  filled: true,
+                                                  fillColor: Colors.white
+                                                      .withOpacity(0.1),
+                                                  border: OutlineInputBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            12),
+                                                    borderSide: BorderSide.none,
+                                                  ),
+                                                  contentPadding:
+                                                      EdgeInsets.symmetric(
+                                                          horizontal: 12,
+                                                          vertical: 8),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -944,6 +982,63 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                             ? () {
                                 // Reemplaza el modal actual con la pantalla de pago
 
+                                // Validar el material de apoyo (si se adjuntó) ANTES
+                                // de navegar al pago, con las mismas reglas del
+                                // backend y de payment_qr_screen.
+                                final File? supportFile = _selectedImage;
+                                if (supportFile != null) {
+                                  final l10n =
+                                      AppLocalizations.of(context)!;
+                                  final int fileSize =
+                                      supportFile.lengthSync();
+                                  final String filePath =
+                                      supportFile.path.toLowerCase();
+                                  final String extension = filePath
+                                          .contains('.')
+                                      ? filePath.split('.').last
+                                      : '';
+                                  const allowedExtensions = [
+                                    'jpg',
+                                    'jpeg',
+                                    'png'
+                                  ];
+                                  final String description =
+                                      _notesController.text.trim();
+
+                                  if (description.length < 2) {
+                                    showCustomToast(
+                                        context,
+                                        description.isEmpty
+                                            ? l10n.descriptionRequired
+                                            : l10n
+                                                .descriptionMinLength,
+                                        false);
+                                    return;
+                                  }
+                                  if (description.length > 500) {
+                                    showCustomToast(
+                                        context,
+                                        l10n.descriptionMaxLength,
+                                        false);
+                                    return;
+                                  }
+                                  if (fileSize > 5 * 1024 * 1024) {
+                                    showCustomToast(
+                                        context,
+                                        l10n.fileTooLarge,
+                                        false);
+                                    return;
+                                  }
+                                  if (!allowedExtensions
+                                      .contains(extension)) {
+                                    showCustomToast(
+                                        context,
+                                        l10n.fileNotAllowed,
+                                        false);
+                                    return;
+                                  }
+                                }
+
                                 Navigator.of(context).pushReplacement(
                                   PageRouteBuilder(
                                     opaque: false,
@@ -955,10 +1050,12 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                         tutorImage: widget.tutorImage,
                                         selectedSubject: _displaySubjectName(
                                             _selectedSubject),
-                                        amount: widget.price != null
-                                            ? "${widget.price!.toInt()} Bs"
-                                            : "20 Bs",
-                                        sessionDuration: "20 min",
+                                        amount: widget.amount ??
+                                            (widget.price != null
+                                                ? "${widget.price!.toInt()} Bs"
+                                                : "20 Bs"),
+                                        sessionDuration: widget.sessionDuration ??
+                                            "20 min",
                                         tutorId: widget.tutorId,
                                         subjectId: _selectedSubjectId ??
                                             widget.subjectId,
@@ -967,7 +1064,13 @@ class _InstantTutoringScreenState extends State<InstantTutoringScreen>
                                         scheduledTime: widget.scheduledTime,
                                         isScheduledBooking:
                                             widget.isScheduledBooking,
+                                        isScheduleRequest:
+                                            widget.isScheduleRequest,
                                         slotId: widget.slotId,
+                                        onCancel: widget.onCancel,
+                                        supportFile: _selectedImage,
+                                        supportDescription:
+                                            _notesController.text.trim(),
                                       );
                                     },
                                     transitionDuration:

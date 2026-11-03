@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
 import 'package:flutter_projects/styles/app_styles.dart';
+import 'package:flutter_projects/base_components/custom_snack_bar.dart';
 import 'package:flutter_projects/models/booking_status.dart';
 import 'package:flutter_projects/view/tutor/dashboard/widgets/tutor_bottom_nav.dart';
 import 'package:flutter_projects/view/tutor/features/agenda/tutor_agenda_screen.dart';
@@ -32,6 +33,7 @@ import 'package:flutter_projects/view/tutor/dashboard/sheets/add_schedule_sheet.
 import 'package:flutter_projects/models/tutor_subject.dart';
 
 import 'package:flutter_projects/view/tutor/dashboard/logic/calendar_selection_controller.dart';
+import 'package:flutter_projects/view/student/reservations/services/reservations_service.dart';
 
 class DashboardTutor extends StatefulWidget {
   @override
@@ -41,7 +43,8 @@ class DashboardTutor extends StatefulWidget {
 class _DashboardTutorState extends State<DashboardTutor>
     with WidgetsBindingObserver {
   bool _isBottomNavVisible = true;
-  bool isAvailable = false;
+  bool isAvailable = true;
+  final ValueNotifier<(DateTime, int)?> _agendaFocusTarget = ValueNotifier(null);
 
   // Variables para el doble tap para salir
   DateTime? _lastBackPressedTime;
@@ -106,10 +109,20 @@ class _DashboardTutorState extends State<DashboardTutor>
 
   @override
   void dispose() {
+    _agendaFocusTarget.dispose();
     _calendarController.dispose();
     _authProvider?.removeListener(_checkAndFetchBookings);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  void _openClassInAgenda(ReservationItem reservation) {
+    _agendaFocusTarget.value = null;
+    _agendaFocusTarget.value = (
+      reservation.start ?? DateTime.now(),
+      reservation.id,
+    );
+    setState(() => _currentIndex = 1);
   }
 
   // CARGA DE DATOS
@@ -730,10 +743,11 @@ class _DashboardTutorState extends State<DashboardTutor>
     final List<Widget> _screens = [
       // 0. INICIO
       TutorHomeScreen(
-          onNavigate: (index) => setState(() => _currentIndex = index)),
+          onNavigate: (index) => setState(() => _currentIndex = index),
+          onOpenClass: _openClassInAgenda),
 
       // 1. AGENDA
-      const TutorAgendaScreen(),
+      TutorAgendaScreen(focusTarget: _agendaFocusTarget),
 
       // 2. MATERIAS
       TutorSubjectsScreen(),
@@ -762,11 +776,10 @@ class _DashboardTutorState extends State<DashboardTutor>
           _lastBackPressedTime = now;
           
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Presiona el botón de retroceso de nuevo para salir'),
-                duration: Duration(seconds: 2),
-              ),
+            CustomToast.show(
+              context,
+              AppLocalizations.of(context)!.pressBackAgainToExit,
+              showIcon: false,
             );
           }
           return;

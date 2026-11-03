@@ -224,6 +224,20 @@ class TutorHomeProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void removePendingFlexibleRequestByToken(String? token) {
+    if (token == null || token.isEmpty) return;
+    final int before = pendingFlexibleRequests.length;
+    pendingFlexibleRequests
+        .removeWhere((req) => _extractTokenFromData(req) == token);
+    if (pendingFlexibleRequests.length != before) {
+      savePendingFlexibleRequestsToStorage();
+      print(
+          '🗑️ [TutorHomeProvider] Removida solicitud flexible por token. '
+          'Restantes: ${pendingFlexibleRequests.length}');
+      notifyListeners();
+    }
+  }
+
   void setRequestRejected(bool rejected) {
     isRequestRejected = rejected;
     notifyListeners();
@@ -344,7 +358,7 @@ class TutorHomeProvider extends ChangeNotifier {
           authProvider.token, authProvider.userId!);
 
       if (response['success'] == true) {
-        isAvailable = response['available_for_tutoring'] ?? false;
+        isAvailable = true;
         notifyListeners();
       }
     } catch (e) {
@@ -403,7 +417,7 @@ class TutorHomeProvider extends ChangeNotifier {
 
   Future<void> handleAvailabilityToggle(
       BuildContext context, bool newState) async {
-    isAvailable = newState;
+    isAvailable = true;
     notifyListeners();
 
     if (newState) {
@@ -426,7 +440,7 @@ class TutorHomeProvider extends ChangeNotifier {
         behavior: SnackBarBehavior.floating,
       ));
     } catch (e) {
-      isAvailable = !newState;
+      isAvailable = true;
       notifyListeners();
     }
   }

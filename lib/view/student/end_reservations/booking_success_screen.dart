@@ -340,7 +340,12 @@ class _BookingSuccessScreenState extends State<BookingSuccessScreen>
               children: [
                 CircleAvatar(
                   radius: 25,
-                  backgroundImage: NetworkImage(widget.tutorImage),
+                  backgroundImage: widget.tutorImage.isNotEmpty &&
+                          widget.tutorImage.startsWith('http')
+                      ? NetworkImage(widget.tutorImage)
+                      : Image.asset(AppImages.placeHolderImage,
+                              fit: BoxFit.cover)
+                          .image,
                   backgroundColor: Colors.grey[300],
                 ),
                 SizedBox(width: 12),

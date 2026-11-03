@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_projects/view/components/role_based_navigation.dart';
 
 class SplashTransicion extends StatefulWidget {
@@ -37,29 +38,36 @@ class _SplashTransicionState extends State<SplashTransicion> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF113644), 
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TweenAnimationBuilder(
-              tween: Tween(begin: 140.0, end: 180.0),
-              duration: Duration(milliseconds: 800),
-              builder: (context, value, child) {
-                return Image.asset(
-                  'assets/images/logo.png',
-                  width: value,
-                );
-              },
-            ),
-            const SizedBox(height: 25),
-
-            Image.asset(
-              'assets/images/logo_classgo.png',
-              width: 180, 
-            ),
-          ],
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        backgroundColor: const Color(0xFF113644), 
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TweenAnimationBuilder(
+                tween: Tween(begin: 140.0, end: 180.0),
+                duration: Duration(milliseconds: 800),
+                builder: (context, value, child) {
+                  return Image.asset(
+                    'assets/images/logo.png',
+                    width: value,
+                  );
+                },
+              ),
+              const SizedBox(height: 25),
+      
+              Image.asset(
+                'assets/images/logo_classgo.png',
+                width: 180, 
+              ),
+            ],
+          ),
         ),
       ),
     );

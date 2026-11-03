@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter_projects/styles/app_styles.dart';
 import 'package:flutter_projects/api_structure/api_service.dart';
 import 'package:flutter_projects/base_components/custom_snack_bar.dart';
+import 'package:flutter_projects/l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:path_provider/path_provider.dart';
@@ -28,6 +29,9 @@ class PaymentQRScreen extends StatefulWidget {
   final bool isScheduleRequest;
   final String? slotId;
   final VoidCallback? onCancel;
+  // Material de apoyo (foto + descripción) subido antes de crear la reserva
+  final File? supportFile;
+  final String? supportDescription;
 
   const PaymentQRScreen({
     Key? key,
@@ -45,6 +49,8 @@ class PaymentQRScreen extends StatefulWidget {
     this.isScheduleRequest = false,
     this.slotId,
     this.onCancel,
+    this.supportFile,
+    this.supportDescription,
   }) : super(key: key);
 
   @override
@@ -275,7 +281,28 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
     }
   }
 
+  (int, int) _parseTime(String timeStr) {
+    final trimmed = timeStr.trim();
+    final match = RegExp(
+      r'^(\d{1,2}):(\d{2})\s*(AM|PM)?$',
+      caseSensitive: false,
+    ).firstMatch(trimmed);
+    if (match == null) {
+      throw const FormatException('Hora inválida');
+    }
+    int hour = int.parse(match.group(1)!);
+    final minute = int.parse(match.group(2)!);
+    final period = match.group(3)?.toUpperCase();
+    if (period == 'PM' && hour != 12) hour += 12;
+    if (period == 'AM' && hour == 12) hour = 0;
+    if (hour > 23 || minute > 59) {
+      throw const FormatException('Hora inválida');
+    }
+    return (hour, minute);
+  }
+
   void _submitPayment() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_receiptImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -443,11 +470,14 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
           print('[PaymentQRScreen] 🔍 DEBUG - End time string: $endTimeStr');
 
           try {
-            // Parsear las horas (formato: "14:00", "15:30", etc.)
-            final startHour = int.parse(startTimeStr.split(':')[0]);
-            final startMinute = int.parse(startTimeStr.split(':')[1]);
-            final endHour = int.parse(endTimeStr.split(':')[0]);
-            final endMinute = int.parse(endTimeStr.split(':')[1]);
+            // Parsear las horas aceptando formato 24h ("14:00") o 12h
+            // con AM/PM ("7:30 PM")
+            final startTimeParsed = _parseTime(startTimeStr);
+            final endTimeParsed = _parseTime(endTimeStr);
+            final startHour = startTimeParsed.$1;
+            final startMinute = startTimeParsed.$2;
+            final endHour = endTimeParsed.$1;
+            final endMinute = endTimeParsed.$2;
 
             print(
                 '[PaymentQRScreen] 🔍 DEBUG - Parsed hours: $startHour:$startMinute - $endHour:$endMinute');
@@ -495,7 +525,10 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
       String? normalizedSlotId = widget.slotId?.trim();
 
       // Únicamente si se trata de una solicitud de horario y no posee un slotId válido:
-      if (widget.isScheduleRequest && (normalizedSlotId == null || normalizedSlotId.isEmpty || !normalizedSlotId.contains('|'))) {
+      if (widget.isScheduleRequest &&
+          (normalizedSlotId == null ||
+              normalizedSlotId.isEmpty ||
+              !normalizedSlotId.contains('|'))) {
         final dateStr = DateFormat('yyyy-MM-dd').format(startTime);
         final startTimeStr = DateFormat('HH:mm').format(startTime);
         final endTimeStr = DateFormat('HH:mm').format(endTime);
@@ -514,11 +547,13 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
         if (slotResp['success'] == true && slotResp['data'] != null) {
           final createdSlotId = slotResp['data']['id'];
           normalizedSlotId = "$createdSlotId|$startTimeStr|$endTimeStr";
-          print('[PaymentQRScreen] ✅ Slot base creado exitosamente: $normalizedSlotId');
+          print(
+              '[PaymentQRScreen] ✅ Slot base creado exitosamente: $normalizedSlotId');
         } else {
           showCustomToast(
             context,
-            slotResp['message'] ?? 'Error al crear la disponibilidad del horario.',
+            slotResp['message'] ??
+                'Error al crear la disponibilidad del horario.',
             false,
           );
           setState(() {
@@ -568,6 +603,49 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
           _isPaymentCompleted = false;
         });
         return;
+      }
+
+      // Adjuntar el material de apoyo (foto + descripción) con las mismas
+      // validaciones del AttachFileSheet (extensión, 5MB, descripción min 2 /
+      // max 500). La descripción se valida ANTES de enviar: nunca se rellena
+      // ni se modifica por nosotros, solo se informa al usuario con un toast.
+      // El material es opcional: si falla, la reserva ya quedó creada y se
+      // podrá adjuntar después desde los detalles.
+      final File? supportFile = widget.supportFile;
+      if (supportFile != null) {
+        final int fileSize = supportFile.lengthSync();
+        final String filePath = supportFile.path.toLowerCase();
+        final String extension =
+            filePath.contains('.') ? filePath.split('.').last : '';
+        const allowedExtensions = ['jpg', 'jpeg', 'png'];
+
+        final String description = widget.supportDescription?.trim() ?? '';
+
+        if (description.length < 2) {
+          showCustomToast(
+              context,
+              description.isEmpty
+                  ? l10n.descriptionRequired
+                  : l10n.descriptionMinLength,
+              false);
+        } else if (description.length > 500) {
+          showCustomToast(context, l10n.descriptionMaxLength, false);
+        } else if (fileSize > 5 * 1024 * 1024) {
+          showCustomToast(context, l10n.fileTooLarge, false);
+        } else if (!allowedExtensions.contains(extension)) {
+          showCustomToast(context, l10n.fileNotAllowed, false);
+        } else {
+          final attachmentResponse = await uploadBookingAttachment(
+            token,
+            slotBookingId,
+            supportFile,
+            description,
+          );
+          if (attachmentResponse['success'] != true) {
+            print('[PaymentQRScreen] ⚠️ No se pudo adjuntar el material: '
+                '${attachmentResponse['message']}');
+          }
+        }
       }
 
       // // 2. Subir el comprobante de pago usando el nuevo endpoint
@@ -642,204 +720,216 @@ class _PaymentQRScreenState extends State<PaymentQRScreen>
         child: makeDismissible(
           context: context,
           child: SlideTransition(
-          position: _slideAnimation,
-          child: DraggableScrollableSheet(
-            initialChildSize: 0.9,
-            minChildSize: 0.6,
-            maxChildSize: 0.9,
-            expand: false,
-            controller: _scrollController,
-            builder: (context, scrollController) {
-              // Se envuelve el contenido en OverlaySupport.local para que
-              // las notificaciones se muestren DENTRO de este modal.
-              return OverlaySupport.local(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.darkBlue,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(24),
-                      topRight: Radius.circular(24),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      // Handle para arrastrar
-                      Container(
-                        width: 40,
-                        height: 5,
-                        margin: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+            position: _slideAnimation,
+            child: DraggableScrollableSheet(
+              initialChildSize: 0.9,
+              minChildSize: 0.6,
+              maxChildSize: 0.9,
+              expand: false,
+              controller: _scrollController,
+              builder: (context, scrollController) {
+                // Se envuelve el contenido en OverlaySupport.local para que
+                // las notificaciones se muestren DENTRO de este modal.
+                return OverlaySupport.local(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.darkBlue,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(24),
+                        topRight: Radius.circular(24),
                       ),
-                      // Contenido principal que es desplazable
-                      Expanded(
-                        child: SingleChildScrollView(
-                          controller: scrollController,
-                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Header con información del tutor
-                              Row(
-                                children: [
-                                  CircleAvatar(
-                                    radius: 28,
-                                    backgroundImage:
-                                        NetworkImage(widget.tutorImage),
-                                  ),
-                                  SizedBox(width: 16),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          widget.tutorName,
-                                          style: AppTextStyles.heading2
-                                              .copyWith(color: Colors.white),
-                                        ),
-                                        SizedBox(height: 4),
-                                        Text(
-                                          widget.selectedSubject,
-                                          style: AppTextStyles.body
-                                              .copyWith(color: Colors.white70),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.close, color: Colors.white70),
-                                    onPressed: () {
-                                      if (widget.onCancel != null) {
-                                        widget.onCancel!();
-                                      } else {
-                                        Navigator.of(context).pop();
-                                      }
-                                    },
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 30),
-
-                              // Información del pago
-                              Container(
-                                padding: EdgeInsets.all(20),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.05),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                      color: Colors.white.withOpacity(0.1)),
-                                ),
-                                child: Column(
+                    ),
+                    child: Column(
+                      children: [
+                        // Handle para arrastrar
+                        Container(
+                          width: 40,
+                          height: 5,
+                          margin: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        // Contenido principal que es desplazable
+                        Expanded(
+                          child: SingleChildScrollView(
+                            controller: scrollController,
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 24.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Header con información del tutor
+                                Row(
                                   children: [
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text('Monto a pagar:',
-                                            style: TextStyle(
-                                                color: Colors.white70,
-                                                fontSize: 16)),
-                                        Text(widget.amount,
-                                            style: TextStyle(
-                                                color: AppColors.lightBlueColor,
-                                                fontSize: 24,
-                                                fontWeight: FontWeight.bold)),
-                                      ],
+                                    CircleAvatar(
+                                      radius: 28,
+                                      backgroundImage:
+                                          widget.tutorImage.isNotEmpty &&
+                                                  widget.tutorImage
+                                                      .startsWith('http')
+                                              ? NetworkImage(
+                                                  widget.tutorImage)
+                                              : Image.asset(
+                                                      AppImages
+                                                          .placeHolderImage,
+                                                      fit: BoxFit.cover)
+                                                  .image,
                                     ),
-                                    SizedBox(height: 12),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text('Duración:',
-                                            style: TextStyle(
-                                                color: Colors.white70,
-                                                fontSize: 16)),
-                                        Text(widget.sessionDuration,
-                                            style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 16)),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              SizedBox(height: 30),
-
-                              // Scroll Horizontal para QR y Comprobante
-                              Container(
-                                height: 350,
-                                child: Column(
-                                  children: [
+                                    SizedBox(width: 16),
                                     Expanded(
-                                      child: PageView(
-                                        controller: _pageController,
-                                        onPageChanged: (index) {
-                                          setState(() {
-                                            _currentPage = index;
-                                          });
-                                        },
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
-                                          // Página 1: QR Code (Compacto)
-                                          _buildQRPage(),
-                                          // Página 2: Subir comprobante (Con Scroll)
-                                          _buildReceiptPage(),
+                                          Text(
+                                            widget.tutorName,
+                                            style: AppTextStyles.heading2
+                                                .copyWith(color: Colors.white),
+                                          ),
+                                          SizedBox(height: 4),
+                                          Text(
+                                            widget.selectedSubject,
+                                            style: AppTextStyles.body.copyWith(
+                                                color: Colors.white70),
+                                          ),
                                         ],
                                       ),
                                     ),
-                                    SizedBox(height: 16),
-                                    // Barra de indicadores
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        GestureDetector(
-                                          onTap: () =>
-                                              _pageController.animateToPage(0,
-                                                  duration: Duration(
-                                                      milliseconds: 300),
-                                                  curve: Curves.easeInOut),
-                                          child: _HorizontalStepBar(
-                                              isActive: _currentPage == 0,
-                                              label: 'QR'),
-                                        ),
-                                        SizedBox(width: 20),
-                                        GestureDetector(
-                                          onTap: () =>
-                                              _pageController.animateToPage(1,
-                                                  duration: Duration(
-                                                      milliseconds: 300),
-                                                  curve: Curves.easeInOut),
-                                          child: _HorizontalStepBar(
-                                              isActive: _currentPage == 1,
-                                              label: 'Comprobante'),
-                                        ),
-                                      ],
+                                    IconButton(
+                                      icon: const Icon(Icons.close,
+                                          color: Colors.white70),
+                                      onPressed: () {
+                                        if (widget.onCancel != null) {
+                                          widget.onCancel!();
+                                        } else {
+                                          Navigator.of(context).pop();
+                                        }
+                                      },
                                     ),
                                   ],
                                 ),
-                              ),
-                              SizedBox(height: 30),
-                            ],
+                                SizedBox(height: 30),
+
+                                // Información del pago
+                                Container(
+                                  padding: EdgeInsets.all(20),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.05),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                        color: Colors.white.withOpacity(0.1)),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text('Monto a pagar:',
+                                              style: TextStyle(
+                                                  color: Colors.white70,
+                                                  fontSize: 16)),
+                                          Text(widget.amount,
+                                              style: TextStyle(
+                                                  color:
+                                                      AppColors.lightBlueColor,
+                                                  fontSize: 24,
+                                                  fontWeight: FontWeight.bold)),
+                                        ],
+                                      ),
+                                      SizedBox(height: 12),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text('Duración:',
+                                              style: TextStyle(
+                                                  color: Colors.white70,
+                                                  fontSize: 16)),
+                                          Text(widget.sessionDuration,
+                                              style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 16)),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(height: 30),
+
+                                // Scroll Horizontal para QR y Comprobante
+                                Container(
+                                  height: 350,
+                                  child: Column(
+                                    children: [
+                                      Expanded(
+                                        child: PageView(
+                                          controller: _pageController,
+                                          onPageChanged: (index) {
+                                            setState(() {
+                                              _currentPage = index;
+                                            });
+                                          },
+                                          children: [
+                                            // Página 1: QR Code (Compacto)
+                                            _buildQRPage(),
+                                            // Página 2: Subir comprobante (Con Scroll)
+                                            _buildReceiptPage(),
+                                          ],
+                                        ),
+                                      ),
+                                      SizedBox(height: 16),
+                                      // Barra de indicadores
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          GestureDetector(
+                                            onTap: () =>
+                                                _pageController.animateToPage(0,
+                                                    duration: Duration(
+                                                        milliseconds: 300),
+                                                    curve: Curves.easeInOut),
+                                            child: _HorizontalStepBar(
+                                                isActive: _currentPage == 0,
+                                                label: 'QR'),
+                                          ),
+                                          SizedBox(width: 20),
+                                          GestureDetector(
+                                            onTap: () =>
+                                                _pageController.animateToPage(1,
+                                                    duration: Duration(
+                                                        milliseconds: 300),
+                                                    curve: Curves.easeInOut),
+                                            child: _HorizontalStepBar(
+                                                isActive: _currentPage == 1,
+                                                label: 'Comprobante'),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(height: 30),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                      // Contenido fijo en la parte inferior (Botón de pago y Stepper)
-                      _buildBottomBar(),
-                    ],
+                        // Contenido fijo en la parte inferior (Botón de pago y Stepper)
+                        _buildBottomBar(),
+                      ],
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   // Widget para la página del QR
   Widget _buildQRPage() {

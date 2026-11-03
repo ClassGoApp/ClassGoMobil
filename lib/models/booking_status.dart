@@ -16,6 +16,48 @@ enum BookingStatus {
   static BookingStatus fromString(String? status) {
     if (status == null) return BookingStatus.pendiente;
     final normalized = status.trim().toLowerCase();
+
+    switch (normalized) {
+      case 'aceptado':
+      case 'accepted':
+      case 'aceito':
+      case '1':
+      case 'activo':
+      case 'active':
+        return BookingStatus.aceptado;
+      case 'pendiente':
+      case 'pending':
+      case 'pendente':
+      case '2':
+        return BookingStatus.pendiente;
+      case 'no completado':
+      case 'no_completado':
+      case 'not completed':
+      case 'not_completed':
+      case 'não concluído':
+      case '3':
+        return BookingStatus.noCompletado;
+      case 'rechazado':
+      case 'rejected':
+      case 'rejeitado':
+      case 'observado':
+      case 'observed':
+      case '4':
+        return BookingStatus.rechazado;
+      case 'completado':
+      case 'completed':
+      case 'concluído':
+      case '5':
+        return BookingStatus.completado;
+      case 'cursando':
+      case 'in progress':
+      case 'in_progress':
+      case 'cursando/em andamento':
+      case 'em andamento':
+      case '6':
+        return BookingStatus.cursando;
+    }
+
     return BookingStatus.values.firstWhere(
       (s) => s.displayName.toLowerCase() == normalized,
       orElse: () => BookingStatus.pendiente,
