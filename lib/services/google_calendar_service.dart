@@ -35,7 +35,6 @@ class GoogleCalendarService {
       // Paso 1: Abrir Google Sign-In dialog (DENTRO de la app)
       final account = await _googleSignIn.signIn();
       
-      print('🔴 [GoogleCalendarService] Sign-In result: account=$account');
       
       if (account == null) {
         print('🔴 [GoogleCalendarService] Usuario canceló el sign-in');
@@ -43,14 +42,12 @@ class GoogleCalendarService {
         return false;
       }
 
-      print('🔴 [GoogleCalendarService] Cuenta obtenida: ${account.email}');
       
       // Paso 2: Obtener authentication details
       final auth = await account.authentication;
       final accessToken = auth.accessToken;
       
       print('🔴 [GoogleCalendarService] Access token obtenido: ${accessToken != null}');
-      print('🔴 [GoogleCalendarService] Access token: $accessToken');
       
       if (accessToken == null) {
         print('🔴 [GoogleCalendarService] No hay access token');
@@ -78,11 +75,9 @@ class GoogleCalendarService {
       );
 
       print('🔴 [GoogleCalendarService] Backend response: ${response.statusCode}');
-      print('🔴 [GoogleCalendarService] Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        print('🔴 [GoogleCalendarService] Response data: $data');
         if (data['success'] == true) {
           _isConnected = true;
           _calendarInfo = data['data']?['calendar_info'] ?? {
@@ -102,12 +97,9 @@ class GoogleCalendarService {
       return false;
     } on PlatformException catch (e) {
       print('🔴 [GoogleCalendarService] ❌ PlatformException: ${e.code}');
-      print('🔴 [GoogleCalendarService] ❌ Message: ${e.message}');
-      print('🔴 [GoogleCalendarService] ❌ Details: ${e.details}');
       _isConnected = false;
       return false;
-    } catch (e) {
-      print('🔴 [GoogleCalendarService] ❌ Exception: $e');
+    } catch (_) {
       _isConnected = false;
       return false;
     }

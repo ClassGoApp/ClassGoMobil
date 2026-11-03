@@ -67,7 +67,6 @@ class AuthProvider with ChangeNotifier {
       print('DEBUG - userRole detectado: $role');
       return role;
     }
-    print('DEBUG - userRole no encontrado. userData: $_userData');
     return null;
   }
 
@@ -105,7 +104,6 @@ class AuthProvider with ChangeNotifier {
   /// Obtiene el nombre completo del usuario
   String get userName {
     print('DEBUG - userName llamado');
-    print('DEBUG - userData: $_userData');
 
     if (_userData != null && _userData!.containsKey('user')) {
       final user = _userData!['user'];
@@ -327,7 +325,6 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> setToken(String token) async {
-    print('setToken llamado con token: $token');
     _token = token;
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('token', token);
@@ -337,9 +334,7 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> setAuthToken(String token) async {
-    print('setAuthToken llamado con token: $token');
     _token = token;
-    print('Token guardado en memoria: $_token');
     notifyListeners();
     print('Listeners notificados en setAuthToken');
 
@@ -723,7 +718,6 @@ class AuthProvider with ChangeNotifier {
       _userData!['user']['profile']['intro_video'] = newVideoUrl;
 
       final serializedUserData = jsonEncode(_userData);
-      print('DEBUG - AuthProvider userData persistido: $serializedUserData');
 
       SharedPreferences.getInstance().then((prefs) {
         prefs.setString('userData', serializedUserData);

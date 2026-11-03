@@ -91,11 +91,8 @@ class _LoginScreenState extends State<LoginScreen>
 
       try {
         final response = await loginUser(email, password);
-        print('Login API Response: $response');
         final String token = response['data']['token'];
         final Map<String, dynamic> userData = response['data'];
-        print('Extracted User Data after login: $userData');
-        print('Token extraído del login: $token');
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
         print('Llamando a setToken...');
@@ -351,7 +348,6 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   void _saveTokenToProvider(String token) {
-    print('_saveTokenToProvider llamado con token: $token');
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     print('AuthProvider obtenido, llamando a setAuthToken...');
     authProvider.setAuthToken(token);
@@ -420,6 +416,7 @@ class _LoginScreenState extends State<LoginScreen>
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      if (!mounted) return;
       if (googleUser == null) {
         setState(() {
           _isLoading = false;
@@ -431,7 +428,6 @@ class _LoginScreenState extends State<LoginScreen>
           await googleUser.authentication;
 
       final String? idToken = googleAuth.idToken;
-      print('🟢 GOOGLE ID TOKEN => $idToken');
       if (idToken == null) {
         throw Exception(l10n.googleTokenError);
       }
@@ -450,6 +446,7 @@ class _LoginScreenState extends State<LoginScreen>
         if (errorMsg.contains('no encontrado') || errorMsg.contains('not found')) {
           if (!mounted) return;
           final retryData = await _googleSignInRetry(idToken, context, googleUser.displayName);
+          if (!mounted) return;
           if (retryData == null) {
             setState(() { _isLoading = false; });
             return;
@@ -468,6 +465,7 @@ class _LoginScreenState extends State<LoginScreen>
         if (userMap == null || userMap['role'] == null || userMap['profile'] == null) {
           if (!mounted) return;
           final retryData = await _googleSignInRetry(idToken, context, googleUser.displayName);
+          if (!mounted) return;
           if (retryData == null) {
             setState(() { _isLoading = false; });
             return;
@@ -478,11 +476,13 @@ class _LoginScreenState extends State<LoginScreen>
 
       final String token = loginData['token'];
 
+      if (!mounted) return;
       // 🔥 CLAVE: loginData debe ser IGUAL al login normal
       await authProvider.setToken(token);
       await authProvider.setUserData(loginData);
       await authProvider.setAuthToken(token);
 
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
@@ -498,14 +498,14 @@ class _LoginScreenState extends State<LoginScreen>
         MaterialPageRoute(builder: (_) => RoleBasedNavigation()),
         (route) => false,
       );
-    } catch (e, stacktrace) {
-      print('🔴 ERROR REAL: $e');
-      print('📜 STACKTRACE: $stacktrace');
+    } catch (e) {
+      debugPrint('Google Sign-In failed: ${e.runtimeType}');
       try {
         await googleSignIn.signOut();
       } catch (signoutError) {
-        print('Error al cerrar sesión de Google tras fallo: $signoutError');
+        debugPrint('Google Sign-In cleanup failed: ${signoutError.runtimeType}');
       }
+      if (!mounted) return;
       String displayMessage = l10n.googleLoginError;
       try {
         // Limpiamos el texto de la excepción e intentamos decodificar el JSON
@@ -542,7 +542,6 @@ class _LoginScreenState extends State<LoginScreen>
       print(
           'LoginScreen: registrationResponse encontrado: ${widget.registrationResponse}');
       final String? token = widget.registrationResponse?['data']['token'];
-      print('LoginScreen: token extraído del registrationResponse: $token');
       if (token != null) {
         print('LoginScreen: llamando a _saveTokenToProvider...');
         _saveTokenToProvider(token);

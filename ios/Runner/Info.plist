@@ -40,8 +40,16 @@
 	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
+	<key>GIDClientID</key>
+	<string>777182771573-femepjrll6nqe1qvbjri72t33hlnksf9.apps.googleusercontent.com</string>
 	<key>CFBundleURLTypes</key>
 	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.777182771573-femepjrll6nqe1qvbjri72t33hlnksf9</string>
+			</array>
+		</dict>
 		<dict>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
