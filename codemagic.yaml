@@ -24,6 +24,40 @@ workflows:
     artifacts:
       - build/ios/iphonesimulator/*.app
   
+  ios_browserstack:
+    name: ClassGo iOS - BrowserStack unsigned IPA
+    instance_type: mac_mini_m1
+    max_build_duration: 120
+    environment:
+      flutter: stable
+    scripts:
+      - name: Get Flutter dependencies
+        script: flutter pub get
+      - name: Install CocoaPods dependencies
+        script: |
+          set -euo pipefail
+          cd ios
+          pod install --repo-update
+      - name: Build release app for real iOS devices without signing
+        script: |
+          set -euo pipefail
+          flutter build ios --release --no-codesign
+          test -d build/ios/iphoneos/Runner.app
+      - name: Package unsigned IPA for BrowserStack re-signing
+        script: |
+          set -euo pipefail
+          # Device build only. This IPA requires signing before installation.
+          APP_PATH="$CM_BUILD_DIR/build/ios/iphoneos/Runner.app"
+          OUTPUT_DIR="$CM_BUILD_DIR/build/ios/ipa"
+          STAGING_DIR="$(mktemp -d)"
+          mkdir -p "$OUTPUT_DIR" "$STAGING_DIR/Payload"
+          ditto "$APP_PATH" "$STAGING_DIR/Payload/Runner.app"
+          cd "$STAGING_DIR"
+          zip -qry "$OUTPUT_DIR/ClassGo-browserstack-unsigned.ipa" Payload
+          unzip -t "$OUTPUT_DIR/ClassGo-browserstack-unsigned.ipa"
+    artifacts:
+      - build/ios/ipa/ClassGo-browserstack-unsigned.ipa
+
   android_build:
     name: ClassGo Android Build
     instance_type: linux_x2
